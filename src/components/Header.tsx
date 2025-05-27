@@ -38,7 +38,7 @@ export const Header = ({ activeSection }: HeaderProps) => {
             />
             <div>
               <h1 className="text-xl font-bold text-green-800">Colégio Zampieri</h1>
-              <p className="text-sm text-green-600">Tradição em Educação</p>
+              <p className="text-sm text-gray-700">Tradição em Educação</p>
             </div>
           </div>
 
