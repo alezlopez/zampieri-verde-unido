@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from "@/components/ui/carousel";
 import type { CarouselApi } from "@/components/ui/carousel";
+
 export const HeroSection = () => {
   const [currentSlide, setCurrentSlide] = useState(0);
   const [api, setApi] = useState<CarouselApi>();
@@ -45,9 +46,9 @@ export const HeroSection = () => {
       </Carousel>
 
       <div className="absolute inset-0 flex items-center justify-center z-10">
-        <div className="text-center text-white max-w-4xl px-4">
-          <div className="mb-8">
-            <h1 className="text-4xl md:text-6xl font-serif font-bold mb-4 bg-gradient-to-r from-white via-green-100 to-white bg-clip-text text-transparent tracking-wide leading-tight lg:text-7xl">
+        <div className="text-center text-white max-w-4xl px-6">
+          <div className="mb-8 py-8">
+            <h1 className="text-3xl md:text-5xl lg:text-6xl font-serif font-bold mb-6 bg-gradient-to-r from-white via-green-100 to-white bg-clip-text text-transparent tracking-wide leading-loose pb-4 min-h-[80px] flex items-center justify-center">
               Colégio Zampieri
             </h1>
             <div className="w-24 h-1 bg-gradient-to-r from-green-400 to-green-600 mx-auto mb-6 rounded-full"></div>
