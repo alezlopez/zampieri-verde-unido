@@ -45,7 +45,7 @@ export const HeroSection = () => {
 
       <div className="absolute inset-0 flex items-center justify-center z-10">
         <div className="text-center text-white">
-          <h1 className="text-5xl md:text-7xl font-bold mb-6 drop-shadow-2xl">
+          <h1 className="text-5xl md:text-7xl mb-6 drop-shadow-2xl font-semibold">
             Colégio Zampieri
           </h1>
           <p className="text-xl md:text-2xl mb-8 max-w-2xl mx-auto drop-shadow-xl">Há mais de 40 anos transformando vidas com educação de qualidade</p>
