@@ -5,13 +5,13 @@ import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious
 export const HeroSection = () => {
   const [currentSlide, setCurrentSlide] = useState(0);
   
-  // Placeholder images for the slideshow - these will be replaced with actual school photos
+  // Real photos of Colégio Zampieri
   const slides = [
-    "photo-1649972904349-6e44c42644a7",
-    "photo-1581091226825-a6a2a5aee158", 
-    "photo-1519389950473-47ba0277781c",
-    "photo-1506744038136-46273834b3fb",
-    "photo-1501854140801-50d01698950b"
+    "/lovable-uploads/50f87f48-5976-4388-802c-470163741419.png",
+    "/lovable-uploads/eac25f65-1ceb-4632-8920-01eb9365ce27.png", 
+    "/lovable-uploads/df233acd-a555-44ec-a57b-0bc85614836f.png",
+    "/lovable-uploads/bd571e68-1908-4859-81a4-bc2c0c51fa6a.png",
+    "/lovable-uploads/c87cdeb9-2c2a-43fb-ab89-e04abe363a87.png"
   ];
 
   useEffect(() => {
@@ -30,7 +30,7 @@ export const HeroSection = () => {
             <CarouselItem key={index} className="relative h-screen">
               <div className="relative w-full h-full">
                 <img
-                  src={`https://images.unsplash.com/${slide}?auto=format&fit=crop&w=1920&h=1080&q=80`}
+                  src={slide}
                   alt={`Colégio Zampieri - Slide ${index + 1}`}
                   className="w-full h-full object-cover"
                 />
