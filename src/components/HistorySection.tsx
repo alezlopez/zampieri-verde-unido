@@ -9,14 +9,14 @@ export const HistorySection = () => {
   ];
 
   return (
-    <section id="historia" className="py-20 bg-gray-50">
+    <section id="historia" className="py-16 bg-gradient-to-br from-green-800 via-green-700 to-green-600 text-white">
       <div className="container mx-auto px-4">
         <div className="max-w-4xl mx-auto">
-          <h2 className="text-4xl font-bold text-center mb-16 text-green-800">
+          <h2 className="text-4xl font-bold text-center mb-12 text-white">
             Nossa História
           </h2>
           
-          <div className="prose prose-lg mx-auto text-gray-700 mb-16">
+          <div className="prose prose-lg mx-auto text-green-50 mb-12">
             <p className="text-lg leading-relaxed mb-6">
               Desde 1980, o Colégio Zampieri transforma vidas com educação de qualidade, 
               da Educação Infantil ao Ensino Médio. Nosso compromisso é evoluir junto com o mundo, 
@@ -41,14 +41,14 @@ export const HistorySection = () => {
             </p>
           </div>
 
-          <div className="grid md:grid-cols-3 gap-8">
+          <div className="grid md:grid-cols-3 gap-6">
             {stats.map((stat, index) => (
-              <Card key={index} className="text-center bg-green-50 border-green-200">
-                <CardContent className="p-8">
-                  <div className="text-3xl font-bold text-green-800 mb-2">
+              <Card key={index} className="text-center bg-white/10 backdrop-blur-sm border-white/20 hover:bg-white/20 transition-all duration-300">
+                <CardContent className="p-6">
+                  <div className="text-3xl font-bold text-white mb-2">
                     {stat.value}
                   </div>
-                  <div className="text-green-600 font-medium">
+                  <div className="text-green-100 font-medium">
                     {stat.label}
                   </div>
                 </CardContent>
