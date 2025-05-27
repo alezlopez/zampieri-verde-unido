@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from "@/components/ui/carousel";
 import type { CarouselApi } from "@/components/ui/carousel";
@@ -39,8 +40,8 @@ export const HeroSection = () => {
           {slides.map((slide, index) => <CarouselItem key={index} className="relative h-screen">
               <div className="relative w-full h-full">
                 <img src={slide} alt={`Colégio Zampieri - Slide ${index + 1}`} className="w-full h-full object-cover" />
-                <div className="absolute inset-0 bg-gradient-to-r from-black/70 via-black/40 to-black/70"></div>
-                <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-black/30"></div>
+                <div className="absolute inset-0 bg-gradient-to-r from-green-900/70 via-green-800/40 to-green-900/70"></div>
+                <div className="absolute inset-0 bg-gradient-to-t from-green-900/60 via-transparent to-green-800/30"></div>
               </div>
             </CarouselItem>)}
         </CarouselContent>
