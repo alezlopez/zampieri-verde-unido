@@ -12,7 +12,7 @@ export const FloatingCTA = () => {
       <Button
         onClick={handleClick}
         size="lg"
-        className="bg-green-600 hover:bg-green-700 text-white font-semibold shadow-2xl rounded-full px-6 py-6 animate-pulse hover:animate-none transition-all duration-300"
+        className="bg-green-600 hover:bg-green-700 text-white font-semibold shadow-2xl rounded-full px-6 py-6 transition-all duration-300"
       >
         <MessageCircle className="h-6 w-6 mr-2" />
         Fale agora com a gente
