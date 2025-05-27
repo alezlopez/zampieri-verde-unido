@@ -1,7 +1,6 @@
 
 import { useState, useEffect } from "react";
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from "@/components/ui/carousel";
-import { WhatsAppCTA } from "./WhatsAppCTA";
 
 export const HeroSection = () => {
   const [currentSlide, setCurrentSlide] = useState(0);
@@ -52,10 +51,6 @@ export const HeroSection = () => {
           <p className="text-xl md:text-2xl mb-8 max-w-2xl mx-auto">
             Mais de 40 anos transformando vidas com educação de qualidade
           </p>
-          
-          <div className="mb-8">
-            <WhatsAppCTA size="lg" className="px-8 py-4 text-lg" />
-          </div>
           
           <div className="flex justify-center space-x-2">
             {slides.map((_, index) => (
