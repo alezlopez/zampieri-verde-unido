@@ -8,6 +8,7 @@ export const HeroSection = () => {
 
   // Real photos of Colégio Zampieri
   const slides = ["/lovable-uploads/50f87f48-5976-4388-802c-470163741419.png", "/lovable-uploads/eac25f65-1ceb-4632-8920-01eb9365ce27.png", "/lovable-uploads/df233acd-a555-44ec-a57b-0bc85614836f.png", "/lovable-uploads/bd571e68-1908-4859-81a4-bc2c0c51fa6a.png", "/lovable-uploads/c87cdeb9-2c2a-43fb-ab89-e04abe363a87.png"];
+  
   useEffect(() => {
     if (!api) {
       return;
@@ -25,11 +26,13 @@ export const HeroSection = () => {
       setCurrentSlide(api.selectedScrollSnap());
     });
   }, [api]);
+  
   const scrollToSlide = (index: number) => {
     if (api) {
       api.scrollTo(index);
     }
   };
+  
   return <section id="inicio" className="relative h-screen overflow-hidden">
       <Carousel className="w-full h-full" setApi={setApi}>
         <CarouselContent>
@@ -47,13 +50,6 @@ export const HeroSection = () => {
 
       <div className="absolute inset-0 flex items-center justify-center z-10">
         <div className="text-center text-white max-w-4xl px-6">
-          <div className="mb-8 py-8">
-            <h1 className="text-3xl md:text-5xl lg:text-6xl font-serif font-bold mb-6 bg-gradient-to-r from-white via-green-100 to-white bg-clip-text text-transparent tracking-wide leading-loose pb-4 min-h-[80px] flex items-center justify-center">
-              Colégio Zampieri
-            </h1>
-            <div className="w-24 h-1 bg-gradient-to-r from-green-400 to-green-600 mx-auto mb-6 rounded-full"></div>
-          </div>
-          
           <p className="text-xl md:text-3xl mb-12 font-light leading-relaxed text-green-50 max-w-3xl mx-auto">
             Há mais de <span className="font-semibold text-green-300">40 anos</span> transformando vidas com 
             <span className="font-semibold text-white"> educação de qualidade</span>
