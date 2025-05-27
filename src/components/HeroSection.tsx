@@ -1,12 +1,14 @@
 import { useState, useEffect } from "react";
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from "@/components/ui/carousel";
 import type { CarouselApi } from "@/components/ui/carousel";
+
 export const HeroSection = () => {
   const [currentSlide, setCurrentSlide] = useState(0);
   const [api, setApi] = useState<CarouselApi>();
 
   // Real photos of Colégio Zampieri
   const slides = ["/lovable-uploads/50f87f48-5976-4388-802c-470163741419.png", "/lovable-uploads/eac25f65-1ceb-4632-8920-01eb9365ce27.png", "/lovable-uploads/df233acd-a555-44ec-a57b-0bc85614836f.png", "/lovable-uploads/bd571e68-1908-4859-81a4-bc2c0c51fa6a.png", "/lovable-uploads/c87cdeb9-2c2a-43fb-ab89-e04abe363a87.png"];
+  
   useEffect(() => {
     if (!api) {
       return;
@@ -29,6 +31,7 @@ export const HeroSection = () => {
       api.scrollTo(index);
     }
   };
+
   return <section id="inicio" className="relative h-screen overflow-hidden">
       <Carousel className="w-full h-full" setApi={setApi}>
         <CarouselContent>
@@ -46,8 +49,8 @@ export const HeroSection = () => {
 
       <div className="absolute inset-0 flex items-center justify-center z-10">
         <div className="text-center text-white max-w-4xl px-4">
-          <div className="mb-8">
-            <h1 className="text-4xl md:text-6xl font-serif font-bold mb-4 bg-gradient-to-r from-white via-green-100 to-white bg-clip-text text-transparent tracking-wide leading-tight lg:text-7xl">
+          <div className="mb-8 py-4">
+            <h1 className="text-4xl md:text-5xl font-serif font-bold mb-6 bg-gradient-to-r from-white via-green-100 to-white bg-clip-text text-transparent tracking-wide leading-relaxed lg:text-6xl overflow-visible">
               Colégio Zampieri
             </h1>
             <div className="w-24 h-1 bg-gradient-to-r from-green-400 to-green-600 mx-auto mb-6 rounded-full"></div>
