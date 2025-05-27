@@ -8,6 +8,7 @@ import { CoursesSection } from "@/components/CoursesSection";
 import { ScheduleSection } from "@/components/ScheduleSection";
 import { LocationSection } from "@/components/LocationSection";
 import { Footer } from "@/components/Footer";
+import { FloatingCTA } from "@/components/FloatingCTA";
 
 const Index = () => {
   const [activeSection, setActiveSection] = useState("inicio");
@@ -47,6 +48,7 @@ const Index = () => {
         <LocationSection />
       </main>
       <Footer />
+      <FloatingCTA />
     </div>
   );
 };
