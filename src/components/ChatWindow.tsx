@@ -61,6 +61,8 @@ export const ChatWindow = ({ userData }: ChatWindowProps) => {
     setIsLoading(true);
 
     try {
+      console.log("Enviando mensagem para webhook:", newMessage.trim());
+      
       const response = await fetch("https://n8n.colegiozampieri.com/webhook/chatSite", {
         method: "POST",
         headers: {
@@ -74,20 +76,46 @@ export const ChatWindow = ({ userData }: ChatWindowProps) => {
         }),
       });
 
+      console.log("Status da resposta:", response.status);
+      console.log("Headers da resposta:", response.headers.get('content-type'));
+
       if (response.ok) {
-        const data = await response.json();
-        
-        if (data.reply) {
+        const contentType = response.headers.get('content-type');
+        let responseData;
+        let replyText = "";
+
+        if (contentType && contentType.includes('application/json')) {
+          // Resposta é JSON
+          responseData = await response.json();
+          console.log("Resposta JSON:", responseData);
+          replyText = responseData.output || responseData.reply || responseData.message || "Resposta recebida";
+        } else {
+          // Resposta é texto simples
+          replyText = await response.text();
+          console.log("Resposta texto:", replyText);
+        }
+
+        if (replyText && replyText.trim()) {
           const agentMessage: Message = {
             id: (Date.now() + 1).toString(),
-            text: data.reply,
+            text: replyText.trim(),
             sender: "agent",
             timestamp: new Date(),
           };
           setMessages(prev => [...prev, agentMessage]);
+        } else {
+          console.log("Resposta vazia ou inválida");
+          const errorMessage: Message = {
+            id: (Date.now() + 1).toString(),
+            text: "Desculpe, não consegui processar sua mensagem. Tente novamente.",
+            sender: "agent",
+            timestamp: new Date(),
+          };
+          setMessages(prev => [...prev, errorMessage]);
         }
       } else {
-        throw new Error("Erro na resposta do servidor");
+        console.log("Erro HTTP:", response.status);
+        throw new Error(`Erro ${response.status}: ${response.statusText}`);
       }
     } catch (error) {
       console.error("Erro ao enviar mensagem:", error);
