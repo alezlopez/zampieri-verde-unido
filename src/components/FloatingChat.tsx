@@ -1,5 +1,5 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { MessageCircle, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ContactForm } from "./ContactForm";
@@ -24,12 +24,27 @@ export const FloatingChat = () => {
     setUserData(null);
   };
 
+  const handleOpenChat = () => {
+    setIsOpen(true);
+  };
+
+  // Escuta evento customizado para abrir o chat
+  useEffect(() => {
+    const handleOpenChatEvent = () => {
+      handleOpenChat();
+    };
+
+    window.addEventListener('openChat', handleOpenChatEvent);
+    return () => window.removeEventListener('openChat', handleOpenChatEvent);
+  }, []);
+
   return (
     <>
       {/* Botão flutuante */}
       <div className="fixed bottom-6 right-6 z-50">
         <Button
-          onClick={() => setIsOpen(true)}
+          onClick={handleOpenChat}
+          data-chat-button
           size="lg"
           className="bg-green-600 hover:bg-green-700 text-white font-semibold shadow-2xl rounded-full px-6 py-4 transition-all duration-300"
         >
