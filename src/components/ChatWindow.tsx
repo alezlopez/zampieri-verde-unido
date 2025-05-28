@@ -1,9 +1,9 @@
-
 import { useState, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Send } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { formatMessage } from "@/utils/messageFormatter";
 
 interface UserData {
   nome: string;
@@ -154,7 +154,14 @@ export const ChatWindow = ({ userData }: ChatWindowProps) => {
                   : "bg-gray-100 text-gray-800"
               }`}
             >
-              <p className="text-sm">{message.text}</p>
+              {message.sender === "agent" ? (
+                <div 
+                  className="text-sm"
+                  dangerouslySetInnerHTML={{ __html: formatMessage(message.text) }}
+                />
+              ) : (
+                <p className="text-sm">{message.text}</p>
+              )}
               <span className="text-xs opacity-70">
                 {message.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
               </span>
