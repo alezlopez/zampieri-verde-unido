@@ -31,7 +31,7 @@ export const FloatingChat = () => {
         <Button
           onClick={() => setIsOpen(true)}
           size="lg"
-          className="bg-green-600 hover:bg-green-700 text-white font-semibold shadow-2xl rounded-full px-6 py-4 transition-all duration-300 animate-pulse"
+          className="bg-green-600 hover:bg-green-700 text-white font-semibold shadow-2xl rounded-full px-6 py-4 transition-all duration-300"
         >
           <MessageCircle className="h-6 w-6 mr-2" />
           Estamos on-line. Fale agora!
