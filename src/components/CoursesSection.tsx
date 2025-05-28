@@ -1,3 +1,4 @@
+
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { BookOpen, Users, Trophy, GraduationCap } from "lucide-react";
 import { WhatsAppCTA } from "./WhatsAppCTA";
@@ -45,7 +46,7 @@ export const CoursesSection = () => {
           <div className="grid md:grid-cols-2 gap-6">
             {courses.map((course, index) => (
               <Card key={index} className="overflow-hidden shadow-lg hover:shadow-xl transition-all duration-300 border-0">
-                <div className={`${course.color} p-6 text-white`}>
+                <div className={`${course.color} p-6 text-white h-48 flex flex-col justify-center`}>
                   <CardHeader className="p-0 mb-4">
                     <div className="flex items-center gap-3 mb-2">
                       <course.icon className="h-8 w-8 text-white" />
