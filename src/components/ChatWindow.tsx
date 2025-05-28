@@ -87,8 +87,17 @@ export const ChatWindow = ({ userData }: ChatWindowProps) => {
         if (contentType && contentType.includes('application/json')) {
           // Resposta é JSON
           responseData = await response.json();
-          console.log("Resposta JSON:", responseData);
-          replyText = responseData.output || responseData.reply || responseData.message || "Resposta recebida";
+          console.log("Resposta JSON completa:", responseData);
+          
+          // Primeiro tenta extrair de messages[0].content
+          if (responseData.messages && responseData.messages.length > 0) {
+            replyText = responseData.messages[0].content;
+            console.log("Mensagem extraída de messages[0].content:", replyText);
+          } else {
+            // Fallback para outros campos possíveis
+            replyText = responseData.output || responseData.reply || responseData.message || "Resposta recebida";
+            console.log("Mensagem extraída de campos alternativos:", replyText);
+          }
         } else {
           // Resposta é texto simples
           replyText = await response.text();
