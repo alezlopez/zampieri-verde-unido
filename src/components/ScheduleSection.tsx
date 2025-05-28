@@ -1,34 +1,26 @@
-
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Clock, Sun, Moon } from "lucide-react";
-
 export const ScheduleSection = () => {
-  const schedules = [
-    {
-      title: "Educação Infantil",
-      morning: "7h15 às 11h20",
-      afternoon: "13h05 às 17h15",
-      note: "",
-      color: "bg-gradient-to-br from-blue-500 to-blue-600"
-    },
-    {
-      title: "Ensino Fundamental I e II",
-      morning: "7h15 às 11h20*",
-      afternoon: "13h05 às 17h15",
-      note: "* turmas do 8º e 9º ano saem às 12h05 duas vezes na semana",
-      color: "bg-gradient-to-br from-green-500 to-green-600"
-    },
-    {
-      title: "Ensino Médio",
-      morning: "7h15 às 12h05",
-      afternoon: "",
-      note: "",
-      color: "bg-gradient-to-br from-purple-500 to-purple-600"
-    }
-  ];
-
-  return (
-    <section id="horarios" className="py-16 bg-gradient-to-r from-gray-800 via-gray-900 to-gray-800 text-white">
+  const schedules = [{
+    title: "Educação Infantil",
+    morning: "7h15 às 11h20",
+    afternoon: "13h05 às 17h15",
+    note: "",
+    color: "bg-gradient-to-br from-blue-500 to-blue-600"
+  }, {
+    title: "Ensino Fundamental I e II",
+    morning: "7h15 às 11h20*",
+    afternoon: "13h05 às 17h15",
+    note: "* turmas do 8º e 9º ano saem às 12h05 duas vezes na semana",
+    color: "bg-gradient-to-br from-green-500 to-green-600"
+  }, {
+    title: "Ensino Médio",
+    morning: "7h15 às 12h05",
+    afternoon: "",
+    note: "",
+    color: "bg-gradient-to-br from-purple-500 to-purple-600"
+  }];
+  return <section id="horarios" className="py-16 bg-gradient-to-r from-gray-800 via-gray-900 to-gray-800 text-white">
       <div className="container mx-auto px-4">
         <div className="max-w-4xl mx-auto">
           <div className="text-center mb-12">
@@ -36,14 +28,11 @@ export const ScheduleSection = () => {
             <h2 className="text-4xl font-bold text-white mb-4">
               Horários
             </h2>
-            <p className="text-xl text-gray-300">
-              Não temos período integral.
-            </p>
+            
           </div>
           
           <div className="grid md:grid-cols-3 gap-6">
-            {schedules.map((schedule, index) => (
-              <Card key={index} className="bg-white/10 backdrop-blur-sm border-white/20 overflow-hidden">
+            {schedules.map((schedule, index) => <Card key={index} className="bg-white/10 backdrop-blur-sm border-white/20 overflow-hidden">
                 <div className={`${schedule.color} p-4`}>
                   <CardHeader className="p-0">
                     <CardTitle className="text-lg font-bold text-white text-center flex items-center justify-center gap-2">
@@ -61,27 +50,21 @@ export const ScheduleSection = () => {
                     <div className="text-white font-mono text-lg">{schedule.morning}</div>
                   </div>
                   
-                  {schedule.afternoon && (
-                    <div className="text-center">
+                  {schedule.afternoon && <div className="text-center">
                       <div className="flex items-center justify-center gap-2 font-semibold text-blue-400 mb-2">
                         <Moon className="h-4 w-4" />
                         Tarde
                       </div>
                       <div className="text-white font-mono text-lg">{schedule.afternoon}</div>
-                    </div>
-                  )}
+                    </div>}
                   
-                  {schedule.note && (
-                    <div className="text-sm text-gray-300 text-center mt-4 italic bg-white/5 p-3 rounded-lg">
+                  {schedule.note && <div className="text-sm text-gray-300 text-center mt-4 italic bg-white/5 p-3 rounded-lg">
                       {schedule.note}
-                    </div>
-                  )}
+                    </div>}
                 </CardContent>
-              </Card>
-            ))}
+              </Card>)}
           </div>
         </div>
       </div>
-    </section>
-  );
+    </section>;
 };
