@@ -80,6 +80,11 @@ export const TestimonialsSection = () => {
                     src={testimonial.thumbnail}
                     alt={`Depoimento ${testimonial.family}`}
                     className="w-full h-64 object-cover group-hover:scale-110 transition-transform duration-700 ease-out"
+                    onError={(e) => {
+                      // Fallback para thumbnail de qualidade menor se maxresdefault não funcionar
+                      const img = e.target as HTMLImageElement;
+                      img.src = `https://img.youtube.com/vi/${testimonial.videoId}/hqdefault.jpg`;
+                    }}
                   />
                   
                   {/* Gradient overlay */}

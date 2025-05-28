@@ -1,6 +1,6 @@
 
 import { useState } from "react";
-import { Menu } from "lucide-react";
+import { Menu, Phone } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 interface HeaderProps {
@@ -38,7 +38,13 @@ export const Header = ({ activeSection }: HeaderProps) => {
             />
             <div>
               <h1 className="text-xl font-bold text-green-800">Colégio Zampieri</h1>
-              <p className="text-sm text-gray-700">Tradição em Educação</p>
+              <div className="flex items-center gap-2">
+                <p className="text-sm text-gray-700">Tradição em Educação</p>
+                <div className="flex items-center gap-1 text-green-600">
+                  <Phone className="h-3 w-3" />
+                  <span className="text-sm font-medium">5560-1473</span>
+                </div>
+              </div>
             </div>
           </div>
 
