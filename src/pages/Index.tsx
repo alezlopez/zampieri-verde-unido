@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { Header } from "@/components/Header";
 import { HeroSection } from "@/components/HeroSection";
@@ -7,6 +8,7 @@ import { CoursesSection } from "@/components/CoursesSection";
 import { ScheduleSection } from "@/components/ScheduleSection";
 import { LocationSection } from "@/components/LocationSection";
 import { Footer } from "@/components/Footer";
+import { FloatingChat } from "@/components/FloatingChat";
 
 const Index = () => {
   const [activeSection, setActiveSection] = useState("inicio");
@@ -46,6 +48,7 @@ const Index = () => {
         <LocationSection />
       </main>
       <Footer />
+      <FloatingChat />
     </div>
   );
 };
