@@ -1,7 +1,6 @@
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { MapPin, Navigation } from "lucide-react";
-import { WhatsAppCTA } from "./WhatsAppCTA";
 
 export const LocationSection = () => {
   const address = "Rua dos Acarapévas, 80, Balneário São Francisco, São Paulo - SP";
@@ -25,8 +24,7 @@ export const LocationSection = () => {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <p className="text-lg text-green-100 mb-4">{address}</p>
-              <WhatsAppCTA variant="outline" className="bg-white/10 border-white/30 text-white hover:bg-white/20" />
+              <p className="text-lg text-green-100">{address}</p>
             </CardContent>
           </Card>
           

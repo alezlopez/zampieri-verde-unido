@@ -1,4 +1,3 @@
-
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { BookOpen, Users, Trophy, GraduationCap } from "lucide-react";
 import { WhatsAppCTA } from "./WhatsAppCTA";
@@ -43,7 +42,7 @@ export const CoursesSection = () => {
             Nossos Cursos
           </h2>
           
-          <div className="grid md:grid-cols-2 gap-6 mb-12">
+          <div className="grid md:grid-cols-2 gap-6">
             {courses.map((course, index) => (
               <Card key={index} className="overflow-hidden shadow-lg hover:shadow-xl transition-all duration-300 border-0">
                 <div className={`${course.color} p-6 text-white`}>
@@ -72,7 +71,7 @@ export const CoursesSection = () => {
             <p className="text-lg text-gray-700 mb-6">
               Quer saber mais sobre nossos cursos e como matricular seu filho?
             </p>
-            <WhatsAppCTA size="lg" />
+            
           </div>
         </div>
       </div>
