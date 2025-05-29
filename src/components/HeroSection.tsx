@@ -1,6 +1,7 @@
 
 import { Button } from "@/components/ui/button";
 import { Phone, MapPin } from "lucide-react";
+import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from "@/components/ui/carousel";
 
 export const HeroSection = () => {
   const handleCallClick = () => {
@@ -11,6 +12,25 @@ export const HeroSection = () => {
     const message = encodeURIComponent("Olá! Gostaria de mais informações sobre o Colégio Zampieri.");
     window.open(`https://wa.me/5511956601473?text=${message}`, "_blank");
   };
+
+  const heroImages = [
+    {
+      src: "/lovable-uploads/c87cdeb9-2c2a-43fb-ab89-e04abe363a87.png",
+      alt: "Colégio Zampieri - Fachada"
+    },
+    {
+      src: "/lovable-uploads/50f87f48-5976-4388-802c-470163741419.png",
+      alt: "Colégio Zampieri - Estrutura"
+    },
+    {
+      src: "/lovable-uploads/bd571e68-1908-4859-81a4-bc2c0c51fa6a.png",
+      alt: "Colégio Zampieri - Ambiente"
+    },
+    {
+      src: "/lovable-uploads/be9056bb-e896-44a3-a954-c8d9a754bb4f.png",
+      alt: "Colégio Zampieri - Sala de Aula"
+    }
+  ];
 
   return (
     <section id="inicio" className="relative min-h-screen flex items-center justify-center bg-gradient-to-br from-green-50 to-blue-50 pt-[140px]">
@@ -49,12 +69,24 @@ export const HeroSection = () => {
           </div>
 
           <div className="relative">
-            <img
-              src="/lovable-uploads/c87cdeb9-2c2a-43fb-ab89-e04abe363a87.png"
-              alt="Colégio Zampieri"
-              className="w-full h-auto rounded-lg shadow-2xl"
-            />
-            <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent rounded-lg"></div>
+            <Carousel className="w-full max-w-lg mx-auto">
+              <CarouselContent>
+                {heroImages.map((image, index) => (
+                  <CarouselItem key={index}>
+                    <div className="relative">
+                      <img
+                        src={image.src}
+                        alt={image.alt}
+                        className="w-full h-auto rounded-lg shadow-2xl"
+                      />
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent rounded-lg"></div>
+                    </div>
+                  </CarouselItem>
+                ))}
+              </CarouselContent>
+              <CarouselPrevious className="left-2" />
+              <CarouselNext className="right-2" />
+            </Carousel>
           </div>
         </div>
       </div>
