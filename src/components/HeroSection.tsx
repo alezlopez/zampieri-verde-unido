@@ -1,4 +1,3 @@
-
 import { Button } from "@/components/ui/button";
 import { Phone, MapPin } from "lucide-react";
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from "@/components/ui/carousel";
@@ -25,10 +24,6 @@ export const HeroSection = () => {
     {
       src: "/lovable-uploads/bd571e68-1908-4859-81a4-bc2c0c51fa6a.png",
       alt: "Colégio Zampieri - Ambiente"
-    },
-    {
-      src: "/lovable-uploads/be9056bb-e896-44a3-a954-c8d9a754bb4f.png",
-      alt: "Colégio Zampieri - Sala de Aula"
     }
   ];
 
