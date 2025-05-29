@@ -1,5 +1,4 @@
 
-
 import { Button } from "@/components/ui/button";
 import { Phone, MapPin } from "lucide-react";
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from "@/components/ui/carousel";
@@ -48,11 +47,6 @@ export const HeroSection = () => {
               Há mais de 30 anos formando cidadãos conscientes e preparados para o futuro. 
               No Colégio Zampieri, cada aluno é único e especial.
             </p>
-
-            <div className="flex items-center gap-2 text-gray-600">
-              <MapPin className="h-4 w-4" />
-              <span className="text-sm">São Paulo - SP</span>
-            </div>
           </div>
 
           <div className="relative">
@@ -80,4 +74,3 @@ export const HeroSection = () => {
     </section>
   );
 };
-
