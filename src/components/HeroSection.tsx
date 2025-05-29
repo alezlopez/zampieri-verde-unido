@@ -1,18 +1,10 @@
 
+
 import { Button } from "@/components/ui/button";
 import { Phone, MapPin } from "lucide-react";
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from "@/components/ui/carousel";
 
 export const HeroSection = () => {
-  const handleCallClick = () => {
-    window.open("tel:5560-1473", "_self");
-  };
-
-  const handleWhatsAppClick = () => {
-    const message = encodeURIComponent("Olá! Gostaria de mais informações sobre o Colégio Zampieri.");
-    window.open(`https://wa.me/5511956601473?text=${message}`, "_blank");
-  };
-
   const heroImages = [
     {
       src: "/lovable-uploads/c87cdeb9-2c2a-43fb-ab89-e04abe363a87.png",
@@ -33,6 +25,14 @@ export const HeroSection = () => {
     {
       src: "/lovable-uploads/f3790e95-abb5-4337-902b-52d8445b9927.png",
       alt: "Colégio Zampieri - Cantina"
+    },
+    {
+      src: "/lovable-uploads/b54ffc4f-651d-4f74-9fcf-5e39229a31e9.png",
+      alt: "Colégio Zampieri - Playground"
+    },
+    {
+      src: "/lovable-uploads/98a581a2-937b-463d-bc0d-a7393568ad43.png",
+      alt: "Colégio Zampieri - Parque Infantil"
     }
   ];
 
@@ -48,23 +48,6 @@ export const HeroSection = () => {
               Há mais de 30 anos formando cidadãos conscientes e preparados para o futuro. 
               No Colégio Zampieri, cada aluno é único e especial.
             </p>
-            
-            <div className="flex flex-col sm:flex-row gap-4">
-              <Button 
-                onClick={handleCallClick}
-                className="bg-green-600 hover:bg-green-700 text-white px-6 py-3 rounded-lg flex items-center gap-2"
-              >
-                <Phone className="h-5 w-5" />
-                Ligar Agora
-              </Button>
-              <Button 
-                onClick={handleWhatsAppClick}
-                variant="outline" 
-                className="border-green-600 text-green-600 hover:bg-green-50 px-6 py-3 rounded-lg"
-              >
-                WhatsApp
-              </Button>
-            </div>
 
             <div className="flex items-center gap-2 text-gray-600">
               <MapPin className="h-4 w-4" />
@@ -97,3 +80,4 @@ export const HeroSection = () => {
     </section>
   );
 };
+
