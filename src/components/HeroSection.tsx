@@ -1,3 +1,4 @@
+
 import { Button } from "@/components/ui/button";
 import { Phone, MapPin } from "lucide-react";
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from "@/components/ui/carousel";
@@ -24,6 +25,14 @@ export const HeroSection = () => {
     {
       src: "/lovable-uploads/bd571e68-1908-4859-81a4-bc2c0c51fa6a.png",
       alt: "Colégio Zampieri - Ambiente"
+    },
+    {
+      src: "/lovable-uploads/0cdb27ce-d958-4905-a581-9db785144836.png",
+      alt: "Colégio Zampieri - Quadra Esportiva"
+    },
+    {
+      src: "/lovable-uploads/f3790e95-abb5-4337-902b-52d8445b9927.png",
+      alt: "Colégio Zampieri - Cantina"
     }
   ];
 
@@ -68,11 +77,11 @@ export const HeroSection = () => {
               <CarouselContent>
                 {heroImages.map((image, index) => (
                   <CarouselItem key={index}>
-                    <div className="relative">
+                    <div className="relative h-96 w-full">
                       <img
                         src={image.src}
                         alt={image.alt}
-                        className="w-full h-auto rounded-lg shadow-2xl"
+                        className="w-full h-full object-cover rounded-lg shadow-2xl"
                       />
                       <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent rounded-lg"></div>
                     </div>
