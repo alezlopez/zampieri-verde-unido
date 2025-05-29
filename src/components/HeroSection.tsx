@@ -1,71 +1,63 @@
 
-import { useState, useEffect } from "react";
-import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from "@/components/ui/carousel";
-import type { CarouselApi } from "@/components/ui/carousel";
+import { Button } from "@/components/ui/button";
+import { Phone, MapPin } from "lucide-react";
 
 export const HeroSection = () => {
-  const [currentSlide, setCurrentSlide] = useState(0);
-  const [api, setApi] = useState<CarouselApi>();
-
-  // Real photos of Colégio Zampieri
-  const slides = ["/lovable-uploads/50f87f48-5976-4388-802c-470163741419.png", "/lovable-uploads/eac25f65-1ceb-4632-8920-01eb9365ce27.png", "/lovable-uploads/df233acd-a555-44ec-a57b-0bc85614836f.png", "/lovable-uploads/bd571e68-1908-4859-81a4-bc2c0c51fa6a.png", "/lovable-uploads/c87cdeb9-2c2a-43fb-ab89-e04abe363a87.png"];
-  
-  useEffect(() => {
-    if (!api) {
-      return;
-    }
-    const timer = setInterval(() => {
-      api.scrollNext();
-    }, 5000);
-    return () => clearInterval(timer);
-  }, [api]);
-  useEffect(() => {
-    if (!api) {
-      return;
-    }
-    api.on("select", () => {
-      setCurrentSlide(api.selectedScrollSnap());
-    });
-  }, [api]);
-  
-  const scrollToSlide = (index: number) => {
-    if (api) {
-      api.scrollTo(index);
-    }
+  const handleCallClick = () => {
+    window.open("tel:5560-1473", "_self");
   };
-  
-  return <section id="inicio" className="relative h-screen overflow-hidden">
-      <Carousel className="w-full h-full" setApi={setApi}>
-        <CarouselContent>
-          {slides.map((slide, index) => <CarouselItem key={index} className="relative h-screen">
-              <div className="relative w-full h-full">
-                <img src={slide} alt={`Colégio Zampieri - Slide ${index + 1}`} className="w-full h-full object-cover" />
-                <div className="absolute inset-0 bg-gradient-to-r from-green-900/70 via-green-800/40 to-green-900/70"></div>
-                <div className="absolute inset-0 bg-gradient-to-t from-green-900/60 via-transparent to-green-800/30"></div>
-              </div>
-            </CarouselItem>)}
-        </CarouselContent>
-        <CarouselPrevious className="left-4 bg-white/20 border-white/30 hover:bg-white/30 backdrop-blur-sm" />
-        <CarouselNext className="right-4 bg-white/20 border-white/30 hover:bg-white/30 backdrop-blur-sm" />
-      </Carousel>
 
-      <div className="absolute inset-0 flex items-center justify-center z-10">
-        <div className="text-center text-white max-w-4xl px-6">
-          <p className="text-xl md:text-3xl mb-12 font-light leading-relaxed text-green-50 max-w-3xl mx-auto">
-            Há mais de <span className="font-semibold text-green-300">40 anos</span> transformando vidas com 
-            <span className="font-semibold text-white"> educação de qualidade</span>
-          </p>
-          
-          <div className="flex justify-center space-x-3 mb-8">
-            {slides.map((_, index) => <button key={index} onClick={() => scrollToSlide(index)} className={`transition-all duration-300 rounded-full ${index === currentSlide ? "w-12 h-3 bg-gradient-to-r from-green-400 to-green-600 shadow-lg shadow-green-500/50" : "w-3 h-3 bg-white/60 hover:bg-white/80"}`} />)}
+  const handleWhatsAppClick = () => {
+    const message = encodeURIComponent("Olá! Gostaria de mais informações sobre o Colégio Zampieri.");
+    window.open(`https://wa.me/5511956601473?text=${message}`, "_blank");
+  };
+
+  return (
+    <section id="inicio" className="relative min-h-screen flex items-center justify-center bg-gradient-to-br from-green-50 to-blue-50 pt-[140px]">
+      <div className="container mx-auto px-4 py-8">
+        <div className="grid md:grid-cols-2 gap-8 items-center">
+          <div className="space-y-6">
+            <h1 className="text-4xl md:text-6xl font-bold text-gray-900 leading-tight">
+              Tradição em <span className="text-green-600">Educação</span>
+            </h1>
+            <p className="text-lg text-gray-700 leading-relaxed">
+              Há mais de 30 anos formando cidadãos conscientes e preparados para o futuro. 
+              No Colégio Zampieri, cada aluno é único e especial.
+            </p>
+            
+            <div className="flex flex-col sm:flex-row gap-4">
+              <Button 
+                onClick={handleCallClick}
+                className="bg-green-600 hover:bg-green-700 text-white px-6 py-3 rounded-lg flex items-center gap-2"
+              >
+                <Phone className="h-5 w-5" />
+                Ligar Agora
+              </Button>
+              <Button 
+                onClick={handleWhatsAppClick}
+                variant="outline" 
+                className="border-green-600 text-green-600 hover:bg-green-50 px-6 py-3 rounded-lg"
+              >
+                WhatsApp
+              </Button>
+            </div>
+
+            <div className="flex items-center gap-2 text-gray-600">
+              <MapPin className="h-4 w-4" />
+              <span className="text-sm">São Paulo - SP</span>
+            </div>
           </div>
 
-          <div className="animate-bounce">
-            <div className="w-6 h-10 border-2 border-white/50 rounded-full mx-auto flex justify-center">
-              <div className="w-1 h-3 bg-white rounded-full mt-2 animate-pulse"></div>
-            </div>
+          <div className="relative">
+            <img
+              src="/lovable-uploads/c87cdeb9-2c2a-43fb-ab89-e04abe363a87.png"
+              alt="Colégio Zampieri"
+              className="w-full h-auto rounded-lg shadow-2xl"
+            />
+            <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent rounded-lg"></div>
           </div>
         </div>
       </div>
-    </section>;
+    </section>
+  );
 };
