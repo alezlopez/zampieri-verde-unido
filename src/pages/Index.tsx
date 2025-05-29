@@ -10,6 +10,7 @@ import { ScheduleSection } from "@/components/ScheduleSection";
 import { LocationSection } from "@/components/LocationSection";
 import { Footer } from "@/components/Footer";
 import { FloatingChat } from "@/components/FloatingChat";
+import { EnrollmentBanner } from "@/components/EnrollmentBanner";
 
 const Index = () => {
   const [activeSection, setActiveSection] = useState("inicio");
@@ -39,6 +40,7 @@ const Index = () => {
 
   return (
     <div className="min-h-screen bg-white">
+      <EnrollmentBanner />
       <Header activeSection={activeSection} />
       <main>
         <HeroSection />
