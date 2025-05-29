@@ -6,26 +6,37 @@ export const EnrollmentBanner = () => {
   const [isVisible, setIsVisible] = useState(false);
 
   useEffect(() => {
+    console.log("EnrollmentBanner mounted");
+    
     const handleScroll = () => {
       const scrollPosition = window.scrollY;
-      // Mostra a faixa após rolar 200px
-      setIsVisible(scrollPosition > 200);
+      console.log("Scroll position:", scrollPosition);
+      // Mostra a faixa após rolar 100px (reduzido de 200px)
+      const shouldShow = scrollPosition > 100;
+      console.log("Should show banner:", shouldShow);
+      setIsVisible(shouldShow);
     };
 
+    // Mostra imediatamente para teste
+    setIsVisible(true);
+    
     window.addEventListener("scroll", handleScroll);
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
   const handleClick = () => {
+    console.log("Banner clicked - opening chat");
     // Dispara o evento para abrir o chat
     window.dispatchEvent(new CustomEvent('openChat'));
   };
 
-  if (!isVisible) return null;
+  console.log("Banner render - isVisible:", isVisible);
 
   return (
     <div 
-      className="fixed top-0 left-0 right-0 z-40 bg-gradient-to-r from-green-600 via-green-500 to-green-600 text-white shadow-lg cursor-pointer transform transition-all duration-300 hover:shadow-xl"
+      className={`fixed top-0 left-0 right-0 z-50 bg-gradient-to-r from-green-600 via-green-500 to-green-600 text-white shadow-lg cursor-pointer transform transition-all duration-300 hover:shadow-xl ${
+        isVisible ? 'translate-y-0 opacity-100' : '-translate-y-full opacity-0'
+      }`}
       onClick={handleClick}
     >
       <div className="container mx-auto px-4 py-3">
