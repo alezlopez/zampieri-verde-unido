@@ -3,12 +3,15 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 
 interface UserData {
   nome: string;
   whatsapp: string;
   email: string;
+  curso: string;
+  horario: string;
 }
 
 interface ContactFormProps {
@@ -20,6 +23,8 @@ export const ContactForm = ({ onSubmit }: ContactFormProps) => {
     nome: "",
     whatsapp: "",
     email: "",
+    curso: "",
+    horario: "",
   });
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
@@ -72,6 +77,24 @@ export const ContactForm = ({ onSubmit }: ContactFormProps) => {
       return false;
     }
 
+    if (!formData.curso) {
+      toast({
+        title: "Erro",
+        description: "Curso de interesse é obrigatório",
+        variant: "destructive",
+      });
+      return false;
+    }
+
+    if (!formData.horario) {
+      toast({
+        title: "Erro",
+        description: "Horário de interesse é obrigatório",
+        variant: "destructive",
+      });
+      return false;
+    }
+
     return true;
   };
 
@@ -108,6 +131,28 @@ export const ContactForm = ({ onSubmit }: ContactFormProps) => {
       setIsLoading(false);
     }
   };
+
+  const cursos = [
+    "Pré (5 anos)",
+    "1º Ano",
+    "2º Ano", 
+    "3º Ano",
+    "4º Ano",
+    "5º Ano",
+    "6º Ano",
+    "7º Ano",
+    "8º Ano",
+    "9º Ano",
+    "1º Médio",
+    "2º Médio",
+    "3º Médio"
+  ];
+
+  const horarios = [
+    "Manhã",
+    "Tarde", 
+    "Indiferente"
+  ];
 
   return (
     <div className="p-4">
@@ -151,6 +196,44 @@ export const ContactForm = ({ onSubmit }: ContactFormProps) => {
             placeholder="seu@email.com"
             required
           />
+        </div>
+
+        <div>
+          <Label htmlFor="curso">Curso de Interesse *</Label>
+          <Select
+            value={formData.curso}
+            onValueChange={(value) => setFormData({ ...formData, curso: value })}
+          >
+            <SelectTrigger>
+              <SelectValue placeholder="Selecione o curso" />
+            </SelectTrigger>
+            <SelectContent className="bg-white border border-gray-200 shadow-lg z-50">
+              {cursos.map((curso) => (
+                <SelectItem key={curso} value={curso}>
+                  {curso}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+
+        <div>
+          <Label htmlFor="horario">Horário de Interesse *</Label>
+          <Select
+            value={formData.horario}
+            onValueChange={(value) => setFormData({ ...formData, horario: value })}
+          >
+            <SelectTrigger>
+              <SelectValue placeholder="Selecione o horário" />
+            </SelectTrigger>
+            <SelectContent className="bg-white border border-gray-200 shadow-lg z-50">
+              {horarios.map((horario) => (
+                <SelectItem key={horario} value={horario}>
+                  {horario}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </div>
 
         <Button 
