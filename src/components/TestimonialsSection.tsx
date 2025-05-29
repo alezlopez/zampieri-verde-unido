@@ -1,10 +1,9 @@
-
 export const TestimonialsSection = () => {
   const testimonials = [
     {
       family: "Família Gonçalves",
       videoId: "AOhDOFI05ZA",
-      thumbnail: `https://img.youtube.com/vi/AOhDOFI05ZA/maxresdefault.jpg`
+      thumbnail: `https://img.youtube.com/vi/AOhDOFI05ZA/hqdefault.jpg`
     },
     {
       family: "Família Viana", 
@@ -81,9 +80,18 @@ export const TestimonialsSection = () => {
                     alt={`Depoimento ${testimonial.family}`}
                     className="w-full h-64 object-cover group-hover:scale-110 transition-transform duration-700 ease-out"
                     onError={(e) => {
-                      // Fallback para thumbnail de qualidade menor se maxresdefault não funcionar
+                      console.log(`Erro ao carregar thumbnail para ${testimonial.family}, tentando fallback`);
                       const img = e.target as HTMLImageElement;
-                      img.src = `https://img.youtube.com/vi/${testimonial.videoId}/hqdefault.jpg`;
+                      // Primeiro fallback para hqdefault
+                      if (img.src.includes('maxresdefault')) {
+                        img.src = `https://img.youtube.com/vi/${testimonial.videoId}/hqdefault.jpg`;
+                      } else if (img.src.includes('hqdefault')) {
+                        // Segundo fallback para mqdefault
+                        img.src = `https://img.youtube.com/vi/${testimonial.videoId}/mqdefault.jpg`;
+                      } else {
+                        // Último fallback para default
+                        img.src = `https://img.youtube.com/vi/${testimonial.videoId}/default.jpg`;
+                      }
                     }}
                   />
                   
