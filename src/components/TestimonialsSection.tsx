@@ -26,15 +26,8 @@ export const TestimonialsSection = () => {
     window.open(`https://youtu.be/${videoId}`, '_blank');
   };
 
-  const openChat = () => {
-    // Simula o clique no botão do chat flutuante
-    const chatButton = document.querySelector('[data-chat-button]') as HTMLButtonElement;
-    if (chatButton) {
-      chatButton.click();
-    } else {
-      // Fallback: envia um evento customizado
-      window.dispatchEvent(new CustomEvent('openChat'));
-    }
+  const openEnrollment = () => {
+    window.open("https://espera.colegiozampieri.com.br", "_blank");
   };
 
   return (
@@ -158,7 +151,7 @@ export const TestimonialsSection = () => {
           {/* Call to action */}
           <div className="text-center mt-16">
             <button
-              onClick={openChat}
+              onClick={openEnrollment}
               className="inline-flex items-center gap-2 bg-gradient-to-r from-green-600 to-green-800 text-white px-6 py-3 rounded-full font-semibold hover:from-green-700 hover:to-green-900 transition-all duration-300 shadow-lg hover:shadow-xl transform hover:scale-105"
             >
               <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">

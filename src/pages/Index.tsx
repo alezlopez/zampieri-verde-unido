@@ -9,7 +9,6 @@ import { CoursesSection } from "@/components/CoursesSection";
 import { ScheduleSection } from "@/components/ScheduleSection";
 import { LocationSection } from "@/components/LocationSection";
 import { Footer } from "@/components/Footer";
-import { FloatingChat } from "@/components/FloatingChat";
 import { EnrollmentBanner } from "@/components/EnrollmentBanner";
 
 const Index = () => {
@@ -52,7 +51,6 @@ const Index = () => {
         <LocationSection />
       </main>
       <Footer />
-      <FloatingChat />
     </div>
   );
 };

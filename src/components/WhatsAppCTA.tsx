@@ -10,7 +10,7 @@ interface WhatsAppCTAProps {
 
 export const WhatsAppCTA = ({ variant = "default", size = "default", className = "" }: WhatsAppCTAProps) => {
   const handleClick = () => {
-    window.open("https://wa.me/551193796214", "_blank");
+    window.open("https://espera.colegiozampieri.com.br", "_blank");
   };
 
   return (

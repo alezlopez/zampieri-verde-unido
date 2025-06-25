@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 
 export const FloatingCTA = () => {
   const handleClick = () => {
-    window.open("https://wa.me/551193796214", "_blank");
+    window.open("https://espera.colegiozampieri.com.br", "_blank");
   };
 
   return (

@@ -4,9 +4,8 @@ import { GraduationCap, ArrowRight } from "lucide-react";
 
 export const EnrollmentBanner = () => {
   const handleClick = () => {
-    console.log("Banner clicked - opening chat");
-    // Dispara o evento para abrir o chat
-    window.dispatchEvent(new CustomEvent('openChat'));
+    console.log("Banner clicked - opening enrollment page");
+    window.open("https://espera.colegiozampieri.com.br", "_blank");
   };
 
   return (
