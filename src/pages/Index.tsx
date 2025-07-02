@@ -41,7 +41,7 @@ const Index = () => {
     <div className="min-h-screen bg-white">
       <EnrollmentBanner />
       <Header activeSection={activeSection} />
-      <main>
+      <main className="pt-20">
         <HeroSection />
         <HistorySection />
         <TestimonialsSection />
