@@ -4,8 +4,8 @@ import { GraduationCap, ArrowRight, Clock } from "lucide-react";
 
 export const EnrollmentBanner = () => {
   const handleClick = () => {
-    console.log("Banner clicked - opening enrollment page");
-    window.open("https://espera.colegiozampieri.com.br", "_blank");
+    console.log("Banner clicked - opening WhatsApp");
+    window.open("https://wa.me/5511993796214?text=Ol%C3%A1,%20quero%20saber%20sobre%20matr%C3%ADculas%20para%202026", "_blank");
   };
 
   return (
@@ -19,7 +19,7 @@ export const EnrollmentBanner = () => {
           <div className="flex items-center justify-center space-x-3 animate-pulse">
             <GraduationCap className="h-5 w-5" />
             <span className="font-bold text-sm md:text-base tracking-wide">
-              MATRÍCULAS ABERTAS, APROVEITE!
+              MATRÍCULAS 2026 ABERTAS - FALE AGORA COM A GENTE
             </span>
             <ArrowRight className="h-4 w-4 animate-bounce" />
           </div>
