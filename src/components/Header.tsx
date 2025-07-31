@@ -40,9 +40,15 @@ export const Header = ({ activeSection }: HeaderProps) => {
               <h1 className="text-xl font-bold text-green-800">Colégio Zampieri</h1>
               <div className="flex items-center gap-2">
                 <p className="text-sm text-gray-700">Tradição em Educação</p>
-                <div className="flex items-center gap-1 text-green-600">
-                  <Phone className="h-3 w-3" />
-                  <span className="text-sm font-medium">5560-1473</span>
+                <div className="flex items-center gap-3 text-green-600">
+                  <div className="flex items-center gap-1">
+                    <Phone className="h-3 w-3" />
+                    <span className="text-sm font-medium">5560-1473</span>
+                  </div>
+                  <div className="flex items-center gap-1">
+                    <Phone className="h-3 w-3" />
+                    <span className="text-sm font-medium">5560-0723</span>
+                  </div>
                 </div>
               </div>
             </div>

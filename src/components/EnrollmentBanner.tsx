@@ -29,17 +29,6 @@ export const EnrollmentBanner = () => {
         <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent transform -skew-x-12 -translate-x-full animate-[shimmer_2s_infinite]" />
       </div>
 
-      {/* Banner de Horário de Julho - Vermelho */}
-      <div className="fixed top-[128px] left-0 right-0 z-40 bg-red-600 text-white shadow-lg">
-        <div className="container mx-auto px-4 py-2">
-          <div className="flex items-center justify-center space-x-2">
-            <Clock className="h-4 w-4" />
-            <span className="font-semibold text-sm md:text-base">
-              Durante o mês de Julho o atendimento será das 8h30 às 13h00
-            </span>
-          </div>
-        </div>
-      </div>
     </>
   );
 };
