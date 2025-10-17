@@ -4,8 +4,8 @@ import { GraduationCap, ArrowRight, Clock } from "lucide-react";
 
 export const EnrollmentBanner = () => {
   const handleClick = () => {
-    console.log("Banner clicked - opening WhatsApp");
-    window.open("https://wa.me/5511993796214?text=Ol%C3%A1,%20quero%20saber%20sobre%20matr%C3%ADculas%20para%202026", "_blank");
+    console.log("Banner clicked - opening matriculas page");
+    window.open("https://matriculas.colegiozampieri.com.br", "_blank");
   };
 
   return (
