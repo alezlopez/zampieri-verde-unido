@@ -30,25 +30,23 @@ export const Header = ({ activeSection }: HeaderProps) => {
     <header className="fixed top-0 w-full bg-white/95 backdrop-blur-sm shadow-sm z-50">
       <div className="container mx-auto px-4 py-4">
         <div className="flex items-center justify-between">
-          <div className="flex items-center space-x-3">
+          <div className="flex items-center space-x-2 md:space-x-3">
             <img 
               src="/lovable-uploads/be9056bb-e896-44a3-a954-c8d9a754bb4f.png" 
               alt="Colégio Zampieri" 
-              className="h-12 w-12"
+              className="h-10 w-10 md:h-12 md:w-12"
             />
             <div>
-              <h1 className="text-xl font-bold text-green-800">Colégio Zampieri</h1>
-              <div className="flex items-center gap-2">
-                <p className="text-sm text-gray-700">Tradição em Educação</p>
-                <div className="flex items-center gap-3 text-green-600">
-                  <div className="flex items-center gap-1">
-                    <Phone className="h-3 w-3" />
-                    <span className="text-sm font-medium">5560-1473</span>
-                  </div>
-                  <div className="flex items-center gap-1">
-                    <Phone className="h-3 w-3" />
-                    <span className="text-sm font-medium">5560-0723</span>
-                  </div>
+              <h1 className="text-base md:text-xl font-bold text-green-800">Colégio Zampieri</h1>
+              <p className="text-xs md:text-sm text-gray-700">Tradição em Educação</p>
+              <div className="hidden md:flex items-center gap-3 text-green-600 mt-1">
+                <div className="flex items-center gap-1">
+                  <Phone className="h-3 w-3" />
+                  <span className="text-sm font-medium">5560-1473</span>
+                </div>
+                <div className="flex items-center gap-1">
+                  <Phone className="h-3 w-3" />
+                  <span className="text-sm font-medium">5560-0723</span>
                 </div>
               </div>
             </div>

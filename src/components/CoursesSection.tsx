@@ -31,7 +31,7 @@ export const CoursesSection = () => {
   }];
 
   return (
-    <section id="cursos" className="py-20 bg-gradient-to-br from-green-50 via-green-100 to-green-200 relative overflow-hidden">
+    <section id="cursos" className="py-12 md:py-20 bg-gradient-to-br from-green-50 via-green-100 to-green-200 relative overflow-hidden">
       {/* Background decorative elements */}
       <div className="absolute top-0 left-0 w-full h-full">
         <div className="absolute top-10 left-10 w-32 h-32 bg-green-200/30 rounded-full blur-xl"></div>
@@ -41,28 +41,28 @@ export const CoursesSection = () => {
 
       <div className="container mx-auto px-4 relative z-10">
         <div className="max-w-6xl mx-auto">
-          <h2 className="text-4xl font-bold text-center mb-12 text-green-800">
+          <h2 className="text-3xl md:text-4xl font-bold text-center mb-8 md:mb-12 text-green-800">
             Nossos Cursos
           </h2>
           
-          <div className="grid md:grid-cols-2 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {courses.map((course, index) => (
               <Card key={index} className="overflow-hidden shadow-lg hover:shadow-xl transition-all duration-300 border-0">
-                <div className={`${course.color} p-6 text-white h-48 flex flex-col justify-center`}>
-                  <CardHeader className="p-0 mb-4">
-                    <div className="flex items-center gap-3 mb-2">
-                      <course.icon className="h-8 w-8 text-white" />
-                      <CardTitle className="text-xl font-bold text-white">
+                <div className={`${course.color} p-4 md:p-6 text-white h-36 md:h-48 flex flex-col justify-center`}>
+                  <CardHeader className="p-0 mb-2 md:mb-4">
+                    <div className="flex items-center gap-2 md:gap-3 mb-1 md:mb-2">
+                      <course.icon className="h-6 w-6 md:h-8 md:w-8 text-white flex-shrink-0" />
+                      <CardTitle className="text-base md:text-xl font-bold text-white">
                         {course.title}
                       </CardTitle>
                     </div>
-                    <p className="text-green-100 font-medium">
+                    <p className="text-green-100 font-medium text-xs md:text-base">
                       {course.subtitle}
                     </p>
                   </CardHeader>
                 </div>
-                <CardContent className="p-6 bg-white">
-                  <p className="text-gray-700 leading-relaxed">
+                <CardContent className="p-4 md:p-6 bg-white">
+                  <p className="text-gray-700 leading-relaxed text-sm md:text-base">
                     {course.description}
                   </p>
                 </CardContent>

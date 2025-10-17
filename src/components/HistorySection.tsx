@@ -9,15 +9,15 @@ export const HistorySection = () => {
   ];
 
   return (
-    <section id="historia" className="py-16 bg-gradient-to-br from-green-800 via-green-700 to-green-600 text-white">
+    <section id="historia" className="py-12 md:py-16 bg-gradient-to-br from-green-800 via-green-700 to-green-600 text-white">
       <div className="container mx-auto px-4">
         <div className="max-w-4xl mx-auto">
-          <h2 className="text-4xl font-bold text-center mb-12 text-white">
+          <h2 className="text-3xl md:text-4xl font-bold text-center mb-8 md:mb-12 text-white">
             Nossa História
           </h2>
           
-          <div className="prose prose-lg mx-auto text-green-50 mb-12">
-            <p className="text-lg leading-relaxed mb-6">
+          <div className="prose prose-base md:prose-lg mx-auto text-green-50 mb-8 md:mb-12">
+            <p className="text-base md:text-lg leading-relaxed mb-4 md:mb-6">
               Desde 1980, o Colégio Zampieri transforma vidas com educação de qualidade, 
               da Educação Infantil ao Ensino Médio. Nosso compromisso é evoluir junto com o mundo, 
               investindo constantemente em inovação, estrutura e ensino de excelência.
@@ -41,14 +41,14 @@ export const HistorySection = () => {
             </p>
           </div>
 
-          <div className="grid md:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 md:gap-6">
             {stats.map((stat, index) => (
               <Card key={index} className="text-center bg-white/10 backdrop-blur-sm border-white/20 hover:bg-white/20 transition-all duration-300">
-                <CardContent className="p-6">
-                  <div className="text-3xl font-bold text-white mb-2">
+                <CardContent className="p-4 md:p-6">
+                  <div className="text-2xl md:text-3xl font-bold text-white mb-1 md:mb-2">
                     {stat.value}
                   </div>
-                  <div className="text-green-100 font-medium">
+                  <div className="text-green-100 font-medium text-sm md:text-base">
                     {stat.label}
                   </div>
                 </CardContent>

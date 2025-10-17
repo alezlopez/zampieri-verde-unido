@@ -68,15 +68,15 @@ const MapadaSuaProximaGrandeAventura = () => {
       <EnrollmentBanner />
       <Header activeSection="formulario" />
       
-      <main className="pt-20">
-        <div className="container mx-auto px-4 py-8 md:py-12">
+      <main className="pt-[120px] md:pt-[140px]">
+        <div className="container mx-auto px-4 py-6 md:py-8 lg:py-12">
           <div className="max-w-4xl mx-auto">
             {/* Back Button */}
-            <div className="mb-6">
+            <div className="mb-4 md:mb-6">
               <Button
                 variant="ghost"
                 onClick={() => window.history.back()}
-                className="text-green-700 hover:text-green-800 hover:bg-green-50"
+                className="text-green-700 hover:text-green-800 hover:bg-green-50 text-sm md:text-base"
               >
                 <ArrowLeft className="mr-2 h-4 w-4" />
                 Voltar
@@ -84,34 +84,34 @@ const MapadaSuaProximaGrandeAventura = () => {
             </div>
 
             {/* Header Section */}
-            <div className="text-center mb-8 md:mb-12">
-              <div className="inline-flex items-center justify-center w-16 h-16 bg-green-100 rounded-full mb-6">
-                <Compass className="h-8 w-8 text-green-600" />
+            <div className="text-center mb-6 md:mb-8 lg:mb-12">
+              <div className="inline-flex items-center justify-center w-12 h-12 md:w-16 md:h-16 bg-green-100 rounded-full mb-4 md:mb-6">
+                <Compass className="h-6 w-6 md:h-8 md:w-8 text-green-600" />
               </div>
-              <h1 className="text-3xl md:text-4xl lg:text-5xl font-bold text-green-800 mb-4">
+              <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold text-green-800 mb-3 md:mb-4 px-4">
                 Mapa da Sua Próxima Grande Aventura
               </h1>
-              <p className="text-lg text-gray-600 max-w-2xl mx-auto">
+              <p className="text-base md:text-lg text-gray-600 max-w-2xl mx-auto px-4">
                 Descubra seu caminho através de perguntas que revelam seus interesses e aspirações para o futuro
               </p>
             </div>
 
             {/* Form Container */}
-            <div className="bg-white rounded-xl shadow-lg border border-gray-100 p-6 md:p-8 lg:p-10">
+            <div className="bg-white rounded-xl shadow-lg border border-gray-100 p-4 md:p-6 lg:p-8 xl:p-10">
               <Form {...form}>
-                <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
-                <div className="grid md:grid-cols-2 gap-6">
+                <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6 md:space-y-8">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
                   <FormField
                     control={form.control}
                     name="nomeCompleto"
                     rules={{ required: "Nome completo é obrigatório" }}
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel className="text-green-800 font-semibold">1. Nome completo</FormLabel>
+                        <FormLabel className="text-green-800 font-semibold text-sm md:text-base">1. Nome completo</FormLabel>
                         <FormControl>
                           <Input 
                             placeholder="Digite seu nome completo" 
-                            className="border-green-200 focus:border-green-500 focus:ring-green-500"
+                            className="border-green-200 focus:border-green-500 focus:ring-green-500 text-sm md:text-base"
                             {...field} 
                           />
                         </FormControl>
@@ -132,12 +132,12 @@ const MapadaSuaProximaGrandeAventura = () => {
                     }}
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel className="text-green-800 font-semibold">2. Idade</FormLabel>
+                        <FormLabel className="text-green-800 font-semibold text-sm md:text-base">2. Idade</FormLabel>
                         <FormControl>
                           <Input 
                             type="number" 
                             placeholder="Digite sua idade"
-                            className="border-green-200 focus:border-green-500 focus:ring-green-500"
+                            className="border-green-200 focus:border-green-500 focus:ring-green-500 text-sm md:text-base"
                             {...field} 
                           />
                         </FormControl>
@@ -153,10 +153,10 @@ const MapadaSuaProximaGrandeAventura = () => {
                   rules={{ required: "Série é obrigatória" }}
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel className="text-green-800 font-semibold">3. Série</FormLabel>
+                      <FormLabel className="text-green-800 font-semibold text-sm md:text-base">3. Série</FormLabel>
                       <Select onValueChange={field.onChange} defaultValue={field.value}>
                         <FormControl>
-                          <SelectTrigger className="border-green-200 focus:border-green-500 focus:ring-green-500">
+                          <SelectTrigger className="border-green-200 focus:border-green-500 focus:ring-green-500 text-sm md:text-base">
                             <SelectValue placeholder="Selecione sua série" />
                           </SelectTrigger>
                         </FormControl>
@@ -177,13 +177,13 @@ const MapadaSuaProximaGrandeAventura = () => {
                   rules={{ required: "Esta pergunta é obrigatória" }}
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel className="text-green-800 font-semibold text-base">
+                      <FormLabel className="text-green-800 font-semibold text-sm md:text-base">
                         4. Se você pudesse passar o dia inteiro fazendo uma única coisa (sem se preocupar com escola ou tarefas), o que seria?
                       </FormLabel>
                       <FormControl>
                         <Textarea 
                           placeholder="Descreva o que você faria..."
-                          className="min-h-[100px] border-green-200 focus:border-green-500 focus:ring-green-500"
+                          className="min-h-[80px] md:min-h-[100px] border-green-200 focus:border-green-500 focus:ring-green-500 text-sm md:text-base"
                           {...field} 
                         />
                       </FormControl>
@@ -297,15 +297,15 @@ const MapadaSuaProximaGrandeAventura = () => {
                   )}
                 />
 
-                <div className="pt-4">
+                <div className="pt-3 md:pt-4">
                   <Button 
                     type="submit" 
-                    className="w-full bg-green-600 hover:bg-green-700 text-white font-semibold py-3 px-6 rounded-lg transition-colors duration-200 text-lg" 
+                    className="w-full bg-green-600 hover:bg-green-700 text-white font-semibold py-2.5 md:py-3 px-4 md:px-6 rounded-lg transition-colors duration-200 text-base md:text-lg" 
                     disabled={isLoading}
                   >
                     {isLoading ? (
                       <>
-                        <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+                        <Loader2 className="mr-2 h-4 w-4 md:h-5 md:w-5 animate-spin" />
                         Enviando...
                       </>
                     ) : (

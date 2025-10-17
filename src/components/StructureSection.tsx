@@ -1,16 +1,16 @@
 
 export const StructureSection = () => {
   return (
-    <section id="estrutura" className="py-16 bg-gradient-to-r from-gray-900 via-gray-800 to-gray-900 text-white">
+    <section id="estrutura" className="py-12 md:py-16 bg-gradient-to-r from-gray-900 via-gray-800 to-gray-900 text-white">
       <div className="container mx-auto px-4">
         <div className="max-w-4xl mx-auto">
-          <h2 className="text-4xl font-bold text-center mb-12 text-white">
+          <h2 className="text-3xl md:text-4xl font-bold text-center mb-8 md:mb-12 text-white">
             Nossa Estrutura
           </h2>
           
-          <div className="bg-white/5 backdrop-blur-sm rounded-2xl p-8 border border-white/10">
-            <div className="prose prose-lg mx-auto text-gray-100">
-              <p className="text-lg leading-relaxed mb-6">
+          <div className="bg-white/5 backdrop-blur-sm rounded-2xl p-4 md:p-8 border border-white/10">
+            <div className="prose prose-base md:prose-lg mx-auto text-gray-100">
+              <p className="text-base md:text-lg leading-relaxed mb-4 md:mb-6">
                 O Colégio Zampieri conta com <span className="text-green-400 font-semibold">2.000 m²</span> de espaço planejado para proporcionar 
                 conforto, segurança e excelência no aprendizado de alunos a partir dos 5 anos 
                 de idade. São dois prédios com <span className="text-green-400 font-semibold">16 salas de aula por período</span>, equipadas com 
