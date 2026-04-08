@@ -2,7 +2,8 @@ import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
-import { Calendar, MapPin, Users, Ticket } from "lucide-react";
+import { Calendar, MapPin, Users, Ticket, ShieldAlert } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Footer } from "@/components/Footer";
@@ -19,6 +20,7 @@ interface Evento {
   vagas_total: number;
   vagas_disponiveis: number;
   ativo: boolean;
+  requer_autorizacao: boolean;
 }
 
 const Eventos = () => {
@@ -129,7 +131,15 @@ const Eventos = () => {
                   </div>
                 )}
                 <CardHeader>
-                  <CardTitle className="text-green-800">{evento.titulo}</CardTitle>
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <CardTitle className="text-green-800">{evento.titulo}</CardTitle>
+                    {evento.requer_autorizacao && (
+                      <Badge variant="outline" className="text-orange-600 border-orange-300 text-xs">
+                        <ShieldAlert className="w-3 h-3 mr-1" />
+                        Requer autorização
+                      </Badge>
+                    )}
+                  </div>
                 </CardHeader>
                 <CardContent className="space-y-2">
                   {evento.descricao && (

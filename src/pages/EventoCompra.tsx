@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
-import { ArrowLeft, Calendar, MapPin, Minus, Plus } from "lucide-react";
+import { ArrowLeft, Calendar, MapPin, Minus, Plus, ShieldAlert } from "lucide-react";
 
 interface Evento {
   id: string;
@@ -17,6 +17,7 @@ interface Evento {
   local: string | null;
   preco: number;
   vagas_disponiveis: number;
+  requer_autorizacao: boolean;
 }
 
 const EventoCompra = () => {
@@ -133,6 +134,12 @@ const EventoCompra = () => {
                 </div>
               )}
             </div>
+            {evento.requer_autorizacao && (
+              <div className="flex items-center gap-2 mt-2 text-orange-600 bg-orange-50 rounded-md px-3 py-2 text-sm">
+                <ShieldAlert className="w-4 h-4 shrink-0" />
+                <span>Este evento requer autorização. Após a compra, sua participação ficará sujeita à aprovação.</span>
+              </div>
+            )}
           </CardHeader>
           <CardContent className="space-y-4">
             <div>
