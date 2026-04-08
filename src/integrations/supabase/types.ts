@@ -326,6 +326,98 @@ export type Database = {
         }
         Relationships: []
       }
+      eventos: {
+        Row: {
+          ativo: boolean
+          created_at: string
+          data_evento: string
+          descricao: string | null
+          horario: string | null
+          id: string
+          imagem_url: string | null
+          local: string | null
+          preco: number
+          titulo: string
+          updated_at: string
+          vagas_disponiveis: number
+          vagas_total: number
+        }
+        Insert: {
+          ativo?: boolean
+          created_at?: string
+          data_evento: string
+          descricao?: string | null
+          horario?: string | null
+          id?: string
+          imagem_url?: string | null
+          local?: string | null
+          preco?: number
+          titulo: string
+          updated_at?: string
+          vagas_disponiveis?: number
+          vagas_total?: number
+        }
+        Update: {
+          ativo?: boolean
+          created_at?: string
+          data_evento?: string
+          descricao?: string | null
+          horario?: string | null
+          id?: string
+          imagem_url?: string | null
+          local?: string | null
+          preco?: number
+          titulo?: string
+          updated_at?: string
+          vagas_disponiveis?: number
+          vagas_total?: number
+        }
+        Relationships: []
+      }
+      ingressos: {
+        Row: {
+          codigo_aluno: string | null
+          created_at: string
+          evento_id: string
+          id: string
+          nome_comprador: string
+          quantidade: number
+          status: string
+          user_id: string
+          webhook_payment_id: string | null
+        }
+        Insert: {
+          codigo_aluno?: string | null
+          created_at?: string
+          evento_id: string
+          id?: string
+          nome_comprador: string
+          quantidade?: number
+          status?: string
+          user_id: string
+          webhook_payment_id?: string | null
+        }
+        Update: {
+          codigo_aluno?: string | null
+          created_at?: string
+          evento_id?: string
+          id?: string
+          nome_comprador?: string
+          quantidade?: number
+          status?: string
+          user_id?: string
+          webhook_payment_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ingressos_evento_id_fkey"
+            columns: ["evento_id"]
+            isOneToOne: false
+            referencedRelation: "eventos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       ocorrencias_mhund: {
         Row: {
           codigo_aluno: number | null
@@ -635,6 +727,27 @@ export type Database = {
         }
         Relationships: []
       }
+      user_roles: {
+        Row: {
+          created_at: string
+          id: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          user_id?: string
+        }
+        Relationships: []
+      }
       vagas_turmas: {
         Row: {
           ativo: boolean | null
@@ -700,6 +813,13 @@ export type Database = {
           turno: string
           vagas_disponiveis: number
         }[]
+      }
+      has_role: {
+        Args: {
+          _role: Database["public"]["Enums"]["app_role"]
+          _user_id: string
+        }
+        Returns: boolean
       }
       match_documents: {
         Args: { filter?: Json; match_count?: number; query_embedding: string }
@@ -838,7 +958,7 @@ export type Database = {
       }
     }
     Enums: {
-      [_ in never]: never
+      app_role: "admin" | "user"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -965,6 +1085,8 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      app_role: ["admin", "user"],
+    },
   },
 } as const
