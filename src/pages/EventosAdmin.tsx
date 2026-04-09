@@ -25,6 +25,7 @@ interface Evento {
   vagas_disponiveis: number;
   ativo: boolean;
   requer_autorizacao: boolean;
+  tipo_evento: string;
 }
 
 interface Ingresso {
@@ -60,6 +61,7 @@ const EventosAdmin = () => {
   const [precoParcelado, setPrecoParcelado] = useState("");
   const [maxParcelas, setMaxParcelas] = useState("");
   const [requerAutorizacao, setRequerAutorizacao] = useState(false);
+  const [tipoEvento, setTipoEvento] = useState<"somente_alunos" | "alunos_convidados">("alunos_convidados");
   const [imagemFile, setImagemFile] = useState<File | null>(null);
   const [imagemPreview, setImagemPreview] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
@@ -96,6 +98,7 @@ const EventosAdmin = () => {
     setMaxParcelas("");
     setVagasTotal("");
     setRequerAutorizacao(false);
+    setTipoEvento("alunos_convidados");
     setImagemFile(null);
     setImagemPreview(null);
     setEditingId(null);
@@ -114,6 +117,7 @@ const EventosAdmin = () => {
     setMaxParcelas(String(evento.max_parcelas));
     setVagasTotal(String(evento.vagas_total));
     setRequerAutorizacao(evento.requer_autorizacao);
+    setTipoEvento((evento.tipo_evento as "somente_alunos" | "alunos_convidados") || "alunos_convidados");
     setImagemFile(null);
     setImagemPreview(evento.imagem_url || null);
     setEditingId(evento.id);
@@ -172,6 +176,7 @@ const EventosAdmin = () => {
       vagas_total: vagasNum,
       vagas_disponiveis: vagasNum,
       requer_autorizacao: requerAutorizacao,
+      tipo_evento: tipoEvento,
     };
 
     if (editingId) {
