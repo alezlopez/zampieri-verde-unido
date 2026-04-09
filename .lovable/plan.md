@@ -1,43 +1,25 @@
 
 
-## Plano: Capturar checkout_url e checkout_id do webhook e exibir ao usuário
+## Plano: Bloquear compra duplicada para ingressos pendentes
 
 ### Resumo
 
-O webhook retorna `checkout_url` e um ID de checkout. Vamos salvar ambos na tabela `ingressos`, exibir o link ao usuário após a reserva, e mostrar botão de pagamento em "Meus Ingressos".
+Antes de permitir a reserva, verificar se o usuário já possui ingressos com status `pendente` para o mesmo evento. Se existirem, bloquear a compra e informar o usuário.
 
 ---
 
-### 1. Migração: novas colunas em `ingressos`
+### Alterações em `EventoCompra.tsx`
 
-```sql
-ALTER TABLE public.ingressos ADD COLUMN checkout_url text DEFAULT null;
-ALTER TABLE public.ingressos ADD COLUMN checkout_id text DEFAULT null;
-```
-
----
-
-### 2. `EventoCompra.tsx` — Capturar resposta do webhook
-
-- Após o `fetch` ao webhook, ler o JSON da resposta (espera-se `{ checkout_url, checkout_id }`)
-- Atualizar todos os registros recém-inseridos com `checkout_url` e `checkout_id` via `supabase.from("ingressos").update()`
-- Após sucesso, exibir o link de checkout ao usuário (abrir em nova aba ou mostrar botão) em vez de redirecionar direto para "Meus Ingressos"
-
----
-
-### 3. `MeusIngressos.tsx` — Botão de pagamento
-
-- Incluir `checkout_url` no select da query
-- Para ingressos com status `pendente` e `checkout_url` preenchido, exibir botão "Pagar" que abre o link em nova aba
-- Agrupar visualmente ingressos do mesmo checkout
-
----
+1. **Novo estado**: `ingressosPendentes` — carregado ao montar o componente
+2. **Novo useEffect**: Consultar `ingressos` filtrando por `evento_id`, `user_id` e `status = 'pendente'`
+3. **Bloqueio na UI**:
+   - Se houver ingressos pendentes, exibir aviso no lugar do botão de compra
+   - Mostrar link para "Meus Ingressos" para que o usuário possa pagar os pendentes
+   - Desabilitar seleção de participantes quando já houver pendentes
 
 ### Arquivos afetados
 
 | Arquivo | Alteração |
 |---|---|
-| Nova migração SQL | Colunas `checkout_url` e `checkout_id` em `ingressos` |
-| `EventoCompra.tsx` | Ler resposta do webhook, salvar checkout_url/id, exibir link |
-| `MeusIngressos.tsx` | Mostrar botão "Pagar" quando checkout_url disponível |
+| `EventoCompra.tsx` | Consulta de pendentes + bloqueio de UI |
 
