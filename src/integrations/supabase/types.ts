@@ -336,7 +336,9 @@ export type Database = {
           id: string
           imagem_url: string | null
           local: string | null
+          max_parcelas: number
           preco: number
+          preco_parcelado: number
           requer_autorizacao: boolean
           titulo: string
           updated_at: string
@@ -352,7 +354,9 @@ export type Database = {
           id?: string
           imagem_url?: string | null
           local?: string | null
+          max_parcelas?: number
           preco?: number
+          preco_parcelado?: number
           requer_autorizacao?: boolean
           titulo: string
           updated_at?: string
@@ -368,7 +372,9 @@ export type Database = {
           id?: string
           imagem_url?: string | null
           local?: string | null
+          max_parcelas?: number
           preco?: number
+          preco_parcelado?: number
           requer_autorizacao?: boolean
           titulo?: string
           updated_at?: string

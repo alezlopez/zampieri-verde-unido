@@ -19,6 +19,8 @@ interface Evento {
   local: string | null;
   imagem_url: string | null;
   preco: number;
+  preco_parcelado: number;
+  max_parcelas: number;
   vagas_total: number;
   vagas_disponiveis: number;
   ativo: boolean;
@@ -55,6 +57,8 @@ const EventosAdmin = () => {
   const [imagemUrl, setImagemUrl] = useState("");
   const [preco, setPreco] = useState("");
   const [vagasTotal, setVagasTotal] = useState("");
+  const [precoParcelado, setPrecoParcelado] = useState("");
+  const [maxParcelas, setMaxParcelas] = useState("");
   const [requerAutorizacao, setRequerAutorizacao] = useState(false);
   const [imagemFile, setImagemFile] = useState<File | null>(null);
   const [imagemPreview, setImagemPreview] = useState<string | null>(null);
@@ -88,6 +92,8 @@ const EventosAdmin = () => {
     setLocal("");
     setImagemUrl("");
     setPreco("");
+    setPrecoParcelado("");
+    setMaxParcelas("");
     setVagasTotal("");
     setRequerAutorizacao(false);
     setImagemFile(null);
@@ -104,6 +110,8 @@ const EventosAdmin = () => {
     setLocal(evento.local || "");
     setImagemUrl(evento.imagem_url || "");
     setPreco(String(evento.preco));
+    setPrecoParcelado(String(evento.preco_parcelado));
+    setMaxParcelas(String(evento.max_parcelas));
     setVagasTotal(String(evento.vagas_total));
     setRequerAutorizacao(evento.requer_autorizacao);
     setImagemFile(null);
@@ -148,6 +156,8 @@ const EventosAdmin = () => {
 
     const vagasNum = parseInt(vagasTotal) || 0;
     const precoNum = parseFloat(preco) || 0;
+    const precoParceladoNum = parseFloat(precoParcelado) || 0;
+    const maxParcelasNum = parseInt(maxParcelas) || 1;
 
     const payload = {
       titulo,
@@ -157,6 +167,8 @@ const EventosAdmin = () => {
       local: local || null,
       imagem_url: finalImagemUrl,
       preco: precoNum,
+      preco_parcelado: precoParceladoNum,
+      max_parcelas: maxParcelasNum,
       vagas_total: vagasNum,
       vagas_disponiveis: vagasNum,
       requer_autorizacao: requerAutorizacao,
@@ -260,8 +272,16 @@ const EventosAdmin = () => {
                   <Input value={local} onChange={(e) => setLocal(e.target.value)} placeholder="Auditório" />
                 </div>
                 <div>
-                  <label className="text-sm font-medium">Preço (R$)</label>
+                  <label className="text-sm font-medium">Preço à Vista (R$)</label>
                   <Input type="number" step="0.01" value={preco} onChange={(e) => setPreco(e.target.value)} placeholder="0.00" />
+                </div>
+                <div>
+                  <label className="text-sm font-medium">Preço Parcelado (R$)</label>
+                  <Input type="number" step="0.01" value={precoParcelado} onChange={(e) => setPrecoParcelado(e.target.value)} placeholder="0.00" />
+                </div>
+                <div>
+                  <label className="text-sm font-medium">Máximo de Parcelas</label>
+                  <Input type="number" value={maxParcelas} onChange={(e) => setMaxParcelas(e.target.value)} placeholder="1" />
                 </div>
                 <div>
                   <label className="text-sm font-medium">Total de Vagas</label>
@@ -338,7 +358,9 @@ const EventosAdmin = () => {
                       {evento.local && ` — ${evento.local}`}
                     </p>
                     <p className="text-sm text-muted-foreground">
-                      R$ {evento.preco.toFixed(2).replace(".", ",")} — {evento.vagas_disponiveis}/{evento.vagas_total} vagas
+                      À vista: R$ {evento.preco.toFixed(2).replace(".", ",")}
+                      {evento.preco_parcelado > 0 && ` | Parcelado: ${evento.max_parcelas}x de R$ ${(evento.preco_parcelado / evento.max_parcelas).toFixed(2).replace(".", ",")}`}
+                      {" "}— {evento.vagas_disponiveis}/{evento.vagas_total} vagas
                     </p>
                   </div>
                   <div className="flex gap-2 flex-wrap">
