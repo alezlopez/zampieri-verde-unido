@@ -18,6 +18,7 @@ interface Evento {
   data_evento: string;
   horario: string | null;
   local: string | null;
+  imagem_url: string | null;
   preco: number;
   preco_parcelado: number;
   max_parcelas: number;
