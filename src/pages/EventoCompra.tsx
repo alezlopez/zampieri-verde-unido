@@ -203,6 +203,21 @@ const EventoCompra = () => {
 
       // Send to webhook
       try {
+        let imagemBase64: string | null = null;
+        if (evento.imagem_url) {
+          try {
+            const imgResponse = await fetch(evento.imagem_url);
+            const blob = await imgResponse.blob();
+            imagemBase64 = await new Promise<string>((resolve) => {
+              const reader = new FileReader();
+              reader.onloadend = () => resolve(reader.result as string);
+              reader.readAsDataURL(blob);
+            });
+          } catch (imgErr) {
+            console.error("Erro ao converter imagem:", imgErr);
+          }
+        }
+
         await fetch("https://n8n.colegiozampieri.com/webhook/20c571e8-7740-40c6-add5-579e40a25ffc", {
           method: "POST",
           headers: {
@@ -210,7 +225,7 @@ const EventoCompra = () => {
             "key_eventos": "qTAA7iUixsaRt9P4bhDB9zUYTFmuamfmeFxJNmk",
           },
           body: JSON.stringify({
-            evento: evento,
+            evento: { ...evento, imagem_base64: imagemBase64 },
             comprador: nomeComprador.trim(),
             user_id: user.id,
             participantes: records,
