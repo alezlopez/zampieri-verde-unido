@@ -5,7 +5,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { ArrowLeft, Ticket, LogOut } from "lucide-react";
+import { ArrowLeft, Ticket, LogOut, ExternalLink } from "lucide-react";
 
 interface IngressoComEvento {
   id: string;
@@ -106,13 +106,28 @@ const MeusIngressos = () => {
                         {ingresso.eventos?.horario && ` às ${ingresso.eventos.horario}`}
                       </p>
                       <p className="text-sm text-muted-foreground mt-1">
-                        {ingresso.quantidade}x — {ingresso.nome_comprador}
+                        {ingresso.nome_participante || ingresso.nome_comprador}
+                        {ingresso.tipo_participante === "convidado" && (
+                          <span className="ml-1 text-xs text-orange-600">(convidado)</span>
+                        )}
                       </p>
                     </div>
                     <Badge className={statusColors[ingresso.status] || ""}>
                       {ingresso.status}
                     </Badge>
                   </div>
+                  {ingresso.status === "pendente" && ingresso.checkout_url && (
+                    <div className="mt-3">
+                      <Button
+                        size="sm"
+                        className="bg-green-600 hover:bg-green-700 w-full"
+                        onClick={() => window.open(ingresso.checkout_url!, "_blank")}
+                      >
+                        <ExternalLink className="w-4 h-4 mr-2" />
+                        Pagar
+                      </Button>
+                    </div>
+                  )}
                 </CardContent>
               </Card>
             ))}
