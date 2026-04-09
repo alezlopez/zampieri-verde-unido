@@ -340,6 +340,7 @@ export type Database = {
           preco: number
           preco_parcelado: number
           requer_autorizacao: boolean
+          tipo_evento: string
           titulo: string
           updated_at: string
           vagas_disponiveis: number
@@ -358,6 +359,7 @@ export type Database = {
           preco?: number
           preco_parcelado?: number
           requer_autorizacao?: boolean
+          tipo_evento?: string
           titulo: string
           updated_at?: string
           vagas_disponiveis?: number
@@ -376,6 +378,7 @@ export type Database = {
           preco?: number
           preco_parcelado?: number
           requer_autorizacao?: boolean
+          tipo_evento?: string
           titulo?: string
           updated_at?: string
           vagas_disponiveis?: number
@@ -385,35 +388,53 @@ export type Database = {
       }
       ingressos: {
         Row: {
+          celular_participante: string | null
           codigo_aluno: string | null
+          cpf_participante: string | null
           created_at: string
+          data_nascimento_participante: string | null
+          email_participante: string | null
           evento_id: string
           id: string
           nome_comprador: string
+          nome_participante: string | null
           quantidade: number
           status: string
+          tipo_participante: string
           user_id: string
           webhook_payment_id: string | null
         }
         Insert: {
+          celular_participante?: string | null
           codigo_aluno?: string | null
+          cpf_participante?: string | null
           created_at?: string
+          data_nascimento_participante?: string | null
+          email_participante?: string | null
           evento_id: string
           id?: string
           nome_comprador: string
+          nome_participante?: string | null
           quantidade?: number
           status?: string
+          tipo_participante?: string
           user_id: string
           webhook_payment_id?: string | null
         }
         Update: {
+          celular_participante?: string | null
           codigo_aluno?: string | null
+          cpf_participante?: string | null
           created_at?: string
+          data_nascimento_participante?: string | null
+          email_participante?: string | null
           evento_id?: string
           id?: string
           nome_comprador?: string
+          nome_participante?: string | null
           quantidade?: number
           status?: string
+          tipo_participante?: string
           user_id?: string
           webhook_payment_id?: string | null
         }

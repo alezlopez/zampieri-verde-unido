@@ -9,6 +9,8 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { useToast } from "@/hooks/use-toast";
 import { ArrowLeft, Plus, Pencil, Trash2, Eye, EyeOff, Users, Upload, X } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Label } from "@/components/ui/label";
 
 interface Evento {
   id: string;
@@ -25,6 +27,7 @@ interface Evento {
   vagas_disponiveis: number;
   ativo: boolean;
   requer_autorizacao: boolean;
+  tipo_evento: string;
 }
 
 interface Ingresso {
@@ -60,6 +63,7 @@ const EventosAdmin = () => {
   const [precoParcelado, setPrecoParcelado] = useState("");
   const [maxParcelas, setMaxParcelas] = useState("");
   const [requerAutorizacao, setRequerAutorizacao] = useState(false);
+  const [tipoEvento, setTipoEvento] = useState<"somente_alunos" | "alunos_convidados">("alunos_convidados");
   const [imagemFile, setImagemFile] = useState<File | null>(null);
   const [imagemPreview, setImagemPreview] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
@@ -96,6 +100,7 @@ const EventosAdmin = () => {
     setMaxParcelas("");
     setVagasTotal("");
     setRequerAutorizacao(false);
+    setTipoEvento("alunos_convidados");
     setImagemFile(null);
     setImagemPreview(null);
     setEditingId(null);
@@ -114,6 +119,7 @@ const EventosAdmin = () => {
     setMaxParcelas(String(evento.max_parcelas));
     setVagasTotal(String(evento.vagas_total));
     setRequerAutorizacao(evento.requer_autorizacao);
+    setTipoEvento((evento.tipo_evento as "somente_alunos" | "alunos_convidados") || "alunos_convidados");
     setImagemFile(null);
     setImagemPreview(evento.imagem_url || null);
     setEditingId(evento.id);
@@ -172,6 +178,7 @@ const EventosAdmin = () => {
       vagas_total: vagasNum,
       vagas_disponiveis: vagasNum,
       requer_autorizacao: requerAutorizacao,
+      tipo_evento: tipoEvento,
     };
 
     if (editingId) {
@@ -328,6 +335,23 @@ const EventosAdmin = () => {
                 <label htmlFor="requer-autorizacao" className="text-sm font-medium cursor-pointer">
                   Requer autorização?
                 </label>
+              </div>
+              <div>
+                <label className="text-sm font-medium mb-2 block">Tipo de Evento</label>
+                <RadioGroup
+                  value={tipoEvento}
+                  onValueChange={(val) => setTipoEvento(val as "somente_alunos" | "alunos_convidados")}
+                  className="flex gap-4"
+                >
+                  <div className="flex items-center space-x-2">
+                    <RadioGroupItem value="somente_alunos" id="somente_alunos" />
+                    <Label htmlFor="somente_alunos" className="cursor-pointer">Somente alunos</Label>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <RadioGroupItem value="alunos_convidados" id="alunos_convidados" />
+                    <Label htmlFor="alunos_convidados" className="cursor-pointer">Alunos + Convidados</Label>
+                  </div>
+                </RadioGroup>
               </div>
               <div className="flex gap-2">
                 <Button onClick={handleSave} className="bg-green-600 hover:bg-green-700" disabled={uploading}>
