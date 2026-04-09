@@ -69,6 +69,10 @@ const EventoCompra = () => {
   // Convidados
   const [convidados, setConvidados] = useState<Convidado[]>([]);
 
+  // Pendentes check
+  const [ingressosPendentes, setIngressosPendentes] = useState<any[]>([]);
+  const [loadingPendentes, setLoadingPendentes] = useState(true);
+
   useEffect(() => {
     if (!authLoading && !user) {
       navigate("/eventos/login");
