@@ -139,12 +139,6 @@ const Eventos = () => {
                 <CardHeader>
                   <div className="flex items-center gap-2 flex-wrap">
                     <CardTitle className="text-green-800">{evento.titulo}</CardTitle>
-                    {evento.requer_autorizacao && (
-                      <Badge variant="outline" className="text-orange-600 border-orange-300 text-xs">
-                        <ShieldAlert className="w-3 h-3 mr-1" />
-                        Requer autorização
-                      </Badge>
-                    )}
                   </div>
                 </CardHeader>
                 <CardContent className="space-y-2">
