@@ -199,10 +199,13 @@ const EventoCompra = () => {
         });
       }
 
-      const { error } = await supabase.from("ingressos").insert(records);
+      const { data: insertedData, error } = await supabase.from("ingressos").insert(records).select("id");
       if (error) throw error;
 
+      const insertedIds = insertedData?.map((r: any) => r.id) || [];
+
       // Send to webhook
+      let checkoutUrl: string | null = null;
       try {
         let imagemBase64: string | null = null;
         if (evento.imagem_url) {
@@ -231,7 +234,7 @@ const EventoCompra = () => {
           imagemNomeArquivo = decodeURIComponent(segments[segments.length - 1]) || null;
         }
 
-        await fetch("https://n8n.colegiozampieri.com/webhook/20c571e8-7740-40c6-add5-579e40a25ffc", {
+        const webhookResponse = await fetch("https://n8n.colegiozampieri.com/webhook/20c571e8-7740-40c6-add5-579e40a25ffc", {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
@@ -246,15 +249,38 @@ const EventoCompra = () => {
             total,
           }),
         });
+
+        if (webhookResponse.ok) {
+          const webhookData = await webhookResponse.json();
+          const receivedUrl = webhookData.checkout_url || null;
+          const receivedId = webhookData.checkout_id || null;
+          checkoutUrl = receivedUrl;
+
+          if ((receivedUrl || receivedId) && insertedIds.length > 0) {
+            await supabase
+              .from("ingressos")
+              .update({ checkout_url: receivedUrl, checkout_id: receivedId } as any)
+              .in("id", insertedIds);
+          }
+        }
       } catch (webhookErr) {
         console.error("Webhook error:", webhookErr);
       }
 
-      toast({
-        title: "Ingressos reservados!",
-        description: `${records.length} ingresso(s) pendente(s) de pagamento.`,
-      });
-      navigate("/eventos/meus-ingressos");
+      if (checkoutUrl) {
+        toast({
+          title: "Ingressos reservados!",
+          description: "Você será redirecionado para o pagamento.",
+        });
+        window.open(checkoutUrl, "_blank");
+        navigate("/eventos/meus-ingressos");
+      } else {
+        toast({
+          title: "Ingressos reservados!",
+          description: `${records.length} ingresso(s) pendente(s) de pagamento.`,
+        });
+        navigate("/eventos/meus-ingressos");
+      }
     } catch (err: any) {
       toast({ title: "Erro ao reservar ingressos", description: err.message, variant: "destructive" });
     } finally {

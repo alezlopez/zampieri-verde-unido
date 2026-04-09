@@ -12,6 +12,9 @@ interface IngressoComEvento {
   quantidade: number;
   status: string;
   nome_comprador: string;
+  nome_participante: string | null;
+  tipo_participante: string;
+  checkout_url: string | null;
   created_at: string;
   eventos: { titulo: string; data_evento: string; horario: string | null; local: string | null } | null;
 }
