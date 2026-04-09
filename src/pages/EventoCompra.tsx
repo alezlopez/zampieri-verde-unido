@@ -7,7 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useToast } from "@/hooks/use-toast";
-import { ArrowLeft, Calendar, MapPin, Minus, Plus, ShieldAlert, Trash2, UserPlus } from "lucide-react";
+import { ArrowLeft, Calendar, MapPin, Minus, Plus, Trash2, UserPlus } from "lucide-react";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
 
@@ -201,6 +201,27 @@ const EventoCompra = () => {
       const { error } = await supabase.from("ingressos").insert(records);
       if (error) throw error;
 
+      // Send to webhook
+      try {
+        await fetch("https://n8n.colegiozampieri.com/webhook/20c571e8-7740-40c6-add5-579e40a25ffc", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "key_eventos": "qTAA7iUixsaRt9P4bhDB9zUYTFmuamfmeFxJNmk",
+          },
+          body: JSON.stringify({
+            evento: evento,
+            comprador: nomeComprador.trim(),
+            user_id: user.id,
+            participantes: records,
+            forma_pagamento: formaPagamento,
+            total,
+          }),
+        });
+      } catch (webhookErr) {
+        console.error("Webhook error:", webhookErr);
+      }
+
       toast({
         title: "Ingressos reservados!",
         description: `${records.length} ingresso(s) pendente(s) de pagamento.`,
@@ -259,12 +280,6 @@ const EventoCompra = () => {
                 </div>
               )}
             </div>
-            {evento.requer_autorizacao && (
-              <div className="flex items-center gap-2 mt-2 text-orange-600 bg-orange-50 rounded-md px-3 py-2 text-sm">
-                <ShieldAlert className="w-4 h-4 shrink-0" />
-                <span>Este evento requer autorização. Após a compra, sua participação ficará sujeita à aprovação.</span>
-              </div>
-            )}
           </CardHeader>
           <CardContent className="space-y-4">
             {/* Nome do comprador */}
