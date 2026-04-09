@@ -337,6 +337,7 @@ export type Database = {
           imagem_url: string | null
           local: string | null
           preco: number
+          requer_autorizacao: boolean
           titulo: string
           updated_at: string
           vagas_disponiveis: number
@@ -352,6 +353,7 @@ export type Database = {
           imagem_url?: string | null
           local?: string | null
           preco?: number
+          requer_autorizacao?: boolean
           titulo: string
           updated_at?: string
           vagas_disponiveis?: number
@@ -367,6 +369,7 @@ export type Database = {
           imagem_url?: string | null
           local?: string | null
           preco?: number
+          requer_autorizacao?: boolean
           titulo?: string
           updated_at?: string
           vagas_disponiveis?: number

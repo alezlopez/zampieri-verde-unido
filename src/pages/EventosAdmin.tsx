@@ -5,8 +5,9 @@ import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import { Checkbox } from "@/components/ui/checkbox";
 import { useToast } from "@/hooks/use-toast";
-import { ArrowLeft, Plus, Pencil, Trash2, Eye, EyeOff, Users } from "lucide-react";
+import { ArrowLeft, Plus, Pencil, Trash2, Eye, EyeOff, Users, Upload, X } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 
 interface Evento {
@@ -21,6 +22,7 @@ interface Evento {
   vagas_total: number;
   vagas_disponiveis: number;
   ativo: boolean;
+  requer_autorizacao: boolean;
 }
 
 interface Ingresso {
@@ -53,6 +55,10 @@ const EventosAdmin = () => {
   const [imagemUrl, setImagemUrl] = useState("");
   const [preco, setPreco] = useState("");
   const [vagasTotal, setVagasTotal] = useState("");
+  const [requerAutorizacao, setRequerAutorizacao] = useState(false);
+  const [imagemFile, setImagemFile] = useState<File | null>(null);
+  const [imagemPreview, setImagemPreview] = useState<string | null>(null);
+  const [uploading, setUploading] = useState(false);
 
   useEffect(() => {
     if (!authLoading && (!user || !isAdmin)) {
@@ -83,6 +89,9 @@ const EventosAdmin = () => {
     setImagemUrl("");
     setPreco("");
     setVagasTotal("");
+    setRequerAutorizacao(false);
+    setImagemFile(null);
+    setImagemPreview(null);
     setEditingId(null);
     setShowForm(false);
   };
@@ -96,14 +105,45 @@ const EventosAdmin = () => {
     setImagemUrl(evento.imagem_url || "");
     setPreco(String(evento.preco));
     setVagasTotal(String(evento.vagas_total));
+    setRequerAutorizacao(evento.requer_autorizacao);
+    setImagemFile(null);
+    setImagemPreview(evento.imagem_url || null);
     setEditingId(evento.id);
     setShowForm(true);
+  };
+
+  const handleImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setImagemFile(file);
+    setImagemPreview(URL.createObjectURL(file));
+  };
+
+  const uploadImage = async (file: File): Promise<string | null> => {
+    const ext = file.name.split(".").pop();
+    const path = `eventos/${Date.now()}_${Math.random().toString(36).slice(2)}.${ext}`;
+    const { error } = await supabase.storage.from("zampieri").upload(path, file);
+    if (error) {
+      toast({ title: "Erro no upload da imagem", description: error.message, variant: "destructive" });
+      return null;
+    }
+    const { data } = supabase.storage.from("zampieri").getPublicUrl(path);
+    return data.publicUrl;
   };
 
   const handleSave = async () => {
     if (!titulo || !dataEvento) {
       toast({ title: "Preencha título e data", variant: "destructive" });
       return;
+    }
+
+    setUploading(true);
+    let finalImagemUrl = imagemUrl || null;
+
+    if (imagemFile) {
+      const url = await uploadImage(imagemFile);
+      if (url) finalImagemUrl = url;
+      else { setUploading(false); return; }
     }
 
     const vagasNum = parseInt(vagasTotal) || 0;
@@ -115,16 +155,18 @@ const EventosAdmin = () => {
       data_evento: dataEvento,
       horario: horario || null,
       local: local || null,
-      imagem_url: imagemUrl || null,
+      imagem_url: finalImagemUrl,
       preco: precoNum,
       vagas_total: vagasNum,
       vagas_disponiveis: vagasNum,
+      requer_autorizacao: requerAutorizacao,
     };
 
     if (editingId) {
       const { error } = await supabase.from("eventos").update(payload).eq("id", editingId);
       if (error) {
         toast({ title: "Erro ao atualizar", description: error.message, variant: "destructive" });
+        setUploading(false);
         return;
       }
       toast({ title: "Evento atualizado!" });
@@ -132,11 +174,13 @@ const EventosAdmin = () => {
       const { error } = await supabase.from("eventos").insert(payload);
       if (error) {
         toast({ title: "Erro ao criar", description: error.message, variant: "destructive" });
+        setUploading(false);
         return;
       }
       toast({ title: "Evento criado!" });
     }
 
+    setUploading(false);
     resetForm();
     fetchEventos();
   };
@@ -234,11 +278,41 @@ const EventosAdmin = () => {
                 />
               </div>
               <div>
-                <label className="text-sm font-medium">URL da Imagem</label>
-                <Input value={imagemUrl} onChange={(e) => setImagemUrl(e.target.value)} placeholder="https://..." />
+                <label className="text-sm font-medium">Imagem do Evento</label>
+                <div className="mt-1">
+                  <label className="flex items-center gap-2 cursor-pointer border border-input rounded-md px-3 py-2 text-sm hover:bg-muted/50 transition-colors">
+                    <Upload className="w-4 h-4 text-green-600" />
+                    <span>{imagemFile ? imagemFile.name : "Selecionar imagem..."}</span>
+                    <input type="file" accept="image/*" className="hidden" onChange={handleImageSelect} />
+                  </label>
+                  {imagemPreview && (
+                    <div className="mt-2 relative inline-block">
+                      <img src={imagemPreview} alt="Preview" className="h-32 rounded-md object-cover" />
+                      <button
+                        type="button"
+                        onClick={() => { setImagemFile(null); setImagemPreview(null); setImagemUrl(""); }}
+                        className="absolute -top-2 -right-2 bg-destructive text-white rounded-full p-1"
+                      >
+                        <X className="w-3 h-3" />
+                      </button>
+                    </div>
+                  )}
+                </div>
+              </div>
+              <div className="flex items-center space-x-2">
+                <Checkbox
+                  id="requer-autorizacao"
+                  checked={requerAutorizacao}
+                  onCheckedChange={(checked) => setRequerAutorizacao(checked === true)}
+                />
+                <label htmlFor="requer-autorizacao" className="text-sm font-medium cursor-pointer">
+                  Requer autorização?
+                </label>
               </div>
               <div className="flex gap-2">
-                <Button onClick={handleSave} className="bg-green-600 hover:bg-green-700">Salvar</Button>
+                <Button onClick={handleSave} className="bg-green-600 hover:bg-green-700" disabled={uploading}>
+                  {uploading ? "Salvando..." : "Salvar"}
+                </Button>
                 <Button variant="outline" onClick={resetForm}>Cancelar</Button>
               </div>
             </CardContent>
