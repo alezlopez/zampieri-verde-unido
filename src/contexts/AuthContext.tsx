@@ -91,36 +91,31 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const cleanCpf = (cpf: string) => cpf.replace(/\D/g, "");
 
+  const formatCpfWithDash = (cpf: string) => {
+    const clean = cpf.replace(/\D/g, "");
+    if (clean.length === 11) return `${clean.slice(0, 9)}-${clean.slice(9)}`;
+    return clean;
+  };
+
   const findEmailByCpf = async (cpf: string): Promise<{ email: string | null; nome: string | null }> => {
     const cpfClean = cleanCpf(cpf);
+    const cpfDash = formatCpfWithDash(cpfClean);
+
+    // Try exact match with both clean and dash formats
     const { data, error } = await supabase
       .from("alunos_26")
       .select("cpf_pai, cpf_mae, email_pai, email_mae, nome_pai, nome_mae")
-      .or(`cpf_pai.eq.${cpfClean},cpf_mae.eq.${cpfClean}`)
+      .or(`cpf_pai.eq.${cpfClean},cpf_mae.eq.${cpfClean},cpf_pai.eq.${cpfDash},cpf_mae.eq.${cpfDash}`)
       .limit(1);
 
-    if (error || !data || data.length === 0) {
-      // Try with formatted CPF patterns
-      const { data: data2 } = await supabase
-        .from("alunos_26")
-        .select("cpf_pai, cpf_mae, email_pai, email_mae, nome_pai, nome_mae")
-        .or(`cpf_pai.ilike.%${cpfClean}%,cpf_mae.ilike.%${cpfClean}%`)
-        .limit(1);
-
-      if (!data2 || data2.length === 0) return { email: null, nome: null };
-      const row = data2[0];
+    if (!error && data && data.length > 0) {
+      const row = data[0];
       const cpfPaiClean = (row.cpf_pai || "").replace(/\D/g, "");
       const cpfMaeClean = (row.cpf_mae || "").replace(/\D/g, "");
       if (cpfPaiClean === cpfClean) return { email: row.email_pai, nome: row.nome_pai };
       if (cpfMaeClean === cpfClean) return { email: row.email_mae, nome: row.nome_mae };
-      return { email: null, nome: null };
     }
 
-    const row = data[0];
-    const cpfPaiClean = (row.cpf_pai || "").replace(/\D/g, "");
-    const cpfMaeClean = (row.cpf_mae || "").replace(/\D/g, "");
-    if (cpfPaiClean === cpfClean) return { email: row.email_pai, nome: row.nome_pai };
-    if (cpfMaeClean === cpfClean) return { email: row.email_mae, nome: row.nome_mae };
     return { email: null, nome: null };
   };
 
