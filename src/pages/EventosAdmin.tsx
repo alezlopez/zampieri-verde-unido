@@ -9,6 +9,8 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { useToast } from "@/hooks/use-toast";
 import { ArrowLeft, Plus, Pencil, Trash2, Eye, EyeOff, Users, Upload, X } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Label } from "@/components/ui/label";
 
 interface Evento {
   id: string;
@@ -333,6 +335,23 @@ const EventosAdmin = () => {
                 <label htmlFor="requer-autorizacao" className="text-sm font-medium cursor-pointer">
                   Requer autorização?
                 </label>
+              </div>
+              <div>
+                <label className="text-sm font-medium mb-2 block">Tipo de Evento</label>
+                <RadioGroup
+                  value={tipoEvento}
+                  onValueChange={(val) => setTipoEvento(val as "somente_alunos" | "alunos_convidados")}
+                  className="flex gap-4"
+                >
+                  <div className="flex items-center space-x-2">
+                    <RadioGroupItem value="somente_alunos" id="somente_alunos" />
+                    <Label htmlFor="somente_alunos" className="cursor-pointer">Somente alunos</Label>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <RadioGroupItem value="alunos_convidados" id="alunos_convidados" />
+                    <Label htmlFor="alunos_convidados" className="cursor-pointer">Alunos + Convidados</Label>
+                  </div>
+                </RadioGroup>
               </div>
               <div className="flex gap-2">
                 <Button onClick={handleSave} className="bg-green-600 hover:bg-green-700" disabled={uploading}>
