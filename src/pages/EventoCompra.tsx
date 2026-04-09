@@ -99,6 +99,25 @@ const EventoCompra = () => {
     }
   }, [user]);
 
+  // Check for pending tickets
+  useEffect(() => {
+    const checkPendentes = async () => {
+      if (!user || !id) {
+        setLoadingPendentes(false);
+        return;
+      }
+      const { data } = await supabase
+        .from("ingressos")
+        .select("id, nome_participante, checkout_url")
+        .eq("evento_id", id)
+        .eq("user_id", user.id)
+        .eq("status", "pendente");
+      if (data) setIngressosPendentes(data);
+      setLoadingPendentes(false);
+    };
+    checkPendentes();
+  }, [user, id]);
+
   // Fetch alunos by CPF
   useEffect(() => {
     const fetchAlunos = async () => {
