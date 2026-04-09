@@ -486,26 +486,53 @@ const EventoCompra = () => {
 
             {/* Total */}
             <div className="border-t pt-4">
-              <div className="flex justify-between items-center mb-1">
-                <span className="text-muted-foreground text-sm">Participantes:</span>
-                <span className="font-medium">{totalParticipantes}</span>
-              </div>
-              <div className="flex justify-between items-center mb-4">
-                <span className="text-muted-foreground">Total:</span>
-                <span className="text-2xl font-bold text-green-700">
-                  {total === 0 && totalParticipantes > 0 ? "Gratuito" : total === 0 ? "—" : `R$ ${total.toFixed(2).replace(".", ",")}`}
-                </span>
-              </div>
-              <Button
-                onClick={handleComprar}
-                className="w-full bg-green-600 hover:bg-green-700"
-                disabled={submitting || totalParticipantes === 0}
-              >
-                {submitting ? "Processando..." : "Reservar Ingressos"}
-              </Button>
-              <p className="text-xs text-muted-foreground text-center mt-2">
-                O pagamento será processado separadamente.
-              </p>
+              {ingressosPendentes.length > 0 ? (
+                <div className="bg-yellow-50 border border-yellow-200 rounded-md p-4 space-y-3">
+                  <p className="text-sm font-medium text-yellow-800">
+                    ⚠️ Você já possui {ingressosPendentes.length} ingresso(s) pendente(s) para este evento.
+                  </p>
+                  <p className="text-xs text-yellow-700">
+                    Finalize o pagamento antes de fazer uma nova reserva.
+                  </p>
+                  {ingressosPendentes[0]?.checkout_url && (
+                    <Button
+                      variant="outline"
+                      className="w-full border-yellow-400 text-yellow-800 hover:bg-yellow-100"
+                      onClick={() => window.open(ingressosPendentes[0].checkout_url, "_blank")}
+                    >
+                      Pagar agora
+                    </Button>
+                  )}
+                  <Link to="/eventos/meus-ingressos">
+                    <Button variant="link" className="w-full text-yellow-800">
+                      Ver meus ingressos →
+                    </Button>
+                  </Link>
+                </div>
+              ) : (
+                <>
+                  <div className="flex justify-between items-center mb-1">
+                    <span className="text-muted-foreground text-sm">Participantes:</span>
+                    <span className="font-medium">{totalParticipantes}</span>
+                  </div>
+                  <div className="flex justify-between items-center mb-4">
+                    <span className="text-muted-foreground">Total:</span>
+                    <span className="text-2xl font-bold text-green-700">
+                      {total === 0 && totalParticipantes > 0 ? "Gratuito" : total === 0 ? "—" : `R$ ${total.toFixed(2).replace(".", ",")}`}
+                    </span>
+                  </div>
+                  <Button
+                    onClick={handleComprar}
+                    className="w-full bg-green-600 hover:bg-green-700"
+                    disabled={submitting || totalParticipantes === 0}
+                  >
+                    {submitting ? "Processando..." : "Reservar Ingressos"}
+                  </Button>
+                  <p className="text-xs text-muted-foreground text-center mt-2">
+                    O pagamento será processado separadamente.
+                  </p>
+                </>
+              )}
             </div>
           </CardContent>
         </Card>
