@@ -238,7 +238,7 @@ const EventoCompra = () => {
             "key_eventos": "qTAA7iUixsaRt9P4bhDB9zUYTFmuamfmeFxJNmk",
           },
           body: JSON.stringify({
-            evento: { ...evento, imagem_base64: imagemBase64, imagem_extensao: imagemExtensao },
+            evento: { ...evento, imagem_base64: imagemBase64, imagem_extensao: imagemExtensao, imagem_nome_arquivo: imagemNomeArquivo },
             comprador: nomeComprador.trim(),
             user_id: user.id,
             participantes: records,
