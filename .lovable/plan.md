@@ -1,39 +1,12 @@
 
 
-## Plano: Variação de Preço (À Vista, Parcelado, Parcelas)
+## Plano: Adicionar botão de Logout na página /eventos
 
-### 1. Migração no banco de dados
+### Alteração única em `src/pages/Eventos.tsx`
 
-Adicionar duas colunas na tabela `eventos`:
+Adicionar um botão "Sair" (com ícone `LogOut`) ao lado do botão "Meus Ingressos" no header, quando o usuário está logado. Ao clicar, chama `signOut()` do `AuthContext`.
 
-```sql
-ALTER TABLE public.eventos ADD COLUMN preco_parcelado numeric NOT NULL DEFAULT 0;
-ALTER TABLE public.eventos ADD COLUMN max_parcelas integer NOT NULL DEFAULT 1;
-```
-
-- `preco` existente passa a ser o **preço à vista**
-- `preco_parcelado` = valor total parcelado
-- `max_parcelas` = número máximo de parcelas (ex: 3, 6, 12)
-
-### 2. Alterações no formulário admin (`EventosAdmin.tsx`)
-
-- Renomear label "Preço (R$)" para "Preço à Vista (R$)"
-- Adicionar campo "Preço Parcelado (R$)" (input numérico)
-- Adicionar campo "Máximo de Parcelas" (input numérico)
-- Incluir novos campos no payload de `handleSave`, `handleEdit` e `resetForm`
-- Exibir info de parcelas na listagem admin
-
-### 3. Alterações nas páginas públicas
-
-- **`Eventos.tsx`**: Exibir "R$ X à vista ou Nx de R$ Y" nos cards
-- **`EventoCompra.tsx`**: Mostrar opções de pagamento (à vista / parcelado) com radio buttons, exibindo o valor conforme seleção
-
-### Arquivos afetados
-
-| Arquivo | Alteração |
-|---|---|
-| Nova migração SQL | Adicionar `preco_parcelado` e `max_parcelas` |
-| `EventosAdmin.tsx` | Novos campos no formulário e interface |
-| `Eventos.tsx` | Exibir preço à vista e parcelado |
-| `EventoCompra.tsx` | Seleção de forma de pagamento |
+- Importar `LogOut` do lucide-react
+- Extrair `signOut` do `useAuth()`
+- Adicionar botão "Sair" após o link "Meus Ingressos"
 
