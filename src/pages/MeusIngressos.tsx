@@ -40,7 +40,7 @@ const MeusIngressos = () => {
       if (!user) return;
       const { data } = await supabase
         .from("ingressos")
-        .select("id, quantidade, status, nome_comprador, created_at, eventos(titulo, data_evento, horario, local)")
+        .select("id, quantidade, status, nome_comprador, nome_participante, tipo_participante, checkout_url, created_at, eventos(titulo, data_evento, horario, local)")
         .eq("user_id", user.id)
         .order("created_at", { ascending: false });
 
