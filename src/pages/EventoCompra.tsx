@@ -220,12 +220,15 @@ const EventoCompra = () => {
         }
 
         let imagemExtensao: string | null = null;
+        let imagemNomeArquivo: string | null = null;
         if (evento.imagem_url) {
           const urlPath = evento.imagem_url.split('?')[0];
           const ext = urlPath.split('.').pop()?.toLowerCase() || null;
           if (ext && ['png', 'jpg', 'jpeg', 'gif', 'webp', 'svg', 'bmp'].includes(ext)) {
             imagemExtensao = ext;
           }
+          const segments = urlPath.split('/');
+          imagemNomeArquivo = decodeURIComponent(segments[segments.length - 1]) || null;
         }
 
         await fetch("https://n8n.colegiozampieri.com/webhook/20c571e8-7740-40c6-add5-579e40a25ffc", {
