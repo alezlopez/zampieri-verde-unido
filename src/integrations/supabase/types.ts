@@ -389,6 +389,8 @@ export type Database = {
       ingressos: {
         Row: {
           celular_participante: string | null
+          checkout_id: string | null
+          checkout_url: string | null
           codigo_aluno: string | null
           cpf_participante: string | null
           created_at: string
@@ -406,6 +408,8 @@ export type Database = {
         }
         Insert: {
           celular_participante?: string | null
+          checkout_id?: string | null
+          checkout_url?: string | null
           codigo_aluno?: string | null
           cpf_participante?: string | null
           created_at?: string
@@ -423,6 +427,8 @@ export type Database = {
         }
         Update: {
           celular_participante?: string | null
+          checkout_id?: string | null
+          checkout_url?: string | null
           codigo_aluno?: string | null
           cpf_participante?: string | null
           created_at?: string
