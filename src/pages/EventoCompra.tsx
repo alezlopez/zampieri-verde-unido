@@ -7,6 +7,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
 import { ArrowLeft, Calendar, MapPin, Minus, Plus, ShieldAlert } from "lucide-react";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Label } from "@/components/ui/label";
 
 interface Evento {
   id: string;
@@ -16,6 +18,8 @@ interface Evento {
   horario: string | null;
   local: string | null;
   preco: number;
+  preco_parcelado: number;
+  max_parcelas: number;
   vagas_disponiveis: number;
   requer_autorizacao: boolean;
 }
@@ -31,6 +35,7 @@ const EventoCompra = () => {
   const [quantidade, setQuantidade] = useState(1);
   const [nomeComprador, setNomeComprador] = useState("");
   const [codigoAluno, setCodigoAluno] = useState("");
+  const [formaPagamento, setFormaPagamento] = useState<"avista" | "parcelado">("avista");
   const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
@@ -109,7 +114,13 @@ const EventoCompra = () => {
     return date.toLocaleDateString("pt-BR", { day: "2-digit", month: "long", year: "numeric" });
   };
 
-  const total = evento.preco * quantidade;
+  const temParcelamento = evento.preco_parcelado > 0 && evento.max_parcelas > 1;
+  const total = formaPagamento === "parcelado" && temParcelamento
+    ? evento.preco_parcelado * quantidade
+    : evento.preco * quantidade;
+  const valorParcela = temParcelamento
+    ? (evento.preco_parcelado * quantidade / evento.max_parcelas)
+    : 0;
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-green-50 to-white py-8 px-4">
@@ -175,6 +186,30 @@ const EventoCompra = () => {
               </div>
               <p className="text-xs text-muted-foreground mt-1">{evento.vagas_disponiveis} vagas disponíveis</p>
             </div>
+
+            {temParcelamento && (
+              <div className="border-t pt-4">
+                <label className="text-sm font-medium mb-2 block">Forma de pagamento</label>
+                <RadioGroup
+                  value={formaPagamento}
+                  onValueChange={(val) => setFormaPagamento(val as "avista" | "parcelado")}
+                  className="space-y-2"
+                >
+                  <div className="flex items-center space-x-2">
+                    <RadioGroupItem value="avista" id="avista" />
+                    <Label htmlFor="avista" className="cursor-pointer">
+                      À vista — R$ {(evento.preco * quantidade).toFixed(2).replace(".", ",")}
+                    </Label>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <RadioGroupItem value="parcelado" id="parcelado" />
+                    <Label htmlFor="parcelado" className="cursor-pointer">
+                      {evento.max_parcelas}x de R$ {valorParcela.toFixed(2).replace(".", ",")} (Total: R$ {(evento.preco_parcelado * quantidade).toFixed(2).replace(".", ",")})
+                    </Label>
+                  </div>
+                </RadioGroup>
+              </div>
+            )}
 
             <div className="border-t pt-4">
               <div className="flex justify-between items-center mb-4">

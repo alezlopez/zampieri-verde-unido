@@ -17,6 +17,8 @@ interface Evento {
   local: string | null;
   imagem_url: string | null;
   preco: number;
+  preco_parcelado: number;
+  max_parcelas: number;
   vagas_total: number;
   vagas_disponiveis: number;
   ativo: boolean;
@@ -160,7 +162,14 @@ const Eventos = () => {
                     <Users className="w-4 h-4 mr-2 text-green-600" />
                     {evento.vagas_disponiveis} vagas disponíveis
                   </div>
-                  <p className="text-xl font-bold text-green-700 pt-2">{formatPrice(evento.preco)}</p>
+                  <div className="pt-2">
+                    <p className="text-xl font-bold text-green-700">{formatPrice(evento.preco)}</p>
+                    {evento.preco_parcelado > 0 && evento.max_parcelas > 1 && (
+                      <p className="text-sm text-muted-foreground">
+                        ou {evento.max_parcelas}x de R$ {(evento.preco_parcelado / evento.max_parcelas).toFixed(2).replace(".", ",")}
+                      </p>
+                    )}
+                  </div>
                 </CardContent>
                 <CardFooter>
                   {evento.vagas_disponiveis > 0 ? (
