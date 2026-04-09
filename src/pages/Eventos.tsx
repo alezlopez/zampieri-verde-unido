@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
-import { Calendar, MapPin, Users, Ticket, ShieldAlert } from "lucide-react";
+import { Calendar, MapPin, Users, Ticket, ShieldAlert, LogOut } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
@@ -28,7 +28,7 @@ interface Evento {
 const Eventos = () => {
   const [eventos, setEventos] = useState<Evento[]>([]);
   const [loading, setLoading] = useState(true);
-  const { user, isAdmin } = useAuth();
+  const { user, isAdmin, signOut } = useAuth();
 
   useEffect(() => {
     const fetchEventos = async () => {
@@ -85,6 +85,10 @@ const Eventos = () => {
                     Meus Ingressos
                   </Button>
                 </Link>
+                <Button variant="outline" size="sm" className="text-red-700 border-white bg-white hover:bg-red-50" onClick={signOut}>
+                  <LogOut className="w-4 h-4 mr-1" />
+                  Sair
+                </Button>
               </div>
             ) : (
               <Link to="/eventos/login">
