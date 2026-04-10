@@ -405,24 +405,31 @@ const EventoCompra = () => {
                 <p className="text-sm text-muted-foreground">Nenhum aluno encontrado para este CPF.</p>
               ) : (
                 <div className="space-y-2">
-                  {alunos.map((aluno) => (
-                    <div
-                      key={aluno.codigo_aluno}
-                      className="flex items-center space-x-3 p-2 rounded-md border hover:bg-muted/50 cursor-pointer"
-                      onClick={() => toggleAluno(aluno.codigo_aluno)}
-                    >
-                      <Checkbox
-                        checked={alunosSelecionados.includes(aluno.codigo_aluno)}
-                        onCheckedChange={() => toggleAluno(aluno.codigo_aluno)}
-                      />
-                      <div>
-                        <p className="text-sm font-medium">{aluno.nome_aluno}</p>
-                        <p className="text-xs text-muted-foreground">
-                          Código: {aluno.codigo_aluno} {aluno.curso && `— ${aluno.curso}`}
-                        </p>
+                  {alunos.map((aluno) => {
+                    const jaTemIngresso = alunosComIngresso.includes(aluno.codigo_aluno);
+                    return (
+                      <div
+                        key={aluno.codigo_aluno}
+                        className={`flex items-center space-x-3 p-2 rounded-md border ${jaTemIngresso ? "opacity-50 cursor-not-allowed bg-muted/30" : "hover:bg-muted/50 cursor-pointer"}`}
+                        onClick={() => !jaTemIngresso && toggleAluno(aluno.codigo_aluno)}
+                      >
+                        <Checkbox
+                          checked={alunosSelecionados.includes(aluno.codigo_aluno)}
+                          onCheckedChange={() => !jaTemIngresso && toggleAluno(aluno.codigo_aluno)}
+                          disabled={jaTemIngresso}
+                        />
+                        <div>
+                          <p className="text-sm font-medium">{aluno.nome_aluno}</p>
+                          <p className="text-xs text-muted-foreground">
+                            Código: {aluno.codigo_aluno} {aluno.curso && `— ${aluno.curso}`}
+                          </p>
+                          {jaTemIngresso && (
+                            <p className="text-xs text-orange-600 font-medium">✅ Já possui ingresso para este evento</p>
+                          )}
+                        </div>
                       </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               )}
             </div>
