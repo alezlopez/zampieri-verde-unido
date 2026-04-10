@@ -73,6 +73,9 @@ const EventoCompra = () => {
   const [ingressosPendentes, setIngressosPendentes] = useState<any[]>([]);
   const [loadingPendentes, setLoadingPendentes] = useState(true);
 
+  // Alunos que já possuem ingresso pago ou pendente para este evento
+  const [alunosComIngresso, setAlunosComIngresso] = useState<string[]>([]);
+
   useEffect(() => {
     if (!authLoading && !user) {
       navigate("/eventos/login");
