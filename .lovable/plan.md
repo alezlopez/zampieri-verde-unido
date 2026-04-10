@@ -1,44 +1,60 @@
 
 
-## Plano: Página dedicada de ingresso com QR Code
+## Plano: Campo "Excursão" no evento + Observação no QR Code + Scanner admin
 
-### Resumo
-Criar uma página `/eventos/ingresso/:id` que exibe o ingresso pago como um card visual estilizado com QR Code único, podendo ser salvo como imagem ou compartilhado.
+### 1. Migração de banco de dados
 
----
+Adicionar duas novas colunas na tabela `eventos`:
+- `is_excursao` (boolean, default false) — indica se o evento é excursão
 
-### 1. Nova página `src/pages/IngressoDetalhe.tsx`
+Adicionar nova coluna na tabela `ingressos`:
+- `utilizado` (boolean, default false) — controle de ingresso já utilizado/escaneado
 
-- Rota: `/eventos/ingresso/:id`
-- Busca o ingresso pelo `id` na tabela `ingressos` (com join em `eventos`)
-- Se status não for `pago`, mostra mensagem informando que o ingresso ainda não foi confirmado
-- Quando `pago`, exibe um card visual estilizado como ingresso contendo:
-  - Nome do evento, data, horário e local
-  - Nome do participante e tipo (aluno/convidado)
-  - QR Code gerado a partir do ID do ingresso (usando biblioteca `qrcode.react`)
-  - Badge "PAGO" em destaque
-- Botão **"Salvar como imagem"** que usa `html-to-image` para exportar o card como PNG
-- Botão **"Compartilhar"** que usa a Web Share API (se disponível) ou copia o link
+```sql
+ALTER TABLE public.eventos ADD COLUMN is_excursao boolean NOT NULL DEFAULT false;
+ALTER TABLE public.ingressos ADD COLUMN utilizado boolean NOT NULL DEFAULT false;
+```
 
-### 2. Dependências
+### 2. Formulário admin (`EventosAdmin.tsx`)
 
-- `qrcode.react` — gerar QR Code a partir do ID do ingresso
-- `html-to-image` — exportar o card como imagem PNG
+- Adicionar checkbox "Evento é excursão?" no formulário de criação/edição
+- Novo state `isExcursao` e inclusão no payload de save/edit
+- Incluir no `handleEdit` para carregar valor existente
 
-### 3. Rota no `App.tsx`
+### 3. Observação no ingresso (`IngressoDetalhe.tsx`)
 
-- Adicionar: `<Route path="/eventos/ingresso/:id" element={<IngressoDetalhe />} />`
+- Buscar campo `is_excursao` do evento junto com o select (adicionar ao join: `eventos(titulo, data_evento, horario, local, is_excursao)`)
+- Abaixo do QR Code, exibir um box destacado:
+  - **Se excursão**: "Este QR Code não é válido para entrada no local da excursão. Deve ser apresentado na escola para efetivo controle do participante. O ingresso para entrada no evento será entregue pela escola no local do evento."
+  - **Se não excursão**: "Obrigatória a apresentação deste ingresso na entrada do evento."
+- Estilo: fundo amarelo/âmbar claro com ícone de alerta para fácil leitura
 
-### 4. Link na página `MeusIngressos.tsx`
+### 4. Página de scanner QR Code para admin (`ScannerIngressos.tsx`)
 
-- Quando o status for `pago`, adicionar um botão **"Ver Ingresso"** que navega para `/eventos/ingresso/:id`
+- Nova página `/eventos/admin/scanner` acessível apenas por admins
+- Usa a câmera do dispositivo para ler QR Codes (biblioteca `html5-qrcode`)
+- Ao escanear, busca o ingresso pelo ID no banco
+- Exibe dados do ingresso (nome, evento, status)
+- Botão para marcar como "utilizado" (update na coluna `utilizado`)
+- Se já utilizado, exibe alerta vermelho
+- Adicionar link/botão no painel admin para acessar o scanner
+
+### 5. Rota no `App.tsx`
+
+- Adicionar: `<Route path="/eventos/admin/scanner" element={<ScannerIngressos />} />`
+
+### Dependências
+
+- `html5-qrcode` — leitura de QR Code via câmera
 
 ### Arquivos afetados
 
 | Arquivo | Alteração |
 |---|---|
-| `src/pages/IngressoDetalhe.tsx` | Novo — página completa do ingresso com QR Code |
-| `src/App.tsx` | Nova rota |
-| `src/pages/MeusIngressos.tsx` | Botão "Ver Ingresso" para ingressos pagos |
-| `package.json` | Adicionar `qrcode.react` e `html-to-image` |
+| Migração SQL | Adicionar `is_excursao` em eventos e `utilizado` em ingressos |
+| `src/pages/EventosAdmin.tsx` | Checkbox "Excursão" no form + botão scanner |
+| `src/pages/IngressoDetalhe.tsx` | Observação condicional abaixo do QR Code |
+| `src/pages/ScannerIngressos.tsx` | Nova página — scanner QR admin |
+| `src/App.tsx` | Nova rota scanner |
+| `package.json` | Adicionar `html5-qrcode` |
 
