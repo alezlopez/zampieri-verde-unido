@@ -335,6 +335,7 @@ export type Database = {
           horario: string | null
           id: string
           imagem_url: string | null
+          is_excursao: boolean
           local: string | null
           max_parcelas: number
           preco: number
@@ -354,6 +355,7 @@ export type Database = {
           horario?: string | null
           id?: string
           imagem_url?: string | null
+          is_excursao?: boolean
           local?: string | null
           max_parcelas?: number
           preco?: number
@@ -373,6 +375,7 @@ export type Database = {
           horario?: string | null
           id?: string
           imagem_url?: string | null
+          is_excursao?: boolean
           local?: string | null
           max_parcelas?: number
           preco?: number
@@ -404,6 +407,7 @@ export type Database = {
           status: string
           tipo_participante: string
           user_id: string
+          utilizado: boolean
           webhook_payment_id: string | null
         }
         Insert: {
@@ -423,6 +427,7 @@ export type Database = {
           status?: string
           tipo_participante?: string
           user_id: string
+          utilizado?: boolean
           webhook_payment_id?: string | null
         }
         Update: {
@@ -442,6 +447,7 @@ export type Database = {
           status?: string
           tipo_participante?: string
           user_id?: string
+          utilizado?: boolean
           webhook_payment_id?: string | null
         }
         Relationships: [
