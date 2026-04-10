@@ -1,25 +1,44 @@
 
 
-## Plano: Bloquear compra duplicada para ingressos pendentes
+## Plano: Página dedicada de ingresso com QR Code
 
 ### Resumo
-
-Antes de permitir a reserva, verificar se o usuário já possui ingressos com status `pendente` para o mesmo evento. Se existirem, bloquear a compra e informar o usuário.
+Criar uma página `/eventos/ingresso/:id` que exibe o ingresso pago como um card visual estilizado com QR Code único, podendo ser salvo como imagem ou compartilhado.
 
 ---
 
-### Alterações em `EventoCompra.tsx`
+### 1. Nova página `src/pages/IngressoDetalhe.tsx`
 
-1. **Novo estado**: `ingressosPendentes` — carregado ao montar o componente
-2. **Novo useEffect**: Consultar `ingressos` filtrando por `evento_id`, `user_id` e `status = 'pendente'`
-3. **Bloqueio na UI**:
-   - Se houver ingressos pendentes, exibir aviso no lugar do botão de compra
-   - Mostrar link para "Meus Ingressos" para que o usuário possa pagar os pendentes
-   - Desabilitar seleção de participantes quando já houver pendentes
+- Rota: `/eventos/ingresso/:id`
+- Busca o ingresso pelo `id` na tabela `ingressos` (com join em `eventos`)
+- Se status não for `pago`, mostra mensagem informando que o ingresso ainda não foi confirmado
+- Quando `pago`, exibe um card visual estilizado como ingresso contendo:
+  - Nome do evento, data, horário e local
+  - Nome do participante e tipo (aluno/convidado)
+  - QR Code gerado a partir do ID do ingresso (usando biblioteca `qrcode.react`)
+  - Badge "PAGO" em destaque
+- Botão **"Salvar como imagem"** que usa `html-to-image` para exportar o card como PNG
+- Botão **"Compartilhar"** que usa a Web Share API (se disponível) ou copia o link
+
+### 2. Dependências
+
+- `qrcode.react` — gerar QR Code a partir do ID do ingresso
+- `html-to-image` — exportar o card como imagem PNG
+
+### 3. Rota no `App.tsx`
+
+- Adicionar: `<Route path="/eventos/ingresso/:id" element={<IngressoDetalhe />} />`
+
+### 4. Link na página `MeusIngressos.tsx`
+
+- Quando o status for `pago`, adicionar um botão **"Ver Ingresso"** que navega para `/eventos/ingresso/:id`
 
 ### Arquivos afetados
 
 | Arquivo | Alteração |
 |---|---|
-| `EventoCompra.tsx` | Consulta de pendentes + bloqueio de UI |
+| `src/pages/IngressoDetalhe.tsx` | Novo — página completa do ingresso com QR Code |
+| `src/App.tsx` | Nova rota |
+| `src/pages/MeusIngressos.tsx` | Botão "Ver Ingresso" para ingressos pagos |
+| `package.json` | Adicionar `qrcode.react` e `html-to-image` |
 
