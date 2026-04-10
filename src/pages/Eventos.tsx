@@ -128,17 +128,25 @@ const Eventos = () => {
             {eventos.map((evento) => (
               <Card key={evento.id} className="overflow-hidden hover:shadow-xl transition-shadow border-green-100">
                 {evento.imagem_url && (
-                  <div className="h-48 overflow-hidden">
+                  <div className={`h-48 overflow-hidden relative ${evento.vagas_disponiveis <= 0 ? "opacity-50" : ""}`}>
                     <img
                       src={evento.imagem_url}
                       alt={evento.titulo}
                       className="w-full h-full object-cover"
                     />
+                    {evento.vagas_disponiveis <= 0 && (
+                      <div className="absolute inset-0 flex items-center justify-center bg-black/30">
+                        <Badge variant="destructive" className="text-base px-4 py-1">ESGOTADO</Badge>
+                      </div>
+                    )}
                   </div>
                 )}
                 <CardHeader>
                   <div className="flex items-center gap-2 flex-wrap">
                     <CardTitle className="text-green-800">{evento.titulo}</CardTitle>
+                    {evento.vagas_disponiveis <= 0 && (
+                      <Badge variant="destructive">ESGOTADO</Badge>
+                    )}
                   </div>
                 </CardHeader>
                 <CardContent className="space-y-2">
