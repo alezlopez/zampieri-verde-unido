@@ -118,7 +118,7 @@ const MeusIngressos = () => {
                   </div>
                   {ingresso.status === "pendente" && ingresso.checkout_url && (
                     <div className="mt-3">
-                      <Button
+                     <Button
                         size="sm"
                         className="bg-green-600 hover:bg-green-700 w-full"
                         onClick={() => window.open(ingresso.checkout_url!, "_blank")}
@@ -126,6 +126,9 @@ const MeusIngressos = () => {
                         <ExternalLink className="w-4 h-4 mr-2" />
                         Pagar
                       </Button>
+                      <p className="text-xs text-muted-foreground mt-2">
+                        Ao clicar no botão pagar, você será redirecionado para um ambiente seguro de pagamento do sistema Asaas. Na tela, insira os dados do responsável pela compra e não os do(a) aluno(a).
+                      </p>
                     </div>
                   )}
                 </CardContent>
