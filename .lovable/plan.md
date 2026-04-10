@@ -1,60 +1,82 @@
 
 
-## Plano: Campo "Excursão" no evento + Observação no QR Code + Scanner admin
+## Plano: Controle automático de vagas disponíveis
 
-### 1. Migração de banco de dados
+### Problema atual
+O campo `vagas_disponiveis` nos eventos não é atualizado quando ingressos são criados, pagos ou cancelados. O controle precisa ser automático via banco de dados.
 
-Adicionar duas novas colunas na tabela `eventos`:
-- `is_excursao` (boolean, default false) — indica se o evento é excursão
+### Solução: Trigger no banco de dados
 
-Adicionar nova coluna na tabela `ingressos`:
-- `utilizado` (boolean, default false) — controle de ingresso já utilizado/escaneado
+Criar um trigger na tabela `ingressos` que ajusta `vagas_disponiveis` automaticamente:
 
-```sql
-ALTER TABLE public.eventos ADD COLUMN is_excursao boolean NOT NULL DEFAULT false;
-ALTER TABLE public.ingressos ADD COLUMN utilizado boolean NOT NULL DEFAULT false;
-```
+- **INSERT** com status `pendente` ou `pago` → decrementa `vagas_disponiveis` pela quantidade
+- **UPDATE de status para `cancelado`** → incrementa `vagas_disponiveis` (devolve vagas)
+- **UPDATE de status de `cancelado` para `pago`/`pendente`** → decrementa novamente
+- **DELETE** de ingresso não-cancelado → incrementa (devolve vagas)
 
-### 2. Formulário admin (`EventosAdmin.tsx`)
+### Validação no frontend
 
-- Adicionar checkbox "Evento é excursão?" no formulário de criação/edição
-- Novo state `isExcursao` e inclusão no payload de save/edit
-- Incluir no `handleEdit` para carregar valor existente
-
-### 3. Observação no ingresso (`IngressoDetalhe.tsx`)
-
-- Buscar campo `is_excursao` do evento junto com o select (adicionar ao join: `eventos(titulo, data_evento, horario, local, is_excursao)`)
-- Abaixo do QR Code, exibir um box destacado:
-  - **Se excursão**: "Este QR Code não é válido para entrada no local da excursão. Deve ser apresentado na escola para efetivo controle do participante. O ingresso para entrada no evento será entregue pela escola no local do evento."
-  - **Se não excursão**: "Obrigatória a apresentação deste ingresso na entrada do evento."
-- Estilo: fundo amarelo/âmbar claro com ícone de alerta para fácil leitura
-
-### 4. Página de scanner QR Code para admin (`ScannerIngressos.tsx`)
-
-- Nova página `/eventos/admin/scanner` acessível apenas por admins
-- Usa a câmera do dispositivo para ler QR Codes (biblioteca `html5-qrcode`)
-- Ao escanear, busca o ingresso pelo ID no banco
-- Exibe dados do ingresso (nome, evento, status)
-- Botão para marcar como "utilizado" (update na coluna `utilizado`)
-- Se já utilizado, exibe alerta vermelho
-- Adicionar link/botão no painel admin para acessar o scanner
-
-### 5. Rota no `App.tsx`
-
-- Adicionar: `<Route path="/eventos/admin/scanner" element={<ScannerIngressos />} />`
-
-### Dependências
-
-- `html5-qrcode` — leitura de QR Code via câmera
+Na página de compra (`EventoCompra.tsx`):
+- Verificar se `vagas_disponiveis >= totalParticipantes` antes de permitir a reserva
+- Exibir vagas disponíveis ao usuário
+- Desabilitar botão se não houver vagas suficientes
 
 ### Arquivos afetados
 
 | Arquivo | Alteração |
 |---|---|
-| Migração SQL | Adicionar `is_excursao` em eventos e `utilizado` em ingressos |
-| `src/pages/EventosAdmin.tsx` | Checkbox "Excursão" no form + botão scanner |
-| `src/pages/IngressoDetalhe.tsx` | Observação condicional abaixo do QR Code |
-| `src/pages/ScannerIngressos.tsx` | Nova página — scanner QR admin |
-| `src/App.tsx` | Nova rota scanner |
-| `package.json` | Adicionar `html5-qrcode` |
+| Migração SQL | Criar função + trigger em `ingressos` para controlar `vagas_disponiveis` |
+| `src/pages/EventoCompra.tsx` | Validar vagas antes de reservar, mostrar vagas disponíveis |
+| `src/pages/Eventos.tsx` | Exibir vagas disponíveis nos cards (se não exibe já) |
+
+### Detalhes técnicos — Trigger SQL
+
+```sql
+CREATE OR REPLACE FUNCTION public.atualizar_vagas_disponiveis()
+RETURNS trigger
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path TO 'public'
+AS $$
+BEGIN
+  -- INSERT: novo ingresso não-cancelado diminui vagas
+  IF TG_OP = 'INSERT' AND NEW.status != 'cancelado' THEN
+    UPDATE eventos SET vagas_disponiveis = vagas_disponiveis - NEW.quantidade
+    WHERE id = NEW.evento_id;
+  END IF;
+
+  -- UPDATE: mudança de status
+  IF TG_OP = 'UPDATE' AND OLD.status != NEW.status THEN
+    -- Cancelou → devolve vagas
+    IF NEW.status = 'cancelado' AND OLD.status != 'cancelado' THEN
+      UPDATE eventos SET vagas_disponiveis = vagas_disponiveis + OLD.quantidade
+      WHERE id = OLD.evento_id;
+    END IF;
+    -- Saiu de cancelado → tira vagas
+    IF OLD.status = 'cancelado' AND NEW.status != 'cancelado' THEN
+      UPDATE eventos SET vagas_disponiveis = vagas_disponiveis - NEW.quantidade
+      WHERE id = NEW.evento_id;
+    END IF;
+  END IF;
+
+  -- DELETE: ingresso não-cancelado → devolve vagas
+  IF TG_OP = 'DELETE' AND OLD.status != 'cancelado' THEN
+    UPDATE eventos SET vagas_disponiveis = vagas_disponiveis + OLD.quantidade
+    WHERE id = OLD.evento_id;
+  END IF;
+
+  RETURN COALESCE(NEW, OLD);
+END;
+$$;
+
+CREATE TRIGGER trg_atualizar_vagas
+AFTER INSERT OR UPDATE OF status OR DELETE
+ON public.ingressos
+FOR EACH ROW
+EXECUTE FUNCTION public.atualizar_vagas_disponiveis();
+```
+
+### Validação no frontend
+
+Em `EventoCompra.tsx`, antes de inserir, re-fetch o evento para pegar `vagas_disponiveis` atualizado e bloquear se insuficiente. Exibir quantidade disponível na tela de compra.
 
