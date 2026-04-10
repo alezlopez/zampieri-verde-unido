@@ -73,6 +73,9 @@ const EventoCompra = () => {
   const [ingressosPendentes, setIngressosPendentes] = useState<any[]>([]);
   const [loadingPendentes, setLoadingPendentes] = useState(true);
 
+  // Alunos que já possuem ingresso pago ou pendente para este evento
+  const [alunosComIngresso, setAlunosComIngresso] = useState<string[]>([]);
+
   useEffect(() => {
     if (!authLoading && !user) {
       navigate("/eventos/login");
@@ -99,23 +102,32 @@ const EventoCompra = () => {
     }
   }, [user]);
 
-  // Check for pending tickets
+  // Check for pending tickets + alunos que já têm ingresso
   useEffect(() => {
-    const checkPendentes = async () => {
+    const checkExistentes = async () => {
       if (!user || !id) {
         setLoadingPendentes(false);
         return;
       }
+      // Buscar todos os ingressos não-cancelados do usuário para este evento
       const { data } = await supabase
         .from("ingressos")
-        .select("id, nome_participante, checkout_url")
+        .select("id, nome_participante, checkout_url, status, codigo_aluno")
         .eq("evento_id", id)
         .eq("user_id", user.id)
-        .eq("status", "pendente");
-      if (data) setIngressosPendentes(data);
+        .in("status", ["pendente", "pago"]);
+
+      if (data) {
+        setIngressosPendentes(data.filter((i) => i.status === "pendente"));
+        // Coletar códigos de alunos que já têm ingresso pago ou pendente
+        const codigos = data
+          .filter((i) => i.codigo_aluno)
+          .map((i) => i.codigo_aluno as string);
+        setAlunosComIngresso(codigos);
+      }
       setLoadingPendentes(false);
     };
-    checkPendentes();
+    checkExistentes();
   }, [user, id]);
 
   // Fetch alunos by CPF
@@ -393,24 +405,31 @@ const EventoCompra = () => {
                 <p className="text-sm text-muted-foreground">Nenhum aluno encontrado para este CPF.</p>
               ) : (
                 <div className="space-y-2">
-                  {alunos.map((aluno) => (
-                    <div
-                      key={aluno.codigo_aluno}
-                      className="flex items-center space-x-3 p-2 rounded-md border hover:bg-muted/50 cursor-pointer"
-                      onClick={() => toggleAluno(aluno.codigo_aluno)}
-                    >
-                      <Checkbox
-                        checked={alunosSelecionados.includes(aluno.codigo_aluno)}
-                        onCheckedChange={() => toggleAluno(aluno.codigo_aluno)}
-                      />
-                      <div>
-                        <p className="text-sm font-medium">{aluno.nome_aluno}</p>
-                        <p className="text-xs text-muted-foreground">
-                          Código: {aluno.codigo_aluno} {aluno.curso && `— ${aluno.curso}`}
-                        </p>
+                  {alunos.map((aluno) => {
+                    const jaTemIngresso = alunosComIngresso.includes(aluno.codigo_aluno);
+                    return (
+                      <div
+                        key={aluno.codigo_aluno}
+                        className={`flex items-center space-x-3 p-2 rounded-md border ${jaTemIngresso ? "opacity-50 cursor-not-allowed bg-muted/30" : "hover:bg-muted/50 cursor-pointer"}`}
+                        onClick={() => !jaTemIngresso && toggleAluno(aluno.codigo_aluno)}
+                      >
+                        <Checkbox
+                          checked={alunosSelecionados.includes(aluno.codigo_aluno)}
+                          onCheckedChange={() => !jaTemIngresso && toggleAluno(aluno.codigo_aluno)}
+                          disabled={jaTemIngresso}
+                        />
+                        <div>
+                          <p className="text-sm font-medium">{aluno.nome_aluno}</p>
+                          <p className="text-xs text-muted-foreground">
+                            Código: {aluno.codigo_aluno} {aluno.curso && `— ${aluno.curso}`}
+                          </p>
+                          {jaTemIngresso && (
+                            <p className="text-xs text-orange-600 font-medium">✅ Já possui ingresso para este evento</p>
+                          )}
+                        </div>
                       </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               )}
             </div>
