@@ -7,7 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useToast } from "@/hooks/use-toast";
-import { ArrowLeft, Plus, Pencil, Trash2, Eye, EyeOff, Users, Upload, X } from "lucide-react";
+import { ArrowLeft, Plus, Pencil, Trash2, Eye, EyeOff, Users, Upload, X, ScanLine } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
@@ -28,6 +28,7 @@ interface Evento {
   ativo: boolean;
   requer_autorizacao: boolean;
   tipo_evento: string;
+  is_excursao: boolean;
 }
 
 interface Ingresso {
@@ -64,6 +65,7 @@ const EventosAdmin = () => {
   const [maxParcelas, setMaxParcelas] = useState("");
   const [requerAutorizacao, setRequerAutorizacao] = useState(false);
   const [tipoEvento, setTipoEvento] = useState<"somente_alunos" | "alunos_convidados">("alunos_convidados");
+  const [isExcursao, setIsExcursao] = useState(false);
   const [imagemFile, setImagemFile] = useState<File | null>(null);
   const [imagemPreview, setImagemPreview] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
@@ -101,6 +103,7 @@ const EventosAdmin = () => {
     setVagasTotal("");
     setRequerAutorizacao(false);
     setTipoEvento("alunos_convidados");
+    setIsExcursao(false);
     setImagemFile(null);
     setImagemPreview(null);
     setEditingId(null);
@@ -120,6 +123,7 @@ const EventosAdmin = () => {
     setVagasTotal(String(evento.vagas_total));
     setRequerAutorizacao(evento.requer_autorizacao);
     setTipoEvento((evento.tipo_evento as "somente_alunos" | "alunos_convidados") || "alunos_convidados");
+    setIsExcursao(evento.is_excursao || false);
     setImagemFile(null);
     setImagemPreview(evento.imagem_url || null);
     setEditingId(evento.id);
@@ -179,6 +183,7 @@ const EventosAdmin = () => {
       vagas_disponiveis: vagasNum,
       requer_autorizacao: requerAutorizacao,
       tipo_evento: tipoEvento,
+      is_excursao: isExcursao,
     };
 
     if (editingId) {
@@ -246,10 +251,18 @@ const EventosAdmin = () => {
             <ArrowLeft className="w-4 h-4 mr-2" />
             Eventos
           </Link>
-          <Button onClick={() => { resetForm(); setShowForm(true); }} className="bg-green-600 hover:bg-green-700">
-            <Plus className="w-4 h-4 mr-2" />
-            Novo Evento
-          </Button>
+          <div className="flex gap-2">
+            <Link to="/eventos/admin/scanner">
+              <Button variant="outline" className="border-green-300 text-green-700 hover:bg-green-50">
+                <ScanLine className="w-4 h-4 mr-2" />
+                Scanner QR
+              </Button>
+            </Link>
+            <Button onClick={() => { resetForm(); setShowForm(true); }} className="bg-green-600 hover:bg-green-700">
+              <Plus className="w-4 h-4 mr-2" />
+              Novo Evento
+            </Button>
+          </div>
         </div>
 
         <h1 className="text-2xl font-bold text-green-800 mb-6">Painel Administrativo — Eventos</h1>
@@ -351,7 +364,17 @@ const EventosAdmin = () => {
                     <RadioGroupItem value="alunos_convidados" id="alunos_convidados" />
                     <Label htmlFor="alunos_convidados" className="cursor-pointer">Alunos + Convidados</Label>
                   </div>
-                </RadioGroup>
+              </RadioGroup>
+              </div>
+              <div className="flex items-center space-x-2">
+                <Checkbox
+                  id="is-excursao"
+                  checked={isExcursao}
+                  onCheckedChange={(checked) => setIsExcursao(checked === true)}
+                />
+                <label htmlFor="is-excursao" className="text-sm font-medium cursor-pointer">
+                  Evento é excursão?
+                </label>
               </div>
               <div className="flex gap-2">
                 <Button onClick={handleSave} className="bg-green-600 hover:bg-green-700" disabled={uploading}>

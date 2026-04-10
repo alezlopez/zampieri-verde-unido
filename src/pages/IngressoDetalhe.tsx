@@ -6,7 +6,7 @@ import { QRCodeSVG } from "qrcode.react";
 import { toPng } from "html-to-image";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { ArrowLeft, Download, Share2, Ticket, Clock } from "lucide-react";
+import { ArrowLeft, Download, Share2, Ticket, Clock, AlertTriangle, Info } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 
 interface IngressoCompleto {
@@ -22,6 +22,7 @@ interface IngressoCompleto {
     data_evento: string;
     horario: string | null;
     local: string | null;
+    is_excursao: boolean;
   } | null;
 }
 
@@ -42,7 +43,7 @@ const IngressoDetalhe = () => {
       if (!user || !id) return;
       const { data } = await supabase
         .from("ingressos")
-        .select("id, quantidade, status, nome_comprador, nome_participante, tipo_participante, created_at, eventos(titulo, data_evento, horario, local)")
+        .select("id, quantidade, status, nome_comprador, nome_participante, tipo_participante, created_at, eventos(titulo, data_evento, horario, local, is_excursao)")
         .eq("id", id)
         .eq("user_id", user.id)
         .single();
@@ -180,6 +181,23 @@ const IngressoDetalhe = () => {
               <QRCodeSVG value={ingresso.id} size={180} level="H" />
             </div>
             <p className="text-xs text-muted-foreground mt-2 font-mono">{ingresso.id.slice(0, 8).toUpperCase()}</p>
+
+            {/* Observação condicional */}
+            {evento?.is_excursao ? (
+              <div className="mt-4 w-full bg-amber-50 border-2 border-amber-400 rounded-lg p-4 flex gap-3 items-start">
+                <AlertTriangle className="w-6 h-6 text-amber-600 shrink-0 mt-0.5" />
+                <p className="text-sm text-amber-900 font-semibold leading-relaxed">
+                  Este QR Code <span className="underline">não é válido</span> para entrada no local da excursão. Deve ser apresentado na escola para efetivo controle do participante. O ingresso para entrada no evento será entregue pela escola no local do evento.
+                </p>
+              </div>
+            ) : (
+              <div className="mt-4 w-full bg-blue-50 border-2 border-blue-400 rounded-lg p-4 flex gap-3 items-start">
+                <Info className="w-6 h-6 text-blue-600 shrink-0 mt-0.5" />
+                <p className="text-sm text-blue-900 font-semibold leading-relaxed">
+                  Obrigatória a apresentação deste ingresso na entrada do evento.
+                </p>
+              </div>
+            )}
           </div>
         </div>
 
