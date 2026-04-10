@@ -102,23 +102,32 @@ const EventoCompra = () => {
     }
   }, [user]);
 
-  // Check for pending tickets
+  // Check for pending tickets + alunos que já têm ingresso
   useEffect(() => {
-    const checkPendentes = async () => {
+    const checkExistentes = async () => {
       if (!user || !id) {
         setLoadingPendentes(false);
         return;
       }
+      // Buscar todos os ingressos não-cancelados do usuário para este evento
       const { data } = await supabase
         .from("ingressos")
-        .select("id, nome_participante, checkout_url")
+        .select("id, nome_participante, checkout_url, status, codigo_aluno")
         .eq("evento_id", id)
         .eq("user_id", user.id)
-        .eq("status", "pendente");
-      if (data) setIngressosPendentes(data);
+        .in("status", ["pendente", "pago"]);
+
+      if (data) {
+        setIngressosPendentes(data.filter((i) => i.status === "pendente"));
+        // Coletar códigos de alunos que já têm ingresso pago ou pendente
+        const codigos = data
+          .filter((i) => i.codigo_aluno)
+          .map((i) => i.codigo_aluno as string);
+        setAlunosComIngresso(codigos);
+      }
       setLoadingPendentes(false);
     };
-    checkPendentes();
+    checkExistentes();
   }, [user, id]);
 
   // Fetch alunos by CPF
