@@ -5,7 +5,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { ArrowLeft, Ticket, LogOut, ExternalLink } from "lucide-react";
+import { ArrowLeft, Ticket, LogOut, ExternalLink, Eye } from "lucide-react";
 
 interface IngressoComEvento {
   id: string;
@@ -116,6 +116,16 @@ const MeusIngressos = () => {
                       {ingresso.status}
                     </Badge>
                   </div>
+                  {ingresso.status === "pago" && (
+                    <div className="mt-3">
+                      <Link to={`/eventos/ingresso/${ingresso.id}`}>
+                        <Button size="sm" className="bg-green-600 hover:bg-green-700 w-full">
+                          <Eye className="w-4 h-4 mr-2" />
+                          Ver Ingresso
+                        </Button>
+                      </Link>
+                    </div>
+                  )}
                   {ingresso.status === "pendente" && ingresso.checkout_url && (
                     <div className="mt-3">
                      <Button
