@@ -187,6 +187,25 @@ const EventoCompra = () => {
 
     setSubmitting(true);
     try {
+      // Re-fetch vagas disponíveis para garantir dados atualizados
+      const { data: eventoAtual } = await supabase
+        .from("eventos")
+        .select("vagas_disponiveis")
+        .eq("id", evento.id)
+        .single();
+
+      if (eventoAtual) {
+        setEvento((prev) => prev ? { ...prev, vagas_disponiveis: eventoAtual.vagas_disponiveis } : prev);
+        if (eventoAtual.vagas_disponiveis < totalParticipantes) {
+          toast({
+            title: "Vagas insuficientes",
+            description: `Restam apenas ${eventoAtual.vagas_disponiveis} vaga(s) disponível(is).`,
+            variant: "destructive",
+          });
+          setSubmitting(false);
+          return;
+        }
+      }
       const records: any[] = [];
 
       // Alunos
@@ -493,6 +512,17 @@ const EventoCompra = () => {
                     <span className="text-muted-foreground text-sm">Participantes:</span>
                     <span className="font-medium">{totalParticipantes}</span>
                   </div>
+                  <div className="flex justify-between items-center mb-1">
+                    <span className="text-muted-foreground text-sm">Vagas disponíveis:</span>
+                    <span className={`font-medium ${evento.vagas_disponiveis < 5 ? "text-red-600" : "text-green-700"}`}>
+                      {evento.vagas_disponiveis}
+                    </span>
+                  </div>
+                  {totalParticipantes > evento.vagas_disponiveis && (
+                    <p className="text-sm text-red-600 font-medium mb-2">
+                      ⚠️ Não há vagas suficientes para {totalParticipantes} participante(s).
+                    </p>
+                  )}
                   <div className="flex justify-between items-center mb-4">
                     <span className="text-muted-foreground">Total:</span>
                     <span className="text-2xl font-bold text-green-700">
@@ -502,7 +532,7 @@ const EventoCompra = () => {
                   <Button
                     onClick={handleComprar}
                     className="w-full bg-green-600 hover:bg-green-700"
-                    disabled={submitting || totalParticipantes === 0}
+                    disabled={submitting || totalParticipantes === 0 || totalParticipantes > evento.vagas_disponiveis}
                   >
                     {submitting ? "Processando..." : "Reservar Ingressos"}
                   </Button>
