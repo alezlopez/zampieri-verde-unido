@@ -1,82 +1,26 @@
 
 
-## Plano: Controle automático de vagas disponíveis
+## Plano: Bloquear compra quando vagas = 0
 
-### Problema atual
-O campo `vagas_disponiveis` nos eventos não é atualizado quando ingressos são criados, pagos ou cancelados. O controle precisa ser automático via banco de dados.
+### O que já funciona
+- `Eventos.tsx` (listagem): já mostra botão "Esgotado" quando `vagas_disponiveis <= 0`
+- `EventoCompra.tsx`: já desabilita o botão quando `totalParticipantes > vagas_disponiveis`
 
-### Solução: Trigger no banco de dados
+### O que falta
+1. **Na página de compra (`EventoCompra.tsx`)**: quando `vagas_disponiveis === 0`, exibir um aviso grande de "Esgotado" e esconder todo o formulário de compra, impedindo qualquer interação. Isso cobre o caso de acesso direto pela URL.
 
-Criar um trigger na tabela `ingressos` que ajusta `vagas_disponiveis` automaticamente:
-
-- **INSERT** com status `pendente` ou `pago` → decrementa `vagas_disponiveis` pela quantidade
-- **UPDATE de status para `cancelado`** → incrementa `vagas_disponiveis` (devolve vagas)
-- **UPDATE de status de `cancelado` para `pago`/`pendente`** → decrementa novamente
-- **DELETE** de ingresso não-cancelado → incrementa (devolve vagas)
-
-### Validação no frontend
-
-Na página de compra (`EventoCompra.tsx`):
-- Verificar se `vagas_disponiveis >= totalParticipantes` antes de permitir a reserva
-- Exibir vagas disponíveis ao usuário
-- Desabilitar botão se não houver vagas suficientes
+2. **Na listagem (`Eventos.tsx`)**: o comportamento já está correto (botão desabilitado + texto "Esgotado"). Vou adicionar um badge vermelho "ESGOTADO" visível no card para destaque maior.
 
 ### Arquivos afetados
 
 | Arquivo | Alteração |
 |---|---|
-| Migração SQL | Criar função + trigger em `ingressos` para controlar `vagas_disponiveis` |
-| `src/pages/EventoCompra.tsx` | Validar vagas antes de reservar, mostrar vagas disponíveis |
-| `src/pages/Eventos.tsx` | Exibir vagas disponíveis nos cards (se não exibe já) |
+| `src/pages/EventoCompra.tsx` | Bloquear formulário inteiro se `vagas_disponiveis === 0`, exibir mensagem "Esgotado" |
+| `src/pages/Eventos.tsx` | Adicionar badge "ESGOTADO" no card quando vagas = 0 |
 
-### Detalhes técnicos — Trigger SQL
+### Detalhes técnicos
 
-```sql
-CREATE OR REPLACE FUNCTION public.atualizar_vagas_disponiveis()
-RETURNS trigger
-LANGUAGE plpgsql
-SECURITY DEFINER
-SET search_path TO 'public'
-AS $$
-BEGIN
-  -- INSERT: novo ingresso não-cancelado diminui vagas
-  IF TG_OP = 'INSERT' AND NEW.status != 'cancelado' THEN
-    UPDATE eventos SET vagas_disponiveis = vagas_disponiveis - NEW.quantidade
-    WHERE id = NEW.evento_id;
-  END IF;
+Em `EventoCompra.tsx`, após carregar o evento, se `evento.vagas_disponiveis <= 0`, renderizar uma tela de bloqueio com mensagem "Este evento está esgotado" e botão para voltar à listagem, sem exibir formulário.
 
-  -- UPDATE: mudança de status
-  IF TG_OP = 'UPDATE' AND OLD.status != NEW.status THEN
-    -- Cancelou → devolve vagas
-    IF NEW.status = 'cancelado' AND OLD.status != 'cancelado' THEN
-      UPDATE eventos SET vagas_disponiveis = vagas_disponiveis + OLD.quantidade
-      WHERE id = OLD.evento_id;
-    END IF;
-    -- Saiu de cancelado → tira vagas
-    IF OLD.status = 'cancelado' AND NEW.status != 'cancelado' THEN
-      UPDATE eventos SET vagas_disponiveis = vagas_disponiveis - NEW.quantidade
-      WHERE id = NEW.evento_id;
-    END IF;
-  END IF;
-
-  -- DELETE: ingresso não-cancelado → devolve vagas
-  IF TG_OP = 'DELETE' AND OLD.status != 'cancelado' THEN
-    UPDATE eventos SET vagas_disponiveis = vagas_disponiveis + OLD.quantidade
-    WHERE id = OLD.evento_id;
-  END IF;
-
-  RETURN COALESCE(NEW, OLD);
-END;
-$$;
-
-CREATE TRIGGER trg_atualizar_vagas
-AFTER INSERT OR UPDATE OF status OR DELETE
-ON public.ingressos
-FOR EACH ROW
-EXECUTE FUNCTION public.atualizar_vagas_disponiveis();
-```
-
-### Validação no frontend
-
-Em `EventoCompra.tsx`, antes de inserir, re-fetch o evento para pegar `vagas_disponiveis` atualizado e bloquear se insuficiente. Exibir quantidade disponível na tela de compra.
+Em `Eventos.tsx`, adicionar um `<Badge variant="destructive">ESGOTADO</Badge>` no card header e aplicar opacidade reduzida na imagem quando vagas = 0.
 
