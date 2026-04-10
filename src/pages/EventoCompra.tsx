@@ -324,6 +324,28 @@ const EventoCompra = () => {
     );
   }
 
+  if (evento.vagas_disponiveis <= 0) {
+    return (
+      <div className="min-h-screen bg-gradient-to-b from-green-50 to-white flex items-center justify-center px-4">
+        <Card className="max-w-md w-full text-center border-red-200 shadow-lg">
+          <CardContent className="py-10 space-y-4">
+            <div className="text-5xl">🚫</div>
+            <h2 className="text-2xl font-bold text-red-700">Evento Esgotado</h2>
+            <p className="text-muted-foreground">
+              Este evento não possui mais vagas disponíveis.
+            </p>
+            <Link to="/eventos">
+              <Button variant="outline" className="mt-4">
+                <ArrowLeft className="w-4 h-4 mr-2" />
+                Voltar para eventos
+              </Button>
+            </Link>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
   const formatDate = (dateStr: string) => {
     const date = new Date(dateStr + "T00:00:00");
     return date.toLocaleDateString("pt-BR", { day: "2-digit", month: "long", year: "numeric" });
