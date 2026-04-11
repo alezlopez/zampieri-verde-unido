@@ -44,7 +44,16 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (_event, session) => {
+      async (event, session) => {
+        if (event === 'TOKEN_REFRESHED' && !session) {
+          console.warn('Token refresh failed, clearing stale session');
+          supabase.auth.signOut();
+          setSession(null);
+          setUser(null);
+          setIsAdmin(false);
+          setLoading(false);
+          return;
+        }
         setSession(session);
         setUser(session?.user ?? null);
         if (session?.user) {
@@ -101,6 +110,21 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     if (!error && data && data.length > 0) {
       return { email: data[0].email, nome: data[0].nome };
+    }
+
+    if (error) {
+      console.error("find_email_by_cpf RPC error:", error.message);
+      // Retry once after clearing potentially stale session
+      await supabase.auth.signOut();
+      const { data: retryData, error: retryError } = await supabase.rpc("find_email_by_cpf", {
+        p_cpf: cpfClean,
+      });
+      if (retryError) {
+        console.error("find_email_by_cpf retry failed:", retryError.message);
+      }
+      if (!retryError && retryData && retryData.length > 0) {
+        return { email: retryData[0].email, nome: retryData[0].nome };
+      }
     }
 
     return { email: null, nome: null };
