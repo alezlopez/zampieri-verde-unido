@@ -91,11 +91,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const cleanCpf = (cpf: string) => cpf.replace(/\D/g, "");
 
-  const formatCpfWithDash = (cpf: string) => {
-    const clean = cpf.replace(/\D/g, "");
-    if (clean.length === 11) return `${clean.slice(0, 9)}-${clean.slice(9)}`;
-    return clean;
-  };
 
   const findEmailByCpf = async (cpf: string): Promise<{ email: string | null; nome: string | null }> => {
     const cpfClean = cleanCpf(cpf);
