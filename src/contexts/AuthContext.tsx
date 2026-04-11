@@ -11,7 +11,7 @@ interface AuthContextType {
   signUp: (email: string, password: string) => Promise<{ error: any }>;
   signOut: () => Promise<void>;
   loginWithCpf: (cpf: string, password: string) => Promise<{ error: any }>;
-  registerWithCpf: (cpf: string, password: string) => Promise<{ error: any; needsConfirmation?: boolean }>;
+  registerWithCpf: (cpf: string, password: string) => Promise<{ error: any; needsConfirmation?: boolean; email?: string }>;
 }
 
 const AuthContext = createContext<AuthContextType>({} as AuthContextType);
@@ -157,7 +157,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     });
 
     if (error) return { error };
-    return { error: null, needsConfirmation: true };
+    return { error: null, needsConfirmation: true, email };
   };
 
   return (
