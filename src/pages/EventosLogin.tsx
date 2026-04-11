@@ -153,6 +153,18 @@ const EventosLogin = () => {
             </CardDescription>
           </CardHeader>
           <CardContent>
+            {!isForgotPassword && !isAdminLogin && (
+              <div className="mb-4 p-3 bg-green-50 border border-green-200 rounded-lg text-sm text-green-800">
+                Utilize o mesmo login do portal do aluno. Caso não tenha cadastro,{" "}
+                <button
+                  type="button"
+                  onClick={() => setIsRegister(true)}
+                  className="font-semibold underline hover:text-green-900"
+                >
+                  cadastre sua senha clicando aqui
+                </button>.
+              </div>
+            )}
             {isForgotPassword ? (
               <form onSubmit={handleForgotPassword} className="space-y-4">
                 {isAdminLogin ? (
