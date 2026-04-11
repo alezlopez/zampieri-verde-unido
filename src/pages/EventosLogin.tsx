@@ -99,13 +99,14 @@ const EventosLogin = () => {
           navigate("/eventos");
         }
       } else if (isRegister) {
-        const { error, needsConfirmation } = await registerWithCpf(cpf, password);
+        const { error, needsConfirmation, email } = await registerWithCpf(cpf, password);
         if (error) {
           toast({ title: "Erro no cadastro", description: error.message, variant: "destructive" });
         } else if (needsConfirmation) {
+          const masked = email ? maskEmail(email) : "seu e-mail";
           toast({
             title: "Cadastro realizado!",
-            description: "Verifique seu e-mail para confirmar a conta.",
+            description: `Link de confirmação enviado para ${masked}. Verifique sua caixa de entrada.`,
           });
         }
       } else {
