@@ -2,6 +2,7 @@
 import { useState } from "react";
 import { Menu, Phone } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import logoZampieri from "@/assets/logo-zampieri.png";
 
 interface HeaderProps {
   activeSection: string;
@@ -32,7 +33,7 @@ export const Header = ({ activeSection }: HeaderProps) => {
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-2 md:space-x-3">
             <img 
-              src="https://lzdhrtcugqnqmyapgmbs.supabase.co/storage/v1/object/public/zampieri/logo%20zampieri.webp" 
+              src={logoZampieri}
               alt="Colégio Zampieri" 
               className="h-10 w-10 md:h-12 md:w-12"
             />

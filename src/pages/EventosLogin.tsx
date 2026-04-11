@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
 import { Eye, EyeOff, ArrowLeft } from "lucide-react";
+import logoZampieri from "@/assets/logo-zampieri.png";
 
 const EventosLogin = () => {
   const [isRegister, setIsRegister] = useState(false);
@@ -82,7 +83,7 @@ const EventosLogin = () => {
         <Card className="border-green-100 shadow-lg">
           <CardHeader className="text-center">
             <img
-              src="https://lzdhrtcugqnqmyapgmbs.supabase.co/storage/v1/object/public/zampieri/logo%20zampieri.webp"
+                src={logoZampieri}
               alt="Logo"
               className="h-16 w-16 rounded-full mx-auto mb-3"
             />
