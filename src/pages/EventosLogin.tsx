@@ -9,6 +9,13 @@ import { useToast } from "@/hooks/use-toast";
 import { Eye, EyeOff, ArrowLeft } from "lucide-react";
 import logoZampieri from "@/assets/logo-zampieri.png";
 
+const maskEmail = (email: string): string => {
+  const [local, domain] = email.split("@");
+  if (!domain) return "******";
+  const visible = local.slice(-4);
+  return `******${visible}@${domain}`;
+};
+
 const EventosLogin = () => {
   const [isRegister, setIsRegister] = useState(false);
   const [cpf, setCpf] = useState("");
