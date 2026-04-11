@@ -848,6 +848,14 @@ export type Database = {
           vagas_disponiveis: number
         }[]
       }
+      find_alunos_by_cpf: {
+        Args: { p_cpf: string }
+        Returns: {
+          codigo_aluno: string
+          curso: string
+          nome_aluno: string
+        }[]
+      }
       find_email_by_cpf: {
         Args: { p_cpf: string }
         Returns: {

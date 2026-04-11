@@ -138,15 +138,11 @@ const EventoCompra = () => {
         return;
       }
       const cpf = (user.user_metadata.cpf as string).replace(/\D/g, "");
-      const cpfDash = cpf.length === 11 ? `${cpf.slice(0, 9)}-${cpf.slice(9)}` : cpf;
 
-      const { data } = await supabase
-        .from("alunos_26")
-        .select("codigo_aluno, nome_aluno, curso")
-        .or(`cpf_pai.eq.${cpf},cpf_mae.eq.${cpf},cpf_pai.eq.${cpfDash},cpf_mae.eq.${cpfDash}`);
+      const { data } = await supabase.rpc("find_alunos_by_cpf", { p_cpf: cpf });
 
       if (data) {
-        const validAlunos = data.filter((a) => a.codigo_aluno && a.nome_aluno) as Aluno[];
+        const validAlunos = data.filter((a: any) => a.codigo_aluno && a.nome_aluno) as Aluno[];
         setAlunos(validAlunos);
       }
       setLoadingAlunos(false);
