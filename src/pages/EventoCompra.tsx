@@ -310,9 +310,11 @@ const EventoCompra = () => {
 
       toast({
         title: "Ingressos reservados!",
-        description: `${records.length} ingresso(s) reservado(s). Aguarde o link de pagamento.`,
+        description: `${records.length} ingresso(s) reservado(s). Aguarde o link de pagamento. Redirecionando em 10 segundos...`,
       });
-      navigate("/eventos/meus-ingressos");
+      setTimeout(() => {
+        navigate("/eventos/meus-ingressos");
+      }, 10000);
     } catch (err: any) {
       toast({ title: "Erro ao reservar ingressos", description: err.message, variant: "destructive" });
     } finally {
