@@ -7,6 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Footer } from "@/components/Footer";
+import logoZampieri from "@/assets/logo-zampieri.png";
 
 interface Evento {
   id: string;
@@ -60,7 +61,7 @@ const Eventos = () => {
         <div className="container mx-auto px-4 flex items-center justify-between">
           <Link to="/" className="flex items-center space-x-3">
             <img
-              src="https://lzdhrtcugqnqmyapgmbs.supabase.co/storage/v1/object/public/zampieri/logo%20zampieri.webp"
+              src={logoZampieri}
               alt="Logo Zampieri"
               className="h-10 w-10 rounded-full"
             />
