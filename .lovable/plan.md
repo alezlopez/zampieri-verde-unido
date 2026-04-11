@@ -1,31 +1,54 @@
 
 
-## Problem Analysis
+## Problem
 
-The "CPF não encontrado na base de alunos" error occurs despite the `find_email_by_cpf` RPC working correctly at the database level. The root cause is likely:
+The user `alexandrezlopez@gmail.com` (CPF 37119355830) has **no `cpf` in their `user_metadata`**. The `EventoCompra` page checks `user.user_metadata.cpf` to call `find_alunos_by_cpf` -- when it's null/undefined, it skips the RPC call entirely and shows "Nenhum aluno encontrado."
 
-1. **Stale session interference**: The console shows `AuthApiError: Invalid Refresh Token: Refresh Token Not Found`. This corrupted session state can cause the Supabase client to fail on subsequent calls (including the RPC), returning an error instead of data.
+This affects any user who:
+- Registered before CPF metadata was added
+- Logged in via admin email path
+- Had a session where `updateUser` didn't persist
 
-2. **Missing error logging**: The `findEmailByCpf` function silently returns `null` on error, making it impossible to distinguish between "CPF not found" and "RPC call failed due to auth error".
+The CPF 29906715871 works because that user (`claudiceia3411@gmail.com`) was registered via `registerWithCpf`, which stores CPF at signup time.
 
-## Plan
+## Solution
 
-### 1. Fix AuthContext to handle stale sessions
-In `src/contexts/AuthContext.tsx`, update the `onAuthStateChange` handler to catch and clear invalid sessions (sign out on `TOKEN_REFRESHED` failure), preventing the corrupted client state.
+Two changes to make this work reliably for **all** CPFs:
 
-### 2. Add error handling and logging to `findEmailByCpf`
-Update the function to log errors so we can see if the RPC is failing vs returning no data. Also, if there's an error, attempt the call after signing out the stale session.
+### 1. New database RPC: `find_alunos_by_email`
+Create a `SECURITY DEFINER` function that looks up students by matching a parent's email address in `alunos_26`. This serves as a fallback when CPF is not available in metadata.
 
-### 3. Ensure the RPC call succeeds even with no session
-Add a fallback: if the RPC returns an error (possibly due to bad auth state), call `supabase.auth.signOut()` to clear the bad session and retry the RPC once.
+```sql
+CREATE OR REPLACE FUNCTION public.find_alunos_by_email(p_email text)
+RETURNS TABLE(codigo_aluno text, nome_aluno text, curso text)
+LANGUAGE plpgsql SECURITY DEFINER SET search_path = public
+AS $$
+BEGIN
+  RETURN QUERY
+  SELECT a.codigo_aluno, a.nome_aluno, a.curso
+  FROM alunos_26 a
+  WHERE lower(trim(a.email_pai)) = lower(trim(p_email))
+     OR lower(trim(a.email_mae)) = lower(trim(p_email));
+END;
+$$;
+```
 
-### Technical Details
+### 2. Update `EventoCompra.tsx` fetchAlunos logic
+Change the student lookup to:
+1. First try by CPF from `user_metadata.cpf` (current behavior)
+2. If CPF is missing, fall back to looking up by the user's email via the new RPC
+3. If both fail, show the "no students" message
 
-**File: `src/contexts/AuthContext.tsx`**
+```text
+Flow:
+  user has cpf in metadata? 
+    → YES → call find_alunos_by_cpf(cpf)
+    → NO  → call find_alunos_by_email(user.email)
+```
 
-- In `findEmailByCpf`: add `console.error` when `error` is present
-- In `onAuthStateChange`: handle `TOKEN_REFRESHED` errors by clearing session
-- Add retry logic: if RPC fails with auth error, sign out stale session and retry
+This ensures every logged-in user whose email matches a parent record in `alunos_26` will see their students, regardless of how they logged in or whether their metadata contains a CPF.
 
-**File: `src/pages/EventosLogin.tsx`** (no changes needed - it correctly delegates to AuthContext)
+### Files affected
+- **New migration**: `find_alunos_by_email` RPC
+- **`src/pages/EventoCompra.tsx`**: Update `fetchAlunos` useEffect with email fallback
 
