@@ -131,9 +131,16 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const loginWithCpf = async (cpf: string, password: string) => {
-    const { email } = await findEmailByCpf(cpf);
+    const { email, nome } = await findEmailByCpf(cpf);
     if (!email) return { error: { message: "CPF não encontrado na base de alunos." } };
-    return signIn(email, password);
+    const result = await signIn(email, password);
+    if (!result.error) {
+      // Store CPF in user metadata so EventoCompra can use it
+      await supabase.auth.updateUser({
+        data: { cpf: cleanCpf(cpf), nome: nome || undefined },
+      });
+    }
+    return result;
   };
 
   const registerWithCpf = async (cpf: string, password: string) => {
