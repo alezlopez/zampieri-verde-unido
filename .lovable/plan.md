@@ -1,26 +1,26 @@
 
 
-## Plano: Bloquear compra quando vagas = 0
+## Plano: Adicionar status "estornado" com link de comprovante
 
-### O que já funciona
-- `Eventos.tsx` (listagem): já mostra botão "Esgotado" quando `vagas_disponiveis <= 0`
-- `EventoCompra.tsx`: já desabilita o botão quando `totalParticipantes > vagas_disponiveis`
+### Alterações no banco de dados (migration)
+1. Adicionar coluna `comprovante_estorno_url` (text, nullable) na tabela `ingressos`
 
-### O que falta
-1. **Na página de compra (`EventoCompra.tsx`)**: quando `vagas_disponiveis === 0`, exibir um aviso grande de "Esgotado" e esconder todo o formulário de compra, impedindo qualquer interação. Isso cobre o caso de acesso direto pela URL.
+### Alterações no frontend
 
-2. **Na listagem (`Eventos.tsx`)**: o comportamento já está correto (botão desabilitado + texto "Esgotado"). Vou adicionar um badge vermelho "ESGOTADO" visível no card para destaque maior.
+**`src/pages/MeusIngressos.tsx`**
+- Adicionar cor para status `estornado` no mapa `statusColors` (ex: roxo/purple)
+- Quando `status === "estornado"` e `comprovante_estorno_url` existir, exibir botão "Ver Comprovante de Estorno" que abre o link em nova aba
+- Incluir `comprovante_estorno_url` no select da query
 
-### Arquivos afetados
+**`src/pages/IngressoDetalhe.tsx`**
+- Tratar status `estornado` similar ao fluxo de "não pago": exibir tela informativa com ícone e mensagem "Ingresso Estornado", com botão para ver o comprovante quando disponível
+- Incluir `comprovante_estorno_url` no select da query
 
-| Arquivo | Alteração |
+### Resumo de arquivos
+
+| Arquivo | Mudança |
 |---|---|
-| `src/pages/EventoCompra.tsx` | Bloquear formulário inteiro se `vagas_disponiveis === 0`, exibir mensagem "Esgotado" |
-| `src/pages/Eventos.tsx` | Adicionar badge "ESGOTADO" no card quando vagas = 0 |
-
-### Detalhes técnicos
-
-Em `EventoCompra.tsx`, após carregar o evento, se `evento.vagas_disponiveis <= 0`, renderizar uma tela de bloqueio com mensagem "Este evento está esgotado" e botão para voltar à listagem, sem exibir formulário.
-
-Em `Eventos.tsx`, adicionar um `<Badge variant="destructive">ESGOTADO</Badge>` no card header e aplicar opacidade reduzida na imagem quando vagas = 0.
+| Migration SQL | `ALTER TABLE ingressos ADD COLUMN comprovante_estorno_url text` |
+| `src/pages/MeusIngressos.tsx` | Novo status visual + botão comprovante |
+| `src/pages/IngressoDetalhe.tsx` | Tela de estorno + link comprovante |
 
