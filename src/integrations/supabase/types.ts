@@ -751,6 +751,27 @@ export type Database = {
         }
         Relationships: []
       }
+      responsaveis_senhas: {
+        Row: {
+          cpf: string
+          created_at: string
+          id: string
+          senha_hash: string
+        }
+        Insert: {
+          cpf: string
+          created_at?: string
+          id?: string
+          senha_hash: string
+        }
+        Update: {
+          cpf?: string
+          created_at?: string
+          id?: string
+          senha_hash?: string
+        }
+        Relationships: []
+      }
       user_profiles: {
         Row: {
           created_at: string
