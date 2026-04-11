@@ -848,6 +848,13 @@ export type Database = {
           vagas_disponiveis: number
         }[]
       }
+      find_email_by_cpf: {
+        Args: { p_cpf: string }
+        Returns: {
+          email: string
+          nome: string
+        }[]
+      }
       get_vagas_disponiveis: {
         Args: never
         Returns: {
