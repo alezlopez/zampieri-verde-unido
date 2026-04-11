@@ -66,6 +66,8 @@ const EventosLogin = () => {
         return;
       }
 
+      const masked = maskEmail(email);
+
       const { error } = await supabase.auth.resetPasswordForEmail(email, {
         redirectTo: `${window.location.origin}/reset-password`,
       });
@@ -73,7 +75,7 @@ const EventosLogin = () => {
       if (error) {
         toast({ title: "Erro", description: error.message, variant: "destructive" });
       } else {
-        toast({ title: "E-mail enviado!", description: "Verifique sua caixa de entrada para redefinir a senha." });
+        toast({ title: "E-mail enviado!", description: `Link de redefinição enviado para ${masked}` });
         setIsForgotPassword(false);
       }
     } catch {
