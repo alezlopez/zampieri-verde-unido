@@ -15,6 +15,7 @@ interface IngressoComEvento {
   nome_participante: string | null;
   tipo_participante: string;
   checkout_url: string | null;
+  comprovante_estorno_url: string | null;
   created_at: string;
   eventos: { titulo: string; data_evento: string; horario: string | null; local: string | null } | null;
 }
@@ -23,6 +24,7 @@ const statusColors: Record<string, string> = {
   pendente: "bg-yellow-100 text-yellow-800 border-yellow-300",
   pago: "bg-green-100 text-green-800 border-green-300",
   cancelado: "bg-red-100 text-red-800 border-red-300",
+  estornado: "bg-purple-100 text-purple-800 border-purple-300",
 };
 
 const MeusIngressos = () => {
@@ -40,7 +42,7 @@ const MeusIngressos = () => {
       if (!user) return;
       const { data } = await supabase
         .from("ingressos")
-        .select("id, quantidade, status, nome_comprador, nome_participante, tipo_participante, checkout_url, created_at, eventos(titulo, data_evento, horario, local)")
+        .select("id, quantidade, status, nome_comprador, nome_participante, tipo_participante, checkout_url, comprovante_estorno_url, created_at, eventos(titulo, data_evento, horario, local)")
         .eq("user_id", user.id)
         .order("created_at", { ascending: false });
 
@@ -124,6 +126,23 @@ const MeusIngressos = () => {
                           Ver Ingresso
                         </Button>
                       </Link>
+                    </div>
+                  )}
+                  {ingresso.status === "estornado" && (
+                    <div className="mt-3">
+                      {ingresso.comprovante_estorno_url ? (
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          className="border-purple-300 text-purple-700 hover:bg-purple-50 w-full"
+                          onClick={() => window.open(ingresso.comprovante_estorno_url!, "_blank")}
+                        >
+                          <ExternalLink className="w-4 h-4 mr-2" />
+                          Ver Comprovante de Estorno
+                        </Button>
+                      ) : (
+                        <p className="text-xs text-muted-foreground">Estorno realizado. Comprovante ainda não disponível.</p>
+                      )}
                     </div>
                   )}
                   {ingresso.status === "pendente" && ingresso.checkout_url && (

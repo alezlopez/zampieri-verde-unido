@@ -6,7 +6,7 @@ import { QRCodeSVG } from "qrcode.react";
 import { toPng } from "html-to-image";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { ArrowLeft, Download, Share2, Ticket, Clock, AlertTriangle, Info } from "lucide-react";
+import { ArrowLeft, Download, Share2, Ticket, Clock, AlertTriangle, Info, RotateCcw, ExternalLink } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 
 interface IngressoCompleto {
@@ -16,6 +16,7 @@ interface IngressoCompleto {
   nome_comprador: string;
   nome_participante: string | null;
   tipo_participante: string;
+  comprovante_estorno_url: string | null;
   created_at: string;
   eventos: {
     titulo: string;
@@ -43,7 +44,7 @@ const IngressoDetalhe = () => {
       if (!user || !id) return;
       const { data } = await supabase
         .from("ingressos")
-        .select("id, quantidade, status, nome_comprador, nome_participante, tipo_participante, created_at, eventos(titulo, data_evento, horario, local, is_excursao)")
+        .select("id, quantidade, status, nome_comprador, nome_participante, tipo_participante, comprovante_estorno_url, created_at, eventos(titulo, data_evento, horario, local, is_excursao)")
         .eq("id", id)
         .eq("user_id", user.id)
         .single();
@@ -93,6 +94,34 @@ const IngressoDetalhe = () => {
         <Link to="/eventos/meus-ingressos">
           <Button variant="outline"><ArrowLeft className="w-4 h-4 mr-2" />Voltar</Button>
         </Link>
+      </div>
+    );
+  }
+
+  if (ingresso.status === "estornado") {
+    return (
+      <div className="min-h-screen bg-gradient-to-b from-green-50 to-white py-8 px-4">
+        <div className="container mx-auto max-w-md text-center">
+          <Link to="/eventos/meus-ingressos" className="inline-flex items-center text-green-700 hover:text-green-800 mb-6">
+            <ArrowLeft className="w-4 h-4 mr-2" />Meus Ingressos
+          </Link>
+          <div className="bg-white rounded-2xl shadow-lg p-8 mt-4">
+            <RotateCcw className="w-16 h-16 text-purple-500 mx-auto mb-4" />
+            <h2 className="text-xl font-bold text-gray-800 mb-2">Ingresso Estornado</h2>
+            <p className="text-muted-foreground mb-4">
+              Este ingresso foi estornado e não é mais válido.
+            </p>
+            {ingresso.comprovante_estorno_url && (
+              <Button
+                className="bg-purple-600 hover:bg-purple-700"
+                onClick={() => window.open(ingresso.comprovante_estorno_url!, "_blank")}
+              >
+                <ExternalLink className="w-4 h-4 mr-2" />
+                Ver Comprovante de Estorno
+              </Button>
+            )}
+          </div>
+        </div>
       </div>
     );
   }
