@@ -9,6 +9,13 @@ import { useToast } from "@/hooks/use-toast";
 import { Eye, EyeOff, ArrowLeft } from "lucide-react";
 import logoZampieri from "@/assets/logo-zampieri.png";
 
+const maskEmail = (email: string): string => {
+  const [local, domain] = email.split("@");
+  if (!domain) return "******";
+  const visible = local.slice(-4);
+  return `******${visible}@${domain}`;
+};
+
 const EventosLogin = () => {
   const [isRegister, setIsRegister] = useState(false);
   const [cpf, setCpf] = useState("");
@@ -59,6 +66,8 @@ const EventosLogin = () => {
         return;
       }
 
+      const masked = maskEmail(email);
+
       const { error } = await supabase.auth.resetPasswordForEmail(email, {
         redirectTo: `${window.location.origin}/reset-password`,
       });
@@ -66,7 +75,7 @@ const EventosLogin = () => {
       if (error) {
         toast({ title: "Erro", description: error.message, variant: "destructive" });
       } else {
-        toast({ title: "E-mail enviado!", description: "Verifique sua caixa de entrada para redefinir a senha." });
+        toast({ title: "E-mail enviado!", description: `Link de redefinição enviado para ${masked}` });
         setIsForgotPassword(false);
       }
     } catch {
