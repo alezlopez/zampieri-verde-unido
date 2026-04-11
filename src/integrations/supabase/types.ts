@@ -877,6 +877,14 @@ export type Database = {
           nome_aluno: string
         }[]
       }
+      find_alunos_by_email: {
+        Args: { p_email: string }
+        Returns: {
+          codigo_aluno: string
+          curso: string
+          nome_aluno: string
+        }[]
+      }
       find_email_by_cpf: {
         Args: { p_cpf: string }
         Returns: {
