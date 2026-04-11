@@ -395,6 +395,7 @@ export type Database = {
           checkout_id: string | null
           checkout_url: string | null
           codigo_aluno: string | null
+          comprovante_estorno_url: string | null
           cpf_participante: string | null
           created_at: string
           data_nascimento_participante: string | null
@@ -415,6 +416,7 @@ export type Database = {
           checkout_id?: string | null
           checkout_url?: string | null
           codigo_aluno?: string | null
+          comprovante_estorno_url?: string | null
           cpf_participante?: string | null
           created_at?: string
           data_nascimento_participante?: string | null
@@ -435,6 +437,7 @@ export type Database = {
           checkout_id?: string | null
           checkout_url?: string | null
           codigo_aluno?: string | null
+          comprovante_estorno_url?: string | null
           cpf_participante?: string | null
           created_at?: string
           data_nascimento_participante?: string | null

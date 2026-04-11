@@ -1,0 +1,1 @@
+ALTER TABLE public.ingressos ADD COLUMN comprovante_estorno_url text;
