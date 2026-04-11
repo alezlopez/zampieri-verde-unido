@@ -16,6 +16,7 @@ import EventosAdmin from "./pages/EventosAdmin";
 import MeusIngressos from "./pages/MeusIngressos";
 import IngressoDetalhe from "./pages/IngressoDetalhe";
 import ScannerIngressos from "./pages/ScannerIngressos";
+import ResetPassword from "./pages/ResetPassword";
 
 const queryClient = new QueryClient();
 
@@ -38,6 +39,7 @@ const App = () => (
             <Route path="/eventos/meus-ingressos" element={<MeusIngressos />} />
             <Route path="/eventos/ingresso/:id" element={<IngressoDetalhe />} />
             <Route path="/eventos/admin/scanner" element={<ScannerIngressos />} />
+            <Route path="/reset-password" element={<ResetPassword />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>

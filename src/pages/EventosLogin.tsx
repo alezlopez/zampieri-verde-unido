@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
+import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -16,6 +17,9 @@ const EventosLogin = () => {
   const [loading, setLoading] = useState(false);
   const [isAdminLogin, setIsAdminLogin] = useState(false);
   const [adminEmail, setAdminEmail] = useState("");
+  const [isForgotPassword, setIsForgotPassword] = useState(false);
+  const [forgotEmail, setForgotEmail] = useState("");
+  const [forgotCpf, setForgotCpf] = useState("");
 
   const { loginWithCpf, registerWithCpf, signIn } = useAuth();
   const navigate = useNavigate();
@@ -31,6 +35,45 @@ const EventosLogin = () => {
 
   const handleCpfChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setCpf(formatCpf(e.target.value));
+  };
+
+  const handleForgotPassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+    try {
+      let email = forgotEmail;
+
+      if (!isAdminLogin && forgotCpf) {
+        const { data, error } = await supabase.rpc("find_email_by_cpf", { p_cpf: forgotCpf.replace(/\D/g, "") });
+        if (error || !data || data.length === 0) {
+          toast({ title: "CPF não encontrado", description: "Verifique se o CPF está cadastrado na escola.", variant: "destructive" });
+          setLoading(false);
+          return;
+        }
+        email = data[0].email;
+      }
+
+      if (!email) {
+        toast({ title: "Erro", description: "Informe o e-mail ou CPF.", variant: "destructive" });
+        setLoading(false);
+        return;
+      }
+
+      const { error } = await supabase.auth.resetPasswordForEmail(email, {
+        redirectTo: `${window.location.origin}/reset-password`,
+      });
+
+      if (error) {
+        toast({ title: "Erro", description: error.message, variant: "destructive" });
+      } else {
+        toast({ title: "E-mail enviado!", description: "Verifique sua caixa de entrada para redefinir a senha." });
+        setIsForgotPassword(false);
+      }
+    } catch {
+      toast({ title: "Erro", description: "Ocorreu um erro inesperado.", variant: "destructive" });
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -88,10 +131,12 @@ const EventosLogin = () => {
               className="h-16 w-16 rounded-full mx-auto mb-3"
             />
             <CardTitle className="text-green-800">
-              {isAdminLogin ? "Login Administrativo" : isRegister ? "Criar Conta" : "Entrar"}
+              {isForgotPassword ? "Esqueci minha senha" : isAdminLogin ? "Login Administrativo" : isRegister ? "Criar Conta" : "Entrar"}
             </CardTitle>
             <CardDescription>
-              {isAdminLogin
+              {isForgotPassword
+                ? isAdminLogin ? "Informe seu e-mail para receber o link de redefinição" : "Informe seu CPF para receber o link de redefinição"
+                : isAdminLogin
                 ? "Acesse com seu e-mail administrativo"
                 : isRegister
                 ? "Cadastre-se com seu CPF para comprar ingressos"
@@ -99,76 +144,129 @@ const EventosLogin = () => {
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <form onSubmit={handleSubmit} className="space-y-4">
-              {isAdminLogin ? (
-                <div>
-                  <label className="text-sm font-medium text-foreground">E-mail</label>
-                  <Input
-                    type="email"
-                    value={adminEmail}
-                    onChange={(e) => setAdminEmail(e.target.value)}
-                    placeholder="seu@email.com"
-                    required
-                  />
-                </div>
-              ) : (
-                <div>
-                  <label className="text-sm font-medium text-foreground">CPF</label>
-                  <Input
-                    value={cpf}
-                    onChange={handleCpfChange}
-                    placeholder="000.000.000-00"
-                    required
-                    maxLength={14}
-                  />
-                </div>
-              )}
+            {isForgotPassword ? (
+              <form onSubmit={handleForgotPassword} className="space-y-4">
+                {isAdminLogin ? (
+                  <div>
+                    <label className="text-sm font-medium text-foreground">E-mail</label>
+                    <Input
+                      type="email"
+                      value={forgotEmail}
+                      onChange={(e) => setForgotEmail(e.target.value)}
+                      placeholder="seu@email.com"
+                      required
+                    />
+                  </div>
+                ) : (
+                  <div>
+                    <label className="text-sm font-medium text-foreground">CPF</label>
+                    <Input
+                      value={forgotCpf}
+                      onChange={(e) => setForgotCpf(formatCpf(e.target.value))}
+                      placeholder="000.000.000-00"
+                      required
+                      maxLength={14}
+                    />
+                  </div>
+                )}
 
-              <div>
-                <label className="text-sm font-medium text-foreground">Senha</label>
-                <div className="relative">
-                  <Input
-                    type={showPassword ? "text" : "password"}
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    placeholder={isRegister ? "Crie uma senha (mín. 6 caracteres)" : "Sua senha"}
-                    required
-                    minLength={6}
-                  />
+                <Button type="submit" className="w-full bg-green-600 hover:bg-green-700" disabled={loading}>
+                  {loading ? "Aguarde..." : "Enviar link de redefinição"}
+                </Button>
+
+                <div className="text-center">
                   <button
                     type="button"
-                    onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground"
+                    onClick={() => setIsForgotPassword(false)}
+                    className="text-sm text-green-700 hover:underline"
                   >
-                    {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                    Voltar ao login
                   </button>
                 </div>
-              </div>
+              </form>
+            ) : (
+              <>
+                <form onSubmit={handleSubmit} className="space-y-4">
+                  {isAdminLogin ? (
+                    <div>
+                      <label className="text-sm font-medium text-foreground">E-mail</label>
+                      <Input
+                        type="email"
+                        value={adminEmail}
+                        onChange={(e) => setAdminEmail(e.target.value)}
+                        placeholder="seu@email.com"
+                        required
+                      />
+                    </div>
+                  ) : (
+                    <div>
+                      <label className="text-sm font-medium text-foreground">CPF</label>
+                      <Input
+                        value={cpf}
+                        onChange={handleCpfChange}
+                        placeholder="000.000.000-00"
+                        required
+                        maxLength={14}
+                      />
+                    </div>
+                  )}
 
-              <Button type="submit" className="w-full bg-green-600 hover:bg-green-700" disabled={loading}>
-                {loading ? "Aguarde..." : isAdminLogin ? "Entrar" : isRegister ? "Cadastrar" : "Entrar"}
-              </Button>
-            </form>
+                  <div>
+                    <label className="text-sm font-medium text-foreground">Senha</label>
+                    <div className="relative">
+                      <Input
+                        type={showPassword ? "text" : "password"}
+                        value={password}
+                        onChange={(e) => setPassword(e.target.value)}
+                        placeholder={isRegister ? "Crie uma senha (mín. 6 caracteres)" : "Sua senha"}
+                        required
+                        minLength={6}
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowPassword(!showPassword)}
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground"
+                      >
+                        {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                      </button>
+                    </div>
+                  </div>
 
-            <div className="mt-4 text-center space-y-2">
-              {!isAdminLogin && (
-                <button
-                  onClick={() => setIsRegister(!isRegister)}
-                  className="text-sm text-green-700 hover:underline block w-full"
-                >
-                  {isRegister ? "Já tem conta? Faça login" : "Não tem conta? Cadastre-se"}
-                </button>
-              )}
-              <button
-                onClick={() => {
-                  setIsAdminLogin(!isAdminLogin);
-                  setIsRegister(false);
-                }}
-                className="text-xs text-muted-foreground hover:underline block w-full"
-              >
-                {isAdminLogin ? "Login como responsável" : "Acesso administrativo"}
-              </button>
-            </div>
+                  <Button type="submit" className="w-full bg-green-600 hover:bg-green-700" disabled={loading}>
+                    {loading ? "Aguarde..." : isAdminLogin ? "Entrar" : isRegister ? "Cadastrar" : "Entrar"}
+                  </Button>
+                </form>
+
+                <div className="mt-4 text-center space-y-2">
+                  {!isRegister && (
+                    <button
+                      onClick={() => setIsForgotPassword(true)}
+                      className="text-sm text-green-700 hover:underline block w-full"
+                    >
+                      Esqueci minha senha
+                    </button>
+                  )}
+                  {!isAdminLogin && (
+                    <button
+                      onClick={() => setIsRegister(!isRegister)}
+                      className="text-sm text-green-700 hover:underline block w-full"
+                    >
+                      {isRegister ? "Já tem conta? Faça login" : "Não tem conta? Cadastre-se"}
+                    </button>
+                  )}
+                  <button
+                    onClick={() => {
+                      setIsAdminLogin(!isAdminLogin);
+                      setIsRegister(false);
+                      setIsForgotPassword(false);
+                    }}
+                    className="text-xs text-muted-foreground hover:underline block w-full"
+                  >
+                    {isAdminLogin ? "Login como responsável" : "Acesso administrativo"}
+                  </button>
+                </div>
+              </>
+            )}
           </CardContent>
         </Card>
       </div>
