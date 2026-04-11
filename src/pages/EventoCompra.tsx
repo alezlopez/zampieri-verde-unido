@@ -130,21 +130,29 @@ const EventoCompra = () => {
     checkExistentes();
   }, [user, id]);
 
-  // Fetch alunos by CPF
+  // Fetch alunos by CPF, fallback to email
   useEffect(() => {
     const fetchAlunos = async () => {
-      if (!user?.user_metadata?.cpf) {
-        setLoadingAlunos(false);
-        return;
-      }
-      const cpf = (user.user_metadata.cpf as string).replace(/\D/g, "");
+      let foundAlunos: Aluno[] = [];
 
-      const { data } = await supabase.rpc("find_alunos_by_cpf", { p_cpf: cpf });
-
-      if (data) {
-        const validAlunos = data.filter((a: any) => a.codigo_aluno && a.nome_aluno) as Aluno[];
-        setAlunos(validAlunos);
+      // Try by CPF first
+      if (user?.user_metadata?.cpf) {
+        const cpf = (user.user_metadata.cpf as string).replace(/\D/g, "");
+        const { data } = await supabase.rpc("find_alunos_by_cpf", { p_cpf: cpf });
+        if (data) {
+          foundAlunos = data.filter((a: any) => a.codigo_aluno && a.nome_aluno) as Aluno[];
+        }
       }
+
+      // Fallback: lookup by user email
+      if (foundAlunos.length === 0 && user?.email) {
+        const { data } = await supabase.rpc("find_alunos_by_email" as any, { p_email: user.email });
+        if (data) {
+          foundAlunos = (data as any[]).filter((a: any) => a.codigo_aluno && a.nome_aluno) as Aluno[];
+        }
+      }
+
+      setAlunos(foundAlunos);
       setLoadingAlunos(false);
     };
     if (user) fetchAlunos();
