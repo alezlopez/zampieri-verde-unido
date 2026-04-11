@@ -1,26 +1,31 @@
 
 
-## Plano: Adicionar status "estornado" com link de comprovante
+## Problem Analysis
 
-### Alterações no banco de dados (migration)
-1. Adicionar coluna `comprovante_estorno_url` (text, nullable) na tabela `ingressos`
+The "CPF não encontrado na base de alunos" error occurs despite the `find_email_by_cpf` RPC working correctly at the database level. The root cause is likely:
 
-### Alterações no frontend
+1. **Stale session interference**: The console shows `AuthApiError: Invalid Refresh Token: Refresh Token Not Found`. This corrupted session state can cause the Supabase client to fail on subsequent calls (including the RPC), returning an error instead of data.
 
-**`src/pages/MeusIngressos.tsx`**
-- Adicionar cor para status `estornado` no mapa `statusColors` (ex: roxo/purple)
-- Quando `status === "estornado"` e `comprovante_estorno_url` existir, exibir botão "Ver Comprovante de Estorno" que abre o link em nova aba
-- Incluir `comprovante_estorno_url` no select da query
+2. **Missing error logging**: The `findEmailByCpf` function silently returns `null` on error, making it impossible to distinguish between "CPF not found" and "RPC call failed due to auth error".
 
-**`src/pages/IngressoDetalhe.tsx`**
-- Tratar status `estornado` similar ao fluxo de "não pago": exibir tela informativa com ícone e mensagem "Ingresso Estornado", com botão para ver o comprovante quando disponível
-- Incluir `comprovante_estorno_url` no select da query
+## Plan
 
-### Resumo de arquivos
+### 1. Fix AuthContext to handle stale sessions
+In `src/contexts/AuthContext.tsx`, update the `onAuthStateChange` handler to catch and clear invalid sessions (sign out on `TOKEN_REFRESHED` failure), preventing the corrupted client state.
 
-| Arquivo | Mudança |
-|---|---|
-| Migration SQL | `ALTER TABLE ingressos ADD COLUMN comprovante_estorno_url text` |
-| `src/pages/MeusIngressos.tsx` | Novo status visual + botão comprovante |
-| `src/pages/IngressoDetalhe.tsx` | Tela de estorno + link comprovante |
+### 2. Add error handling and logging to `findEmailByCpf`
+Update the function to log errors so we can see if the RPC is failing vs returning no data. Also, if there's an error, attempt the call after signing out the stale session.
+
+### 3. Ensure the RPC call succeeds even with no session
+Add a fallback: if the RPC returns an error (possibly due to bad auth state), call `supabase.auth.signOut()` to clear the bad session and retry the RPC once.
+
+### Technical Details
+
+**File: `src/contexts/AuthContext.tsx`**
+
+- In `findEmailByCpf`: add `console.error` when `error` is present
+- In `onAuthStateChange`: handle `TOKEN_REFRESHED` errors by clearing session
+- Add retry logic: if RPC fails with auth error, sign out stale session and retry
+
+**File: `src/pages/EventosLogin.tsx`** (no changes needed - it correctly delegates to AuthContext)
 
