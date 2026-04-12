@@ -618,12 +618,10 @@ const EventoCompra = () => {
                 disabled={submitting || totalParticipantes === 0 || totalParticipantes > evento.vagas_disponiveis}
               >
                 {submitting ? "Processando..." : "Reservar Ingressos"}
-                  </Button>
-                  <p className="text-xs text-muted-foreground text-center mt-2">
-                    O pagamento será processado separadamente.
-                  </p>
-                </>
-              )}
+              </Button>
+              <p className="text-xs text-muted-foreground text-center mt-2">
+                O pagamento será processado separadamente.
+              </p>
             </div>
           </CardContent>
         </Card>
