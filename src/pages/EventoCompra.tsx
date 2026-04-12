@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef, useCallback } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
@@ -7,7 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useToast } from "@/hooks/use-toast";
-import { ArrowLeft, Calendar, CheckCircle, MapPin, Minus, Plus, Trash2, UserPlus } from "lucide-react";
+import { ArrowLeft, Calendar, CheckCircle, MapPin, Minus, Plus, Trash2, UserPlus, AlertTriangle, FileText, ShieldCheck } from "lucide-react";
 import { Progress } from "@/components/ui/progress";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
@@ -80,6 +80,28 @@ const EventoCompra = () => {
 
   // Alunos que já possuem ingresso pago ou pendente para este evento
   const [alunosComIngresso, setAlunosComIngresso] = useState<string[]>([]);
+
+  // Termos e autorização
+  const [termosAceitos, setTermosAceitos] = useState(false);
+  const [termosScrolledToEnd, setTermosScrolledToEnd] = useState(false);
+  const [autorizacaoAceita, setAutorizacaoAceita] = useState(false);
+  const [autorizacaoScrolledToEnd, setAutorizacaoScrolledToEnd] = useState(false);
+  const termosRef = useRef<HTMLDivElement>(null);
+  const autorizacaoRef = useRef<HTMLDivElement>(null);
+
+  const handleTermosScroll = useCallback((e: React.UIEvent<HTMLDivElement>) => {
+    const { scrollTop, scrollHeight, clientHeight } = e.currentTarget;
+    if (scrollTop + clientHeight >= scrollHeight - 10) {
+      setTermosScrolledToEnd(true);
+    }
+  }, []);
+
+  const handleAutorizacaoScroll = useCallback((e: React.UIEvent<HTMLDivElement>) => {
+    const { scrollTop, scrollHeight, clientHeight } = e.currentTarget;
+    if (scrollTop + clientHeight >= scrollHeight - 10) {
+      setAutorizacaoScrolledToEnd(true);
+    }
+  }, []);
 
   useEffect(() => {
     if (!authLoading && !user) {
@@ -181,6 +203,12 @@ const EventoCompra = () => {
       prev.includes(codigo) ? prev.filter((c) => c !== codigo) : [...prev, codigo]
     );
   };
+
+  // Reset autorização quando muda seleção de alunos
+  useEffect(() => {
+    setAutorizacaoAceita(false);
+    setAutorizacaoScrolledToEnd(false);
+  }, [alunosSelecionados]);
 
   const addConvidado = () => setConvidados((prev) => [...prev, emptyConvidado()]);
   const removeConvidado = (index: number) => setConvidados((prev) => prev.filter((_, i) => i !== index));
@@ -564,7 +592,174 @@ const EventoCompra = () => {
               </div>
             )}
 
-            {/* Total */}
+            {/* Aviso de cancelamento automático */}
+            <div className="border-t pt-4">
+              <div className="bg-blue-50 border border-blue-200 rounded-md p-4 flex items-start gap-3">
+                <AlertTriangle className="w-5 h-5 text-blue-600 shrink-0 mt-0.5" />
+                <p className="text-sm text-blue-800">
+                  A reserva do ingresso será cancelada automaticamente após <strong>2 horas</strong> caso o pagamento não seja realizado, sendo necessário uma nova reserva para participação mediante a disponibilidade de vagas.
+                </p>
+              </div>
+            </div>
+
+            {/* Termos de compra obrigatórios */}
+            <div className="border-t pt-4 space-y-3">
+              <div className="flex items-center gap-2">
+                <FileText className="w-5 h-5 text-green-700" />
+                <label className="text-sm font-medium text-green-800">Termos de Compra e Participação</label>
+              </div>
+              <div
+                ref={termosRef}
+                onScroll={handleTermosScroll}
+                className="max-h-48 overflow-y-auto border rounded-md p-3 text-xs text-gray-700 bg-gray-50 space-y-3"
+              >
+                <p className="font-bold text-sm">TERMO DE COMPRA, PARTICIPAÇÃO EM EVENTOS E TRATAMENTO DE DADOS PESSOAIS</p>
+                <p className="font-semibold">Colégio Zampieri</p>
+                <p>Razão Social: Colégio Zampieri<br/>CNPJ: 55.704.506/0001-73<br/>Endereço: Rua dos Acarapevas, 80, Balneário São Francisco, São Paulo – SP<br/>E-mail para contato: financeiro@colegiozampieri.com.br</p>
+                
+                <p className="font-bold">1. OBJETO</p>
+                <p>O presente Termo estabelece as condições para a reserva, compra e participação em eventos promovidos pelo Colégio Zampieri, realizados nas dependências da instituição ou em locais externos previamente informados.</p>
+                <p>Ao prosseguir com a reserva e/ou pagamento, o responsável declara estar ciente e de acordo com todas as condições descritas neste Termo.</p>
+
+                <p className="font-bold">2. ACESSO AO SISTEMA E IDENTIFICAÇÃO DOS PARTICIPANTES</p>
+                <p>A aquisição de ingressos será realizada por meio da plataforma online de eventos do Colégio Zampieri, mediante login e senha do responsável.</p>
+                <p>Ao acessar o sistema:</p>
+                <ul className="list-disc pl-4 space-y-1">
+                  <li>Os alunos vinculados ao CPF do responsável serão exibidos automaticamente</li>
+                  <li>O responsável deverá selecionar corretamente os alunos participantes</li>
+                  <li>O responsável declara que os dados cadastrados são verdadeiros e atualizados</li>
+                </ul>
+                <p>O Colégio Zampieri não se responsabiliza por informações incorretas fornecidas pelo usuário.</p>
+
+                <p className="font-bold">3. RESERVA DE VAGAS</p>
+                <p>Ao selecionar os participantes e confirmar a participação, será criada uma reserva temporária da vaga no evento.</p>
+                <p>Essa reserva:</p>
+                <ul className="list-disc pl-4 space-y-1">
+                  <li>Terá validade de 2 (duas) horas</li>
+                  <li>Será cancelada automaticamente caso o pagamento não seja realizado dentro desse prazo</li>
+                  <li>Liberará automaticamente a vaga para outros participantes</li>
+                </ul>
+                <p>Após o cancelamento automático: Será necessário realizar nova reserva, mediante disponibilidade de vagas. O Colégio Zampieri não garante disponibilidade de vagas após o cancelamento automático da reserva.</p>
+
+                <p className="font-bold">4. PAGAMENTO E CONFIRMAÇÃO DA PARTICIPAÇÃO</p>
+                <p>A participação no evento será considerada confirmada somente após: Realização do pagamento, confirmação do pagamento pelo sistema e liberação automática do ingresso.</p>
+
+                <p className="font-bold">5. DISPONIBILIZAÇÃO DO INGRESSO</p>
+                <p>Após a confirmação do pagamento, o ingresso será gerado automaticamente, disponibilizado na área logada do usuário e acessível dentro do sistema de eventos. O responsável deverá garantir o acesso ao ingresso no momento do evento, quando solicitado.</p>
+
+                <p className="font-bold">6. POLÍTICA DE CANCELAMENTO E ESTORNO</p>
+                <p>O cancelamento com solicitação de estorno poderá ser realizado até 24 (vinte e quatro) horas antes do início do evento. A solicitação deverá ser enviada exclusivamente para: financeiro@colegiozampieri.com.br</p>
+                <p>A solicitação deverá conter: Nome do responsável, Nome do aluno, Nome do evento, Comprovante de pagamento.</p>
+                <p>Após o prazo de 24 horas que antecede o início do evento: Não haverá possibilidade de estorno ou cancelamento.</p>
+                <p>O estorno será realizado pelo mesmo meio de pagamento utilizado, dentro dos prazos operacionais das instituições financeiras.</p>
+
+                <p className="font-bold">7. AUSÊNCIA NO EVENTO</p>
+                <p>A ausência do participante no evento, por qualquer motivo, não dará direito a reembolso, exceto quando solicitado dentro do prazo estabelecido neste Termo.</p>
+
+                <p className="font-bold">8. ALTERAÇÃO OU CANCELAMENTO DO EVENTO</p>
+                <p>O Colégio Zampieri poderá alterar data, horário ou local do evento por motivos operacionais ou de força maior, ou cancelar o evento quando necessário. Em caso de cancelamento por parte do Colégio Zampieri, o valor pago será integralmente reembolsado.</p>
+
+                <p className="font-bold">9. EVENTOS EXTERNOS E EXCURSÕES</p>
+                <p>Para eventos realizados fora das dependências da escola (excursões, passeios ou atividades externas), o responsável declara estar ciente de que:</p>
+                <ul className="list-disc pl-4 space-y-1">
+                  <li>O deslocamento poderá ocorrer por transporte contratado pela instituição</li>
+                  <li>Os participantes deverão cumprir os horários definidos pela organização</li>
+                  <li>O retorno antecipado do participante poderá depender de disponibilidade logística e poderá gerar custos adicionais ao responsável</li>
+                  <li>A participação está condicionada ao cumprimento das normas de segurança e disciplina</li>
+                </ul>
+                <p>O responsável declara estar ciente dos riscos inerentes a deslocamentos e atividades externas.</p>
+
+                <p className="font-bold">10. COMPORTAMENTO E RESPONSABILIDADE DISCIPLINAR</p>
+                <p>O responsável declara estar ciente de que: O aluno deverá respeitar as normas disciplinares da escola. Condutas inadequadas poderão resultar na retirada do aluno do evento. Em casos graves, poderá ser solicitado que o responsável realize a retirada do participante. Não haverá reembolso em caso de retirada por comportamento inadequado.</p>
+
+                <p className="font-bold">11. CONDIÇÕES DE SAÚDE E SEGURANÇA</p>
+                <p>O responsável declara que: O aluno está apto física e emocionalmente para participar das atividades. Informações médicas relevantes deverão ser previamente comunicadas à escola. Medicamentos pessoais deverão ser identificados e entregues conforme orientação da instituição. O Colégio Zampieri não se responsabiliza por omissão de informações médicas relevantes.</p>
+
+                <p className="font-bold">12. USO DE IMAGEM</p>
+                <p>Ao realizar a compra, o responsável autoriza o uso da imagem e voz do participante, capturados durante o evento, para fins educacionais, institucionais, publicitários, divulgação em redes sociais, materiais impressos e digitais da instituição. Caso não autorize o uso de imagem, o responsável deverá comunicar formalmente antes da realização do evento.</p>
+
+                <p className="font-bold">13. OBJETOS PESSOAIS</p>
+                <p>O Colégio Zampieri não se responsabiliza por perda, furto, extravio ou danos a objetos pessoais. Recomenda-se evitar o envio de objetos de valor.</p>
+
+                <p className="font-bold">14. TRATAMENTO DE DADOS PESSOAIS — LGPD</p>
+                <p>Em conformidade com a Lei Geral de Proteção de Dados Pessoais (Lei nº 13.709/2018 – LGPD), o responsável declara ciência de que os dados pessoais coletados (nome, CPF, dados de contato, dados de pagamento etc.) serão utilizados para identificação, gestão de inscrições, processamento de pagamentos, controle de acesso e comunicação. Os dados poderão ser compartilhados com empresas de pagamento, transporte e prestadores de serviços. O titular poderá solicitar acesso, correção ou exclusão de dados pelo e-mail financeiro@colegiozampieri.com.br.</p>
+
+                <p className="font-bold">15. LIMITAÇÃO DE RESPONSABILIDADE</p>
+                <p>O Colégio Zampieri não se responsabiliza por informações incorretas fornecidas pelo usuário, problemas de acesso à internet ou situações de força maior.</p>
+
+                <p className="font-bold">16. ACEITE DO TERMO</p>
+                <p>Ao prosseguir com a reserva e/ou pagamento, o responsável declara que:</p>
+                <p>✔ Leu integralmente este Termo<br/>✔ Está ciente das regras estabelecidas<br/>✔ Concorda com todas as condições descritas<br/>✔ Autoriza o tratamento de dados pessoais conforme descrito</p>
+                <p>O aceite eletrônico deste Termo possui validade jurídica equivalente à assinatura física.</p>
+              </div>
+              {!termosScrolledToEnd && (
+                <p className="text-xs text-amber-600 font-medium">↓ Role até o final do texto para habilitar o aceite</p>
+              )}
+              <div className="flex items-start space-x-3">
+                <Checkbox
+                  id="termos"
+                  checked={termosAceitos}
+                  onCheckedChange={(checked) => setTermosAceitos(checked === true)}
+                  disabled={!termosScrolledToEnd}
+                />
+                <label
+                  htmlFor="termos"
+                  className={`text-xs cursor-pointer ${!termosScrolledToEnd ? "text-muted-foreground" : "text-foreground"}`}
+                >
+                  Li e aceito os Termos de Compra, Participação em Eventos e Tratamento de Dados Pessoais.
+                </label>
+              </div>
+            </div>
+
+            {/* Autorização (somente se evento requer) */}
+            {evento.requer_autorizacao && (
+              <div className="border-t pt-4 space-y-3">
+                <div className="flex items-center gap-2">
+                  <ShieldCheck className="w-5 h-5 text-green-700" />
+                  <label className="text-sm font-medium text-green-800">Autorização de Participação</label>
+                </div>
+                <div
+                  ref={autorizacaoRef}
+                  onScroll={handleAutorizacaoScroll}
+                  className="max-h-40 overflow-y-auto border rounded-md p-3 text-xs text-gray-700 bg-gray-50 space-y-3"
+                >
+                  {alunosSelecionados.length === 0 ? (
+                    <p className="text-muted-foreground italic">Selecione ao menos um aluno acima para visualizar o texto da autorização.</p>
+                  ) : (
+                    alunosSelecionados.map((codigo) => {
+                      const aluno = alunos.find((a) => a.codigo_aluno === codigo);
+                      const cpfResp = user?.user_metadata?.cpf
+                        ? (user.user_metadata.cpf as string).replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, "$1.$2.$3-$4")
+                        : "[CPF não informado]";
+                      return (
+                        <p key={codigo}>
+                          Eu <strong>{nomeComprador || "[nome do responsável]"}</strong>, portador do CPF nº <strong>{cpfResp}</strong>, no papel de responsável pelo aluno(a) <strong>{aluno?.nome_aluno || codigo}</strong>, autorizo a sua participação no evento: <strong>{evento.titulo}</strong>, a ser realizado no dia <strong>{formatDate(evento.data_evento)}</strong>{evento.horario ? <>, às <strong>{evento.horario}</strong></> : ""}.
+                        </p>
+                      );
+                    })
+                  )}
+                </div>
+                {!autorizacaoScrolledToEnd && alunosSelecionados.length > 0 && (
+                  <p className="text-xs text-amber-600 font-medium">↓ Role até o final do texto para habilitar o aceite</p>
+                )}
+                <div className="flex items-start space-x-3">
+                  <Checkbox
+                    id="autorizacao"
+                    checked={autorizacaoAceita}
+                    onCheckedChange={(checked) => setAutorizacaoAceita(checked === true)}
+                    disabled={!autorizacaoScrolledToEnd || alunosSelecionados.length === 0}
+                  />
+                  <label
+                    htmlFor="autorizacao"
+                    className={`text-xs cursor-pointer ${!autorizacaoScrolledToEnd || alunosSelecionados.length === 0 ? "text-muted-foreground" : "text-foreground"}`}
+                  >
+                    Autorizo a participação conforme descrito acima.
+                  </label>
+                </div>
+              </div>
+            )}
+
+            {/* Total e botão */}
             <div className="border-t pt-4">
               {ingressosPendentes.length > 0 && (
                 <div className="bg-yellow-50 border border-yellow-200 rounded-md p-4 space-y-3 mb-4">
@@ -615,10 +810,21 @@ const EventoCompra = () => {
               <Button
                 onClick={handleComprar}
                 className="w-full bg-green-600 hover:bg-green-700"
-                disabled={submitting || totalParticipantes === 0 || totalParticipantes > evento.vagas_disponiveis}
+                disabled={
+                  submitting ||
+                  totalParticipantes === 0 ||
+                  totalParticipantes > evento.vagas_disponiveis ||
+                  !termosAceitos ||
+                  (evento.requer_autorizacao && !autorizacaoAceita)
+                }
               >
                 {submitting ? "Processando..." : "Reservar Ingressos"}
               </Button>
+              {(!termosAceitos || (evento.requer_autorizacao && !autorizacaoAceita)) && totalParticipantes > 0 && (
+                <p className="text-xs text-amber-600 text-center mt-2">
+                  {!termosAceitos ? "Aceite os termos de compra para continuar." : "Aceite a autorização de participação para continuar."}
+                </p>
+              )}
               <p className="text-xs text-muted-foreground text-center mt-2">
                 O pagamento será processado separadamente.
               </p>
