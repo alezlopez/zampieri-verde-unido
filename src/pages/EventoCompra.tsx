@@ -319,6 +319,7 @@ const EventoCompra = () => {
           body: JSON.stringify({
             evento: { ...evento, imagem_base64: imagemBase64, imagem_extensao: imagemExtensao, imagem_nome_arquivo: imagemNomeArquivo },
             comprador: nomeComprador.trim(),
+            cpf_responsavel: user.user_metadata?.cpf ? (user.user_metadata.cpf as string).replace(/\D/g, "") : null,
             user_id: user.id,
             participantes: records,
             ingresso_ids: insertedIds,
