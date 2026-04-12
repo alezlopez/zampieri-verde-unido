@@ -204,6 +204,12 @@ const EventoCompra = () => {
     );
   };
 
+  // Reset autorização quando muda seleção de alunos
+  useEffect(() => {
+    setAutorizacaoAceita(false);
+    setAutorizacaoScrolledToEnd(false);
+  }, [alunosSelecionados]);
+
   const addConvidado = () => setConvidados((prev) => [...prev, emptyConvidado()]);
   const removeConvidado = (index: number) => setConvidados((prev) => prev.filter((_, i) => i !== index));
   const updateConvidado = (index: number, field: keyof Convidado, value: string) => {
