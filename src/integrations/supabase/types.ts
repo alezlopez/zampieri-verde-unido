@@ -256,6 +256,7 @@ export type Database = {
       }
       comunicados_2026: {
         Row: {
+          codigo_aluno: string | null
           created_at: string
           id: number
           link: string | null
@@ -263,6 +264,7 @@ export type Database = {
           nome_aluno: string | null
         }
         Insert: {
+          codigo_aluno?: string | null
           created_at?: string
           id?: number
           link?: string | null
@@ -270,6 +272,7 @@ export type Database = {
           nome_aluno?: string | null
         }
         Update: {
+          codigo_aluno?: string | null
           created_at?: string
           id?: number
           link?: string | null
