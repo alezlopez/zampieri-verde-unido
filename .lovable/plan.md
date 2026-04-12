@@ -1,25 +1,25 @@
 
 
-## Full-Screen Countdown Overlay After Reservation
+## Fix: Allow reserving tickets for different students even with pending tickets
 
-### What changes
+### Problem
+When a user has a pending ticket for **aluno A**, the system blocks reserving tickets for **aluno B** entirely. Two separate mechanisms cause this:
+
+1. **`alunosComIngresso` array** (line 141-144): Collects ALL `codigo_aluno` from tickets with status `pendente` or `pago` — this correctly disables the checkbox per-aluno. This part works fine.
+
+2. **`ingressosPendentes` check** (line 569): When `ingressosPendentes.length > 0`, the entire "Reservar" button is hidden and replaced with a "finalize payment first" warning. This is the bug — it blocks ALL new reservations globally regardless of which aluno they're for.
+
+### Solution
 **File: `src/pages/EventoCompra.tsx`**
 
-After a successful reservation, instead of just showing a toast and waiting 10 seconds, display a **full-screen overlay** that:
-- Blocks all interaction (fixed overlay with high z-index, pointer-events on the overlay)
-- Shows a success message ("Ingressos reservados!")
-- Displays a circular countdown timer from 10 to 0
-- Shows text like "Redirecionando para Meus Ingressos em X segundos..."
-- Has a green/white theme consistent with the app
+Remove the global block based on `ingressosPendentes.length > 0`. Instead:
+- Keep the per-aluno blocking via `alunosComIngresso` (already working)
+- Show the pending tickets warning as an **informational banner** (not blocking), so the user is aware they have pending tickets
+- Always show the "Reservar" button as long as the user has selected at least one aluno that doesn't already have a ticket
+- The button should be disabled only if no valid participants are selected (all selected alunos already have tickets, or nothing selected)
 
-### Implementation
-1. Add state: `redirectCountdown: number | null` (null = not showing, 10→0 = counting)
-2. On successful reservation, set `redirectCountdown = 10` instead of using `setTimeout`
-3. Use a `useEffect` with `setInterval` that decrements every second; when it hits 0, navigate
-4. Render a fixed overlay (`fixed inset-0 z-50 bg-black/60`) with a centered card showing:
-   - Check icon
-   - "Ingressos reservados com sucesso!"
-   - Circular countdown or large number
-   - "Redirecionando em {n} segundos..."
-5. Remove the toast call and the old `setTimeout`
+### Changes
+1. Move the pending tickets warning from the button area to an informational section above
+2. Always render the "Reservar Ingressos" button regardless of pending tickets
+3. Keep the per-aluno checkbox disabling logic unchanged
 
