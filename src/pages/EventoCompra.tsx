@@ -7,7 +7,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useToast } from "@/hooks/use-toast";
-import { ArrowLeft, Calendar, MapPin, Minus, Plus, Trash2, UserPlus } from "lucide-react";
+import { ArrowLeft, Calendar, CheckCircle, MapPin, Minus, Plus, Trash2, UserPlus } from "lucide-react";
+import { Progress } from "@/components/ui/progress";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
 
@@ -72,6 +73,10 @@ const EventoCompra = () => {
   // Pendentes check
   const [ingressosPendentes, setIngressosPendentes] = useState<any[]>([]);
   const [loadingPendentes, setLoadingPendentes] = useState(true);
+
+  // Countdown overlay
+  const [redirectCountdown, setRedirectCountdown] = useState<number | null>(null);
+  const [totalIngressosReservados, setTotalIngressosReservados] = useState(0);
 
   // Alunos que já possuem ingresso pago ou pendente para este evento
   const [alunosComIngresso, setAlunosComIngresso] = useState<string[]>([]);
@@ -312,13 +317,8 @@ const EventoCompra = () => {
         console.error("Webhook error:", webhookErr);
       }
 
-      toast({
-        title: "Ingressos reservados!",
-        description: `${records.length} ingresso(s) reservado(s). Aguarde o link de pagamento. Redirecionando em 10 segundos...`,
-      });
-      setTimeout(() => {
-        navigate("/eventos/meus-ingressos");
-      }, 10000);
+      setTotalIngressosReservados(records.length);
+      setRedirectCountdown(10);
     } catch (err: any) {
       toast({ title: "Erro ao reservar ingressos", description: err.message, variant: "destructive" });
     } finally {
