@@ -566,64 +566,62 @@ const EventoCompra = () => {
 
             {/* Total */}
             <div className="border-t pt-4">
-              {ingressosPendentes.length > 0 ? (
-                <div className="bg-yellow-50 border border-yellow-200 rounded-md p-4 space-y-3">
+              {ingressosPendentes.length > 0 && (
+                <div className="bg-yellow-50 border border-yellow-200 rounded-md p-4 space-y-3 mb-4">
                   <p className="text-sm font-medium text-yellow-800">
-                    ⚠️ Você já possui {ingressosPendentes.length} ingresso(s) pendente(s) para este evento.
+                    ⚠️ Você possui {ingressosPendentes.length} ingresso(s) pendente(s) de pagamento para este evento.
                   </p>
-                  <p className="text-xs text-yellow-700">
-                    Finalize o pagamento antes de fazer uma nova reserva.
-                  </p>
-                  {ingressosPendentes[0]?.checkout_url && (
-                    <Button
-                      variant="outline"
-                      className="w-full border-yellow-400 text-yellow-800 hover:bg-yellow-100"
-                      onClick={() => window.open(ingressosPendentes[0].checkout_url, "_blank")}
-                    >
-                      Pagar agora
-                    </Button>
-                  )}
-                  <Link to="/eventos/meus-ingressos">
-                    <Button variant="link" className="w-full text-yellow-800">
-                      Ver meus ingressos →
-                    </Button>
-                  </Link>
+                  <div className="flex gap-2">
+                    {ingressosPendentes[0]?.checkout_url && (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="border-yellow-400 text-yellow-800 hover:bg-yellow-100"
+                        onClick={() => window.open(ingressosPendentes[0].checkout_url, "_blank")}
+                      >
+                        Pagar agora
+                      </Button>
+                    )}
+                    <Link to="/eventos/meus-ingressos">
+                      <Button variant="link" size="sm" className="text-yellow-800">
+                        Ver meus ingressos →
+                      </Button>
+                    </Link>
+                  </div>
                 </div>
-              ) : (
-                <>
-                  <div className="flex justify-between items-center mb-1">
-                    <span className="text-muted-foreground text-sm">Participantes:</span>
-                    <span className="font-medium">{totalParticipantes}</span>
-                  </div>
-                  <div className="flex justify-between items-center mb-1">
-                    <span className="text-muted-foreground text-sm">Vagas disponíveis:</span>
-                    <span className={`font-medium ${evento.vagas_disponiveis < 5 ? "text-red-600" : "text-green-700"}`}>
-                      {evento.vagas_disponiveis}
-                    </span>
-                  </div>
-                  {totalParticipantes > evento.vagas_disponiveis && (
-                    <p className="text-sm text-red-600 font-medium mb-2">
-                      ⚠️ Não há vagas suficientes para {totalParticipantes} participante(s).
-                    </p>
-                  )}
-                  <div className="flex justify-between items-center mb-4">
-                    <span className="text-muted-foreground">Total:</span>
-                    <span className="text-2xl font-bold text-green-700">
-                      {total === 0 && totalParticipantes > 0 ? "Gratuito" : total === 0 ? "—" : `R$ ${total.toFixed(2).replace(".", ",")}`}
-                    </span>
-                  </div>
-                  <Button
-                    onClick={handleComprar}
-                    className="w-full bg-green-600 hover:bg-green-700"
-                    disabled={submitting || totalParticipantes === 0 || totalParticipantes > evento.vagas_disponiveis}
-                  >
-                    {submitting ? "Processando..." : "Reservar Ingressos"}
-                  </Button>
-                  <p className="text-xs text-muted-foreground text-center mt-2">
-                    O pagamento será processado separadamente.
-                  </p>
-                </>
               )}
+
+              <div className="flex justify-between items-center mb-1">
+                <span className="text-muted-foreground text-sm">Participantes:</span>
+                <span className="font-medium">{totalParticipantes}</span>
+              </div>
+              <div className="flex justify-between items-center mb-1">
+                <span className="text-muted-foreground text-sm">Vagas disponíveis:</span>
+                <span className={`font-medium ${evento.vagas_disponiveis < 5 ? "text-red-600" : "text-green-700"}`}>
+                  {evento.vagas_disponiveis}
+                </span>
+              </div>
+              {totalParticipantes > evento.vagas_disponiveis && (
+                <p className="text-sm text-red-600 font-medium mb-2">
+                  ⚠️ Não há vagas suficientes para {totalParticipantes} participante(s).
+                </p>
+              )}
+              <div className="flex justify-between items-center mb-4">
+                <span className="text-muted-foreground">Total:</span>
+                <span className="text-2xl font-bold text-green-700">
+                  {total === 0 && totalParticipantes > 0 ? "Gratuito" : total === 0 ? "—" : `R$ ${total.toFixed(2).replace(".", ",")}`}
+                </span>
+              </div>
+              <Button
+                onClick={handleComprar}
+                className="w-full bg-green-600 hover:bg-green-700"
+                disabled={submitting || totalParticipantes === 0 || totalParticipantes > evento.vagas_disponiveis}
+              >
+                {submitting ? "Processando..." : "Reservar Ingressos"}
+              </Button>
+              <p className="text-xs text-muted-foreground text-center mt-2">
+                O pagamento será processado separadamente.
+              </p>
             </div>
           </CardContent>
         </Card>
