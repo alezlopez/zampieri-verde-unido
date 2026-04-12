@@ -84,25 +84,9 @@ const EventoCompra = () => {
 
   // Termos e autorização
   const [termosAceitos, setTermosAceitos] = useState(false);
-  const [termosScrolledToEnd, setTermosScrolledToEnd] = useState(false);
   const [autorizacaoAceita, setAutorizacaoAceita] = useState(false);
-  const [autorizacaoScrolledToEnd, setAutorizacaoScrolledToEnd] = useState(false);
-  const termosRef = useRef<HTMLDivElement>(null);
-  const autorizacaoRef = useRef<HTMLDivElement>(null);
-
-  const handleTermosScroll = useCallback((e: React.UIEvent<HTMLDivElement>) => {
-    const { scrollTop, scrollHeight, clientHeight } = e.currentTarget;
-    if (scrollTop + clientHeight >= scrollHeight - 10) {
-      setTermosScrolledToEnd(true);
-    }
-  }, []);
-
-  const handleAutorizacaoScroll = useCallback((e: React.UIEvent<HTMLDivElement>) => {
-    const { scrollTop, scrollHeight, clientHeight } = e.currentTarget;
-    if (scrollTop + clientHeight >= scrollHeight - 10) {
-      setAutorizacaoScrolledToEnd(true);
-    }
-  }, []);
+  const [termosDialogOpen, setTermosDialogOpen] = useState(false);
+  const [autorizacaoDialogOpen, setAutorizacaoDialogOpen] = useState(false);
 
   useEffect(() => {
     if (!authLoading && !user) {
