@@ -610,6 +610,36 @@ export type Database = {
         }
         Relationships: []
       }
+      push_tokens: {
+        Row: {
+          atualizado_em: string | null
+          codigo_aluno: string
+          criado_em: string | null
+          id: number
+          nome_aluno: string
+          plataforma: string | null
+          push_token: string
+        }
+        Insert: {
+          atualizado_em?: string | null
+          codigo_aluno: string
+          criado_em?: string | null
+          id?: number
+          nome_aluno: string
+          plataforma?: string | null
+          push_token: string
+        }
+        Update: {
+          atualizado_em?: string | null
+          codigo_aluno?: string
+          criado_em?: string | null
+          id?: number
+          nome_aluno?: string
+          plataforma?: string | null
+          push_token?: string
+        }
+        Relationships: []
+      }
       rematricula: {
         Row: {
           Anuidade: string | null

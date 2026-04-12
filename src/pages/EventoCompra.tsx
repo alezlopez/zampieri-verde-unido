@@ -7,7 +7,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useToast } from "@/hooks/use-toast";
-import { ArrowLeft, Calendar, MapPin, Minus, Plus, Trash2, UserPlus } from "lucide-react";
+import { ArrowLeft, Calendar, CheckCircle, MapPin, Minus, Plus, Trash2, UserPlus } from "lucide-react";
+import { Progress } from "@/components/ui/progress";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
 
@@ -73,6 +74,10 @@ const EventoCompra = () => {
   const [ingressosPendentes, setIngressosPendentes] = useState<any[]>([]);
   const [loadingPendentes, setLoadingPendentes] = useState(true);
 
+  // Countdown overlay
+  const [redirectCountdown, setRedirectCountdown] = useState<number | null>(null);
+  const [totalIngressosReservados, setTotalIngressosReservados] = useState(0);
+
   // Alunos que já possuem ingresso pago ou pendente para este evento
   const [alunosComIngresso, setAlunosComIngresso] = useState<string[]>([]);
 
@@ -81,6 +86,19 @@ const EventoCompra = () => {
       navigate("/eventos/login");
     }
   }, [user, authLoading, navigate]);
+
+  // Countdown timer effect
+  useEffect(() => {
+    if (redirectCountdown === null) return;
+    if (redirectCountdown <= 0) {
+      navigate("/eventos/meus-ingressos");
+      return;
+    }
+    const timer = setTimeout(() => {
+      setRedirectCountdown((prev) => (prev !== null ? prev - 1 : null));
+    }, 1000);
+    return () => clearTimeout(timer);
+  }, [redirectCountdown, navigate]);
 
   useEffect(() => {
     const fetchEvento = async () => {
@@ -312,13 +330,8 @@ const EventoCompra = () => {
         console.error("Webhook error:", webhookErr);
       }
 
-      toast({
-        title: "Ingressos reservados!",
-        description: `${records.length} ingresso(s) reservado(s). Aguarde o link de pagamento. Redirecionando em 10 segundos...`,
-      });
-      setTimeout(() => {
-        navigate("/eventos/meus-ingressos");
-      }, 10000);
+      setTotalIngressosReservados(records.length);
+      setRedirectCountdown(10);
     } catch (err: any) {
       toast({ title: "Erro ao reservar ingressos", description: err.message, variant: "destructive" });
     } finally {
@@ -373,6 +386,28 @@ const EventoCompra = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-green-50 to-white py-8 px-4">
+      {/* Countdown overlay */}
+      {redirectCountdown !== null && (
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center">
+          <div className="bg-white rounded-2xl shadow-2xl p-8 max-w-sm w-full mx-4 text-center space-y-5">
+            <div className="mx-auto w-16 h-16 bg-green-100 rounded-full flex items-center justify-center">
+              <CheckCircle className="w-10 h-10 text-green-600" />
+            </div>
+            <h3 className="text-xl font-bold text-green-800">Ingressos reservados!</h3>
+            <p className="text-sm text-muted-foreground">
+              {totalIngressosReservados} ingresso(s) reservado(s) com sucesso.<br />
+              Aguarde o link de pagamento.
+            </p>
+            <div className="space-y-2">
+              <div className="text-4xl font-bold text-green-700">{redirectCountdown}</div>
+              <Progress value={((10 - redirectCountdown) / 10) * 100} className="h-2" />
+              <p className="text-xs text-muted-foreground">
+                Redirecionando para Meus Ingressos em {redirectCountdown} segundo{redirectCountdown !== 1 ? "s" : ""}...
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
       <div className="container mx-auto max-w-lg">
         <Link to="/eventos" className="inline-flex items-center text-green-700 hover:text-green-800 mb-6">
           <ArrowLeft className="w-4 h-4 mr-2" />
