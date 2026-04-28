@@ -277,6 +277,35 @@ const EventosLogin = () => {
               </form>
             ) : (
               <>
+                {unconfirmedEmail && !isAdminLogin && (
+                  <div className="mb-4 p-4 bg-amber-50 border border-amber-200 rounded-lg">
+                    <div className="flex items-start gap-3">
+                      <MailWarning className="w-5 h-5 text-amber-600 mt-0.5 shrink-0" />
+                      <div className="flex-1">
+                        <p className="text-sm font-semibold text-amber-900">
+                          Confirme seu cadastro
+                        </p>
+                        <p className="text-xs text-amber-800 mt-1">
+                          Enviamos um link de confirmação para <strong>{maskEmail(unconfirmedEmail)}</strong>.
+                          Verifique sua caixa de entrada e a pasta de spam. Se não recebeu, reenvie abaixo.
+                        </p>
+                        <Button
+                          type="button"
+                          size="sm"
+                          onClick={handleResendConfirmation}
+                          disabled={resending || resendCooldown > 0}
+                          className="mt-3 bg-amber-600 hover:bg-amber-700 text-white"
+                        >
+                          {resending
+                            ? "Enviando..."
+                            : resendCooldown > 0
+                            ? `Reenviar em ${resendCooldown}s`
+                            : "Reenviar link de confirmação"}
+                        </Button>
+                      </div>
+                    </div>
+                  </div>
+                )}
                 <form onSubmit={handleSubmit} className="space-y-4">
                   {isAdminLogin ? (
                     <div>
