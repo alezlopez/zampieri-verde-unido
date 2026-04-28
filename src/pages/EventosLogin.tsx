@@ -53,6 +53,41 @@ const EventosLogin = () => {
 
   const handleCpfChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setCpf(formatCpf(e.target.value));
+    if (unconfirmedEmail) clearUnconfirmed();
+  };
+
+  const handleResendConfirmation = async () => {
+    if (!unconfirmedEmail || resending || resendCooldown > 0) return;
+    setResending(true);
+    try {
+      const { error } = await supabase.auth.resend({
+        type: "signup",
+        email: unconfirmedEmail,
+        options: { emailRedirectTo: window.location.origin },
+      });
+      if (error) {
+        const msg = error.message?.toLowerCase() || "";
+        if (msg.includes("already confirmed")) {
+          toast({ title: "Conta já confirmada", description: "Você já pode fazer login normalmente." });
+          clearUnconfirmed();
+        } else if (msg.includes("rate") || msg.includes("seconds")) {
+          toast({ title: "Aguarde um momento", description: "Tente reenviar em alguns instantes.", variant: "destructive" });
+          setResendCooldown(60);
+        } else {
+          toast({ title: "Erro ao reenviar", description: error.message, variant: "destructive" });
+        }
+      } else {
+        toast({
+          title: "Link reenviado!",
+          description: `Verifique sua caixa de entrada e a pasta de spam em ${maskEmail(unconfirmedEmail)}.`,
+        });
+        setResendCooldown(60);
+      }
+    } catch {
+      toast({ title: "Erro", description: "Não foi possível reenviar agora.", variant: "destructive" });
+    } finally {
+      setResending(false);
+    }
   };
 
   const handleForgotPassword = async (e: React.FormEvent) => {
