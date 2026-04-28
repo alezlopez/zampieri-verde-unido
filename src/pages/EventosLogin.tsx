@@ -27,6 +27,17 @@ const EventosLogin = () => {
   const [isForgotPassword, setIsForgotPassword] = useState(false);
   const [forgotEmail, setForgotEmail] = useState("");
   const [forgotCpf, setForgotCpf] = useState("");
+  const [unconfirmedEmail, setUnconfirmedEmail] = useState<string | null>(null);
+  const [resendCooldown, setResendCooldown] = useState(0);
+  const [resending, setResending] = useState(false);
+
+  useEffect(() => {
+    if (resendCooldown <= 0) return;
+    const t = setInterval(() => setResendCooldown((s) => Math.max(0, s - 1)), 1000);
+    return () => clearInterval(t);
+  }, [resendCooldown]);
+
+  const clearUnconfirmed = () => setUnconfirmedEmail(null);
 
   const { loginWithCpf, registerWithCpf, signIn } = useAuth();
   const navigate = useNavigate();
