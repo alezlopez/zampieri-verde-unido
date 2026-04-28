@@ -134,6 +134,7 @@ const EventosLogin = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
+    clearUnconfirmed();
 
     try {
       if (isAdminLogin) {
@@ -147,18 +148,40 @@ const EventosLogin = () => {
       } else if (isRegister) {
         const { error, needsConfirmation, email } = await registerWithCpf(cpf, password);
         if (error) {
-          toast({ title: "Erro no cadastro", description: error.message, variant: "destructive" });
+          const msg = error.message?.toLowerCase() || "";
+          if (msg.includes("already registered") || msg.includes("user already") || msg.includes("já cadastrado")) {
+            // Conta já existe — pode estar não-confirmada. Buscar e-mail e oferecer reenvio.
+            const { data } = await supabase.rpc("find_email_by_cpf", { p_cpf: cpf.replace(/\D/g, "") });
+            if (data && data.length > 0) {
+              setUnconfirmedEmail(data[0].email);
+            } else {
+              toast({ title: "Conta já existe", description: "Faça login ou recupere sua senha.", variant: "destructive" });
+            }
+          } else {
+            toast({ title: "Erro no cadastro", description: error.message, variant: "destructive" });
+          }
         } else if (needsConfirmation) {
           const masked = email ? maskEmail(email) : "seu e-mail";
           toast({
             title: "Cadastro realizado!",
             description: `Link de confirmação enviado para ${masked}. Verifique sua caixa de entrada.`,
           });
+          if (email) setUnconfirmedEmail(email);
         }
       } else {
         const { error } = await loginWithCpf(cpf, password);
         if (error) {
-          toast({ title: "Erro no login", description: error.message, variant: "destructive" });
+          const msg = error.message?.toLowerCase() || "";
+          if (msg.includes("email not confirmed") || msg.includes("email_not_confirmed") || msg.includes("not confirmed")) {
+            const { data } = await supabase.rpc("find_email_by_cpf", { p_cpf: cpf.replace(/\D/g, "") });
+            if (data && data.length > 0) {
+              setUnconfirmedEmail(data[0].email);
+            } else {
+              toast({ title: "E-mail não confirmado", description: "Confirme seu cadastro pelo link enviado por e-mail.", variant: "destructive" });
+            }
+          } else {
+            toast({ title: "Erro no login", description: error.message, variant: "destructive" });
+          }
         } else {
           toast({ title: "Login realizado com sucesso!" });
           navigate("/eventos");
