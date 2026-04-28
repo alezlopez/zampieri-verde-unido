@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
-import { Eye, EyeOff, ArrowLeft } from "lucide-react";
+import { Eye, EyeOff, ArrowLeft, MailWarning } from "lucide-react";
 import logoZampieri from "@/assets/logo-zampieri.png";
 
 const maskEmail = (email: string): string => {
@@ -27,6 +27,17 @@ const EventosLogin = () => {
   const [isForgotPassword, setIsForgotPassword] = useState(false);
   const [forgotEmail, setForgotEmail] = useState("");
   const [forgotCpf, setForgotCpf] = useState("");
+  const [unconfirmedEmail, setUnconfirmedEmail] = useState<string | null>(null);
+  const [resendCooldown, setResendCooldown] = useState(0);
+  const [resending, setResending] = useState(false);
+
+  useEffect(() => {
+    if (resendCooldown <= 0) return;
+    const t = setInterval(() => setResendCooldown((s) => Math.max(0, s - 1)), 1000);
+    return () => clearInterval(t);
+  }, [resendCooldown]);
+
+  const clearUnconfirmed = () => setUnconfirmedEmail(null);
 
   const { loginWithCpf, registerWithCpf, signIn } = useAuth();
   const navigate = useNavigate();
@@ -42,6 +53,41 @@ const EventosLogin = () => {
 
   const handleCpfChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setCpf(formatCpf(e.target.value));
+    if (unconfirmedEmail) clearUnconfirmed();
+  };
+
+  const handleResendConfirmation = async () => {
+    if (!unconfirmedEmail || resending || resendCooldown > 0) return;
+    setResending(true);
+    try {
+      const { error } = await supabase.auth.resend({
+        type: "signup",
+        email: unconfirmedEmail,
+        options: { emailRedirectTo: window.location.origin },
+      });
+      if (error) {
+        const msg = error.message?.toLowerCase() || "";
+        if (msg.includes("already confirmed")) {
+          toast({ title: "Conta já confirmada", description: "Você já pode fazer login normalmente." });
+          clearUnconfirmed();
+        } else if (msg.includes("rate") || msg.includes("seconds")) {
+          toast({ title: "Aguarde um momento", description: "Tente reenviar em alguns instantes.", variant: "destructive" });
+          setResendCooldown(60);
+        } else {
+          toast({ title: "Erro ao reenviar", description: error.message, variant: "destructive" });
+        }
+      } else {
+        toast({
+          title: "Link reenviado!",
+          description: `Verifique sua caixa de entrada e a pasta de spam em ${maskEmail(unconfirmedEmail)}.`,
+        });
+        setResendCooldown(60);
+      }
+    } catch {
+      toast({ title: "Erro", description: "Não foi possível reenviar agora.", variant: "destructive" });
+    } finally {
+      setResending(false);
+    }
   };
 
   const handleForgotPassword = async (e: React.FormEvent) => {
@@ -88,6 +134,7 @@ const EventosLogin = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
+    clearUnconfirmed();
 
     try {
       if (isAdminLogin) {
@@ -101,18 +148,40 @@ const EventosLogin = () => {
       } else if (isRegister) {
         const { error, needsConfirmation, email } = await registerWithCpf(cpf, password);
         if (error) {
-          toast({ title: "Erro no cadastro", description: error.message, variant: "destructive" });
+          const msg = error.message?.toLowerCase() || "";
+          if (msg.includes("already registered") || msg.includes("user already") || msg.includes("já cadastrado")) {
+            // Conta já existe — pode estar não-confirmada. Buscar e-mail e oferecer reenvio.
+            const { data } = await supabase.rpc("find_email_by_cpf", { p_cpf: cpf.replace(/\D/g, "") });
+            if (data && data.length > 0) {
+              setUnconfirmedEmail(data[0].email);
+            } else {
+              toast({ title: "Conta já existe", description: "Faça login ou recupere sua senha.", variant: "destructive" });
+            }
+          } else {
+            toast({ title: "Erro no cadastro", description: error.message, variant: "destructive" });
+          }
         } else if (needsConfirmation) {
           const masked = email ? maskEmail(email) : "seu e-mail";
           toast({
             title: "Cadastro realizado!",
             description: `Link de confirmação enviado para ${masked}. Verifique sua caixa de entrada.`,
           });
+          if (email) setUnconfirmedEmail(email);
         }
       } else {
         const { error } = await loginWithCpf(cpf, password);
         if (error) {
-          toast({ title: "Erro no login", description: error.message, variant: "destructive" });
+          const msg = error.message?.toLowerCase() || "";
+          if (msg.includes("email not confirmed") || msg.includes("email_not_confirmed") || msg.includes("not confirmed")) {
+            const { data } = await supabase.rpc("find_email_by_cpf", { p_cpf: cpf.replace(/\D/g, "") });
+            if (data && data.length > 0) {
+              setUnconfirmedEmail(data[0].email);
+            } else {
+              toast({ title: "E-mail não confirmado", description: "Confirme seu cadastro pelo link enviado por e-mail.", variant: "destructive" });
+            }
+          } else {
+            toast({ title: "Erro no login", description: error.message, variant: "destructive" });
+          }
         } else {
           toast({ title: "Login realizado com sucesso!" });
           navigate("/eventos");
@@ -208,6 +277,35 @@ const EventosLogin = () => {
               </form>
             ) : (
               <>
+                {unconfirmedEmail && !isAdminLogin && (
+                  <div className="mb-4 p-4 bg-amber-50 border border-amber-200 rounded-lg">
+                    <div className="flex items-start gap-3">
+                      <MailWarning className="w-5 h-5 text-amber-600 mt-0.5 shrink-0" />
+                      <div className="flex-1">
+                        <p className="text-sm font-semibold text-amber-900">
+                          Confirme seu cadastro
+                        </p>
+                        <p className="text-xs text-amber-800 mt-1">
+                          Enviamos um link de confirmação para <strong>{maskEmail(unconfirmedEmail)}</strong>.
+                          Verifique sua caixa de entrada e a pasta de spam. Se não recebeu, reenvie abaixo.
+                        </p>
+                        <Button
+                          type="button"
+                          size="sm"
+                          onClick={handleResendConfirmation}
+                          disabled={resending || resendCooldown > 0}
+                          className="mt-3 bg-amber-600 hover:bg-amber-700 text-white"
+                        >
+                          {resending
+                            ? "Enviando..."
+                            : resendCooldown > 0
+                            ? `Reenviar em ${resendCooldown}s`
+                            : "Reenviar link de confirmação"}
+                        </Button>
+                      </div>
+                    </div>
+                  </div>
+                )}
                 <form onSubmit={handleSubmit} className="space-y-4">
                   {isAdminLogin ? (
                     <div>
@@ -270,7 +368,7 @@ const EventosLogin = () => {
                   )}
                   {!isAdminLogin && (
                     <button
-                      onClick={() => setIsRegister(!isRegister)}
+                      onClick={() => { setIsRegister(!isRegister); clearUnconfirmed(); }}
                       className="text-sm text-green-700 hover:underline block w-full"
                     >
                       {isRegister ? "Já tem conta? Faça login" : "Não tem conta? Cadastre-se"}
@@ -281,6 +379,7 @@ const EventosLogin = () => {
                       setIsAdminLogin(!isAdminLogin);
                       setIsRegister(false);
                       setIsForgotPassword(false);
+                      clearUnconfirmed();
                     }}
                     className="text-xs text-muted-foreground hover:underline block w-full"
                   >
