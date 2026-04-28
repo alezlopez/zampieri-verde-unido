@@ -368,7 +368,7 @@ const EventosLogin = () => {
                   )}
                   {!isAdminLogin && (
                     <button
-                      onClick={() => setIsRegister(!isRegister)}
+                      onClick={() => { setIsRegister(!isRegister); clearUnconfirmed(); }}
                       className="text-sm text-green-700 hover:underline block w-full"
                     >
                       {isRegister ? "Já tem conta? Faça login" : "Não tem conta? Cadastre-se"}
@@ -379,6 +379,7 @@ const EventosLogin = () => {
                       setIsAdminLogin(!isAdminLogin);
                       setIsRegister(false);
                       setIsForgotPassword(false);
+                      clearUnconfirmed();
                     }}
                     className="text-xs text-muted-foreground hover:underline block w-full"
                   >
