@@ -466,6 +466,33 @@ export type Database = {
           },
         ]
       }
+      message_usage: {
+        Row: {
+          created_at: string | null
+          id: string
+          max_messages: number
+          messages_sent: number
+          period_end: string
+          period_start: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          max_messages?: number
+          messages_sent?: number
+          period_end: string
+          period_start: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          max_messages?: number
+          messages_sent?: number
+          period_end?: string
+          period_start?: string
+        }
+        Relationships: []
+      }
       ocorrencias_mhund: {
         Row: {
           codigo_aluno: number | null
@@ -882,6 +909,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      auth_user_exists_by_email: { Args: { p_email: string }; Returns: boolean }
       authenticate_with_username: {
         Args: { p_password: string; p_username: string }
         Returns: {
@@ -925,6 +953,15 @@ export type Database = {
           nome: string
         }[]
       }
+      get_current_message_period: {
+        Args: never
+        Returns: {
+          max_messages: number
+          messages_sent: number
+          period_end: string
+          period_start: string
+        }[]
+      }
       get_vagas_disponiveis: {
         Args: never
         Returns: {
@@ -943,6 +980,7 @@ export type Database = {
         }
         Returns: boolean
       }
+      increment_message_count: { Args: { count: number }; Returns: undefined }
       match_documents: {
         Args: { filter?: Json; match_count?: number; query_embedding: string }
         Returns: {
