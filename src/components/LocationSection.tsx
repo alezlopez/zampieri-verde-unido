@@ -1,44 +1,93 @@
-
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { MapPin, Navigation } from "lucide-react";
+import { MapPin, Phone, Mail, Clock, ArrowUpRight } from "lucide-react";
 
 export const LocationSection = () => {
-  const address = "Rua dos Acarapévas, 80, Balneário São Francisco, São Paulo - SP";
-  
   return (
-    <section id="localizacao" className="py-12 md:py-16 bg-gradient-to-br from-green-600 via-green-700 to-green-800">
+    <section id="localizacao" className="py-16 md:py-24 bg-zampieri-cream">
       <div className="container mx-auto px-4">
-        <div className="max-w-4xl mx-auto">
-          <div className="text-center mb-8 md:mb-12">
-            <Navigation className="h-10 w-10 md:h-12 md:w-12 text-white mx-auto mb-4" />
-            <h2 className="text-3xl md:text-4xl font-bold text-white">
-              Localização
-            </h2>
+        <div className="max-w-6xl mx-auto">
+          <div className="text-center mb-12">
+            <span className="text-xs uppercase tracking-[0.2em] text-zampieri-gold font-bold">Onde estamos</span>
+            <h2 className="font-serif text-3xl md:text-5xl font-bold text-zampieri-green-dark mt-3">Venha nos conhecer</h2>
           </div>
-          
-          <Card className="mb-6 md:mb-8 bg-white/10 backdrop-blur-sm border-white/20">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2 text-white text-base md:text-lg">
-                <MapPin className="h-4 w-4 md:h-5 md:w-5 text-green-300 flex-shrink-0" />
-                Nosso Endereço
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="text-base md:text-lg text-green-100">{address}</p>
-            </CardContent>
-          </Card>
-          
-          <div className="w-full h-64 md:h-96 rounded-2xl overflow-hidden shadow-2xl border-2 md:border-4 border-white/20">
-            <iframe
-              src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3658.2345678901234!2d-46.4967890847896!3d-23.567890123456789!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x94ce59c8b2345678%3A0x1234567890abcdef!2sRua%20dos%20Acarap%C3%A9vas%2C%2080%20-%20Balne%C3%A1rio%20S%C3%A3o%20Francisco%2C%20S%C3%A3o%20Paulo%20-%20SP!5e0!3m2!1spt-BR!2sbr!4v1234567890123!5m2!1spt-BR!2sbr"
-              width="100%"
-              height="100%"
-              style={{ border: 0 }}
-              allowFullScreen
-              loading="lazy"
-              referrerPolicy="no-referrer-when-downgrade"
-              title="Localização do Colégio Zampieri - Rua dos Acarapévas, 80"
-            ></iframe>
+
+          <div className="grid md:grid-cols-2 gap-8 items-stretch">
+            <div className="space-y-5">
+              <div className="bg-white rounded-2xl p-6 border border-zampieri-cream-light">
+                <div className="flex items-start gap-4">
+                  <div className="h-10 w-10 rounded-full bg-zampieri-green-dark text-zampieri-gold-light flex items-center justify-center flex-shrink-0">
+                    <MapPin className="h-5 w-5" />
+                  </div>
+                  <div>
+                    <div className="text-xs uppercase tracking-wider text-zampieri-gold font-bold mb-1">Endereço</div>
+                    <p className="text-zampieri-green-dark font-medium">
+                      Rua dos Acarapévas, 80<br />
+                      Balneário São Francisco · São Paulo – SP
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="bg-white rounded-2xl p-6 border border-zampieri-cream-light">
+                <div className="flex items-start gap-4">
+                  <div className="h-10 w-10 rounded-full bg-zampieri-green-dark text-zampieri-gold-light flex items-center justify-center flex-shrink-0">
+                    <Phone className="h-5 w-5" />
+                  </div>
+                  <div>
+                    <div className="text-xs uppercase tracking-wider text-zampieri-gold font-bold mb-1">Telefones</div>
+                    <a href="tel:+551155601473" className="block text-zampieri-green-dark font-medium hover:text-zampieri-gold">(11) 5560-1473</a>
+                    <a href="tel:+551155600723" className="block text-zampieri-green-dark font-medium hover:text-zampieri-gold">(11) 5560-0723</a>
+                  </div>
+                </div>
+              </div>
+
+              <div className="bg-white rounded-2xl p-6 border border-zampieri-cream-light">
+                <div className="flex items-start gap-4">
+                  <div className="h-10 w-10 rounded-full bg-zampieri-green-dark text-zampieri-gold-light flex items-center justify-center flex-shrink-0">
+                    <Mail className="h-5 w-5" />
+                  </div>
+                  <div>
+                    <div className="text-xs uppercase tracking-wider text-zampieri-gold font-bold mb-1">E-mail</div>
+                    <a href="mailto:secretaria@colegiozampieri.com.br" className="text-zampieri-green-dark font-medium hover:text-zampieri-gold break-all">
+                      secretaria@colegiozampieri.com.br
+                    </a>
+                  </div>
+                </div>
+              </div>
+
+              <div className="bg-white rounded-2xl p-6 border border-zampieri-cream-light">
+                <div className="flex items-start gap-4">
+                  <div className="h-10 w-10 rounded-full bg-zampieri-green-dark text-zampieri-gold-light flex items-center justify-center flex-shrink-0">
+                    <Clock className="h-5 w-5" />
+                  </div>
+                  <div>
+                    <div className="text-xs uppercase tracking-wider text-zampieri-gold font-bold mb-1">Horário</div>
+                    <p className="text-zampieri-green-dark font-medium">Segunda a sexta · 7h30 às 17h30</p>
+                  </div>
+                </div>
+              </div>
+
+              <a
+                href="https://www.google.com/maps/search/Rua+dos+Acarapevas+80+Balneario+Sao+Francisco+Sao+Paulo"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-2 bg-zampieri-gold hover:bg-zampieri-gold-light text-white font-semibold px-5 py-3 rounded-md transition-colors"
+              >
+                Ver rotas no Google Maps <ArrowUpRight className="h-4 w-4" />
+              </a>
+            </div>
+
+            <div className="rounded-2xl overflow-hidden shadow-lg border border-zampieri-cream-light min-h-[400px]">
+              <iframe
+                src="https://www.google.com/maps?q=Rua+dos+Acarapevas+80+Balneario+Sao+Francisco+Sao+Paulo&output=embed"
+                width="100%"
+                height="100%"
+                style={{ border: 0, minHeight: 400 }}
+                allowFullScreen
+                loading="lazy"
+                referrerPolicy="no-referrer-when-downgrade"
+                title="Localização Colégio Zampieri"
+              />
+            </div>
           </div>
         </div>
       </div>

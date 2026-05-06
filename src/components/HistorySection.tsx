@@ -1,58 +1,50 @@
-
-import { Card, CardContent } from "@/components/ui/card";
+import { Check } from "lucide-react";
 
 export const HistorySection = () => {
-  const stats = [
-    { value: "+ de 40 anos", label: "de tradição" },
-    { value: "+ de 10 mil", label: "alunos matriculados" },
-    { value: "Referência", label: "na região" },
+  const values = [
+    "Inovação constante",
+    "Ambiente acolhedor",
+    "Pensamento crítico",
+    "Arte e cultura",
+    "Formação cidadã",
+    "Excelência acadêmica",
   ];
 
   return (
-    <section id="historia" className="py-12 md:py-16 bg-gradient-to-br from-green-800 via-green-700 to-green-600 text-white">
+    <section id="historia" className="py-16 md:py-24 bg-zampieri-cream">
       <div className="container mx-auto px-4">
         <div className="max-w-4xl mx-auto">
-          <h2 className="text-3xl md:text-4xl font-bold text-center mb-8 md:mb-12 text-white">
-            Nossa História
+          <span className="text-xs uppercase tracking-[0.2em] text-zampieri-gold font-bold">Nossa história</span>
+          <h2 className="font-serif text-3xl md:text-5xl font-bold text-zampieri-green-dark mt-3 mb-8 leading-tight">
+            46 anos formando gerações
           </h2>
-          
-          <div className="prose prose-base md:prose-lg mx-auto text-green-50 mb-8 md:mb-12">
-            <p className="text-base md:text-lg leading-relaxed mb-4 md:mb-6">
-              Desde 1980, o Colégio Zampieri transforma vidas com educação de qualidade, 
-              da Educação Infantil ao Ensino Médio. Nosso compromisso é evoluir junto com o mundo, 
-              investindo constantemente em inovação, estrutura e ensino de excelência.
+
+          <div className="space-y-5 text-zampieri-green-dark/85 text-base md:text-lg leading-relaxed">
+            <p>
+              Desde 1980, o Colégio Zampieri transforma vidas com educação de qualidade. Nosso compromisso é evoluir junto com o mundo, investindo constantemente em inovação, estrutura e ensino de excelência.
             </p>
-            
-            <p className="text-lg leading-relaxed mb-6">
-              Aqui, o aluno aprende a pensar, questionar e agir. Nossa missão é formar cidadãos 
-              conscientes, preparados para enfrentar os desafios da sociedade com conhecimento, 
-              criatividade e atitude.
+            <p>
+              Aqui, o aluno aprende a pensar, questionar e agir. Nossa missão é formar cidadãos conscientes, preparados para enfrentar os desafios da sociedade com conhecimento, criatividade e atitude.
             </p>
-            
-            <p className="text-lg leading-relaxed mb-6">
-              Com o sistema SAE Digital, garantimos um material didático dinâmico, crítico e 
-              alinhado com a realidade.
-            </p>
-            
-            <p className="text-lg leading-relaxed">
-              Acreditamos que arte, cultura e vivência são parte essencial do aprendizado. 
-              Promovemos atividades que despertam talentos, desenvolvem habilidades e enriquecem 
-              a formação dos nossos alunos.
+            <p>
+              Acreditamos que arte, cultura e vivência são parte essencial do aprendizado. Promovemos atividades que despertam talentos, desenvolvem habilidades e enriquecem a formação dos nossos alunos.
             </p>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 md:gap-6">
-            {stats.map((stat, index) => (
-              <Card key={index} className="text-center bg-white/10 backdrop-blur-sm border-white/20 hover:bg-white/20 transition-all duration-300">
-                <CardContent className="p-4 md:p-6">
-                  <div className="text-2xl md:text-3xl font-bold text-white mb-1 md:mb-2">
-                    {stat.value}
-                  </div>
-                  <div className="text-green-100 font-medium text-sm md:text-base">
-                    {stat.label}
-                  </div>
-                </CardContent>
-              </Card>
+          <div className="inline-flex items-center gap-3 bg-zampieri-wine text-white px-5 py-2.5 rounded-full mt-8 text-sm font-semibold">
+            <span className="font-serif text-base">1980</span>
+            <span className="opacity-50">·</span>
+            <span>Fundação — 46 anos de história</span>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-10">
+            {values.map((v) => (
+              <div key={v} className="flex items-center gap-3 bg-white rounded-md px-4 py-3 border border-zampieri-cream-light shadow-sm">
+                <div className="h-7 w-7 rounded-full bg-zampieri-green-dark text-zampieri-gold-light flex items-center justify-center flex-shrink-0">
+                  <Check className="h-4 w-4" />
+                </div>
+                <span className="font-semibold text-zampieri-green-dark">{v}</span>
+              </div>
             ))}
           </div>
         </div>
