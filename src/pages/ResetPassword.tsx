@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
 import { Eye, EyeOff, ArrowLeft, CheckCircle } from "lucide-react";
-import logoZampieri from "@/assets/logo-zampieri.svg";
+import logoZampieri from "@/assets/logo-zampieri.png";
 
 const ResetPassword = () => {
   const [password, setPassword] = useState("");
