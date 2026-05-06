@@ -18,7 +18,22 @@ export default {
 			}
 		},
 		extend: {
+			fontFamily: {
+				serif: ['"Playfair Display"', 'Georgia', 'serif'],
+				sans: ['Lato', 'system-ui', 'sans-serif'],
+			},
 			colors: {
+				zampieri: {
+					'green-dark': 'hsl(var(--zampieri-green-dark))',
+					green: 'hsl(var(--zampieri-green))',
+					'green-light': 'hsl(var(--zampieri-green-light))',
+					wine: 'hsl(var(--zampieri-wine))',
+					gold: 'hsl(var(--zampieri-gold))',
+					'gold-light': 'hsl(var(--zampieri-gold-light))',
+					cream: 'hsl(var(--zampieri-cream))',
+					'cream-light': 'hsl(var(--zampieri-cream-light))',
+					footer: 'hsl(var(--zampieri-footer))',
+				},
 				border: 'hsl(var(--border))',
 				input: 'hsl(var(--input))',
 				ring: 'hsl(var(--ring))',
