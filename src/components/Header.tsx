@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Menu, X } from "lucide-react";
-import logoZampieri from "@/assets/logo-zampieri.svg";
+import logoZampieri from "@/assets/logo-zampieri.png";
 
 interface HeaderProps {
   activeSection: string;

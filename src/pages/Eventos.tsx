@@ -7,7 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Footer } from "@/components/Footer";
-import logoZampieri from "@/assets/logo-zampieri.svg";
+import logoZampieri from "@/assets/logo-zampieri.png";
 
 interface Evento {
   id: string;
