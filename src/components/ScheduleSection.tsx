@@ -1,70 +1,64 @@
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Clock, Sun, Moon } from "lucide-react";
+import { Sun, Moon } from "lucide-react";
+
 export const ScheduleSection = () => {
-  const schedules = [{
-    title: "Educação Infantil",
-    morning: "7h15 às 11h20",
-    afternoon: "13h05 às 17h15",
-    note: "",
-    color: "bg-gradient-to-br from-blue-500 to-blue-600"
-  }, {
-    title: "Ensino Fundamental I e II",
-    morning: "7h15 às 11h20*",
-    afternoon: "13h05 às 17h15",
-    note: "* turmas do 8º e 9º ano saem às 12h05 duas vezes na semana",
-    color: "bg-gradient-to-br from-green-500 to-green-600"
-  }, {
-    title: "Ensino Médio",
-    morning: "7h15 às 12h05",
-    afternoon: "",
-    note: "",
-    color: "bg-gradient-to-br from-purple-500 to-purple-600"
-  }];
-  return <section id="horarios" className="py-12 md:py-16 bg-gradient-to-r from-gray-800 via-gray-900 to-gray-800 text-white">
+  const schedules = [
+    {
+      title: "Educação Infantil",
+      headerClass: "bg-zampieri-green-dark",
+      blocks: [{ icon: "tarde" as const, label: "Tarde (único turno)", time: "13h05 – 17h15" }],
+    },
+    {
+      title: "Ensino Fundamental I e II",
+      headerClass: "bg-zampieri-wine",
+      blocks: [
+        { icon: "manha" as const, label: "Manhã", time: "7h15 – 11h20" },
+        { icon: "tarde" as const, label: "Tarde", time: "13h05 – 17h15" },
+      ],
+      note: "* Turmas do 5º, 8º e 9º ano podem ter aulas até 12h05 em um ou dois dias da semana.",
+    },
+    {
+      title: "Ensino Médio",
+      headerClass: "bg-zampieri-gold",
+      blocks: [{ icon: "manha" as const, label: "Manhã (único turno)", time: "7h15 – 12h05" }],
+    },
+  ];
+
+  return (
+    <section id="horarios" className="py-16 md:py-24 bg-white">
       <div className="container mx-auto px-4">
-        <div className="max-w-4xl mx-auto">
-          <div className="text-center mb-8 md:mb-12">
-            <Clock className="h-10 w-10 md:h-12 md:w-12 text-green-400 mx-auto mb-4" />
-            <h2 className="text-3xl md:text-4xl font-bold text-white mb-4">
-              Horários
-            </h2>
-            
+        <div className="max-w-6xl mx-auto">
+          <div className="text-center mb-12">
+            <span className="text-xs uppercase tracking-[0.2em] text-zampieri-gold font-bold">Organização escolar</span>
+            <h2 className="font-serif text-3xl md:text-5xl font-bold text-zampieri-green-dark mt-3">Horários de aula</h2>
           </div>
-          
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {schedules.map((schedule, index) => <Card key={index} className="bg-white/10 backdrop-blur-sm border-white/20 overflow-hidden">
-                <div className={`${schedule.color} p-3 md:p-4`}>
-                  <CardHeader className="p-0">
-                    <CardTitle className="text-base md:text-lg font-bold text-white text-center flex items-center justify-center gap-2">
-                      <Clock className="h-4 w-4 md:h-5 md:w-5" />
-                      {schedule.title}
-                    </CardTitle>
-                  </CardHeader>
+
+          <div className="grid md:grid-cols-3 gap-6">
+            {schedules.map((s) => (
+              <div key={s.title} className="rounded-2xl overflow-hidden border border-zampieri-cream shadow-sm">
+                <div className={`${s.headerClass} text-white p-5`}>
+                  <h3 className="font-serif text-lg md:text-xl font-bold text-center">{s.title}</h3>
                 </div>
-                <CardContent className="p-4 md:p-6 space-y-3 md:space-y-4">
-                  <div className="text-center">
-                    <div className="flex items-center justify-center gap-2 font-semibold text-yellow-400 mb-2">
-                      <Sun className="h-4 w-4" />
-                      Manhã
-                    </div>
-                    <div className="text-white font-mono text-base md:text-lg">{schedule.morning}</div>
-                  </div>
-                  
-                  {schedule.afternoon && <div className="text-center">
-                      <div className="flex items-center justify-center gap-2 font-semibold text-blue-400 mb-2">
-                        <Moon className="h-4 w-4" />
-                        Tarde
+                <div className="p-6 bg-zampieri-cream-light space-y-5">
+                  {s.blocks.map((b, i) => (
+                    <div key={i} className="text-center">
+                      <div className="flex items-center justify-center gap-2 text-zampieri-green-light font-semibold text-sm mb-1">
+                        {b.icon === "manha" ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
+                        {b.label}
                       </div>
-                      <div className="text-white font-mono text-base md:text-lg">{schedule.afternoon}</div>
-                    </div>}
-                  
-                  {schedule.note && <div className="text-sm text-gray-300 text-center mt-4 italic bg-white/5 p-3 rounded-lg">
-                      {schedule.note}
-                    </div>}
-                </CardContent>
-              </Card>)}
+                      <div className="font-serif text-xl text-zampieri-green-dark font-bold">{b.time}</div>
+                    </div>
+                  ))}
+                  {s.note && (
+                    <p className="text-xs italic text-zampieri-green-dark/65 text-center bg-white p-3 rounded-md border border-zampieri-cream">
+                      {s.note}
+                    </p>
+                  )}
+                </div>
+              </div>
+            ))}
           </div>
         </div>
       </div>
-    </section>;
+    </section>
+  );
 };

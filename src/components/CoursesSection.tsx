@@ -1,78 +1,63 @@
-
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { BookOpen, Users, Trophy, GraduationCap } from "lucide-react";
-import { WhatsAppCTA } from "./WhatsAppCTA";
-
 export const CoursesSection = () => {
-  const courses = [{
-    title: "Educação Infantil (5 anos)",
-    subtitle: "Os Primeiros Passos no Colégio Zampieri a partir dos 5 anos.",
-    description: "Acolhedor e Essencial para o desenvolvimento. A criança encontra carinho, entusiasmo, encantamento e aprende a alegria das descobertas.",
-    color: "bg-gradient-to-br from-green-400 to-green-500",
-    icon: BookOpen
-  }, {
-    title: "Ensino Fundamental I",
-    subtitle: "Anos Iniciais, essencial para a formação!",
-    description: "A aprendizagem precisa ter motivo e finalidade. O aluno encontra desafios, motivação, incentivo e descobre a emoção de aprender.",
-    color: "bg-gradient-to-br from-green-500 to-green-600",
-    icon: Users
-  }, {
-    title: "Ensino Fundamental II",
-    subtitle: "Anos finais, essencial para o aprendizado!",
-    description: "O Aluno formula e constata hipóteses de seus pensamentos, apresenta atividades diversificadas e interdisciplinares.",
-    color: "bg-gradient-to-br from-green-600 to-green-700",
-    icon: Trophy
-  }, {
-    title: "Ensino Médio",
-    subtitle: "Anos finais, essencial para o aprendizado!",
-    description: "O Aluno formula e constata hipóteses de seus pensamentos, apresenta atividades diversificadas e interdisciplinares.",
-    color: "bg-gradient-to-br from-green-700 to-green-800",
-    icon: GraduationCap
-  }];
+  const courses = [
+    {
+      icon: "🌱",
+      title: "Educação Infantil",
+      subtitle: "Maternal ao Jardim II",
+      description: "Ambiente seguro e estimulante para os primeiros anos de descoberta. Aprendizado por meio do afeto, da brincadeira e da curiosidade natural da criança.",
+      tags: ["Desenvolvimento", "Socialização", "Letramento"],
+      headerClass: "bg-zampieri-green-dark",
+      tagClass: "bg-zampieri-green-dark/10 text-zampieri-green-dark",
+    },
+    {
+      icon: "📚",
+      title: "Ensino Fundamental",
+      subtitle: "1º ao 9º ano · I e II",
+      description: "Base sólida em todas as disciplinas com metodologia que estimula o raciocínio crítico, a criatividade e o protagonismo do aluno em cada etapa.",
+      tags: ["Raciocínio crítico", "Projetos", "Esportes"],
+      headerClass: "bg-zampieri-wine",
+      tagClass: "bg-zampieri-wine/10 text-zampieri-wine",
+    },
+    {
+      icon: "🎓",
+      title: "Ensino Médio",
+      subtitle: "1ª à 3ª série",
+      description: "Preparação completa para vestibulares e ENEM com acompanhamento próximo, orientação vocacional e foco no sucesso de cada aluno.",
+      tags: ["Vestibular", "ENEM", "Orientação"],
+      headerClass: "bg-zampieri-gold",
+      tagClass: "bg-zampieri-gold/15 text-zampieri-gold",
+    },
+  ];
 
   return (
-    <section id="cursos" className="py-12 md:py-20 bg-gradient-to-br from-green-50 via-green-100 to-green-200 relative overflow-hidden">
-      {/* Background decorative elements */}
-      <div className="absolute top-0 left-0 w-full h-full">
-        <div className="absolute top-10 left-10 w-32 h-32 bg-green-200/30 rounded-full blur-xl"></div>
-        <div className="absolute bottom-20 right-20 w-40 h-40 bg-green-300/30 rounded-full blur-xl"></div>
-        <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-60 h-60 bg-green-200/20 rounded-full blur-2xl"></div>
-      </div>
-
-      <div className="container mx-auto px-4 relative z-10">
+    <section id="cursos" className="py-16 md:py-24 bg-white">
+      <div className="container mx-auto px-4">
         <div className="max-w-6xl mx-auto">
-          <h2 className="text-3xl md:text-4xl font-bold text-center mb-8 md:mb-12 text-green-800">
-            Nossos Cursos
-          </h2>
-          
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {courses.map((course, index) => (
-              <Card key={index} className="overflow-hidden shadow-lg hover:shadow-xl transition-all duration-300 border-0">
-                <div className={`${course.color} p-4 md:p-6 text-white h-36 md:h-48 flex flex-col justify-center`}>
-                  <CardHeader className="p-0 mb-2 md:mb-4">
-                    <div className="flex items-center gap-2 md:gap-3 mb-1 md:mb-2">
-                      <course.icon className="h-6 w-6 md:h-8 md:w-8 text-white flex-shrink-0" />
-                      <CardTitle className="text-base md:text-xl font-bold text-white">
-                        {course.title}
-                      </CardTitle>
-                    </div>
-                    <p className="text-green-100 font-medium text-xs md:text-base">
-                      {course.subtitle}
-                    </p>
-                  </CardHeader>
-                </div>
-                <CardContent className="p-4 md:p-6 bg-white">
-                  <p className="text-gray-700 leading-relaxed text-sm md:text-base">
-                    {course.description}
-                  </p>
-                </CardContent>
-              </Card>
-            ))}
+          <div className="text-center mb-12">
+            <span className="text-xs uppercase tracking-[0.2em] text-zampieri-gold font-bold">Nossos segmentos</span>
+            <h2 className="font-serif text-3xl md:text-5xl font-bold text-zampieri-green-dark mt-3">
+              Do primeiro passo ao vestibular
+            </h2>
           </div>
 
-          <div className="text-center">
-            
-            
+          <div className="grid md:grid-cols-3 gap-6">
+            {courses.map((c) => (
+              <div key={c.title} className="rounded-2xl overflow-hidden border border-zampieri-cream shadow-sm hover:shadow-xl transition-shadow flex flex-col">
+                <div className={`${c.headerClass} text-white p-6 h-48 flex flex-col justify-center`}>
+                  <div className="text-4xl mb-3">{c.icon}</div>
+                  <h3 className="font-serif text-2xl font-bold leading-tight">{c.title}</h3>
+                  <p className="text-white/85 text-sm mt-1">{c.subtitle}</p>
+                </div>
+                <div className="p-6 bg-white flex-1 flex flex-col">
+                  <p className="text-zampieri-green-dark/80 leading-relaxed mb-5 flex-1">{c.description}</p>
+                  <div className="flex flex-wrap gap-2">
+                    {c.tags.map((t) => (
+                      <span key={t} className={`${c.tagClass} text-xs font-semibold px-3 py-1.5 rounded-full`}>{t}</span>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            ))}
           </div>
         </div>
       </div>
