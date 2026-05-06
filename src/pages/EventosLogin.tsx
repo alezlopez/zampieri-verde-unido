@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
 import { Eye, EyeOff, ArrowLeft, MailWarning } from "lucide-react";
-import logoZampieri from "@/assets/logo-zampieri.png";
+import logoZampieri from "@/assets/logo-zampieri.svg";
 
 const maskEmail = (email: string): string => {
   const [local, domain] = email.split("@");
@@ -207,7 +207,7 @@ const EventosLogin = () => {
             <img
                 src={logoZampieri}
               alt="Logo"
-              className="h-16 w-16 rounded-full mx-auto mb-3"
+              className="h-20 w-auto mx-auto mb-3"
             />
             <CardTitle className="text-green-800">
               {isForgotPassword ? "Esqueci minha senha" : isAdminLogin ? "Login Administrativo" : isRegister ? "Criar Conta" : "Entrar"}

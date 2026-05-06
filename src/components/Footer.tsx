@@ -1,4 +1,4 @@
-import logoZampieri from "@/assets/logo-zampieri.png";
+import logoZampieri from "@/assets/logo-zampieri.svg";
 
 export const Footer = () => {
   const escola = [
@@ -28,7 +28,7 @@ export const Footer = () => {
         <div className="grid md:grid-cols-3 gap-10">
           <div>
             <div className="flex items-center gap-3 mb-4">
-              <img src={logoZampieri} alt="Colégio Zampieri" className="h-12 w-12" />
+              <img src={logoZampieri} alt="Colégio Zampieri" className="h-14 w-auto" />
               <div>
                 <h3 className="font-serif text-xl font-bold">Colégio Zampieri</h3>
                 <p className="text-xs text-zampieri-gold-light">Tradição em Educação · Desde 1980</p>

@@ -7,7 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Footer } from "@/components/Footer";
-import logoZampieri from "@/assets/logo-zampieri.png";
+import logoZampieri from "@/assets/logo-zampieri.svg";
 
 interface Evento {
   id: string;
@@ -63,7 +63,7 @@ const Eventos = () => {
             <img
               src={logoZampieri}
               alt="Logo Zampieri"
-              className="h-10 w-10 rounded-full"
+              className="h-12 w-auto"
             />
             <div>
               <h1 className="text-lg font-bold">Colégio Zampieri</h1>

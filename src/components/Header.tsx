@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Menu, X } from "lucide-react";
-import logoZampieri from "@/assets/logo-zampieri.png";
+import logoZampieri from "@/assets/logo-zampieri.svg";
 
 interface HeaderProps {
   activeSection: string;
@@ -28,7 +28,7 @@ export const Header = ({ activeSection }: HeaderProps) => {
       <div className="container mx-auto px-4 py-3">
         <div className="flex items-center justify-between gap-4">
           <div className="flex items-center gap-3">
-            <img src={logoZampieri} alt="Colégio Zampieri" className="h-11 w-11 md:h-12 md:w-12" />
+            <img src={logoZampieri} alt="Colégio Zampieri" className="h-12 md:h-14 w-auto" />
             <div>
               <h1 className="font-serif text-lg md:text-xl font-bold text-zampieri-green-dark leading-tight">Colégio Zampieri</h1>
               <p className="text-[11px] md:text-xs text-zampieri-green-light tracking-wide">Tradição em Educação · Desde 1980</p>
