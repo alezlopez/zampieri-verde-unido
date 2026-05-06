@@ -108,7 +108,7 @@ const ResetPassword = () => {
 
         <Card className="border-green-100 shadow-lg">
           <CardHeader className="text-center">
-            <img src={logoZampieri} alt="Logo" className="h-16 w-16 rounded-full mx-auto mb-3" />
+            <img src={logoZampieri} alt="Logo" className="h-20 w-auto mx-auto mb-3" />
             <CardTitle className="text-green-800">Nova Senha</CardTitle>
             <CardDescription>Digite sua nova senha abaixo</CardDescription>
           </CardHeader>
