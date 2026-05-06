@@ -63,7 +63,7 @@ const Eventos = () => {
             <img
               src={logoZampieri}
               alt="Logo Zampieri"
-              className="h-10 w-10 rounded-full"
+              className="h-12 w-auto"
             />
             <div>
               <h1 className="text-lg font-bold">Colégio Zampieri</h1>

@@ -207,7 +207,7 @@ const EventosLogin = () => {
             <img
                 src={logoZampieri}
               alt="Logo"
-              className="h-16 w-16 rounded-full mx-auto mb-3"
+              className="h-20 w-auto mx-auto mb-3"
             />
             <CardTitle className="text-green-800">
               {isForgotPassword ? "Esqueci minha senha" : isAdminLogin ? "Login Administrativo" : isRegister ? "Criar Conta" : "Entrar"}
