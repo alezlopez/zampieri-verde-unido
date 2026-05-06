@@ -1,4 +1,4 @@
-import logoZampieri from "@/assets/logo-zampieri.png";
+import logoZampieri from "@/assets/logo-zampieri.svg";
 
 export const Footer = () => {
   const escola = [
