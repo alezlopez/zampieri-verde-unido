@@ -428,6 +428,10 @@ const EventoCompra = () => {
       }
       const records: any[] = [];
       const nowIso = new Date().toISOString();
+      const isParcelado = formaPagamento === "parcelado";
+      const precoInteira = Number(isParcelado ? evento.preco_parcelado : evento.preco) || 0;
+      const precoMeiaCalc = Number(isParcelado ? (evento.preco_meia_parcelado ?? 0) : (evento.preco_meia ?? 0)) || 0;
+      const valorPara = (isMeia: boolean) => Number((isMeia ? precoMeiaCalc : precoInteira).toFixed(2));
 
       // Comprador participando como ingresso
       if (comprarParaSi) {
