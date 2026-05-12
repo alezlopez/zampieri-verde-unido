@@ -295,6 +295,7 @@ const EventosAdmin = () => {
       preco_meia: precoMeia,
       preco_meia_parcelado: precoMeiaParcelado,
       categorias_meia: categoriasMeia,
+      aluno_cortesia: alunoCortesia,
     };
     if (payload.vagas_disponiveis === undefined) delete (payload as any).vagas_disponiveis;
 
