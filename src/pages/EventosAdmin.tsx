@@ -780,6 +780,12 @@ const EventosAdmin = () => {
                                   {ing.tipo_comprador === "externo" ? "Externo" : "Aluno"}
                                 </Badge>
                               )}
+                              {ing.tipo_ingresso === "meia" && (
+                                <Badge className="ml-2 text-[10px] bg-orange-100 text-orange-800 border border-orange-300">
+                                  MEIA{ing.categoria_meia ? ` · ${ing.categoria_meia}` : ""}
+                                  {ing.meia_validada_portaria ? " ✓" : ""}
+                                </Badge>
+                              )}
                             </div>
                             <div className="flex items-center gap-2 flex-wrap">
                               {ing.status === "pendente" && !ing.checkout_url && (
