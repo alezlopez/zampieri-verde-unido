@@ -163,6 +163,9 @@ const Eventos = () => {
                     {evento.vagas_disponiveis <= 0 && (
                       <Badge variant="destructive">ESGOTADO</Badge>
                     )}
+                    <Badge variant="outline" className="text-[10px] border-zampieri-gold/60 text-zampieri-green-dark">
+                      {labelPublico(evento.publico_alvo)}
+                    </Badge>
                   </div>
                 </CardHeader>
                 <CardContent className="space-y-2">
@@ -194,15 +197,17 @@ const Eventos = () => {
                   </div>
                 </CardContent>
                 <CardFooter>
-                  {evento.vagas_disponiveis > 0 ? (
+                  {evento.vagas_disponiveis <= 0 ? (
+                    <Button disabled className="w-full">Esgotado</Button>
+                  ) : !podeComprar(evento) ? (
+                    <Button disabled className="w-full">Exclusivo para alunos</Button>
+                  ) : (
                     <Link to={user ? `/eventos/comprar/${evento.id}` : "/eventos/login"} className="w-full">
                       <Button className="w-full bg-zampieri-green-dark hover:bg-zampieri-green text-white">
                         <Ticket className="w-4 h-4 mr-2" />
                         Comprar Ingresso
                       </Button>
                     </Link>
-                  ) : (
-                    <Button disabled className="w-full">Esgotado</Button>
                   )}
                 </CardFooter>
               </Card>
