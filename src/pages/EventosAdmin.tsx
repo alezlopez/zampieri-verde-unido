@@ -74,6 +74,7 @@ const EventosAdmin = () => {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [selectedEventoIngressos, setSelectedEventoIngressos] = useState<string | null>(null);
   const [ingressos, setIngressos] = useState<Ingresso[]>([]);
+  const [filtroMeiaNaoValidada, setFiltroMeiaNaoValidada] = useState(false);
 
   // Manual ticket form
   type Participante = {
@@ -671,20 +672,62 @@ const EventosAdmin = () => {
                 </div>
 
                 {/* Ingressos list */}
-                {selectedEventoIngressos === evento.id && (
+                {selectedEventoIngressos === evento.id && (() => {
+                  const totalMeias = ingressos.filter(i => i.tipo_ingresso === "meia" && i.status !== "cancelado").length;
+                  const meiasValidadas = ingressos.filter(i => i.tipo_ingresso === "meia" && i.meia_validada_portaria).length;
+                  const meiasPendentesValidacao = ingressos.filter(i => i.tipo_ingresso === "meia" && i.status === "pago" && !i.meia_validada_portaria).length;
+                  const exportarCsv = () => {
+                    const header = ["id", "comprador", "codigo_aluno", "qtd", "status", "tipo_comprador", "tipo_ingresso", "categoria_meia", "meia_validada", "asaas_payment_id", "criado_em"];
+                    const rows = ingressos.map(i => [
+                      i.id, i.nome_comprador || "", i.codigo_aluno || "", i.quantidade, i.status,
+                      i.tipo_comprador || "", i.tipo_ingresso || "inteira", i.categoria_meia || "",
+                      i.meia_validada_portaria ? "sim" : "nao", i.asaas_payment_id || "", i.created_at,
+                    ]);
+                    const csv = [header, ...rows].map(r => r.map(c => `"${String(c).replace(/"/g, '""')}"`).join(",")).join("\n");
+                    const blob = new Blob(["\uFEFF" + csv], { type: "text/csv;charset=utf-8" });
+                    const url = URL.createObjectURL(blob);
+                    const a = document.createElement("a");
+                    a.href = url;
+                    a.download = `ingressos-${evento.titulo.replace(/[^a-z0-9]/gi, "_")}.csv`;
+                    a.click();
+                    URL.revokeObjectURL(url);
+                  };
+                  const ingressosVisiveis = filtroMeiaNaoValidada
+                    ? ingressos.filter(i => i.tipo_ingresso === "meia" && i.status === "pago" && !i.meia_validada_portaria)
+                    : ingressos;
+                  return (
                   <div className="mt-4 border-t pt-4 space-y-3">
-                    <div className="flex items-center justify-between">
+                    <div className="flex items-center justify-between flex-wrap gap-2">
                       <h4 className="font-medium text-sm">Ingressos vendidos:</h4>
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        className="border-zampieri-green-dark text-zampieri-green-dark hover:bg-zampieri-cream"
-                        onClick={() => { resetManualForm(); setShowManualForm(true); }}
-                      >
-                        <UserPlus className="w-4 h-4 mr-1" />
-                        Adicionar ingresso manual
-                      </Button>
+                      <div className="flex gap-2 flex-wrap">
+                        <Button
+                          size="sm"
+                          variant={filtroMeiaNaoValidada ? "default" : "outline"}
+                          className={filtroMeiaNaoValidada ? "bg-zampieri-wine hover:bg-zampieri-wine/90 text-white" : ""}
+                          onClick={() => setFiltroMeiaNaoValidada((v) => !v)}
+                        >
+                          Meias não validadas {meiasPendentesValidacao > 0 && `(${meiasPendentesValidacao})`}
+                        </Button>
+                        <Button size="sm" variant="outline" onClick={exportarCsv}>
+                          Exportar CSV
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          className="border-zampieri-green-dark text-zampieri-green-dark hover:bg-zampieri-cream"
+                          onClick={() => { resetManualForm(); setShowManualForm(true); }}
+                        >
+                          <UserPlus className="w-4 h-4 mr-1" />
+                          Adicionar ingresso manual
+                        </Button>
+                      </div>
                     </div>
+
+                    {evento.meia_entrada_habilitada && (
+                      <div className="text-xs text-muted-foreground bg-muted/40 rounded p-2">
+                        <strong>Meias:</strong> {totalMeias} vendidas · {meiasValidadas} validadas na portaria · {meiasPendentesValidacao} aguardando validação
+                      </div>
+                    )}
 
                     {showManualForm && (
                       <Card className="border-zampieri-gold/40 bg-zampieri-cream">
@@ -765,11 +808,13 @@ const EventosAdmin = () => {
                       </Card>
                     )}
 
-                    {ingressos.length === 0 ? (
-                      <p className="text-sm text-muted-foreground">Nenhum ingresso vendido.</p>
+                    {ingressosVisiveis.length === 0 ? (
+                      <p className="text-sm text-muted-foreground">
+                        {filtroMeiaNaoValidada ? "Nenhuma meia aguardando validação." : "Nenhum ingresso vendido."}
+                      </p>
                     ) : (
                       <div className="space-y-2">
-                        {ingressos.map((ing) => (
+                        {ingressosVisiveis.map((ing) => (
                           <div key={ing.id} className="flex flex-col md:flex-row md:justify-between md:items-center gap-2 text-sm bg-muted/50 rounded p-2">
                             <div className="flex-1">
                               <span className="font-medium">{ing.nome_comprador}</span>
@@ -818,7 +863,8 @@ const EventosAdmin = () => {
                       </div>
                     )}
                   </div>
-                )}
+                  );
+                })()}
               </CardContent>
             </Card>
           ))}

@@ -35,10 +35,12 @@ const Eventos = () => {
 
   useEffect(() => {
     const fetchEventos = async () => {
+      const hoje = new Date().toISOString().slice(0, 10);
       const { data, error } = await supabase
         .from("eventos")
         .select("*")
         .eq("ativo", true)
+        .gte("data_evento", hoje)
         .order("data_evento", { ascending: true });
 
       if (!error && data) setEventos(data as any);

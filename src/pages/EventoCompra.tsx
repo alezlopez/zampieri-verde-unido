@@ -434,6 +434,16 @@ const EventoCompra = () => {
         return;
       }
 
+      // Abre o checkout do Asaas em nova aba imediatamente (UX: pagamento + redirect paralelo)
+      const checkoutUrl = (checkoutData as any)?.checkout_url;
+      if (checkoutUrl) {
+        window.open(checkoutUrl, "_blank", "noopener,noreferrer");
+        toast({
+          title: "Checkout aberto em nova aba",
+          description: "Conclua o pagamento na nova aba. Você será redirecionado em alguns segundos.",
+        });
+      }
+
       setTotalIngressosReservados(records.length);
       setRedirectCountdown(10);
     } catch (err: any) {

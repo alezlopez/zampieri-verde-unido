@@ -18,6 +18,8 @@ interface IngressoCompleto {
   nome_comprador: string;
   nome_participante: string | null;
   tipo_participante: string;
+  tipo_ingresso: string;
+  categoria_meia: string | null;
   comprovante_estorno_url: string | null;
   created_at: string;
   eventos: {
@@ -28,6 +30,14 @@ interface IngressoCompleto {
     is_excursao: boolean;
   } | null;
 }
+
+const CATEGORIA_MEIA_LABEL: Record<string, string> = {
+  estudante: "Estudante",
+  idoso: "Idoso (60+)",
+  pcd: "PCD",
+  pcd_acompanhante: "Acompanhante de PCD",
+  professor: "Professor da rede pública",
+};
 
 const Shell = ({ children }: { children: React.ReactNode }) => (
   <div className="min-h-screen bg-background flex flex-col">
@@ -54,7 +64,7 @@ const IngressoDetalhe = () => {
       if (!user || !id) return;
       const { data } = await supabase
         .from("ingressos")
-        .select("id, quantidade, status, nome_comprador, nome_participante, tipo_participante, comprovante_estorno_url, created_at, eventos(titulo, data_evento, horario, local, is_excursao)")
+        .select("id, quantidade, status, nome_comprador, nome_participante, tipo_participante, tipo_ingresso, categoria_meia, comprovante_estorno_url, created_at, eventos(titulo, data_evento, horario, local, is_excursao)")
         .eq("id", id)
         .eq("user_id", user.id)
         .single();
@@ -181,6 +191,22 @@ const IngressoDetalhe = () => {
               <Badge className="bg-zampieri-gold text-zampieri-green-dark hover:bg-zampieri-gold font-bold text-xs">
                 ✓ PAGO
               </Badge>
+            </div>
+            <div className="flex items-center gap-2 mt-2 flex-wrap">
+              {ingresso.tipo_ingresso === "meia" ? (
+                <Badge className="bg-zampieri-wine text-white hover:bg-zampieri-wine font-bold text-xs">
+                  MEIA-ENTRADA
+                </Badge>
+              ) : (
+                <Badge variant="outline" className="border-white/40 text-white text-xs">
+                  INTEIRA
+                </Badge>
+              )}
+              {ingresso.tipo_ingresso === "meia" && ingresso.categoria_meia && (
+                <span className="text-xs text-white/90">
+                  {CATEGORIA_MEIA_LABEL[ingresso.categoria_meia] || ingresso.categoria_meia}
+                </span>
+              )}
             </div>
             <h1 className="font-serif text-xl md:text-2xl font-bold mt-3">{evento?.titulo}</h1>
           </div>

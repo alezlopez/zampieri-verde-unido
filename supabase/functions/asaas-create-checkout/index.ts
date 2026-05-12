@@ -1,12 +1,13 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
+import { z } from "https://esm.sh/zod@3.23.8";
 import { corsHeaders } from "../_shared/cors.ts";
 import { getOrCreateCustomer, createPayment } from "../_shared/asaas.ts";
 
-interface Body {
-  ingresso_ids: string[];
-  forma_pagamento: "pix" | "credit_card";
-  parcelas?: number;
-}
+const BodySchema = z.object({
+  ingresso_ids: z.array(z.string().uuid()).min(1).max(20),
+  forma_pagamento: z.enum(["pix", "credit_card"]),
+  parcelas: z.number().int().min(1).max(12).optional(),
+});
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
@@ -36,17 +37,15 @@ Deno.serve(async (req) => {
     }
     const user = userData.user;
 
-    const body = (await req.json()) as Body;
-    if (!Array.isArray(body.ingresso_ids) || body.ingresso_ids.length === 0) {
-      return new Response(JSON.stringify({ error: "ingresso_ids vazio" }), {
-        status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
+    const raw = await req.json().catch(() => null);
+    const parsed = BodySchema.safeParse(raw);
+    if (!parsed.success) {
+      return new Response(JSON.stringify({
+        error: "Body inválido",
+        detalhes: parsed.error.flatten().fieldErrors,
+      }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
-    if (!["pix", "credit_card"].includes(body.forma_pagamento)) {
-      return new Response(JSON.stringify({ error: "forma_pagamento inválida" }), {
-        status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
-    }
+    const body = parsed.data;
     const parcelasReq = Math.max(1, Math.min(Number(body.parcelas) || 1, 12));
 
     // Carrega ingressos + evento (inclui preços de meia)
