@@ -264,13 +264,50 @@ const EventoCompra = () => {
   const totalParticipantes = alunosSelecionados.length + convidados.length;
 
   const temParcelamento = evento ? evento.preco_parcelado > 0 && evento.max_parcelas > 1 : false;
-  const precoUnitario =
-    formaPagamento === "parcelado" && temParcelamento && evento
-      ? evento.preco_parcelado
-      : evento?.preco ?? 0;
-  const total = precoUnitario * totalParticipantes;
-  const valorParcela =
-    temParcelamento && evento ? (evento.preco_parcelado * totalParticipantes) / evento.max_parcelas : 0;
+  const meiaHabilitada = !!evento?.meia_entrada_habilitada && Number(evento?.preco_meia ?? 0) > 0;
+
+  // Identificadores de cada participante (para meia config)
+  const participantKeys: string[] = [
+    ...alunosSelecionados.map((c) => `aluno-${c}`),
+    ...convidados.map((_, i) => `convidado-${i}`),
+  ];
+
+  const qtdMeias = participantKeys.filter((k) => getMeia(k).tipo_ingresso === "meia").length;
+  const qtdInteiras = totalParticipantes - qtdMeias;
+
+  const precoInteiraUnit = formaPagamento === "parcelado" && temParcelamento && evento
+    ? evento.preco_parcelado
+    : evento?.preco ?? 0;
+  const precoMeiaUnit = formaPagamento === "parcelado" && temParcelamento && evento
+    ? Number(evento.preco_meia_parcelado ?? 0)
+    : Number(evento?.preco_meia ?? 0);
+
+  const total = qtdInteiras * precoInteiraUnit + qtdMeias * precoMeiaUnit;
+  const valorParcela = temParcelamento && evento && evento.max_parcelas > 0
+    ? total / evento.max_parcelas
+    : 0;
+
+  // Carrega info de cota de meia
+  useEffect(() => {
+    const load = async () => {
+      if (!id || !meiaHabilitada) return;
+      const { data } = await supabase.rpc("contar_meias_evento" as any, { p_evento_id: id });
+      const row = Array.isArray(data) ? data[0] : data;
+      if (row) setMeiaInfo({
+        vagas_meia_total: Number(row.vagas_meia_total ?? 0),
+        meias_vendidas: Number(row.meias_vendidas ?? 0),
+        meias_disponiveis: Number(row.meias_disponiveis ?? 0),
+      });
+    };
+    load();
+  }, [id, meiaHabilitada, redirectCountdown]);
+
+  // Validação: toda meia deve ter categoria + declaração
+  const meiasInvalidas = participantKeys.some((k) => {
+    const m = getMeia(k);
+    return m.tipo_ingresso === "meia" && (!m.categoria_meia || !m.declaracao);
+  });
+  const cotaMeiaExcedida = meiaHabilitada && meiaInfo ? qtdMeias > meiaInfo.meias_disponiveis : false;
 
   const handleComprar = async () => {
     if (!evento || !user) return;
