@@ -455,6 +455,7 @@ const EventoCompra = () => {
           categoria_meia: isMeia ? m.categoria_meia : null,
           declaracao_meia_aceita: isMeia ? m.declaracao : false,
           declaracao_meia_aceita_em: isMeia && m.declaracao ? nowIso : null,
+          valor_total: valorPara(isMeia),
         });
       }
 
@@ -476,6 +477,7 @@ const EventoCompra = () => {
           categoria_meia: isMeia ? m.categoria_meia : null,
           declaracao_meia_aceita: isMeia ? m.declaracao : false,
           declaracao_meia_aceita_em: isMeia && m.declaracao ? nowIso : null,
+          valor_total: valorPara(isMeia),
         });
       }
 
@@ -501,6 +503,7 @@ const EventoCompra = () => {
           categoria_meia: isMeia ? m.categoria_meia : null,
           declaracao_meia_aceita: isMeia ? m.declaracao : false,
           declaracao_meia_aceita_em: isMeia && m.declaracao ? nowIso : null,
+          valor_total: valorPara(isMeia),
         });
       }
 
