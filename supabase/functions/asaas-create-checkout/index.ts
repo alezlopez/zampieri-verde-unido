@@ -37,17 +37,15 @@ Deno.serve(async (req) => {
     }
     const user = userData.user;
 
-    const body = (await req.json()) as Body;
-    if (!Array.isArray(body.ingresso_ids) || body.ingresso_ids.length === 0) {
-      return new Response(JSON.stringify({ error: "ingresso_ids vazio" }), {
-        status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
+    const raw = await req.json().catch(() => null);
+    const parsed = BodySchema.safeParse(raw);
+    if (!parsed.success) {
+      return new Response(JSON.stringify({
+        error: "Body inválido",
+        detalhes: parsed.error.flatten().fieldErrors,
+      }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
-    if (!["pix", "credit_card"].includes(body.forma_pagamento)) {
-      return new Response(JSON.stringify({ error: "forma_pagamento inválida" }), {
-        status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
-    }
+    const body = parsed.data;
     const parcelasReq = Math.max(1, Math.min(Number(body.parcelas) || 1, 12));
 
     // Carrega ingressos + evento (inclui preços de meia)
