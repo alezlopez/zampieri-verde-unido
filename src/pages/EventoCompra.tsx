@@ -647,7 +647,36 @@ const EventoCompra = () => {
               <Input value={nomeComprador} onChange={(e) => setNomeComprador(e.target.value)} placeholder="Seu nome completo" />
             </div>
 
-            {/* Quem vai participar */}
+            {/* Auto-cadastro do comprador (sem aluno vinculado nem cadastro externo) */}
+            {precisaCompletarPerfil && (
+              <div className="rounded-md border border-zampieri-green/30 bg-zampieri-cream/30 p-3 space-y-2">
+                <div>
+                  <p className="text-sm font-semibold text-zampieri-green-dark">Complete seus dados de comprador</p>
+                  <p className="text-xs text-muted-foreground">
+                    Não localizamos aluno vinculado ao seu cadastro. Precisamos do seu CPF para emitir a cobrança.
+                  </p>
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                  <Input
+                    placeholder="CPF *"
+                    value={compradorForm.cpf}
+                    onChange={(e) => setCompradorForm((p) => ({ ...p, cpf: e.target.value }))}
+                  />
+                  <Input
+                    placeholder="Celular"
+                    value={compradorForm.celular}
+                    onChange={(e) => setCompradorForm((p) => ({ ...p, celular: e.target.value }))}
+                  />
+                  <Input
+                    type="date"
+                    placeholder="Data de nascimento"
+                    value={compradorForm.data_nascimento}
+                    onChange={(e) => setCompradorForm((p) => ({ ...p, data_nascimento: e.target.value }))}
+                  />
+                </div>
+              </div>
+            )}
+
             <div className="border-t pt-4 space-y-3">
               <label className="text-sm font-medium block">Quem vai participar do evento?</label>
 
