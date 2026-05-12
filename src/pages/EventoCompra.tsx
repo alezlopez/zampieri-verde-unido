@@ -65,6 +65,9 @@ const EventoCompra = () => {
   const [formaPagamento, setFormaPagamento] = useState<"avista" | "parcelado">("avista");
   const [submitting, setSubmitting] = useState(false);
 
+  // Tipo do comprador (aluno x externo)
+  const [tipoComprador, setTipoComprador] = useState<"aluno" | "externo" | null>(null);
+
   // Alunos from DB
   const [alunos, setAlunos] = useState<Aluno[]>([]);
   const [alunosSelecionados, setAlunosSelecionados] = useState<string[]>([]);
@@ -95,6 +98,26 @@ const EventoCompra = () => {
       navigate("/eventos/login");
     }
   }, [user, authLoading, navigate]);
+
+  // Detecta se é comprador externo
+  useEffect(() => {
+    const detect = async () => {
+      if (!user) return;
+      const { data } = await supabase
+        .from("compradores_externos")
+        .select("id, nome")
+        .eq("user_id", user.id)
+        .maybeSingle();
+      if (data) {
+        setTipoComprador("externo");
+        if (data.nome && !nomeComprador) setNomeComprador(data.nome);
+      } else {
+        setTipoComprador("aluno");
+      }
+    };
+    detect();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user]);
 
   // Countdown timer effect
   useEffect(() => {
