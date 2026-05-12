@@ -512,17 +512,30 @@ const EventoCompra = () => {
         });
       }
 
-      const { data: insertedData, error } = await supabase.from("ingressos").insert(records).select("id");
+      const { data: insertedData, error } = await supabase.from("ingressos").insert(records).select("id, cortesia");
       if (error) throw error;
 
-      const insertedIds = (insertedData?.map((r: any) => r.id) || []) as string[];
+      const payableIds = (insertedData || [])
+        .filter((r: any) => r.cortesia !== true)
+        .map((r: any) => r.id) as string[];
 
-      // Asaas: cria/recupera cobrança
+      // Se não há nada a cobrar (todos cortesia), pular checkout
+      if (payableIds.length === 0) {
+        toast({
+          title: "Ingresso(s) de cortesia emitido(s)!",
+          description: "Sem cobrança. Acesse 'Meus Ingressos' para visualizar.",
+        });
+        setTotalIngressosReservados(records.length);
+        setRedirectCountdown(5);
+        return;
+      }
+
+      // Asaas: cria/recupera cobrança apenas para os ingressos pagos
       const formaAsaas = formaPagamento === "parcelado" ? "credit_card" : "pix";
       const parcelas = formaPagamento === "parcelado" ? evento.max_parcelas : 1;
       const { data: checkoutData, error: checkoutErr } = await supabase.functions.invoke(
         "asaas-create-checkout",
-        { body: { ingresso_ids: insertedIds, forma_pagamento: formaAsaas, parcelas } }
+        { body: { ingresso_ids: payableIds, forma_pagamento: formaAsaas, parcelas } }
       );
 
       if (checkoutErr || (checkoutData as any)?.error) {
