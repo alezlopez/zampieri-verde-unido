@@ -114,6 +114,18 @@ const EventoCompra = () => {
   const [termosDialogOpen, setTermosDialogOpen] = useState(false);
   const [autorizacaoDialogOpen, setAutorizacaoDialogOpen] = useState(false);
 
+  // Meia-entrada por participante (chave: `aluno-<codigo>` ou `convidado-<idx>`)
+  const [meiaConfigs, setMeiaConfigs] = useState<Record<string, MeiaConfig>>({});
+  const [meiaInfo, setMeiaInfo] = useState<{ vagas_meia_total: number; meias_vendidas: number; meias_disponiveis: number } | null>(null);
+
+  const setMeiaField = (key: string, patch: Partial<MeiaConfig>) => {
+    setMeiaConfigs((prev) => ({
+      ...prev,
+      [key]: { ...(prev[key] ?? emptyMeiaConfig()), ...patch },
+    }));
+  };
+  const getMeia = (key: string): MeiaConfig => meiaConfigs[key] ?? emptyMeiaConfig();
+
   useEffect(() => {
     if (!authLoading && !user) {
       navigate("/eventos/login");
@@ -252,13 +264,50 @@ const EventoCompra = () => {
   const totalParticipantes = alunosSelecionados.length + convidados.length;
 
   const temParcelamento = evento ? evento.preco_parcelado > 0 && evento.max_parcelas > 1 : false;
-  const precoUnitario =
-    formaPagamento === "parcelado" && temParcelamento && evento
-      ? evento.preco_parcelado
-      : evento?.preco ?? 0;
-  const total = precoUnitario * totalParticipantes;
-  const valorParcela =
-    temParcelamento && evento ? (evento.preco_parcelado * totalParticipantes) / evento.max_parcelas : 0;
+  const meiaHabilitada = !!evento?.meia_entrada_habilitada && Number(evento?.preco_meia ?? 0) > 0;
+
+  // Identificadores de cada participante (para meia config)
+  const participantKeys: string[] = [
+    ...alunosSelecionados.map((c) => `aluno-${c}`),
+    ...convidados.map((_, i) => `convidado-${i}`),
+  ];
+
+  const qtdMeias = participantKeys.filter((k) => getMeia(k).tipo_ingresso === "meia").length;
+  const qtdInteiras = totalParticipantes - qtdMeias;
+
+  const precoInteiraUnit = formaPagamento === "parcelado" && temParcelamento && evento
+    ? evento.preco_parcelado
+    : evento?.preco ?? 0;
+  const precoMeiaUnit = formaPagamento === "parcelado" && temParcelamento && evento
+    ? Number(evento.preco_meia_parcelado ?? 0)
+    : Number(evento?.preco_meia ?? 0);
+
+  const total = qtdInteiras * precoInteiraUnit + qtdMeias * precoMeiaUnit;
+  const valorParcela = temParcelamento && evento && evento.max_parcelas > 0
+    ? total / evento.max_parcelas
+    : 0;
+
+  // Carrega info de cota de meia
+  useEffect(() => {
+    const load = async () => {
+      if (!id || !meiaHabilitada) return;
+      const { data } = await supabase.rpc("contar_meias_evento" as any, { p_evento_id: id });
+      const row = Array.isArray(data) ? data[0] : data;
+      if (row) setMeiaInfo({
+        vagas_meia_total: Number(row.vagas_meia_total ?? 0),
+        meias_vendidas: Number(row.meias_vendidas ?? 0),
+        meias_disponiveis: Number(row.meias_disponiveis ?? 0),
+      });
+    };
+    load();
+  }, [id, meiaHabilitada, redirectCountdown]);
+
+  // Validação: toda meia deve ter categoria + declaração
+  const meiasInvalidas = participantKeys.some((k) => {
+    const m = getMeia(k);
+    return m.tipo_ingresso === "meia" && (!m.categoria_meia || !m.declaracao);
+  });
+  const cotaMeiaExcedida = meiaHabilitada && meiaInfo ? qtdMeias > meiaInfo.meias_disponiveis : false;
 
   const handleComprar = async () => {
     if (!evento || !user) return;
@@ -278,6 +327,16 @@ const EventoCompra = () => {
         toast({ title: `Informe o nome do convidado ${i + 1}`, variant: "destructive" });
         return;
       }
+    }
+
+    // Validar meias
+    if (meiasInvalidas) {
+      toast({ title: "Meia-entrada incompleta", description: "Selecione a categoria e aceite a declaração para todas as meias.", variant: "destructive" });
+      return;
+    }
+    if (cotaMeiaExcedida) {
+      toast({ title: "Cota de meia-entrada excedida", description: `Restam apenas ${meiaInfo?.meias_disponiveis ?? 0} meia(s) disponível(is).`, variant: "destructive" });
+      return;
     }
 
     setSubmitting(true);
@@ -302,10 +361,13 @@ const EventoCompra = () => {
         }
       }
       const records: any[] = [];
+      const nowIso = new Date().toISOString();
 
       // Alunos
       for (const codigo of alunosSelecionados) {
         const aluno = alunos.find((a) => a.codigo_aluno === codigo);
+        const m = getMeia(`aluno-${codigo}`);
+        const isMeia = m.tipo_ingresso === "meia";
         records.push({
           evento_id: evento.id,
           user_id: user.id,
@@ -315,11 +377,18 @@ const EventoCompra = () => {
           status: "pendente",
           tipo_participante: "aluno",
           nome_participante: aluno?.nome_aluno || null,
+          tipo_ingresso: isMeia ? "meia" : "inteira",
+          categoria_meia: isMeia ? m.categoria_meia : null,
+          declaracao_meia_aceita: isMeia ? m.declaracao : false,
+          declaracao_meia_aceita_em: isMeia && m.declaracao ? nowIso : null,
         });
       }
 
       // Convidados
-      for (const c of convidados) {
+      for (let i = 0; i < convidados.length; i++) {
+        const c = convidados[i];
+        const m = getMeia(`convidado-${i}`);
+        const isMeia = m.tipo_ingresso === "meia";
         records.push({
           evento_id: evento.id,
           user_id: user.id,
@@ -333,6 +402,10 @@ const EventoCompra = () => {
           data_nascimento_participante: c.data_nascimento || null,
           email_participante: c.email || null,
           celular_participante: c.celular || null,
+          tipo_ingresso: isMeia ? "meia" : "inteira",
+          categoria_meia: isMeia ? m.categoria_meia : null,
+          declaracao_meia_aceita: isMeia ? m.declaracao : false,
+          declaracao_meia_aceita_em: isMeia && m.declaracao ? nowIso : null,
         });
       }
 
@@ -573,6 +646,88 @@ const EventoCompra = () => {
               </div>
             )}
 
+            {/* Meia-entrada por participante (Lei 12.933/2013) */}
+            {meiaHabilitada && totalParticipantes > 0 && (
+              <div className="border-t pt-4 space-y-3">
+                <div>
+                  <label className="text-sm font-medium block">Tipo de ingresso por participante</label>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Conforme Lei 12.933/2013, há cota de meia-entrada (estudantes, idosos 60+, PCD + acompanhante e professores da rede pública). É exigida comprovação na portaria.
+                  </p>
+                  {meiaInfo && (
+                    <p className="text-xs mt-1">
+                      <span className="font-medium">Meias disponíveis no evento: </span>
+                      <span className={meiaInfo.meias_disponiveis <= 0 ? "text-destructive font-bold" : "text-zampieri-green-dark font-bold"}>
+                        {meiaInfo.meias_disponiveis} de {meiaInfo.vagas_meia_total}
+                      </span>
+                    </p>
+                  )}
+                </div>
+
+                {participantKeys.map((key) => {
+                  const isAluno = key.startsWith("aluno-");
+                  const label = isAluno
+                    ? alunos.find((a) => `aluno-${a.codigo_aluno}` === key)?.nome_aluno ?? "Aluno"
+                    : convidados[Number(key.replace("convidado-", ""))]?.nome?.trim() || `Convidado ${Number(key.replace("convidado-", "")) + 1}`;
+                  const m = getMeia(key);
+                  const categoriasPermitidas = evento.categorias_meia ?? [];
+                  return (
+                    <div key={key} className="border rounded-md p-3 space-y-2 bg-muted/20">
+                      <p className="text-xs font-semibold text-zampieri-green-dark">{label}</p>
+                      <RadioGroup
+                        value={m.tipo_ingresso}
+                        onValueChange={(v) => setMeiaField(key, { tipo_ingresso: v as "inteira" | "meia", categoria_meia: v === "inteira" ? "" : m.categoria_meia, declaracao: v === "inteira" ? false : m.declaracao })}
+                        className="flex gap-4"
+                      >
+                        <div className="flex items-center space-x-2">
+                          <RadioGroupItem value="inteira" id={`${key}-inteira`} />
+                          <Label htmlFor={`${key}-inteira`} className="cursor-pointer text-sm">Inteira</Label>
+                        </div>
+                        <div className="flex items-center space-x-2">
+                          <RadioGroupItem value="meia" id={`${key}-meia`} />
+                          <Label htmlFor={`${key}-meia`} className="cursor-pointer text-sm">Meia (50%)</Label>
+                        </div>
+                      </RadioGroup>
+
+                      {m.tipo_ingresso === "meia" && (
+                        <div className="space-y-2 pt-1">
+                          <div>
+                            <Label className="text-xs">Categoria *</Label>
+                            <select
+                              className="w-full border rounded-md p-2 text-sm bg-background"
+                              value={m.categoria_meia}
+                              onChange={(e) => setMeiaField(key, { categoria_meia: e.target.value })}
+                            >
+                              <option value="">Selecione...</option>
+                              {categoriasPermitidas.map((c) => (
+                                <option key={c} value={c}>{CATEGORIAS_LABELS[c] ?? c}</option>
+                              ))}
+                            </select>
+                          </div>
+                          <div className="flex items-start space-x-2">
+                            <Checkbox
+                              id={`${key}-decl`}
+                              checked={m.declaracao}
+                              onCheckedChange={(c) => setMeiaField(key, { declaracao: c === true })}
+                            />
+                            <label htmlFor={`${key}-decl`} className="text-xs cursor-pointer">
+                              Declaro, sob as penas da lei, que o participante se enquadra na categoria selecionada e apresentarei o documento comprobatório original na portaria do evento. Caso contrário, será necessário pagar a diferença para ingresso inteira.
+                            </label>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+
+                {cotaMeiaExcedida && (
+                  <p className="text-xs text-destructive font-medium">
+                    ⚠️ Cota de meia-entrada excedida. Restam {meiaInfo?.meias_disponiveis ?? 0} meia(s).
+                  </p>
+                )}
+              </div>
+            )}
+
             {/* Forma de pagamento */}
             {temParcelamento && totalParticipantes > 0 && (
               <div className="border-t pt-4">
@@ -585,14 +740,14 @@ const EventoCompra = () => {
                   <div className="flex items-center space-x-2">
                     <RadioGroupItem value="avista" id="avista" />
                     <Label htmlFor="avista" className="cursor-pointer">
-                      À vista — R$ {(evento.preco * totalParticipantes).toFixed(2).replace(".", ",")}
+                      À vista — R$ {(qtdInteiras * evento.preco + qtdMeias * Number(evento.preco_meia ?? 0)).toFixed(2).replace(".", ",")}
                     </Label>
                   </div>
                   <div className="flex items-center space-x-2">
                     <RadioGroupItem value="parcelado" id="parcelado" />
                     <Label htmlFor="parcelado" className="cursor-pointer">
                       {evento.max_parcelas}x de R$ {valorParcela.toFixed(2).replace(".", ",")} (Total: R${" "}
-                      {(evento.preco_parcelado * totalParticipantes).toFixed(2).replace(".", ",")})
+                      {(qtdInteiras * evento.preco_parcelado + qtdMeias * Number(evento.preco_meia_parcelado ?? 0)).toFixed(2).replace(".", ",")})
                     </Label>
                   </div>
                 </RadioGroup>
@@ -816,14 +971,22 @@ const EventoCompra = () => {
                   totalParticipantes === 0 ||
                   totalParticipantes > evento.vagas_disponiveis ||
                   !termosAceitos ||
-                  (evento.requer_autorizacao && !autorizacaoAceita)
+                  (evento.requer_autorizacao && !autorizacaoAceita) ||
+                  meiasInvalidas ||
+                  cotaMeiaExcedida
                 }
               >
                 {submitting ? "Processando..." : "Reservar Ingressos"}
               </Button>
-              {(!termosAceitos || (evento.requer_autorizacao && !autorizacaoAceita)) && totalParticipantes > 0 && (
+              {(!termosAceitos || (evento.requer_autorizacao && !autorizacaoAceita) || meiasInvalidas || cotaMeiaExcedida) && totalParticipantes > 0 && (
                 <p className="text-xs text-amber-600 text-center mt-2">
-                  {!termosAceitos ? "Aceite os termos de compra para continuar." : "Aceite a autorização de participação para continuar."}
+                  {!termosAceitos
+                    ? "Aceite os termos de compra para continuar."
+                    : evento.requer_autorizacao && !autorizacaoAceita
+                    ? "Aceite a autorização de participação para continuar."
+                    : meiasInvalidas
+                    ? "Selecione a categoria e aceite a declaração de cada meia-entrada."
+                    : "Cota de meia-entrada excedida."}
                 </p>
               )}
               <p className="text-xs text-muted-foreground text-center mt-2">

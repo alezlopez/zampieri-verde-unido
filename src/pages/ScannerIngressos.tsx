@@ -19,11 +19,22 @@ interface IngressoScanned {
   status: string;
   utilizado: boolean;
   codigo_aluno: string | null;
+  tipo_ingresso: string;
+  categoria_meia: string | null;
+  meia_validada_portaria: boolean;
   eventos: {
     titulo: string;
     data_evento: string;
   } | null;
 }
+
+const CATEGORIAS_LABELS: Record<string, string> = {
+  estudante: "Estudante",
+  idoso: "Idoso (60+)",
+  pcd: "PCD",
+  pcd_acompanhante: "Acompanhante de PCD",
+  professor: "Professor rede pública",
+};
 
 const ScannerIngressos = () => {
   const { user, isAdmin, loading: authLoading } = useAuth();
@@ -53,7 +64,7 @@ const ScannerIngressos = () => {
 
     const { data, error: err } = await supabase
       .from("ingressos")
-      .select("id, nome_comprador, nome_participante, tipo_participante, status, utilizado, codigo_aluno, eventos(titulo, data_evento)")
+      .select("id, nome_comprador, nome_participante, tipo_participante, status, utilizado, codigo_aluno, tipo_ingresso, categoria_meia, meia_validada_portaria, eventos(titulo, data_evento)")
       .eq("id", decodedText)
       .single();
 
@@ -98,6 +109,10 @@ const ScannerIngressos = () => {
 
   const markAsUsed = async () => {
     if (!ingresso) return;
+    if (ingresso.tipo_ingresso === "meia" && !ingresso.meia_validada_portaria) {
+      toast({ title: "Valide o documento de meia primeiro", variant: "destructive" });
+      return;
+    }
     setMarking(true);
     const { error: err } = await supabase
       .from("ingressos")
@@ -109,6 +124,27 @@ const ScannerIngressos = () => {
     } else {
       setIngresso({ ...ingresso, utilizado: true });
       toast({ title: "Ingresso marcado como utilizado!" });
+    }
+    setMarking(false);
+  };
+
+  const validarDocMeia = async () => {
+    if (!ingresso || !user) return;
+    setMarking(true);
+    const { error: err } = await supabase
+      .from("ingressos")
+      .update({
+        meia_validada_portaria: true,
+        meia_validada_em: new Date().toISOString(),
+        meia_validada_por: user.id,
+      })
+      .eq("id", ingresso.id);
+
+    if (err) {
+      toast({ title: "Erro ao validar documento", variant: "destructive" });
+    } else {
+      setIngresso({ ...ingresso, meia_validada_portaria: true });
+      toast({ title: "Documento de meia validado!" });
     }
     setMarking(false);
   };
@@ -182,11 +218,31 @@ const ScannerIngressos = () => {
                   <div>
                     <p className="text-xs text-muted-foreground uppercase tracking-wider">Participante</p>
                     <p className="font-medium text-foreground">{ingresso.nome_participante || ingresso.nome_comprador}</p>
-                    <div className="flex gap-2 mt-1">
+                    <div className="flex gap-2 mt-1 flex-wrap">
                       <Badge variant="outline">{ingresso.tipo_participante}</Badge>
                       {ingresso.codigo_aluno && <Badge variant="outline">Aluno: {ingresso.codigo_aluno}</Badge>}
+                      {ingresso.tipo_ingresso === "meia" ? (
+                        <Badge className="bg-destructive text-destructive-foreground border-0">MEIA — exige documento</Badge>
+                      ) : (
+                        <Badge className="bg-zampieri-green/15 text-zampieri-green-dark border border-zampieri-green/40">Inteira</Badge>
+                      )}
                     </div>
                   </div>
+
+                  {ingresso.tipo_ingresso === "meia" && (
+                    <div className={`rounded-md p-3 border ${ingresso.meia_validada_portaria ? "bg-zampieri-green/10 border-zampieri-green/40" : "bg-destructive/10 border-destructive/40"}`}>
+                      <p className="text-xs uppercase tracking-wider font-bold mb-1">
+                        {ingresso.meia_validada_portaria ? "✅ Documento validado" : "⚠️ Validação pendente"}
+                      </p>
+                      <p className="text-sm">
+                        Categoria: <strong>{CATEGORIAS_LABELS[ingresso.categoria_meia ?? ""] ?? ingresso.categoria_meia ?? "—"}</strong>
+                      </p>
+                      <p className="text-xs text-muted-foreground mt-1">
+                        Confira o documento original (carteira de estudante, RG, laudo PCD ou identificação profissional) antes de liberar a entrada.
+                      </p>
+                    </div>
+                  )}
+
                   <div className="flex items-center gap-2">
                     <p className="text-xs text-muted-foreground uppercase tracking-wider">Status:</p>
                     <Badge className={
@@ -199,11 +255,23 @@ const ScannerIngressos = () => {
                   </div>
                 </div>
 
+                {ingresso.status === "pago" && !ingresso.utilizado && ingresso.tipo_ingresso === "meia" && !ingresso.meia_validada_portaria && (
+                  <Button
+                    onClick={validarDocMeia}
+                    disabled={marking}
+                    className="w-full mt-4 bg-destructive hover:bg-destructive/90 text-destructive-foreground"
+                    size="lg"
+                  >
+                    <CheckCircle2 className="w-5 h-5 mr-2" />
+                    {marking ? "Validando..." : "Validar documento de meia"}
+                  </Button>
+                )}
+
                 {ingresso.status === "pago" && !ingresso.utilizado && (
                   <Button
                     onClick={markAsUsed}
-                    disabled={marking}
-                    className="w-full mt-4 bg-zampieri-green-dark hover:bg-zampieri-green text-white"
+                    disabled={marking || (ingresso.tipo_ingresso === "meia" && !ingresso.meia_validada_portaria)}
+                    className="w-full mt-3 bg-zampieri-green-dark hover:bg-zampieri-green text-white"
                     size="lg"
                   >
                     <CheckCircle2 className="w-5 h-5 mr-2" />
