@@ -116,6 +116,12 @@ const EventosAdmin = () => {
   const [imagemPreview, setImagemPreview] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
 
+  // Resumo financeiro (calculado com base em valor_total + status dos ingressos)
+  type ResumoFinanceiro = { recebido: number; pendente: number; estornado: number; cancelado: number };
+  const emptyResumo = (): ResumoFinanceiro => ({ recebido: 0, pendente: 0, estornado: 0, cancelado: 0 });
+  const [resumoGeral, setResumoGeral] = useState<ResumoFinanceiro>(emptyResumo());
+  const [resumoPorEvento, setResumoPorEvento] = useState<Record<string, ResumoFinanceiro>>({});
+
   useEffect(() => {
     if (!authLoading && (!user || !isAdmin)) {
       navigate("/eventos/login");
@@ -132,9 +138,41 @@ const EventosAdmin = () => {
     setLoading(false);
   };
 
+  const fetchResumoFinanceiro = async () => {
+    const { data, error } = await supabase
+      .from("ingressos")
+      .select("evento_id, status, valor_total")
+      .not("valor_total", "is", null);
+    if (error || !data) return;
+    const geral = emptyResumo();
+    const porEvento: Record<string, ResumoFinanceiro> = {};
+    for (const row of data as any[]) {
+      const valor = Number(row.valor_total) || 0;
+      if (valor <= 0) continue;
+      const eid = row.evento_id as string;
+      if (!porEvento[eid]) porEvento[eid] = emptyResumo();
+      const bucket =
+        row.status === "pago" ? "recebido" :
+        row.status === "estornado" ? "estornado" :
+        row.status === "cancelado" ? "cancelado" :
+        row.status === "pendente" ? "pendente" : null;
+      if (!bucket) continue;
+      geral[bucket] += valor;
+      porEvento[eid][bucket] += valor;
+    }
+    setResumoGeral(geral);
+    setResumoPorEvento(porEvento);
+  };
+
   useEffect(() => {
-    if (isAdmin) fetchEventos();
+    if (isAdmin) {
+      fetchEventos();
+      fetchResumoFinanceiro();
+    }
   }, [isAdmin]);
+
+  const formatBRL = (v: number) =>
+    v.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 
   const resetForm = () => {
     setTitulo("");
