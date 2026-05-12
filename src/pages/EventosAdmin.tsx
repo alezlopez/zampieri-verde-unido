@@ -209,7 +209,7 @@ const EventosAdmin = () => {
       vagas_total: vagasNum,
       vagas_disponiveis: vagasNum,
       requer_autorizacao: requerAutorizacao,
-      tipo_evento: tipoEvento,
+      tipo_evento: publicoAlvo === "apenas_alunos" ? "somente_alunos" : "alunos_convidados",
       is_excursao: isExcursao,
       publico_alvo: publicoAlvo,
     };
