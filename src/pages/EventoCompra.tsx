@@ -598,44 +598,77 @@ const EventoCompra = () => {
           <CardContent className="space-y-4">
             {/* Nome do comprador */}
             <div>
-              <label className="text-sm font-medium">Nome do responsável (comprador) *</label>
+              <label className="text-sm font-medium">Nome do comprador *</label>
               <Input value={nomeComprador} onChange={(e) => setNomeComprador(e.target.value)} placeholder="Seu nome completo" />
             </div>
 
-            {/* Seleção de alunos */}
-            <div className="border-t pt-4">
-              <label className="text-sm font-medium mb-2 block">Selecione os alunos</label>
-              {loadingAlunos ? (
-                <p className="text-sm text-muted-foreground">Carregando alunos...</p>
-              ) : alunos.length === 0 ? (
-                <p className="text-sm text-muted-foreground">Nenhum aluno encontrado para este CPF.</p>
-              ) : (
-                <div className="space-y-2">
-                  {alunos.map((aluno) => {
-                    const jaTemIngresso = alunosComIngresso.includes(aluno.codigo_aluno);
-                    return (
-                      <div
-                        key={aluno.codigo_aluno}
-                        className={`flex items-center space-x-3 p-2 rounded-md border ${jaTemIngresso ? "opacity-50 cursor-not-allowed bg-muted/30" : "hover:bg-muted/50 cursor-pointer"}`}
-                        onClick={() => !jaTemIngresso && toggleAluno(aluno.codigo_aluno)}
-                      >
-                        <Checkbox
-                          checked={alunosSelecionados.includes(aluno.codigo_aluno)}
-                          onCheckedChange={() => !jaTemIngresso && toggleAluno(aluno.codigo_aluno)}
-                          disabled={jaTemIngresso}
-                        />
-                        <div>
-                          <p className="text-sm font-medium">{aluno.nome_aluno}</p>
-                          <p className="text-xs text-muted-foreground">
-                            Código: {aluno.codigo_aluno} {aluno.curso && `— ${aluno.curso}`}
-                          </p>
-                          {jaTemIngresso && (
-                            <p className="text-xs text-orange-600 font-medium">✅ Já possui ingresso para este evento</p>
-                          )}
-                        </div>
+            {/* Quem vai participar */}
+            <div className="border-t pt-4 space-y-3">
+              <label className="text-sm font-medium block">Quem vai participar do evento?</label>
+
+              {/* Card: Você (comprador) */}
+              {permiteConvidados && (
+                <div
+                  className={`flex items-start space-x-3 p-3 rounded-md border-2 cursor-pointer transition ${comprarParaSi ? "border-zampieri-green bg-zampieri-cream/40" : "border-border hover:bg-muted/40"}`}
+                  onClick={() => { setComprarParaSiTouched(true); setComprarParaSi((v) => !v); }}
+                >
+                  <Checkbox
+                    checked={comprarParaSi}
+                    onCheckedChange={(c) => { setComprarParaSiTouched(true); setComprarParaSi(c === true); }}
+                  />
+                  <div className="flex-1">
+                    <p className="text-sm font-semibold text-zampieri-green-dark">
+                      Eu também vou participar
+                      {nomeComprador.trim() && <span className="text-muted-foreground font-normal"> — {nomeComprador.trim()}</span>}
+                    </p>
+                    <p className="text-xs text-muted-foreground mt-0.5">
+                      Marque se o ingresso é para você. Já preenchido com seus dados de cadastro.
+                    </p>
+                  </div>
+                </div>
+              )}
+
+              {/* Alunos vinculados */}
+              {tipoComprador !== "externo" && (
+                <div>
+                  {loadingAlunos ? (
+                    <p className="text-sm text-muted-foreground">Carregando alunos vinculados...</p>
+                  ) : alunos.length === 0 ? (
+                    <p className="text-xs text-muted-foreground">
+                      Não localizamos alunos vinculados ao seu CPF. Marque a opção acima para comprar para você ou adicione convidados abaixo.
+                    </p>
+                  ) : (
+                    <>
+                      <p className="text-xs font-medium text-muted-foreground mb-2">Alunos vinculados ao seu CPF</p>
+                      <div className="space-y-2">
+                        {alunos.map((aluno) => {
+                          const jaTemIngresso = alunosComIngresso.includes(aluno.codigo_aluno);
+                          return (
+                            <div
+                              key={aluno.codigo_aluno}
+                              className={`flex items-center space-x-3 p-2 rounded-md border ${jaTemIngresso ? "opacity-50 cursor-not-allowed bg-muted/30" : "hover:bg-muted/50 cursor-pointer"}`}
+                              onClick={() => !jaTemIngresso && toggleAluno(aluno.codigo_aluno)}
+                            >
+                              <Checkbox
+                                checked={alunosSelecionados.includes(aluno.codigo_aluno)}
+                                onCheckedChange={() => !jaTemIngresso && toggleAluno(aluno.codigo_aluno)}
+                                disabled={jaTemIngresso}
+                              />
+                              <div>
+                                <p className="text-sm font-medium">{aluno.nome_aluno}</p>
+                                <p className="text-xs text-muted-foreground">
+                                  Código: {aluno.codigo_aluno} {aluno.curso && `— ${aluno.curso}`}
+                                </p>
+                                {jaTemIngresso && (
+                                  <p className="text-xs text-orange-600 font-medium">✅ Já possui ingresso para este evento</p>
+                                )}
+                              </div>
+                            </div>
+                          );
+                        })}
                       </div>
-                    );
-                  })}
+                    </>
+                  )}
                 </div>
               )}
             </div>
@@ -644,10 +677,13 @@ const EventoCompra = () => {
             {permiteConvidados && (
               <div className="border-t pt-4">
                 <div className="flex items-center justify-between mb-2">
-                  <label className="text-sm font-medium">Convidados extras</label>
+                  <div>
+                    <label className="text-sm font-medium block">Outros convidados</label>
+                    <p className="text-xs text-muted-foreground">Cônjuge, avô, primo, amigo etc.</p>
+                  </div>
                   <Button type="button" variant="outline" size="sm" onClick={addConvidado}>
                     <UserPlus className="w-4 h-4 mr-1" />
-                    Adicionar
+                    Adicionar convidado
                   </Button>
                 </div>
                 {convidados.length === 0 && (
