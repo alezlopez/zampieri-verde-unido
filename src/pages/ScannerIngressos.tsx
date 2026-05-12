@@ -275,6 +275,12 @@ const ScannerIngressos = () => {
                       <p className="text-xs text-muted-foreground mt-1">
                         Confira o documento original (carteira de estudante, RG, laudo PCD ou identificação profissional) antes de liberar a entrada.
                       </p>
+                      {ingresso.meia_validada_portaria && (ingresso.meia_validada_em || ingresso.meia_validada_por) && (
+                        <p className="text-xs text-zampieri-green-dark mt-2 font-medium">
+                          Validado{ingresso.meia_validada_em ? ` em ${new Date(ingresso.meia_validada_em).toLocaleString("pt-BR")}` : ""}
+                          {ingresso.meia_validada_por && validadores[ingresso.meia_validada_por] ? ` por ${validadores[ingresso.meia_validada_por]}` : ""}
+                        </p>
+                      )}
                     </div>
                   )}
 
