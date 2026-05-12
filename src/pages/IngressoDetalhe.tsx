@@ -64,7 +64,7 @@ const IngressoDetalhe = () => {
       if (!user || !id) return;
       const { data } = await supabase
         .from("ingressos")
-        .select("id, quantidade, status, nome_comprador, nome_participante, tipo_participante, comprovante_estorno_url, created_at, eventos(titulo, data_evento, horario, local, is_excursao)")
+        .select("id, quantidade, status, nome_comprador, nome_participante, tipo_participante, tipo_ingresso, categoria_meia, comprovante_estorno_url, created_at, eventos(titulo, data_evento, horario, local, is_excursao)")
         .eq("id", id)
         .eq("user_id", user.id)
         .single();
