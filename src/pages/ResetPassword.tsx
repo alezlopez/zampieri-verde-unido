@@ -6,7 +6,8 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
 import { Eye, EyeOff, ArrowLeft, CheckCircle } from "lucide-react";
-import logoZampieri from "@/assets/logo-zampieri.png";
+import { EventosHeader } from "@/components/EventosHeader";
+import { Footer } from "@/components/Footer";
 
 const ResetPassword = () => {
   const [password, setPassword] = useState("");
@@ -64,97 +65,104 @@ const ResetPassword = () => {
     }
   };
 
+  const Shell = ({ children }: { children: React.ReactNode }) => (
+    <div className="min-h-screen bg-background flex flex-col">
+      <EventosHeader subtitle="Redefinir senha" />
+      <div className="flex-1 flex items-center justify-center px-4 py-10">
+        <div className="w-full max-w-md">{children}</div>
+      </div>
+      <Footer />
+    </div>
+  );
+
   if (!isRecovery) {
     return (
-      <div className="min-h-screen bg-gradient-to-b from-green-50 to-white flex items-center justify-center px-4">
-        <Card className="w-full max-w-md border-green-100 shadow-lg">
+      <Shell>
+        <Card className="border-border shadow-lg">
           <CardHeader className="text-center">
-            <CardTitle className="text-green-800">Link inválido</CardTitle>
+            <CardTitle className="font-serif text-zampieri-green-dark">Link inválido</CardTitle>
             <CardDescription>
               Este link de recuperação é inválido ou expirou. Solicite um novo link.
             </CardDescription>
           </CardHeader>
           <CardContent>
             <Link to="/eventos/login">
-              <Button className="w-full bg-green-600 hover:bg-green-700">Voltar ao login</Button>
+              <Button className="w-full bg-zampieri-green-dark hover:bg-zampieri-green text-white">Voltar ao login</Button>
             </Link>
           </CardContent>
         </Card>
-      </div>
+      </Shell>
     );
   }
 
   if (success) {
     return (
-      <div className="min-h-screen bg-gradient-to-b from-green-50 to-white flex items-center justify-center px-4">
-        <Card className="w-full max-w-md border-green-100 shadow-lg">
+      <Shell>
+        <Card className="border-border shadow-lg">
           <CardHeader className="text-center">
-            <CheckCircle className="w-12 h-12 text-green-600 mx-auto mb-3" />
-            <CardTitle className="text-green-800">Senha alterada!</CardTitle>
+            <CheckCircle className="w-12 h-12 text-zampieri-green mx-auto mb-3" />
+            <CardTitle className="font-serif text-zampieri-green-dark">Senha alterada!</CardTitle>
             <CardDescription>Redirecionando para a página de eventos...</CardDescription>
           </CardHeader>
         </Card>
-      </div>
+      </Shell>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-green-50 to-white flex items-center justify-center px-4">
-      <div className="w-full max-w-md">
-        <Link to="/eventos/login" className="inline-flex items-center text-green-700 hover:text-green-800 mb-6">
-          <ArrowLeft className="w-4 h-4 mr-2" />
-          Voltar ao login
-        </Link>
+    <Shell>
+      <Link to="/eventos/login" className="inline-flex items-center text-zampieri-green-dark hover:text-zampieri-gold mb-6 text-sm font-semibold">
+        <ArrowLeft className="w-4 h-4 mr-2" />
+        Voltar ao login
+      </Link>
 
-        <Card className="border-green-100 shadow-lg">
-          <CardHeader className="text-center">
-            <img src={logoZampieri} alt="Logo" className="h-20 w-auto mx-auto mb-3" />
-            <CardTitle className="text-green-800">Nova Senha</CardTitle>
-            <CardDescription>Digite sua nova senha abaixo</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <form onSubmit={handleSubmit} className="space-y-4">
-              <div>
-                <label className="text-sm font-medium text-foreground">Nova senha</label>
-                <div className="relative">
-                  <Input
-                    type={showPassword ? "text" : "password"}
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    placeholder="Mínimo 6 caracteres"
-                    required
-                    minLength={6}
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground"
-                  >
-                    {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                  </button>
-                </div>
-              </div>
-
-              <div>
-                <label className="text-sm font-medium text-foreground">Confirmar senha</label>
+      <Card className="border-border shadow-lg">
+        <CardHeader className="text-center border-b border-zampieri-gold/30 pb-6">
+          <CardTitle className="font-serif text-2xl text-zampieri-green-dark">Nova Senha</CardTitle>
+          <CardDescription>Digite sua nova senha abaixo</CardDescription>
+        </CardHeader>
+        <CardContent className="pt-6">
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <div>
+              <label className="text-sm font-medium text-foreground">Nova senha</label>
+              <div className="relative">
                 <Input
                   type={showPassword ? "text" : "password"}
-                  value={confirmPassword}
-                  onChange={(e) => setConfirmPassword(e.target.value)}
-                  placeholder="Repita a nova senha"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  placeholder="Mínimo 6 caracteres"
                   required
                   minLength={6}
                 />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground"
+                >
+                  {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                </button>
               </div>
+            </div>
 
-              <Button type="submit" className="w-full bg-green-600 hover:bg-green-700" disabled={loading}>
-                {loading ? "Aguarde..." : "Alterar senha"}
-              </Button>
-            </form>
-          </CardContent>
-        </Card>
-      </div>
-    </div>
+            <div>
+              <label className="text-sm font-medium text-foreground">Confirmar senha</label>
+              <Input
+                type={showPassword ? "text" : "password"}
+                value={confirmPassword}
+                onChange={(e) => setConfirmPassword(e.target.value)}
+                placeholder="Repita a nova senha"
+                required
+                minLength={6}
+              />
+            </div>
+
+            <Button type="submit" className="w-full bg-zampieri-green-dark hover:bg-zampieri-green text-white" disabled={loading}>
+              {loading ? "Aguarde..." : "Alterar senha"}
+            </Button>
+          </form>
+        </CardContent>
+      </Card>
+    </Shell>
   );
 };
 
