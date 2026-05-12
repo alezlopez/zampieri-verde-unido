@@ -1,51 +1,51 @@
-## Inclusão manual de ingressos no painel admin
+## Objetivo
 
-Adicionar um botão "Adicionar ingresso manual" para cada evento no `EventosAdmin`, abrindo um formulário que permite ao admin lançar ingressos já pagos (cortesia, pagamento externo, dinheiro, etc.) com os dados completos dos participantes.
+Padronizar visualmente todas as rotas secundárias (Eventos + institucionais) para seguir a identidade aplicada na home (`/`), sem mexer em hooks, queries Supabase, RPCs, validações ou fluxos de negócio.
 
-### Fluxo de uso
+## Padrão visual de referência (home)
 
-1. Admin clica em "Ingressos" no card do evento (já existente).
-2. Acima da lista aparece o botão "+ Adicionar ingresso manual".
-3. Abre um formulário inline com:
-   - Dados do comprador: nome, CPF (usado para vincular usuário).
-   - Lista dinâmica de participantes (botão "+ Adicionar participante"), cada um com: tipo (aluno/convidado), nome, CPF, data de nascimento, e-mail, celular. Para tipo aluno, campo "código do aluno".
-   - Observação opcional.
-4. Ao salvar:
-   - Valida vagas disponíveis no evento (busca `vagas_disponiveis` atualizado).
-   - Tenta resolver `user_id` via CPF do comprador (RPC nova `find_user_id_by_cpf`); se não achar, usa `auth.uid()` do admin.
-   - Insere 1 registro por participante em `ingressos` com `status = 'pago'` (trigger `atualizar_vagas_disponiveis` desconta vagas automaticamente).
-   - Marca `nome_comprador`, `cpf_participante`, `tipo_participante`, etc.
-5. Lista de ingressos é recarregada e mostra os novos registros como "pago".
+- **Tokens**: `bg-background`, `text-foreground`, `bg-card`, `border-border`, paleta `zampieri-green-dark / green / green-light / gold / gold-light / cream / wine / footer`. Nada de classes cruas (`bg-green-600`, `text-white` direto, gradientes `from-green-X`).
+- **Tipografia**: títulos em `font-serif` (Playfair Display) com `text-zampieri-green-dark`; corpo em `font-sans` (Lato).
+- **Header das sub-páginas (simplificado por contexto)**: barra branca `bg-white/95 backdrop-blur` com `border-b-[3px] border-zampieri-gold`, logo + título "Colégio Zampieri" / subtítulo da página à esquerda, ações contextuais à direita (ex.: Voltar para o site, Meus Ingressos, Sair, Painel Admin). Sem menu de seções da home.
+- **Footer**: reutilizar o `Footer` institucional já existente. Quando os links de âncora não fizerem sentido (rotas fora da home), redirecionar para `/#secao` ou esconder a coluna respectiva — manter a coluna de marca + legal.
+- **Banners/heroes internos**: fundo `bg-gradient-to-r from-zampieri-green-dark to-zampieri-green` com filete dourado inferior, título serifado.
+- **Cards**: usar componente `Card` com `border-border` e `shadow-sm`; destaques com `border-zampieri-gold/40` e `bg-zampieri-cream-light`.
+- **Botões**: `Button` shadcn nos variants padrão; CTA principal = `bg-zampieri-green-dark hover:bg-zampieri-green`; CTA destaque = `bg-zampieri-gold hover:bg-zampieri-gold-light text-zampieri-green-dark`. Estados destrutivos via `variant="destructive"`.
+- **Badges**: status mapeados para tokens (pago = `bg-zampieri-green text-white`, pendente = `bg-zampieri-gold/20 text-zampieri-green-dark`, cancelado = `variant="destructive"`).
 
-### Mudanças
+## Componente reutilizável a criar
 
-**1. Migração (Supabase)** — nova RPC `find_user_id_by_cpf(p_cpf text)`:
-- `SECURITY DEFINER`, `search_path = public`.
-- Procura em `alunos_26.cpf_pai`/`cpf_mae`, pega `email` correspondente, e busca `auth.users` por esse e-mail. Retorna `user_id uuid` ou `NULL`.
+`src/components/EventosHeader.tsx` — header simplificado parametrizável:
+- Props: `subtitle?: string`, `actions?: ReactNode`.
+- Renderiza logo + "Colégio Zampieri" + subtítulo, mais slot de ações à direita.
+- Substitui o cabeçalho duplicado nas rotas de eventos.
 
-**2. `src/pages/EventosAdmin.tsx`**:
-- Novo estado: `showManualForm`, `manualEventoId`, `compradorNome`, `compradorCpf`, lista `participantes[]`.
-- Função `handleAddParticipante`, `handleRemoveParticipante`, `handleSaveManual`.
-- Botão "+ Adicionar ingresso manual" dentro do bloco `selectedEventoIngressos === evento.id`.
-- Formulário inline (Card) com os campos descritos.
-- `handleSaveManual`:
-  - Valida nome do comprador e ao menos 1 participante com nome.
-  - Chama `supabase.rpc("find_user_id_by_cpf", { p_cpf })` se CPF informado; fallback `user.id` do admin.
-  - Recarrega `vagas_disponiveis` do evento; se < participantes, bloqueia.
-  - Insert em massa em `ingressos` com `status: "pago"`, `tipo_participante`, dados do participante.
-  - Toast de sucesso, fecha formulário, recarrega ingressos + eventos.
+(Sem alterar `Header.tsx`, `TopBar.tsx`, `Footer.tsx` da home.)
 
-### Observações técnicas
+## Rotas a atualizar
 
-- A RLS atual (`Users can create own tickets`) exige `auth.uid() = user_id`. Como o admin sempre está autenticado, vincular ao admin (fallback) ou ao próprio usuário do CPF ambos passam — quando vinculado a outro usuário, a policy bloqueia. **Solução**: o INSERT vai sempre com `user_id = auth.uid() (admin)`; em paralelo, gravamos o `user_id` real do responsável em uma coluna nova... 
-  
-  Mais simples: **manter `user_id = auth.uid() do admin`** sempre (ingresso é administrativo). Se a RPC encontrar um usuário pelo CPF, usamos esse `user_id` mas precisaremos relaxar a policy via política nova "Admins can create tickets for any user" (`has_role(auth.uid(), 'admin')`). Vou adicionar essa policy na migração para permitir que o ingresso apareça em "Meus Ingressos" do responsável real.
+### Eventos (apenas visual)
+1. **`/eventos`** (`Eventos.tsx`) — trocar header inline por `EventosHeader`, ajustar banner para gradiente Zampieri, cards usando tokens, badges de esgotado em tokens.
+2. **`/eventos/login`** (`EventosLogin.tsx`) — header simplificado, card central com `bg-card border-border`, botões com tokens, mantendo todo o fluxo de CPF/email/reset.
+3. **`/eventos/comprar/:id`** (`EventoCompra.tsx`) — header, breadcrumb visual, cards de participantes/resumo/pagamento com tokens; preservar handlers, validações, integração Asaas, termos.
+4. **`/eventos/admin`** (`EventosAdmin.tsx`) — header com ação "Voltar a Eventos", abas/cards, formulário manual recém-adicionado e seção de ingressos seguindo o padrão; sem mexer em RPCs nem RLS.
+5. **`/eventos/meus-ingressos`** (`MeusIngressos.tsx`) — header, lista de cards de ingresso em tokens, badges padronizadas.
+6. **`/eventos/ingresso/:id`** (`IngressoDetalhe.tsx`) — cabeçalho do ingresso com gradiente Zampieri, QR em card claro com filete dourado.
+7. **`/eventos/admin/scanner`** (`ScannerIngressos.tsx`) — header, área da câmera com moldura `border-zampieri-gold`, feedback visual usando `zampieri-green` / `destructive`.
 
-- O trigger `atualizar_vagas_disponiveis` cuida de descontar vagas automaticamente para `status` diferente de cancelado/estornado.
+### Institucionais
+8. **`/privacidade`** (`Privacidade.tsx`) e **`/termos`** (`TermosDeUso.tsx`) — envolver com `TopBar + Header + Footer` da home, container tipográfico `prose`-like com `font-serif` em h1/h2 e tokens Zampieri.
+9. **`/reset-password`** (`ResetPassword.tsx`) — mesmo padrão de `EventosLogin` (header simplificado + card central).
+10. **`/MapadaSuaProximaGrandeAventura`** (`MapadaSuaProximaGrandeAventura.tsx`) — usar `TopBar + Header + Footer`, hero com gradiente Zampieri, formulário em card tokenizado. Webhook n8n e validações intactos.
+11. **`*` NotFound** (`NotFound.tsx`) — página 404 com identidade (logo, mensagem serifada, CTA "Voltar à home" em verde Zampieri).
 
-- Não altera webhooks, edge functions, fluxo público de compra ou Asaas.
+## Garantias (não-escopo)
 
-### Arquivos afetados
+- Não alterar: `AuthContext`, hooks, chamadas `supabase.*`, RPCs, validações, máscaras, webhooks n8n, fluxo Asaas, regras de RLS, vínculos por CPF, lógica de termos/autorização, lógica do scanner, lógica do formulário manual de ingresso.
+- Não alterar rotas no `App.tsx`.
+- Não tocar `Header.tsx`, `TopBar.tsx`, `Footer.tsx` da home (apenas reutilizar).
+- Memória `mem://style/visual-identity` será atualizada para refletir o uso obrigatório de tokens semânticos `zampieri-*` em rotas internas.
 
-- `supabase/migrations/*` (nova RPC + nova RLS policy de INSERT para admins).
-- `src/pages/EventosAdmin.tsx` (UI + lógica).
+## Verificação
+
+Após a implementação, inspecionar visualmente cada rota no preview (login → meus ingressos → ingresso → admin → scanner; institucionais e 404), confirmando consistência com a home e ausência de classes de cor cruas.
