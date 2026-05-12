@@ -214,6 +214,7 @@ const EventosAdmin = () => {
       requer_autorizacao: requerAutorizacao,
       tipo_evento: tipoEvento,
       is_excursao: isExcursao,
+      publico_alvo: publicoAlvo,
     };
 
     if (editingId) {
