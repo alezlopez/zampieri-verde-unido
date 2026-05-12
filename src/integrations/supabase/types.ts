@@ -401,6 +401,7 @@ export type Database = {
       eventos: {
         Row: {
           ativo: boolean
+          categorias_meia: string[]
           created_at: string
           data_evento: string
           descricao: string | null
@@ -410,7 +411,11 @@ export type Database = {
           is_excursao: boolean
           local: string | null
           max_parcelas: number
+          meia_entrada_habilitada: boolean
+          percentual_meia: number
           preco: number
+          preco_meia: number
+          preco_meia_parcelado: number
           preco_parcelado: number
           publico_alvo: string
           requer_autorizacao: boolean
@@ -422,6 +427,7 @@ export type Database = {
         }
         Insert: {
           ativo?: boolean
+          categorias_meia?: string[]
           created_at?: string
           data_evento: string
           descricao?: string | null
@@ -431,7 +437,11 @@ export type Database = {
           is_excursao?: boolean
           local?: string | null
           max_parcelas?: number
+          meia_entrada_habilitada?: boolean
+          percentual_meia?: number
           preco?: number
+          preco_meia?: number
+          preco_meia_parcelado?: number
           preco_parcelado?: number
           publico_alvo?: string
           requer_autorizacao?: boolean
@@ -443,6 +453,7 @@ export type Database = {
         }
         Update: {
           ativo?: boolean
+          categorias_meia?: string[]
           created_at?: string
           data_evento?: string
           descricao?: string | null
@@ -452,7 +463,11 @@ export type Database = {
           is_excursao?: boolean
           local?: string | null
           max_parcelas?: number
+          meia_entrada_habilitada?: boolean
+          percentual_meia?: number
           preco?: number
+          preco_meia?: number
+          preco_meia_parcelado?: number
           preco_parcelado?: number
           publico_alvo?: string
           requer_autorizacao?: boolean
@@ -468,6 +483,7 @@ export type Database = {
         Row: {
           asaas_customer_id: string | null
           asaas_payment_id: string | null
+          categoria_meia: string | null
           celular_participante: string | null
           checkout_id: string | null
           checkout_url: string | null
@@ -476,16 +492,22 @@ export type Database = {
           cpf_participante: string | null
           created_at: string
           data_nascimento_participante: string | null
+          declaracao_meia_aceita: boolean
+          declaracao_meia_aceita_em: string | null
           email_participante: string | null
           evento_id: string
           forma_pagamento: string | null
           id: string
+          meia_validada_em: string | null
+          meia_validada_por: string | null
+          meia_validada_portaria: boolean
           nome_comprador: string
           nome_participante: string | null
           parcelas: number
           quantidade: number
           status: string
           tipo_comprador: string
+          tipo_ingresso: string
           tipo_participante: string
           user_id: string
           utilizado: boolean
@@ -495,6 +517,7 @@ export type Database = {
         Insert: {
           asaas_customer_id?: string | null
           asaas_payment_id?: string | null
+          categoria_meia?: string | null
           celular_participante?: string | null
           checkout_id?: string | null
           checkout_url?: string | null
@@ -503,16 +526,22 @@ export type Database = {
           cpf_participante?: string | null
           created_at?: string
           data_nascimento_participante?: string | null
+          declaracao_meia_aceita?: boolean
+          declaracao_meia_aceita_em?: string | null
           email_participante?: string | null
           evento_id: string
           forma_pagamento?: string | null
           id?: string
+          meia_validada_em?: string | null
+          meia_validada_por?: string | null
+          meia_validada_portaria?: boolean
           nome_comprador: string
           nome_participante?: string | null
           parcelas?: number
           quantidade?: number
           status?: string
           tipo_comprador?: string
+          tipo_ingresso?: string
           tipo_participante?: string
           user_id: string
           utilizado?: boolean
@@ -522,6 +551,7 @@ export type Database = {
         Update: {
           asaas_customer_id?: string | null
           asaas_payment_id?: string | null
+          categoria_meia?: string | null
           celular_participante?: string | null
           checkout_id?: string | null
           checkout_url?: string | null
@@ -530,16 +560,22 @@ export type Database = {
           cpf_participante?: string | null
           created_at?: string
           data_nascimento_participante?: string | null
+          declaracao_meia_aceita?: boolean
+          declaracao_meia_aceita_em?: string | null
           email_participante?: string | null
           evento_id?: string
           forma_pagamento?: string | null
           id?: string
+          meia_validada_em?: string | null
+          meia_validada_por?: string | null
+          meia_validada_portaria?: boolean
           nome_comprador?: string
           nome_participante?: string | null
           parcelas?: number
           quantidade?: number
           status?: string
           tipo_comprador?: string
+          tipo_ingresso?: string
           tipo_participante?: string
           user_id?: string
           utilizado?: boolean
@@ -1018,6 +1054,16 @@ export type Database = {
           max_vagas: number
           turno: string
           vagas_disponiveis: number
+        }[]
+      }
+      contar_meias_evento: {
+        Args: { p_evento_id: string }
+        Returns: {
+          meias_disponiveis: number
+          meias_vendidas: number
+          percentual_meia: number
+          vagas_meia_total: number
+          vagas_total: number
         }[]
       }
       find_alunos_by_cpf: {
