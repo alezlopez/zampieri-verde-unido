@@ -148,7 +148,7 @@ Deno.serve(async (req) => {
       mobilePhone: comprador.celular || undefined,
     });
 
-    const dueDate = new Date(Date.now() + 2 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
+    
 
     console.log("[asaas-create-checkout]", {
       evento_id: eventoId, qtd_inteira: qtdInteira, qtd_meia: qtdMeia,
