@@ -494,23 +494,6 @@ const EventosAdmin = () => {
                 </label>
               </div>
               <div>
-                <label className="text-sm font-medium mb-2 block">Tipo de Evento</label>
-                <RadioGroup
-                  value={tipoEvento}
-                  onValueChange={(val) => setTipoEvento(val as "somente_alunos" | "alunos_convidados")}
-                  className="flex gap-4"
-                >
-                  <div className="flex items-center space-x-2">
-                    <RadioGroupItem value="somente_alunos" id="somente_alunos" />
-                    <Label htmlFor="somente_alunos" className="cursor-pointer">Somente alunos</Label>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <RadioGroupItem value="alunos_convidados" id="alunos_convidados" />
-                    <Label htmlFor="alunos_convidados" className="cursor-pointer">Alunos + Convidados</Label>
-                  </div>
-              </RadioGroup>
-              </div>
-              <div>
                 <label className="text-sm font-medium mb-2 block">Público-alvo (quem pode comprar)</label>
                 <Select value={publicoAlvo} onValueChange={(v) => setPublicoAlvo(v as any)}>
                   <SelectTrigger><SelectValue /></SelectTrigger>
