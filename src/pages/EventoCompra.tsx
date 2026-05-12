@@ -34,6 +34,7 @@ interface Evento {
   preco_meia?: number;
   preco_meia_parcelado?: number;
   categorias_meia?: string[];
+  aluno_cortesia?: boolean;
 }
 
 interface Aluno {
