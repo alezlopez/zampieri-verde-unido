@@ -90,14 +90,23 @@ Deno.serve(async (req) => {
     // Recalcula preço por ingresso usando tipo_ingresso (defesa contra preço enviado pelo cliente)
     let qtdInteira = 0, qtdMeia = 0;
     let valorTotal = 0;
+    const items: { description: string; quantity: number; value: number; ingresso_id: string }[] = [];
     for (const ing of ingressos as any[]) {
       const isMeia = ing.tipo_ingresso === "meia";
       if (isMeia) qtdMeia++; else qtdInteira++;
       const preco = isParcelado
         ? (isMeia ? Number(evento.preco_meia_parcelado) : Number(evento.preco_parcelado))
         : (isMeia ? Number(evento.preco_meia) : Number(evento.preco));
-      valorTotal += isFinite(preco) ? preco : 0;
+      const valor = isFinite(preco) ? preco : 0;
+      valorTotal += valor;
+      items.push({
+        description: `${evento.titulo} — ${ing.nome_participante || "Ingresso"}${isMeia ? " (meia)" : ""}`,
+        quantity: 1,
+        value: valor,
+        ingresso_id: ing.id,
+      });
     }
+
     valorTotal = Number(valorTotal.toFixed(2));
     if (valorTotal <= 0) {
       return new Response(JSON.stringify({ error: "Valor total inválido" }), {
