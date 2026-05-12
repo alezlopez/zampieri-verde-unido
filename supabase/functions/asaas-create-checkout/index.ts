@@ -1,12 +1,13 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
+import { z } from "https://esm.sh/zod@3.23.8";
 import { corsHeaders } from "../_shared/cors.ts";
 import { getOrCreateCustomer, createPayment } from "../_shared/asaas.ts";
 
-interface Body {
-  ingresso_ids: string[];
-  forma_pagamento: "pix" | "credit_card";
-  parcelas?: number;
-}
+const BodySchema = z.object({
+  ingresso_ids: z.array(z.string().uuid()).min(1).max(20),
+  forma_pagamento: z.enum(["pix", "credit_card"]),
+  parcelas: z.number().int().min(1).max(12).optional(),
+});
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
