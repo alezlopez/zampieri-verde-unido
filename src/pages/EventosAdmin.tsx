@@ -108,6 +108,8 @@ const EventosAdmin = () => {
   const [requerAutorizacao, setRequerAutorizacao] = useState(false);
   const [isExcursao, setIsExcursao] = useState(false);
   const [publicoAlvo, setPublicoAlvo] = useState<"apenas_alunos" | "alunos_e_convidados" | "aberto_ao_publico">("alunos_e_convidados");
+  const [meiaHabilitada, setMeiaHabilitada] = useState(true);
+  const [categoriasMeia, setCategoriasMeia] = useState<string[]>(["estudante", "idoso", "pcd", "pcd_acompanhante", "professor"]);
   const [syncingId, setSyncingId] = useState<string | null>(null);
   const [imagemFile, setImagemFile] = useState<File | null>(null);
   const [imagemPreview, setImagemPreview] = useState<string | null>(null);
