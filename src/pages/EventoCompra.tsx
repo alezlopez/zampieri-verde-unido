@@ -464,7 +464,7 @@ const EventoCompra = () => {
       }
 
       // Alunos
-      const alunoCortesia = !!evento.aluno_cortesia;
+      const alunoCortesia = !!(eventoAtual as any)?.aluno_cortesia ?? !!evento.aluno_cortesia;
       for (const codigo of alunosSelecionados) {
         const aluno = alunos.find((a) => a.codigo_aluno === codigo);
         const m = getMeia(`aluno-${codigo}`);
