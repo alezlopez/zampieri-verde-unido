@@ -427,6 +427,33 @@ const EventosLogin = () => {
                     </Button>
                   </form>
 
+                  {showExternoForm && !isAdminLogin && (
+                    <div className="mt-6 p-4 border border-zampieri-gold/40 bg-zampieri-cream rounded-lg">
+                      <p className="text-sm font-semibold text-zampieri-green-dark mb-2">
+                        Cadastro de comprador externo
+                      </p>
+                      <p className="text-xs text-muted-foreground mb-3">
+                        Não é aluno? Crie sua conta para comprar ingressos de eventos abertos ao público. Usaremos o CPF e a senha já digitados acima.
+                      </p>
+                      <form onSubmit={handleExternoSignup} className="space-y-3">
+                        <Input placeholder="Nome completo *" value={externoNome} onChange={(e) => setExternoNome(e.target.value)} required />
+                        <Input type="email" placeholder="E-mail *" value={externoEmail} onChange={(e) => setExternoEmail(e.target.value)} required />
+                        <div className="grid grid-cols-2 gap-2">
+                          <Input placeholder="Celular" value={externoCelular} onChange={(e) => setExternoCelular(e.target.value)} />
+                          <Input type="date" placeholder="Nascimento" value={externoNascimento} onChange={(e) => setExternoNascimento(e.target.value)} />
+                        </div>
+                        <div className="flex gap-2">
+                          <Button type="submit" disabled={loading} className="flex-1 bg-zampieri-green-dark hover:bg-zampieri-green text-white">
+                            {loading ? "Criando..." : "Criar conta e entrar"}
+                          </Button>
+                          <Button type="button" variant="outline" onClick={() => setShowExternoForm(false)}>
+                            Cancelar
+                          </Button>
+                        </div>
+                      </form>
+                    </div>
+                  )}
+
                   <div className="mt-4 text-center space-y-2">
                     {!isRegister && (
                       <button
