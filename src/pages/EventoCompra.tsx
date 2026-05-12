@@ -114,6 +114,18 @@ const EventoCompra = () => {
   const [termosDialogOpen, setTermosDialogOpen] = useState(false);
   const [autorizacaoDialogOpen, setAutorizacaoDialogOpen] = useState(false);
 
+  // Meia-entrada por participante (chave: `aluno-<codigo>` ou `convidado-<idx>`)
+  const [meiaConfigs, setMeiaConfigs] = useState<Record<string, MeiaConfig>>({});
+  const [meiaInfo, setMeiaInfo] = useState<{ vagas_meia_total: number; meias_vendidas: number; meias_disponiveis: number } | null>(null);
+
+  const setMeiaField = (key: string, patch: Partial<MeiaConfig>) => {
+    setMeiaConfigs((prev) => ({
+      ...prev,
+      [key]: { ...(prev[key] ?? emptyMeiaConfig()), ...patch },
+    }));
+  };
+  const getMeia = (key: string): MeiaConfig => meiaConfigs[key] ?? emptyMeiaConfig();
+
   useEffect(() => {
     if (!authLoading && !user) {
       navigate("/eventos/login");
