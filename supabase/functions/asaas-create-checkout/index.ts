@@ -155,12 +155,10 @@ Deno.serve(async (req) => {
       valor_total: valorTotal, parcelado: isParcelado, parcelas: maxParcelas,
     });
 
-    const origin =
-      req.headers.get("origin") ||
-      req.headers.get("referer")?.replace(/\/[^/]*$/, "") ||
-      "https://colegiozampieri.com.br";
-    const successUrl = `${origin.replace(/\/+$/, "")}/eventos/meus-ingressos?status=success`;
-    const cancelUrl = `${origin.replace(/\/+$/, "")}/eventos/meus-ingressos?status=cancel`;
+    const SITE_BASE = "https://colegiozampieri.com.br";
+    const successUrl = `${SITE_BASE}/eventos/meus-ingressos?status=success`;
+    const cancelUrl = `${SITE_BASE}/eventos/meus-ingressos?status=cancel`;
+    const expiredUrl = `${SITE_BASE}/eventos/meus-ingressos?status=expired`;
 
     const billingTypes = isParcelado
       ? (["CREDIT_CARD"] as const)
@@ -176,7 +174,7 @@ Deno.serve(async (req) => {
       items: items.map((i) => ({ name: i.description, description: i.description, quantity: i.quantity, value: i.value })),
       successUrl,
       cancelUrl,
-      expiredUrl: cancelUrl,
+      expiredUrl,
       externalReference: ingressos.map((i: any) => i.id).join(","),
       minutesToExpire: 1440,
       maxInstallmentCount: isParcelado ? maxParcelas : undefined,
