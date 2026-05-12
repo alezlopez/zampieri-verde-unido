@@ -130,7 +130,6 @@ const EventosAdmin = () => {
     setVagasTotal("");
     setRequerAutorizacao(false);
     setIsExcursao(false);
-    setIsExcursao(false);
     setPublicoAlvo("alunos_e_convidados");
     setImagemFile(null);
     setImagemPreview(null);
