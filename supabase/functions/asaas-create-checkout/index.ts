@@ -47,11 +47,12 @@ Deno.serve(async (req) => {
         status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
+    const parcelasReq = Math.max(1, Math.min(Number(body.parcelas) || 1, 12));
 
-    // Carrega ingressos + evento
+    // Carrega ingressos + evento (inclui preços de meia)
     const { data: ingressos, error: ingErr } = await admin
       .from("ingressos")
-      .select("id, user_id, evento_id, asaas_payment_id, checkout_url, status, eventos:evento_id(id,titulo,preco,preco_parcelado,max_parcelas)")
+      .select("id, user_id, evento_id, asaas_payment_id, checkout_url, status, tipo_ingresso, eventos:evento_id(id,titulo,preco,preco_parcelado,max_parcelas,preco_meia,preco_meia_parcelado)")
       .in("id", body.ingresso_ids);
 
     if (ingErr || !ingressos || ingressos.length === 0) {
@@ -60,14 +61,13 @@ Deno.serve(async (req) => {
       });
     }
 
-    // Ownership
     if (ingressos.some((i: any) => i.user_id !== user.id)) {
       return new Response(JSON.stringify({ error: "Ingressos não pertencem ao usuário" }), {
         status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
-    // Idempotência: se já existe payment_id, devolve checkout existente
+    // Idempotência
     const existing = ingressos.find((i: any) => i.asaas_payment_id && i.checkout_url);
     if (existing) {
       return new Response(JSON.stringify({
@@ -77,7 +77,6 @@ Deno.serve(async (req) => {
       }), { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
 
-    // Mesmo evento
     const eventoId = ingressos[0].evento_id;
     if (ingressos.some((i: any) => i.evento_id !== eventoId)) {
       return new Response(JSON.stringify({ error: "Ingressos de eventos diferentes" }), {
@@ -85,14 +84,41 @@ Deno.serve(async (req) => {
       });
     }
     const evento: any = ingressos[0].eventos;
-    const qtd = ingressos.length;
 
-    const isParcelado = body.forma_pagamento === "credit_card" && (body.parcelas || 1) > 1;
-    const maxParcelas = Math.max(1, Math.min(body.parcelas || 1, evento.max_parcelas || 1));
-    const precoUnit = isParcelado && evento.preco_parcelado > 0 ? evento.preco_parcelado : evento.preco;
-    const valorTotal = Number((precoUnit * qtd).toFixed(2));
+    const isParcelado = body.forma_pagamento === "credit_card" && parcelasReq > 1;
+    const maxParcelas = Math.max(1, Math.min(parcelasReq, evento.max_parcelas || 1));
 
-    // Resolve dados do comprador (aluno OU externo)
+    // Recalcula preço por ingresso usando tipo_ingresso (defesa contra preço enviado pelo cliente)
+    let qtdInteira = 0, qtdMeia = 0;
+    let valorTotal = 0;
+    for (const ing of ingressos as any[]) {
+      const isMeia = ing.tipo_ingresso === "meia";
+      if (isMeia) qtdMeia++; else qtdInteira++;
+      const preco = isParcelado
+        ? (isMeia ? Number(evento.preco_meia_parcelado) : Number(evento.preco_parcelado))
+        : (isMeia ? Number(evento.preco_meia) : Number(evento.preco));
+      valorTotal += isFinite(preco) ? preco : 0;
+    }
+    valorTotal = Number(valorTotal.toFixed(2));
+    if (valorTotal <= 0) {
+      return new Response(JSON.stringify({ error: "Valor total inválido" }), {
+        status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    // Recheck cota de meias (race entre carrinhos diferentes)
+    if (qtdMeia > 0) {
+      const { data: cotaRows } = await admin.rpc("contar_meias_evento", { p_evento_id: eventoId });
+      const cota = cotaRows?.[0];
+      if (cota && cota.meias_vendidas > cota.vagas_meia_total) {
+        return new Response(JSON.stringify({
+          error: "cota_meia_esgotada",
+          message: `Cota de meia-entrada esgotada. ${cota.meias_disponiveis} disponíveis.`,
+        }), { status: 409, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+      }
+    }
+
+    // Comprador
     const { data: compradorRows, error: compErr } = await admin.rpc("get_comprador_dados", {
       p_user_id: user.id,
     });
@@ -108,7 +134,6 @@ Deno.serve(async (req) => {
       });
     }
 
-    // Customer Asaas
     const customer = await getOrCreateCustomer({
       name: comprador.nome,
       cpfCnpj: comprador.cpf,
@@ -116,23 +141,27 @@ Deno.serve(async (req) => {
       mobilePhone: comprador.celular || undefined,
     });
 
-    // Cobrança
     const dueDate = new Date(Date.now() + 2 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
+
+    console.log("[asaas-create-checkout]", {
+      evento_id: eventoId, qtd_inteira: qtdInteira, qtd_meia: qtdMeia,
+      valor_total: valorTotal, parcelado: isParcelado, parcelas: maxParcelas,
+    });
+
     const payment = await createPayment({
       customer: customer.id,
       billingType: body.forma_pagamento === "pix" ? "PIX" : "CREDIT_CARD",
-      value: precoUnit,
+      value: valorTotal,
       totalValue: isParcelado ? valorTotal : undefined,
       installmentCount: isParcelado ? maxParcelas : undefined,
       dueDate,
-      description: `${evento.titulo} — ${qtd} ingresso(s)`,
+      description: `${evento.titulo} — ${ingressos.length} ingresso(s)`,
       externalReference: ingressos.map((i: any) => i.id).join(","),
     });
 
     const checkoutUrl = payment.invoiceUrl || payment.bankSlipUrl;
     const paymentId = payment.id;
 
-    // Persiste
     await admin
       .from("ingressos")
       .update({
@@ -148,7 +177,7 @@ Deno.serve(async (req) => {
       .in("id", body.ingresso_ids);
 
     return new Response(
-      JSON.stringify({ checkout_url: checkoutUrl, payment_id: paymentId, reused: false }),
+      JSON.stringify({ checkout_url: checkoutUrl, payment_id: paymentId, reused: false, valor_total: valorTotal }),
       { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } },
     );
   } catch (e: any) {
