@@ -218,11 +218,31 @@ const ScannerIngressos = () => {
                   <div>
                     <p className="text-xs text-muted-foreground uppercase tracking-wider">Participante</p>
                     <p className="font-medium text-foreground">{ingresso.nome_participante || ingresso.nome_comprador}</p>
-                    <div className="flex gap-2 mt-1">
+                    <div className="flex gap-2 mt-1 flex-wrap">
                       <Badge variant="outline">{ingresso.tipo_participante}</Badge>
                       {ingresso.codigo_aluno && <Badge variant="outline">Aluno: {ingresso.codigo_aluno}</Badge>}
+                      {ingresso.tipo_ingresso === "meia" ? (
+                        <Badge className="bg-destructive text-destructive-foreground border-0">MEIA — exige documento</Badge>
+                      ) : (
+                        <Badge className="bg-zampieri-green/15 text-zampieri-green-dark border border-zampieri-green/40">Inteira</Badge>
+                      )}
                     </div>
                   </div>
+
+                  {ingresso.tipo_ingresso === "meia" && (
+                    <div className={`rounded-md p-3 border ${ingresso.meia_validada_portaria ? "bg-zampieri-green/10 border-zampieri-green/40" : "bg-destructive/10 border-destructive/40"}`}>
+                      <p className="text-xs uppercase tracking-wider font-bold mb-1">
+                        {ingresso.meia_validada_portaria ? "✅ Documento validado" : "⚠️ Validação pendente"}
+                      </p>
+                      <p className="text-sm">
+                        Categoria: <strong>{CATEGORIAS_LABELS[ingresso.categoria_meia ?? ""] ?? ingresso.categoria_meia ?? "—"}</strong>
+                      </p>
+                      <p className="text-xs text-muted-foreground mt-1">
+                        Confira o documento original (carteira de estudante, RG, laudo PCD ou identificação profissional) antes de liberar a entrada.
+                      </p>
+                    </div>
+                  )}
+
                   <div className="flex items-center gap-2">
                     <p className="text-xs text-muted-foreground uppercase tracking-wider">Status:</p>
                     <Badge className={
@@ -235,11 +255,23 @@ const ScannerIngressos = () => {
                   </div>
                 </div>
 
+                {ingresso.status === "pago" && !ingresso.utilizado && ingresso.tipo_ingresso === "meia" && !ingresso.meia_validada_portaria && (
+                  <Button
+                    onClick={validarDocMeia}
+                    disabled={marking}
+                    className="w-full mt-4 bg-destructive hover:bg-destructive/90 text-destructive-foreground"
+                    size="lg"
+                  >
+                    <CheckCircle2 className="w-5 h-5 mr-2" />
+                    {marking ? "Validando..." : "Validar documento de meia"}
+                  </Button>
+                )}
+
                 {ingresso.status === "pago" && !ingresso.utilizado && (
                   <Button
                     onClick={markAsUsed}
-                    disabled={marking}
-                    className="w-full mt-4 bg-zampieri-green-dark hover:bg-zampieri-green text-white"
+                    disabled={marking || (ingresso.tipo_ingresso === "meia" && !ingresso.meia_validada_portaria)}
+                    className="w-full mt-3 bg-zampieri-green-dark hover:bg-zampieri-green text-white"
                     size="lg"
                   >
                     <CheckCircle2 className="w-5 h-5 mr-2" />
