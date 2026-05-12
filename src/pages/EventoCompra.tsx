@@ -461,24 +461,28 @@ const EventoCompra = () => {
       }
 
       // Alunos
+      const alunoCortesia = !!evento.aluno_cortesia;
       for (const codigo of alunosSelecionados) {
         const aluno = alunos.find((a) => a.codigo_aluno === codigo);
         const m = getMeia(`aluno-${codigo}`);
-        const isMeia = m.tipo_ingresso === "meia";
+        const isMeia = !alunoCortesia && m.tipo_ingresso === "meia";
         records.push({
           evento_id: evento.id,
           user_id: user.id,
           nome_comprador: nomeComprador.trim(),
           codigo_aluno: codigo,
           quantidade: 1,
-          status: "pendente",
+          status: alunoCortesia ? "pago" : "pendente",
+          cortesia: alunoCortesia,
           tipo_participante: "aluno",
           nome_participante: aluno?.nome_aluno || null,
           tipo_ingresso: isMeia ? "meia" : "inteira",
           categoria_meia: isMeia ? m.categoria_meia : null,
           declaracao_meia_aceita: isMeia ? m.declaracao : false,
           declaracao_meia_aceita_em: isMeia && m.declaracao ? nowIso : null,
-          valor_total: valorPara(isMeia),
+          valor_total: alunoCortesia ? 0 : valorPara(isMeia),
+          forma_pagamento: alunoCortesia ? null : undefined,
+          parcelas: 1,
         });
       }
 
