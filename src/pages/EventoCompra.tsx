@@ -384,6 +384,31 @@ const EventoCompra = () => {
       const records: any[] = [];
       const nowIso = new Date().toISOString();
 
+      // Comprador participando como ingresso
+      if (comprarParaSi) {
+        const m = getMeia("comprador-self");
+        const isMeia = m.tipo_ingresso === "meia";
+        const cpfSelf = compradorExternoData?.cpf || (user.user_metadata?.cpf as string | undefined) || null;
+        records.push({
+          evento_id: evento.id,
+          user_id: user.id,
+          nome_comprador: nomeComprador.trim(),
+          codigo_aluno: null,
+          quantidade: 1,
+          status: "pendente",
+          tipo_participante: "convidado",
+          nome_participante: nomeComprador.trim(),
+          cpf_participante: cpfSelf,
+          data_nascimento_participante: compradorExternoData?.data_nascimento || null,
+          email_participante: compradorExternoData?.email || user.email || null,
+          celular_participante: compradorExternoData?.celular || null,
+          tipo_ingresso: isMeia ? "meia" : "inteira",
+          categoria_meia: isMeia ? m.categoria_meia : null,
+          declaracao_meia_aceita: isMeia ? m.declaracao : false,
+          declaracao_meia_aceita_em: isMeia && m.declaracao ? nowIso : null,
+        });
+      }
+
       // Alunos
       for (const codigo of alunosSelecionados) {
         const aluno = alunos.find((a) => a.codigo_aluno === codigo);
