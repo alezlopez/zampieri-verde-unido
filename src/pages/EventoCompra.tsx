@@ -274,13 +274,21 @@ const EventoCompra = () => {
     setConvidados((prev) => prev.map((c, i) => (i === index ? { ...c, [field]: value } : c)));
   };
 
-  const totalParticipantes = alunosSelecionados.length + convidados.length;
+  // Default automático: comprador entra como participante quando faz mais sentido
+  useEffect(() => {
+    if (loadingAlunos || !tipoComprador || comprarParaSiTouched) return;
+    if (tipoComprador === "externo") setComprarParaSi(true);
+    else setComprarParaSi(alunos.length === 0);
+  }, [tipoComprador, alunos.length, loadingAlunos, comprarParaSiTouched]);
+
+  const totalParticipantes = (comprarParaSi ? 1 : 0) + alunosSelecionados.length + convidados.length;
 
   const temParcelamento = evento ? evento.preco_parcelado > 0 && evento.max_parcelas > 1 : false;
   const meiaHabilitada = !!evento?.meia_entrada_habilitada && Number(evento?.preco_meia ?? 0) > 0;
 
   // Identificadores de cada participante (para meia config)
   const participantKeys: string[] = [
+    ...(comprarParaSi ? ["comprador-self"] : []),
     ...alunosSelecionados.map((c) => `aluno-${c}`),
     ...convidados.map((_, i) => `convidado-${i}`),
   ];
