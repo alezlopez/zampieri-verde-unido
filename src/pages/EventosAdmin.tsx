@@ -207,6 +207,16 @@ const EventosAdmin = () => {
       toast({ title: "Preencha título e data", variant: "destructive" });
       return;
     }
+    if (meiaHabilitada && categoriasMeia.length === 0) {
+      toast({ title: "Selecione ao menos uma categoria de meia-entrada", variant: "destructive" });
+      return;
+    }
+    const precoNum = parseFloat(preco) || 0;
+    const precoParceladoNum = parseFloat(precoParcelado) || 0;
+    if (precoParceladoNum > 0 && precoParceladoNum < precoNum) {
+      toast({ title: "Preço parcelado não pode ser menor que o à vista", variant: "destructive" });
+      return;
+    }
 
     setUploading(true);
     let finalImagemUrl = imagemUrl || null;
@@ -218,9 +228,9 @@ const EventosAdmin = () => {
     }
 
     const vagasNum = parseInt(vagasTotal) || 0;
-    const precoNum = parseFloat(preco) || 0;
-    const precoParceladoNum = parseFloat(precoParcelado) || 0;
-    const maxParcelasNum = parseInt(maxParcelas) || 1;
+    const maxParcelasNum = Math.max(1, Math.min(parseInt(maxParcelas) || 1, 12));
+    const precoMeia = Number((precoNum / 2).toFixed(2));
+    const precoMeiaParcelado = Number((precoParceladoNum / 2).toFixed(2));
 
     const payload = {
       titulo,
@@ -233,12 +243,17 @@ const EventosAdmin = () => {
       preco_parcelado: precoParceladoNum,
       max_parcelas: maxParcelasNum,
       vagas_total: vagasNum,
-      vagas_disponiveis: vagasNum,
+      vagas_disponiveis: editingId ? undefined : vagasNum, // não sobrescrever em edição
       requer_autorizacao: requerAutorizacao,
       tipo_evento: publicoAlvo === "apenas_alunos" ? "somente_alunos" : "alunos_convidados",
       is_excursao: isExcursao,
       publico_alvo: publicoAlvo,
+      meia_entrada_habilitada: meiaHabilitada,
+      preco_meia: precoMeia,
+      preco_meia_parcelado: precoMeiaParcelado,
+      categorias_meia: categoriasMeia,
     };
+    if (payload.vagas_disponiveis === undefined) delete (payload as any).vagas_disponiveis;
 
     if (editingId) {
       const { error } = await supabase.from("eventos").update(payload).eq("id", editingId);
