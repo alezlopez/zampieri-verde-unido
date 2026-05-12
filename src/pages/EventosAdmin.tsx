@@ -254,7 +254,83 @@ const EventosAdmin = () => {
     setSelectedEventoIngressos(eventoId);
   };
 
-  if (authLoading || loading) {
+  const resetManualForm = () => {
+    setCompradorNome("");
+    setCompradorCpf("");
+    setParticipantes([emptyParticipante()]);
+    setShowManualForm(false);
+  };
+
+  const updateParticipante = (idx: number, patch: Partial<Participante>) => {
+    setParticipantes((prev) => prev.map((p, i) => (i === idx ? { ...p, ...patch } : p)));
+  };
+
+  const handleSaveManual = async (eventoId: string) => {
+    if (!user) return;
+    if (!compradorNome.trim()) {
+      toast({ title: "Informe o nome do comprador", variant: "destructive" });
+      return;
+    }
+    const validos = participantes.filter((p) => p.nome.trim());
+    if (validos.length === 0) {
+      toast({ title: "Adicione ao menos um participante", variant: "destructive" });
+      return;
+    }
+
+    setSavingManual(true);
+    try {
+      // Recheck vagas
+      const { data: ev } = await supabase.from("eventos").select("vagas_disponiveis").eq("id", eventoId).single();
+      if (ev && ev.vagas_disponiveis < validos.length) {
+        toast({ title: "Vagas insuficientes", description: `Restam ${ev.vagas_disponiveis} vaga(s).`, variant: "destructive" });
+        setSavingManual(false);
+        return;
+      }
+
+      // Resolve user_id by CPF (fallback: admin)
+      let targetUserId = user.id;
+      const cpfClean = compradorCpf.replace(/\D/g, "");
+      if (cpfClean) {
+        const { data: foundId } = await supabase.rpc("find_user_id_by_cpf", { p_cpf: cpfClean });
+        if (foundId) targetUserId = foundId as string;
+      }
+
+      const records = validos.map((p) => ({
+        evento_id: eventoId,
+        user_id: targetUserId,
+        nome_comprador: compradorNome.trim(),
+        codigo_aluno: p.tipo === "aluno" ? (p.codigo_aluno.trim() || null) : null,
+        quantidade: 1,
+        status: "pago",
+        tipo_participante: p.tipo,
+        nome_participante: p.nome.trim(),
+        cpf_participante: p.cpf.replace(/\D/g, "") || null,
+        data_nascimento_participante: p.data_nascimento || null,
+        email_participante: p.email.trim() || null,
+        celular_participante: p.celular.replace(/\D/g, "") || null,
+      }));
+
+      const { error } = await supabase.from("ingressos").insert(records);
+      if (error) {
+        toast({ title: "Erro ao criar ingressos", description: error.message, variant: "destructive" });
+        setSavingManual(false);
+        return;
+      }
+
+      toast({ title: `${records.length} ingresso(s) criado(s)!` });
+      resetManualForm();
+      // Refresh
+      const { data: ings } = await supabase.from("ingressos").select("*").eq("evento_id", eventoId).order("created_at", { ascending: false });
+      if (ings) setIngressos(ings);
+      fetchEventos();
+    } catch (err: any) {
+      toast({ title: "Erro inesperado", description: err.message, variant: "destructive" });
+    } finally {
+      setSavingManual(false);
+    }
+  };
+
+
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-green-600"></div>
