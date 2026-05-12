@@ -407,7 +407,7 @@ const EventoCompra = () => {
       {redirectCountdown !== null && (
         <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center">
           <div className="bg-white rounded-2xl shadow-2xl p-8 max-w-sm w-full mx-4 text-center space-y-5">
-            <div className="mx-auto w-16 h-16 bg-green-100 rounded-full flex items-center justify-center">
+            <div className="mx-auto w-16 h-16 bg-zampieri-cream rounded-full flex items-center justify-center">
               <CheckCircle className="w-10 h-10 text-zampieri-gold" />
             </div>
             <h3 className="text-xl font-bold text-zampieri-green-dark">Ingressos reservados!</h3>
@@ -602,7 +602,7 @@ const EventoCompra = () => {
                   Li e aceito os{" "}
                   <button
                     type="button"
-                    className="text-zampieri-green-dark underline font-medium hover:text-green-900"
+                    className="text-zampieri-green-dark underline font-medium hover:text-zampieri-gold"
                     onClick={(e) => { e.preventDefault(); setTermosDialogOpen(true); }}
                   >
                     Termos de Compra e Participação
@@ -628,7 +628,7 @@ const EventoCompra = () => {
                     Autorizo a participação conforme{" "}
                     <button
                       type="button"
-                      className="text-zampieri-green-dark underline font-medium hover:text-green-900"
+                      className="text-zampieri-green-dark underline font-medium hover:text-zampieri-gold"
                       onClick={(e) => { e.preventDefault(); setAutorizacaoDialogOpen(true); }}
                       disabled={alunosSelecionados.length === 0}
                     >
