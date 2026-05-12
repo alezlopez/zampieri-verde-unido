@@ -192,6 +192,22 @@ const IngressoDetalhe = () => {
                 ✓ PAGO
               </Badge>
             </div>
+            <div className="flex items-center gap-2 mt-2 flex-wrap">
+              {ingresso.tipo_ingresso === "meia" ? (
+                <Badge className="bg-zampieri-wine text-white hover:bg-zampieri-wine font-bold text-xs">
+                  MEIA-ENTRADA
+                </Badge>
+              ) : (
+                <Badge variant="outline" className="border-white/40 text-white text-xs">
+                  INTEIRA
+                </Badge>
+              )}
+              {ingresso.tipo_ingresso === "meia" && ingresso.categoria_meia && (
+                <span className="text-xs text-white/90">
+                  {CATEGORIA_MEIA_LABEL[ingresso.categoria_meia] || ingresso.categoria_meia}
+                </span>
+              )}
+            </div>
             <h1 className="font-serif text-xl md:text-2xl font-bold mt-3">{evento?.titulo}</h1>
           </div>
 
