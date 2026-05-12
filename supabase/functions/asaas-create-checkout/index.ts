@@ -173,7 +173,7 @@ Deno.serve(async (req) => {
       customer: customer.id,
       billingTypes: billingTypes as any,
       chargeTypes: chargeTypes as any,
-      items: items.map((i) => ({ description: i.description, quantity: i.quantity, value: i.value })),
+      items: items.map((i) => ({ name: i.description, description: i.description, quantity: i.quantity, value: i.value })),
       successUrl,
       cancelUrl,
       externalReference: ingressos.map((i: any) => i.id).join(","),

@@ -89,7 +89,8 @@ export async function getPayment(paymentId: string) {
 }
 
 export interface CheckoutItem {
-  description: string;
+  name: string;
+  description?: string;
   quantity: number;
   value: number;
 }
@@ -114,7 +115,8 @@ export async function createCheckout(input: {
       cancelUrl: input.cancelUrl || input.successUrl,
     },
     items: input.items.map((i) => ({
-      description: i.description,
+      name: i.name,
+      description: i.description ?? i.name,
       quantity: i.quantity,
       value: Number(i.value.toFixed(2)),
     })),
