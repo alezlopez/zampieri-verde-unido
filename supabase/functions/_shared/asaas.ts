@@ -102,29 +102,37 @@ export async function createCheckout(input: {
   items: CheckoutItem[];
   successUrl: string;
   cancelUrl?: string;
+  expiredUrl?: string;
   externalReference?: string;
   minutesToExpire?: number;
   maxInstallmentCount?: number;
 }) {
+  // Asaas aceita minutesToExpire entre 10 e 1440
+  const requested = input.minutesToExpire ?? 1440;
+  const minutesToExpire = Math.max(10, Math.min(1440, requested));
   const body: any = {
     billingTypes: input.billingTypes,
     chargeTypes: input.chargeTypes,
-    minutesToExpire: input.minutesToExpire ?? 2880,
+    minutesToExpire,
     callback: {
       successUrl: input.successUrl,
       cancelUrl: input.cancelUrl || input.successUrl,
+      expiredUrl: input.expiredUrl || input.cancelUrl || input.successUrl,
     },
-    items: input.items.map((i) => ({
-      name: i.name,
-      description: i.description ?? i.name,
-      quantity: i.quantity,
-      value: Number(i.value.toFixed(2)),
-    })),
+    items: input.items.map((i) => {
+      const name = (i.name || i.description || "Ingresso").slice(0, 100);
+      return {
+        name,
+        description: (i.description ?? name).slice(0, 500),
+        quantity: i.quantity,
+        value: Number(i.value.toFixed(2)),
+      };
+    }),
     customer: input.customer,
     externalReference: input.externalReference,
   };
   if (input.chargeTypes.includes("INSTALLMENT") && input.maxInstallmentCount && input.maxInstallmentCount > 1) {
-    body.installment = { maxInstallmentCount: input.maxInstallmentCount };
+    body.installment = { maxInstallmentCount: Math.min(21, input.maxInstallmentCount) };
   }
   return await call(`/checkouts`, { method: "POST", body: JSON.stringify(body) });
 }

@@ -166,7 +166,7 @@ Deno.serve(async (req) => {
       ? (["CREDIT_CARD"] as const)
       : (["PIX", "CREDIT_CARD"] as const);
     const chargeTypes = isParcelado
-      ? (["INSTALLMENT"] as const)
+      ? (["DETACHED", "INSTALLMENT"] as const)
       : (["DETACHED"] as const);
 
     const checkout = await createCheckout({
@@ -176,8 +176,9 @@ Deno.serve(async (req) => {
       items: items.map((i) => ({ name: i.description, description: i.description, quantity: i.quantity, value: i.value })),
       successUrl,
       cancelUrl,
+      expiredUrl: cancelUrl,
       externalReference: ingressos.map((i: any) => i.id).join(","),
-      minutesToExpire: 2880,
+      minutesToExpire: 1440,
       maxInstallmentCount: isParcelado ? maxParcelas : undefined,
     });
 

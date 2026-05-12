@@ -1,57 +1,27 @@
-## Problema
+Plano para garantir o funcionamento do Checkout Asaas sem mexer nos hooks:
 
-Hoje o backend usa a API de **Cobrança** do Asaas (`POST /payments`) e força um único `billingType`. Quando o cliente escolhe "à vista", mandamos `PIX`, então a página final só aceita PIX. Se mandássemos `CREDIT_CARD`, só aceitaria cartão. A API de cobrança não suporta múltiplos métodos por cobrança.
+1. Corrigir a criação do checkout no backend
+- Ajustar `minutesToExpire` para o limite oficial do Asaas: entre 10 e 1440 minutos. O erro atual vem de `2880`, que a API rejeita.
+- Incluir `expiredUrl` no `callback`, pois a documentação lista `cancelUrl`, `expiredUrl` e `successUrl` como obrigatórios/esperados.
+- Garantir que os `items` sempre tenham `name`, `description`, `quantity` e `value`, com fallback seguro para nome do evento/ingresso.
+- Manter o fluxo atual da tela: à vista envia para checkout com PIX + cartão; parcelado envia cartão com parcelamento.
 
-## Solução
+2. Ajustar a modelagem do checkout conforme documentação Asaas
+- Para à vista: usar `billingTypes: ["PIX", "CREDIT_CARD"]` e `chargeTypes: ["DETACHED"]`.
+- Para parcelado: usar `billingTypes: ["CREDIT_CARD"]` e `chargeTypes: ["DETACHED", "INSTALLMENT"]`, com `installment.maxInstallmentCount` limitado ao máximo do evento.
+- Não alterar hooks nem o frontend; a chamada atual já passa `pix` para à vista e `credit_card` para parcelado.
 
-Migrar para o **Asaas Checkout** (`POST /v3/checkouts`), que gera uma página hospedada onde o cliente escolhe o método entre os habilitados. Mantemos a UX atual com 2 botões: **À vista** (PIX **ou** cartão 1x) e **Parcelado** (cartão em N parcelas).
+3. Atualizar o webhook para eventos de Checkout
+- O webhook atual só processa eventos `PAYMENT_*` e procura `payload.payment.externalReference`.
+- O Checkout Asaas também envia `CHECKOUT_CREATED`, `CHECKOUT_CANCELED`, `CHECKOUT_EXPIRED` e `CHECKOUT_PAID`, com dados em `payload.checkout`.
+- Implementar suporte a:
+  - `CHECKOUT_PAID` → marcar ingressos como `pago`.
+  - `CHECKOUT_CANCELED` e `CHECKOUT_EXPIRED` → manter/voltar ingressos para `pendente` ou `cancelado` conforme regra atual desejada. Para não mudar regra de negócio agressivamente, usarei `pendente` para expirado/cancelado se não houver pagamento confirmado.
+- Casar os ingressos por `checkout_id` e também por `checkout.externalReference` quando disponível.
 
-## Comportamento por opção
+4. Validar logs e testes do edge function
+- Conferir logs recentes depois do ajuste para confirmar que o erro de `minutesToExpire` sumiu.
+- Testar o formato do payload do checkout no código antes de considerar concluído.
+- Avisar explicitamente quais eventos precisam estar habilitados no painel/webhook do Asaas: `CHECKOUT_PAID`, `CHECKOUT_CANCELED`, `CHECKOUT_EXPIRED`, além dos eventos `PAYMENT_*` já usados.
 
-| Opção UI | `billingTypes` enviado | `chargeTypes` | Parcelas |
-|---|---|---|---|
-| À vista | `["PIX","CREDIT_CARD"]` | `["DETACHED"]` | 1 |
-| Parcelado | `["CREDIT_CARD"]` | `["INSTALLMENT"]` | até `evento.max_parcelas` |
-
-Preço por ingresso continua usando `preco`/`preco_meia` na à vista e `preco_parcelado`/`preco_meia_parcelado` no parcelado (sem mudança de regra de meia).
-
-## Mudanças técnicas
-
-### 1. `supabase/functions/_shared/asaas.ts`
-- Adicionar `createCheckout(input)` chamando `POST /v3/checkouts` com:
-  - `billingTypes`, `chargeTypes`
-  - `minutesToExpire: 2880` (48 h, igual ao dueDate atual)
-  - `callback: { successUrl, cancelUrl }` apontando para `/eventos/meus-ingressos`
-  - `items: [{ description, quantity:1, value }]` — um item por ingresso, valor já calculado pelo back
-  - `customer: <id>` (reaproveita `getOrCreateCustomer`)
-  - `externalReference: <ingresso_ids csv>` (igual ao atual, para conciliar no webhook)
-  - quando `chargeTypes=["INSTALLMENT"]`, adicionar `installment: { maxInstallmentCount }`
-- Manter `createPayment` por enquanto (não remover, pode haver pendentes antigos), só deixar de chamar.
-
-### 2. `supabase/functions/asaas-create-checkout/index.ts`
-- Trocar a chamada `createPayment(...)` por `createCheckout(...)`.
-- Montar `items[]` a partir dos ingressos (descrição: `evento.titulo + " — " + nome_participante|"Ingresso"`).
-- Persistir em `ingressos`:
-  - `checkout_url` = `checkout.link`
-  - `checkout_id` / `asaas_payment_id` = `checkout.id` (mantém colunas existentes; `asaas_payment_id` real será atualizado pelo webhook quando o pagamento nascer)
-  - demais campos (`forma_pagamento`, `parcelas`, `valor_total`) seguem iguais
-- Idempotência: continua respeitando `checkout_url` já preenchido.
-
-### 3. `supabase/functions/asaas-webhook/index.ts` (verificar)
-- Eventos `PAYMENT_CREATED/CONFIRMED/RECEIVED` continuam chegando com `externalReference = ingresso_ids` → conciliação atual segue funcionando.
-- Adicionar (se ainda não tratar) atualização do `asaas_payment_id` no primeiro `PAYMENT_CREATED` para refletir o pagamento real gerado pelo checkout.
-
-### 4. Frontend `src/pages/EventoCompra.tsx`
-- Renomear o copy do botão à vista para algo como **"PIX ou cartão à vista"** (label do RadioGroup), deixando claro que ambos estão liberados.
-- Nada muda no fluxo de inserção dos ingressos nem na regra de meia.
-
-## Fora de escopo
-
-- Não muda RLS, RPCs de meia (`contar_meias_evento`), template de e-mail, fluxo de comprador externo nem schema do banco.
-- Não remove `createPayment` (mantido para retrocompatibilidade de pendentes antigos).
-
-## Verificação após implementar
-
-1. Deploy automático das edge functions.
-2. Teste manual: criar ingresso à vista → abrir link → confirmar que aparecem PIX **e** cartão. Repetir parcelado → só cartão com seletor de parcelas.
-3. Conferir logs do webhook para garantir que `PAYMENT_CONFIRMED` ainda atualiza o ingresso para `pago`.
+Observação importante: provavelmente você precisa atualizar a configuração do webhook no Asaas para incluir os eventos de Checkout, porque o webhook atual registrado parece estar recebendo apenas `PAYMENT_*`.
