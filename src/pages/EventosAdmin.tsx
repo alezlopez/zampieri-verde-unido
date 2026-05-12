@@ -524,8 +524,99 @@ const EventosAdmin = () => {
 
                 {/* Ingressos list */}
                 {selectedEventoIngressos === evento.id && (
-                  <div className="mt-4 border-t pt-4">
-                    <h4 className="font-medium text-sm mb-2">Ingressos vendidos:</h4>
+                  <div className="mt-4 border-t pt-4 space-y-3">
+                    <div className="flex items-center justify-between">
+                      <h4 className="font-medium text-sm">Ingressos vendidos:</h4>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="border-green-300 text-green-700 hover:bg-green-50"
+                        onClick={() => { resetManualForm(); setShowManualForm(true); }}
+                      >
+                        <UserPlus className="w-4 h-4 mr-1" />
+                        Adicionar ingresso manual
+                      </Button>
+                    </div>
+
+                    {showManualForm && (
+                      <Card className="border-green-200 bg-green-50/30">
+                        <CardContent className="p-4 space-y-3">
+                          <h5 className="font-semibold text-sm text-green-800">Novo ingresso manual (status: pago)</h5>
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                            <div>
+                              <label className="text-xs font-medium">Nome do comprador *</label>
+                              <Input value={compradorNome} onChange={(e) => setCompradorNome(e.target.value)} />
+                            </div>
+                            <div>
+                              <label className="text-xs font-medium">CPF do comprador (vincula usuário)</label>
+                              <Input value={compradorCpf} onChange={(e) => setCompradorCpf(e.target.value)} placeholder="000.000.000-00" />
+                            </div>
+                          </div>
+
+                          <div className="space-y-3">
+                            <div className="flex items-center justify-between">
+                              <span className="text-xs font-medium">Participantes ({participantes.length})</span>
+                              <Button
+                                type="button"
+                                size="sm"
+                                variant="ghost"
+                                onClick={() => setParticipantes((p) => [...p, emptyParticipante()])}
+                              >
+                                <Plus className="w-3 h-3 mr-1" /> Adicionar
+                              </Button>
+                            </div>
+                            {participantes.map((p, idx) => (
+                              <div key={idx} className="border border-green-200 rounded-md p-3 space-y-2 bg-white">
+                                <div className="flex items-center justify-between">
+                                  <span className="text-xs font-semibold text-green-700">Participante {idx + 1}</span>
+                                  {participantes.length > 1 && (
+                                    <button
+                                      type="button"
+                                      onClick={() => setParticipantes((prev) => prev.filter((_, i) => i !== idx))}
+                                      className="text-destructive"
+                                    >
+                                      <X className="w-4 h-4" />
+                                    </button>
+                                  )}
+                                </div>
+                                <RadioGroup
+                                  value={p.tipo}
+                                  onValueChange={(v) => updateParticipante(idx, { tipo: v as "aluno" | "convidado" })}
+                                  className="flex gap-4"
+                                >
+                                  <div className="flex items-center space-x-2">
+                                    <RadioGroupItem value="aluno" id={`tp-aluno-${idx}`} />
+                                    <Label htmlFor={`tp-aluno-${idx}`} className="cursor-pointer text-xs">Aluno</Label>
+                                  </div>
+                                  <div className="flex items-center space-x-2">
+                                    <RadioGroupItem value="convidado" id={`tp-conv-${idx}`} />
+                                    <Label htmlFor={`tp-conv-${idx}`} className="cursor-pointer text-xs">Convidado</Label>
+                                  </div>
+                                </RadioGroup>
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                                  <Input placeholder="Nome *" value={p.nome} onChange={(e) => updateParticipante(idx, { nome: e.target.value })} />
+                                  <Input placeholder="CPF" value={p.cpf} onChange={(e) => updateParticipante(idx, { cpf: e.target.value })} />
+                                  {p.tipo === "aluno" && (
+                                    <Input placeholder="Código do aluno" value={p.codigo_aluno} onChange={(e) => updateParticipante(idx, { codigo_aluno: e.target.value })} />
+                                  )}
+                                  <Input type="date" placeholder="Data de nascimento" value={p.data_nascimento} onChange={(e) => updateParticipante(idx, { data_nascimento: e.target.value })} />
+                                  <Input type="email" placeholder="E-mail" value={p.email} onChange={(e) => updateParticipante(idx, { email: e.target.value })} />
+                                  <Input placeholder="Celular" value={p.celular} onChange={(e) => updateParticipante(idx, { celular: e.target.value })} />
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+
+                          <div className="flex gap-2">
+                            <Button onClick={() => handleSaveManual(evento.id)} disabled={savingManual} className="bg-green-600 hover:bg-green-700">
+                              {savingManual ? "Salvando..." : "Salvar ingressos"}
+                            </Button>
+                            <Button variant="outline" onClick={resetManualForm}>Cancelar</Button>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    )}
+
                     {ingressos.length === 0 ? (
                       <p className="text-sm text-muted-foreground">Nenhum ingresso vendido.</p>
                     ) : (
