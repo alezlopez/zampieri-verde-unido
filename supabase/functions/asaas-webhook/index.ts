@@ -121,10 +121,19 @@ Deno.serve(async (req) => {
       }
 
       // Dispara e-mail de confirmação (best-effort)
-      if (newStatus === "pago" && matched && matched.length > 0 && paymentId) {
-        admin.functions.invoke("enviar-confirmacao-ingresso", {
-          body: { payment_id: paymentId },
-        }).catch((e) => console.error("[asaas-webhook] envio email falhou", e));
+      if (newStatus === "pago" && matched && matched.length > 0) {
+        if (paymentId) {
+          admin.functions.invoke("enviar-confirmacao-ingresso", {
+            body: { payment_id: paymentId },
+          }).catch((e) => console.error("[asaas-webhook] envio email falhou", e));
+        } else {
+          // Fluxo Checkout: dispara um envio por ingresso pago
+          for (const row of matched) {
+            admin.functions.invoke("enviar-confirmacao-ingresso", {
+              body: { ingresso_id: row.id },
+            }).catch((e) => console.error("[asaas-webhook] envio email (checkout) falhou", e));
+          }
+        }
       }
     }
 
