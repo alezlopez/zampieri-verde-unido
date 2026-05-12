@@ -143,12 +143,13 @@ const EventosAdmin = () => {
   const fetchResumoFinanceiro = async () => {
     const { data, error } = await supabase
       .from("ingressos")
-      .select("evento_id, status, valor_total")
+      .select("evento_id, status, valor_total, cortesia")
       .not("valor_total", "is", null);
     if (error || !data) return;
     const geral = emptyResumo();
     const porEvento: Record<string, ResumoFinanceiro> = {};
     for (const row of data as any[]) {
+      if (row.cortesia === true) continue; // cortesias não somam
       const valor = Number(row.valor_total) || 0;
       if (valor <= 0) continue;
       const eid = row.evento_id as string;
