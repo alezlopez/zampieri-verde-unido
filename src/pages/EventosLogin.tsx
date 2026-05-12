@@ -32,6 +32,13 @@ const EventosLogin = () => {
   const [resendCooldown, setResendCooldown] = useState(0);
   const [resending, setResending] = useState(false);
 
+  // Cadastro externo (não-aluno)
+  const [showExternoForm, setShowExternoForm] = useState(false);
+  const [externoNome, setExternoNome] = useState("");
+  const [externoEmail, setExternoEmail] = useState("");
+  const [externoCelular, setExternoCelular] = useState("");
+  const [externoNascimento, setExternoNascimento] = useState("");
+
   useEffect(() => {
     if (resendCooldown <= 0) return;
     const t = setInterval(() => setResendCooldown((s) => Math.max(0, s - 1)), 1000);
