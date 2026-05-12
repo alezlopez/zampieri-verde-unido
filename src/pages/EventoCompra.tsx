@@ -433,7 +433,7 @@ const EventoCompra = () => {
       if (comprarParaSi) {
         const m = getMeia("comprador-self");
         const isMeia = m.tipo_ingresso === "meia";
-        const cpfSelf = compradorExternoData?.cpf || (user.user_metadata?.cpf as string | undefined) || null;
+        const cpfSelf = compradorExternoLocal?.cpf || (user.user_metadata?.cpf as string | undefined) || null;
         records.push({
           evento_id: evento.id,
           user_id: user.id,
@@ -444,9 +444,9 @@ const EventoCompra = () => {
           tipo_participante: "convidado",
           nome_participante: nomeComprador.trim(),
           cpf_participante: cpfSelf,
-          data_nascimento_participante: compradorExternoData?.data_nascimento || null,
-          email_participante: compradorExternoData?.email || user.email || null,
-          celular_participante: compradorExternoData?.celular || null,
+          data_nascimento_participante: compradorExternoLocal?.data_nascimento || null,
+          email_participante: compradorExternoLocal?.email || user.email || null,
+          celular_participante: compradorExternoLocal?.celular || null,
           tipo_ingresso: isMeia ? "meia" : "inteira",
           categoria_meia: isMeia ? m.categoria_meia : null,
           declaracao_meia_aceita: isMeia ? m.declaracao : false,
