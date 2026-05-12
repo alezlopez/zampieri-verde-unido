@@ -64,17 +64,36 @@ Deno.serve(async (req) => {
 
   try {
     const newStatus = STATUS_MAP[eventType];
+    const externalRef: string | null = payload?.payment?.externalReference || null;
+
     if (newStatus && paymentId) {
-      const update: any = { status: newStatus };
+      const update: any = { status: newStatus, asaas_payment_id: paymentId };
       if (newStatus === "pago") update.utilizado = false;
-      const { error: updErr } = await admin
+
+      // 1) Tenta casar pelo asaas_payment_id (caso já tenha sido salvo antes)
+      let { data: matched, error: updErr } = await admin
         .from("ingressos")
         .update(update)
-        .eq("asaas_payment_id", paymentId);
+        .eq("asaas_payment_id", paymentId)
+        .select("id");
       if (updErr) throw updErr;
 
+      // 2) Fallback: casar pelos ids vindos no externalReference (Asaas Checkout)
+      if ((!matched || matched.length === 0) && externalRef) {
+        const ids = externalRef.split(",").map((s) => s.trim()).filter(Boolean);
+        if (ids.length > 0) {
+          const r = await admin
+            .from("ingressos")
+            .update(update)
+            .in("id", ids)
+            .select("id");
+          if (r.error) throw r.error;
+          matched = r.data;
+        }
+      }
+
       // Dispara e-mail de confirmação (best-effort, não bloqueia webhook)
-      if (newStatus === "pago") {
+      if (newStatus === "pago" && matched && matched.length > 0) {
         admin.functions.invoke("enviar-confirmacao-ingresso", {
           body: { payment_id: paymentId },
         }).catch((e) => console.error("[asaas-webhook] envio email falhou", e));
