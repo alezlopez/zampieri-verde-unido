@@ -24,11 +24,13 @@ interface Evento {
   vagas_disponiveis: number;
   ativo: boolean;
   requer_autorizacao: boolean;
+  publico_alvo: "apenas_alunos" | "alunos_e_convidados" | "aberto_ao_publico";
 }
 
 const Eventos = () => {
   const [eventos, setEventos] = useState<Evento[]>([]);
   const [loading, setLoading] = useState(true);
+  const [tipoComprador, setTipoComprador] = useState<"aluno" | "externo" | null>(null);
   const { user, isAdmin, signOut } = useAuth();
 
   useEffect(() => {
@@ -39,11 +41,36 @@ const Eventos = () => {
         .eq("ativo", true)
         .order("data_evento", { ascending: true });
 
-      if (!error && data) setEventos(data);
+      if (!error && data) setEventos(data as any);
       setLoading(false);
     };
     fetchEventos();
   }, []);
+
+  // Resolve tipo de comprador para filtrar/avisar
+  useEffect(() => {
+    const resolve = async () => {
+      if (!user) { setTipoComprador(null); return; }
+      const { data } = await supabase
+        .from("compradores_externos")
+        .select("id")
+        .eq("user_id", user.id)
+        .maybeSingle();
+      setTipoComprador(data ? "externo" : "aluno");
+    };
+    resolve();
+  }, [user]);
+
+  const podeComprar = (e: Evento) => {
+    if (e.publico_alvo === "aberto_ao_publico") return true;
+    if (!user) return true; // mostra; ao clicar vai para login
+    if (tipoComprador === "aluno") return true;
+    return false; // externo só pode comprar aberto_ao_publico
+  };
+
+  const labelPublico = (p: Evento["publico_alvo"]) =>
+    p === "aberto_ao_publico" ? "Aberto ao público" :
+    p === "apenas_alunos" ? "Apenas alunos" : "Alunos e convidados";
 
   const formatDate = (dateStr: string) => {
     const date = new Date(dateStr + "T00:00:00");
