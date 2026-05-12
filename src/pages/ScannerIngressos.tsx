@@ -18,10 +18,14 @@ interface IngressoScanned {
   tipo_participante: string;
   status: string;
   utilizado: boolean;
+  utilizado_em: string | null;
+  utilizado_por: string | null;
   codigo_aluno: string | null;
   tipo_ingresso: string;
   categoria_meia: string | null;
   meia_validada_portaria: boolean;
+  meia_validada_em: string | null;
+  meia_validada_por: string | null;
   eventos: {
     titulo: string;
     data_evento: string;
