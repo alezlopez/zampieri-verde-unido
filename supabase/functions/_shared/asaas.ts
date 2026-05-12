@@ -87,3 +87,43 @@ export async function createPayment(input: {
 export async function getPayment(paymentId: string) {
   return await call(`/payments/${paymentId}`, { method: "GET" });
 }
+
+export interface CheckoutItem {
+  description: string;
+  quantity: number;
+  value: number;
+}
+
+export async function createCheckout(input: {
+  customer: string;
+  billingTypes: AsaasBilling[];
+  chargeTypes: ("DETACHED" | "INSTALLMENT" | "RECURRENT")[];
+  items: CheckoutItem[];
+  successUrl: string;
+  cancelUrl?: string;
+  externalReference?: string;
+  minutesToExpire?: number;
+  maxInstallmentCount?: number;
+}) {
+  const body: any = {
+    billingTypes: input.billingTypes,
+    chargeTypes: input.chargeTypes,
+    minutesToExpire: input.minutesToExpire ?? 2880,
+    callback: {
+      successUrl: input.successUrl,
+      cancelUrl: input.cancelUrl || input.successUrl,
+    },
+    items: input.items.map((i) => ({
+      description: i.description,
+      quantity: i.quantity,
+      value: Number(i.value.toFixed(2)),
+    })),
+    customer: input.customer,
+    externalReference: input.externalReference,
+  };
+  if (input.chargeTypes.includes("INSTALLMENT") && input.maxInstallmentCount && input.maxInstallmentCount > 1) {
+    body.installment = { maxInstallmentCount: input.maxInstallmentCount };
+  }
+  return await call(`/checkouts`, { method: "POST", body: JSON.stringify(body) });
+}
+

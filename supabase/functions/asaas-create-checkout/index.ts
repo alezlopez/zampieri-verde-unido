@@ -1,7 +1,7 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
 import { z } from "https://esm.sh/zod@3.23.8";
 import { corsHeaders } from "../_shared/cors.ts";
-import { getOrCreateCustomer, createPayment } from "../_shared/asaas.ts";
+import { getOrCreateCustomer, createCheckout } from "../_shared/asaas.ts";
 
 const BodySchema = z.object({
   ingresso_ids: z.array(z.string().uuid()).min(1).max(20),
@@ -51,7 +51,7 @@ Deno.serve(async (req) => {
     // Carrega ingressos + evento (inclui preços de meia)
     const { data: ingressos, error: ingErr } = await admin
       .from("ingressos")
-      .select("id, user_id, evento_id, asaas_payment_id, checkout_url, status, tipo_ingresso, eventos:evento_id(id,titulo,preco,preco_parcelado,max_parcelas,preco_meia,preco_meia_parcelado)")
+      .select("id, user_id, evento_id, asaas_payment_id, checkout_url, status, tipo_ingresso, nome_participante, eventos:evento_id(id,titulo,preco,preco_parcelado,max_parcelas,preco_meia,preco_meia_parcelado)")
       .in("id", body.ingresso_ids);
 
     if (ingErr || !ingressos || ingressos.length === 0) {
@@ -66,12 +66,11 @@ Deno.serve(async (req) => {
       });
     }
 
-    // Idempotência
-    const existing = ingressos.find((i: any) => i.asaas_payment_id && i.checkout_url);
+    // Idempotência: se já tem checkout gerado, reutiliza
+    const existing = ingressos.find((i: any) => i.checkout_url);
     if (existing) {
       return new Response(JSON.stringify({
         checkout_url: existing.checkout_url,
-        payment_id: existing.asaas_payment_id,
         reused: true,
       }), { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
@@ -90,14 +89,23 @@ Deno.serve(async (req) => {
     // Recalcula preço por ingresso usando tipo_ingresso (defesa contra preço enviado pelo cliente)
     let qtdInteira = 0, qtdMeia = 0;
     let valorTotal = 0;
+    const items: { description: string; quantity: number; value: number; ingresso_id: string }[] = [];
     for (const ing of ingressos as any[]) {
       const isMeia = ing.tipo_ingresso === "meia";
       if (isMeia) qtdMeia++; else qtdInteira++;
       const preco = isParcelado
         ? (isMeia ? Number(evento.preco_meia_parcelado) : Number(evento.preco_parcelado))
         : (isMeia ? Number(evento.preco_meia) : Number(evento.preco));
-      valorTotal += isFinite(preco) ? preco : 0;
+      const valor = isFinite(preco) ? preco : 0;
+      valorTotal += valor;
+      items.push({
+        description: `${evento.titulo} — ${ing.nome_participante || "Ingresso"}${isMeia ? " (meia)" : ""}`,
+        quantity: 1,
+        value: valor,
+        ingresso_id: ing.id,
+      });
     }
+
     valorTotal = Number(valorTotal.toFixed(2));
     if (valorTotal <= 0) {
       return new Response(JSON.stringify({ error: "Valor total inválido" }), {
@@ -140,34 +148,48 @@ Deno.serve(async (req) => {
       mobilePhone: comprador.celular || undefined,
     });
 
-    const dueDate = new Date(Date.now() + 2 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
+    
 
     console.log("[asaas-create-checkout]", {
       evento_id: eventoId, qtd_inteira: qtdInteira, qtd_meia: qtdMeia,
       valor_total: valorTotal, parcelado: isParcelado, parcelas: maxParcelas,
     });
 
-    const payment = await createPayment({
+    const origin =
+      req.headers.get("origin") ||
+      req.headers.get("referer")?.replace(/\/[^/]*$/, "") ||
+      "https://colegiozampieri.com.br";
+    const successUrl = `${origin.replace(/\/+$/, "")}/eventos/meus-ingressos?status=success`;
+    const cancelUrl = `${origin.replace(/\/+$/, "")}/eventos/meus-ingressos?status=cancel`;
+
+    const billingTypes = isParcelado
+      ? (["CREDIT_CARD"] as const)
+      : (["PIX", "CREDIT_CARD"] as const);
+    const chargeTypes = isParcelado
+      ? (["INSTALLMENT"] as const)
+      : (["DETACHED"] as const);
+
+    const checkout = await createCheckout({
       customer: customer.id,
-      billingType: body.forma_pagamento === "pix" ? "PIX" : "CREDIT_CARD",
-      value: valorTotal,
-      totalValue: isParcelado ? valorTotal : undefined,
-      installmentCount: isParcelado ? maxParcelas : undefined,
-      dueDate,
-      description: `${evento.titulo} — ${ingressos.length} ingresso(s)`,
+      billingTypes: billingTypes as any,
+      chargeTypes: chargeTypes as any,
+      items: items.map((i) => ({ description: i.description, quantity: i.quantity, value: i.value })),
+      successUrl,
+      cancelUrl,
       externalReference: ingressos.map((i: any) => i.id).join(","),
+      minutesToExpire: 2880,
+      maxInstallmentCount: isParcelado ? maxParcelas : undefined,
     });
 
-    const checkoutUrl = payment.invoiceUrl || payment.bankSlipUrl;
-    const paymentId = payment.id;
+    const checkoutUrl = checkout.link || checkout.url || checkout.checkoutUrl;
+    const checkoutId = checkout.id;
 
     await admin
       .from("ingressos")
       .update({
         asaas_customer_id: customer.id,
-        asaas_payment_id: paymentId,
         checkout_url: checkoutUrl,
-        checkout_id: paymentId,
+        checkout_id: checkoutId,
         forma_pagamento: body.forma_pagamento,
         parcelas: isParcelado ? maxParcelas : 1,
         valor_total: valorTotal,
@@ -176,7 +198,7 @@ Deno.serve(async (req) => {
       .in("id", body.ingresso_ids);
 
     return new Response(
-      JSON.stringify({ checkout_url: checkoutUrl, payment_id: paymentId, reused: false, valor_total: valorTotal }),
+      JSON.stringify({ checkout_url: checkoutUrl, checkout_id: checkoutId, reused: false, valor_total: valorTotal }),
       { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } },
     );
   } catch (e: any) {
