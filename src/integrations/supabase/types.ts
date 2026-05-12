@@ -131,6 +131,39 @@ export type Database = {
         }
         Relationships: []
       }
+      asaas_webhook_events: {
+        Row: {
+          created_at: string
+          error: string | null
+          event_id: string
+          event_type: string
+          id: string
+          payload: Json
+          payment_id: string | null
+          processed: boolean
+        }
+        Insert: {
+          created_at?: string
+          error?: string | null
+          event_id: string
+          event_type: string
+          id?: string
+          payload: Json
+          payment_id?: string | null
+          processed?: boolean
+        }
+        Update: {
+          created_at?: string
+          error?: string | null
+          event_id?: string
+          event_type?: string
+          id?: string
+          payload?: Json
+          payment_id?: string | null
+          processed?: boolean
+        }
+        Relationships: []
+      }
       boletim_mensal_26: {
         Row: {
           codigo_aluno: string | null
@@ -254,6 +287,42 @@ export type Database = {
         }
         Relationships: []
       }
+      compradores_externos: {
+        Row: {
+          celular: string | null
+          cpf: string
+          created_at: string
+          data_nascimento: string | null
+          email: string
+          id: string
+          nome: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          celular?: string | null
+          cpf: string
+          created_at?: string
+          data_nascimento?: string | null
+          email: string
+          id?: string
+          nome: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          celular?: string | null
+          cpf?: string
+          created_at?: string
+          data_nascimento?: string | null
+          email?: string
+          id?: string
+          nome?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       comunicados_2026: {
         Row: {
           codigo_aluno: string | null
@@ -343,6 +412,7 @@ export type Database = {
           max_parcelas: number
           preco: number
           preco_parcelado: number
+          publico_alvo: string
           requer_autorizacao: boolean
           tipo_evento: string
           titulo: string
@@ -363,6 +433,7 @@ export type Database = {
           max_parcelas?: number
           preco?: number
           preco_parcelado?: number
+          publico_alvo?: string
           requer_autorizacao?: boolean
           tipo_evento?: string
           titulo: string
@@ -383,6 +454,7 @@ export type Database = {
           max_parcelas?: number
           preco?: number
           preco_parcelado?: number
+          publico_alvo?: string
           requer_autorizacao?: boolean
           tipo_evento?: string
           titulo?: string
@@ -394,6 +466,8 @@ export type Database = {
       }
       ingressos: {
         Row: {
+          asaas_customer_id: string | null
+          asaas_payment_id: string | null
           celular_participante: string | null
           checkout_id: string | null
           checkout_url: string | null
@@ -404,17 +478,23 @@ export type Database = {
           data_nascimento_participante: string | null
           email_participante: string | null
           evento_id: string
+          forma_pagamento: string | null
           id: string
           nome_comprador: string
           nome_participante: string | null
+          parcelas: number
           quantidade: number
           status: string
+          tipo_comprador: string
           tipo_participante: string
           user_id: string
           utilizado: boolean
+          valor_total: number | null
           webhook_payment_id: string | null
         }
         Insert: {
+          asaas_customer_id?: string | null
+          asaas_payment_id?: string | null
           celular_participante?: string | null
           checkout_id?: string | null
           checkout_url?: string | null
@@ -425,17 +505,23 @@ export type Database = {
           data_nascimento_participante?: string | null
           email_participante?: string | null
           evento_id: string
+          forma_pagamento?: string | null
           id?: string
           nome_comprador: string
           nome_participante?: string | null
+          parcelas?: number
           quantidade?: number
           status?: string
+          tipo_comprador?: string
           tipo_participante?: string
           user_id: string
           utilizado?: boolean
+          valor_total?: number | null
           webhook_payment_id?: string | null
         }
         Update: {
+          asaas_customer_id?: string | null
+          asaas_payment_id?: string | null
           celular_participante?: string | null
           checkout_id?: string | null
           checkout_url?: string | null
@@ -446,14 +532,18 @@ export type Database = {
           data_nascimento_participante?: string | null
           email_participante?: string | null
           evento_id?: string
+          forma_pagamento?: string | null
           id?: string
           nome_comprador?: string
           nome_participante?: string | null
+          parcelas?: number
           quantidade?: number
           status?: string
+          tipo_comprador?: string
           tipo_participante?: string
           user_id?: string
           utilizado?: boolean
+          valor_total?: number | null
           webhook_payment_id?: string | null
         }
         Relationships: [
@@ -953,7 +1043,25 @@ export type Database = {
           nome: string
         }[]
       }
+      find_user_context_by_cpf: {
+        Args: { p_cpf: string }
+        Returns: {
+          email: string
+          nome: string
+          origem: string
+        }[]
+      }
       find_user_id_by_cpf: { Args: { p_cpf: string }; Returns: string }
+      get_comprador_dados: {
+        Args: { p_user_id: string }
+        Returns: {
+          celular: string
+          cpf: string
+          email: string
+          nome: string
+          origem: string
+        }[]
+      }
       get_current_message_period: {
         Args: never
         Returns: {
