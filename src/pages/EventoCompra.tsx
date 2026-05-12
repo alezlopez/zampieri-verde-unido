@@ -121,6 +121,11 @@ const EventoCompra = () => {
     cpf?: string; email?: string; celular?: string; data_nascimento?: string;
   } | null>(null);
 
+  // Form de auto-cadastro do comprador (quando não há aluno vinculado e não é externo cadastrado)
+  const [compradorForm, setCompradorForm] = useState<{ cpf: string; celular: string; data_nascimento: string }>({
+    cpf: "", celular: "", data_nascimento: "",
+  });
+
   // Meia-entrada por participante (chave: `aluno-<codigo>`, `convidado-<idx>` ou `comprador-self`)
   const [meiaConfigs, setMeiaConfigs] = useState<Record<string, MeiaConfig>>({});
   const [meiaInfo, setMeiaInfo] = useState<{ vagas_meia_total: number; meias_vendidas: number; meias_disponiveis: number } | null>(null);
@@ -330,6 +335,9 @@ const EventoCompra = () => {
   });
   const cotaMeiaExcedida = meiaHabilitada && meiaInfo ? qtdMeias > meiaInfo.meias_disponiveis : false;
 
+  const precisaCompletarPerfil =
+    tipoComprador === "aluno" && !loadingAlunos && alunos.length === 0 && !compradorExternoData?.cpf;
+
   const handleComprar = async () => {
     if (!evento || !user) return;
     if (!nomeComprador.trim()) {
@@ -340,6 +348,43 @@ const EventoCompra = () => {
       toast({ title: "Selecione ao menos um participante", variant: "destructive" });
       return;
     }
+
+    // Auto-cadastro do comprador (caso não seja aluno vinculado nem externo já cadastrado)
+    let compradorExternoLocal = compradorExternoData;
+    if (precisaCompletarPerfil) {
+      const cpfClean = compradorForm.cpf.replace(/\D/g, "");
+      if (cpfClean.length !== 11) {
+        toast({ title: "Informe um CPF válido (11 dígitos)", variant: "destructive" });
+        return;
+      }
+      const celClean = compradorForm.celular.replace(/\D/g, "") || null;
+      const { error: upErr } = await supabase
+        .from("compradores_externos")
+        .upsert(
+          {
+            user_id: user.id,
+            nome: nomeComprador.trim(),
+            cpf: cpfClean,
+            email: user.email || "",
+            celular: celClean,
+            data_nascimento: compradorForm.data_nascimento || null,
+          },
+          { onConflict: "user_id" }
+        );
+      if (upErr) {
+        toast({ title: "Não foi possível salvar seus dados", description: upErr.message, variant: "destructive" });
+        return;
+      }
+      compradorExternoLocal = {
+        cpf: cpfClean,
+        email: user.email || undefined,
+        celular: celClean || undefined,
+        data_nascimento: compradorForm.data_nascimento || undefined,
+      };
+      setCompradorExternoData(compradorExternoLocal);
+      setTipoComprador("externo");
+    }
+
 
     // Validate convidados
     for (let i = 0; i < convidados.length; i++) {
@@ -388,7 +433,7 @@ const EventoCompra = () => {
       if (comprarParaSi) {
         const m = getMeia("comprador-self");
         const isMeia = m.tipo_ingresso === "meia";
-        const cpfSelf = compradorExternoData?.cpf || (user.user_metadata?.cpf as string | undefined) || null;
+        const cpfSelf = compradorExternoLocal?.cpf || (user.user_metadata?.cpf as string | undefined) || null;
         records.push({
           evento_id: evento.id,
           user_id: user.id,
@@ -399,9 +444,9 @@ const EventoCompra = () => {
           tipo_participante: "convidado",
           nome_participante: nomeComprador.trim(),
           cpf_participante: cpfSelf,
-          data_nascimento_participante: compradorExternoData?.data_nascimento || null,
-          email_participante: compradorExternoData?.email || user.email || null,
-          celular_participante: compradorExternoData?.celular || null,
+          data_nascimento_participante: compradorExternoLocal?.data_nascimento || null,
+          email_participante: compradorExternoLocal?.email || user.email || null,
+          celular_participante: compradorExternoLocal?.celular || null,
           tipo_ingresso: isMeia ? "meia" : "inteira",
           categoria_meia: isMeia ? m.categoria_meia : null,
           declaracao_meia_aceita: isMeia ? m.declaracao : false,
@@ -602,7 +647,36 @@ const EventoCompra = () => {
               <Input value={nomeComprador} onChange={(e) => setNomeComprador(e.target.value)} placeholder="Seu nome completo" />
             </div>
 
-            {/* Quem vai participar */}
+            {/* Auto-cadastro do comprador (sem aluno vinculado nem cadastro externo) */}
+            {precisaCompletarPerfil && (
+              <div className="rounded-md border border-zampieri-green/30 bg-zampieri-cream/30 p-3 space-y-2">
+                <div>
+                  <p className="text-sm font-semibold text-zampieri-green-dark">Complete seus dados de comprador</p>
+                  <p className="text-xs text-muted-foreground">
+                    Não localizamos aluno vinculado ao seu cadastro. Precisamos do seu CPF para emitir a cobrança.
+                  </p>
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                  <Input
+                    placeholder="CPF *"
+                    value={compradorForm.cpf}
+                    onChange={(e) => setCompradorForm((p) => ({ ...p, cpf: e.target.value }))}
+                  />
+                  <Input
+                    placeholder="Celular"
+                    value={compradorForm.celular}
+                    onChange={(e) => setCompradorForm((p) => ({ ...p, celular: e.target.value }))}
+                  />
+                  <Input
+                    type="date"
+                    placeholder="Data de nascimento"
+                    value={compradorForm.data_nascimento}
+                    onChange={(e) => setCompradorForm((p) => ({ ...p, data_nascimento: e.target.value }))}
+                  />
+                </div>
+              </div>
+            )}
+
             <div className="border-t pt-4 space-y-3">
               <label className="text-sm font-medium block">Quem vai participar do evento?</label>
 
