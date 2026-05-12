@@ -139,18 +139,24 @@ const EventoCompra = () => {
     }
   }, [user, authLoading, navigate]);
 
-  // Detecta se é comprador externo
+  // Detecta se é comprador externo + carrega dados completos
   useEffect(() => {
     const detect = async () => {
       if (!user) return;
       const { data } = await supabase
         .from("compradores_externos")
-        .select("id, nome")
+        .select("id, nome, cpf, email, celular, data_nascimento")
         .eq("user_id", user.id)
         .maybeSingle();
       if (data) {
         setTipoComprador("externo");
         if (data.nome && !nomeComprador) setNomeComprador(data.nome);
+        setCompradorExternoData({
+          cpf: data.cpf || undefined,
+          email: data.email || undefined,
+          celular: data.celular || undefined,
+          data_nascimento: data.data_nascimento || undefined,
+        });
       } else {
         setTipoComprador("aluno");
       }
