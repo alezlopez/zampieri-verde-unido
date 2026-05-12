@@ -494,6 +494,7 @@ export type Database = {
           data_nascimento_participante: string | null
           declaracao_meia_aceita: boolean
           declaracao_meia_aceita_em: string | null
+          email_confirmacao_enviado_em: string | null
           email_participante: string | null
           evento_id: string
           forma_pagamento: string | null
@@ -511,6 +512,8 @@ export type Database = {
           tipo_participante: string
           user_id: string
           utilizado: boolean
+          utilizado_em: string | null
+          utilizado_por: string | null
           valor_total: number | null
           webhook_payment_id: string | null
         }
@@ -528,6 +531,7 @@ export type Database = {
           data_nascimento_participante?: string | null
           declaracao_meia_aceita?: boolean
           declaracao_meia_aceita_em?: string | null
+          email_confirmacao_enviado_em?: string | null
           email_participante?: string | null
           evento_id: string
           forma_pagamento?: string | null
@@ -545,6 +549,8 @@ export type Database = {
           tipo_participante?: string
           user_id: string
           utilizado?: boolean
+          utilizado_em?: string | null
+          utilizado_por?: string | null
           valor_total?: number | null
           webhook_payment_id?: string | null
         }
@@ -562,6 +568,7 @@ export type Database = {
           data_nascimento_participante?: string | null
           declaracao_meia_aceita?: boolean
           declaracao_meia_aceita_em?: string | null
+          email_confirmacao_enviado_em?: string | null
           email_participante?: string | null
           evento_id?: string
           forma_pagamento?: string | null
@@ -579,6 +586,8 @@ export type Database = {
           tipo_participante?: string
           user_id?: string
           utilizado?: boolean
+          utilizado_em?: string | null
+          utilizado_por?: string | null
           valor_total?: number | null
           webhook_payment_id?: string | null
         }
