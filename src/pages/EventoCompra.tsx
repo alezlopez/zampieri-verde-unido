@@ -114,7 +114,14 @@ const EventoCompra = () => {
   const [termosDialogOpen, setTermosDialogOpen] = useState(false);
   const [autorizacaoDialogOpen, setAutorizacaoDialogOpen] = useState(false);
 
-  // Meia-entrada por participante (chave: `aluno-<codigo>` ou `convidado-<idx>`)
+  // Comprador como participante
+  const [comprarParaSi, setComprarParaSi] = useState(false);
+  const [comprarParaSiTouched, setComprarParaSiTouched] = useState(false);
+  const [compradorExternoData, setCompradorExternoData] = useState<{
+    cpf?: string; email?: string; celular?: string; data_nascimento?: string;
+  } | null>(null);
+
+  // Meia-entrada por participante (chave: `aluno-<codigo>`, `convidado-<idx>` ou `comprador-self`)
   const [meiaConfigs, setMeiaConfigs] = useState<Record<string, MeiaConfig>>({});
   const [meiaInfo, setMeiaInfo] = useState<{ vagas_meia_total: number; meias_vendidas: number; meias_disponiveis: number } | null>(null);
 
@@ -132,18 +139,24 @@ const EventoCompra = () => {
     }
   }, [user, authLoading, navigate]);
 
-  // Detecta se é comprador externo
+  // Detecta se é comprador externo + carrega dados completos
   useEffect(() => {
     const detect = async () => {
       if (!user) return;
       const { data } = await supabase
         .from("compradores_externos")
-        .select("id, nome")
+        .select("id, nome, cpf, email, celular, data_nascimento")
         .eq("user_id", user.id)
         .maybeSingle();
       if (data) {
         setTipoComprador("externo");
         if (data.nome && !nomeComprador) setNomeComprador(data.nome);
+        setCompradorExternoData({
+          cpf: data.cpf || undefined,
+          email: data.email || undefined,
+          celular: data.celular || undefined,
+          data_nascimento: data.data_nascimento || undefined,
+        });
       } else {
         setTipoComprador("aluno");
       }
@@ -261,13 +274,21 @@ const EventoCompra = () => {
     setConvidados((prev) => prev.map((c, i) => (i === index ? { ...c, [field]: value } : c)));
   };
 
-  const totalParticipantes = alunosSelecionados.length + convidados.length;
+  // Default automático: comprador entra como participante quando faz mais sentido
+  useEffect(() => {
+    if (loadingAlunos || !tipoComprador || comprarParaSiTouched) return;
+    if (tipoComprador === "externo") setComprarParaSi(true);
+    else setComprarParaSi(alunos.length === 0);
+  }, [tipoComprador, alunos.length, loadingAlunos, comprarParaSiTouched]);
+
+  const totalParticipantes = (comprarParaSi ? 1 : 0) + alunosSelecionados.length + convidados.length;
 
   const temParcelamento = evento ? evento.preco_parcelado > 0 && evento.max_parcelas > 1 : false;
   const meiaHabilitada = !!evento?.meia_entrada_habilitada && Number(evento?.preco_meia ?? 0) > 0;
 
   // Identificadores de cada participante (para meia config)
   const participantKeys: string[] = [
+    ...(comprarParaSi ? ["comprador-self"] : []),
     ...alunosSelecionados.map((c) => `aluno-${c}`),
     ...convidados.map((_, i) => `convidado-${i}`),
   ];
@@ -362,6 +383,31 @@ const EventoCompra = () => {
       }
       const records: any[] = [];
       const nowIso = new Date().toISOString();
+
+      // Comprador participando como ingresso
+      if (comprarParaSi) {
+        const m = getMeia("comprador-self");
+        const isMeia = m.tipo_ingresso === "meia";
+        const cpfSelf = compradorExternoData?.cpf || (user.user_metadata?.cpf as string | undefined) || null;
+        records.push({
+          evento_id: evento.id,
+          user_id: user.id,
+          nome_comprador: nomeComprador.trim(),
+          codigo_aluno: null,
+          quantidade: 1,
+          status: "pendente",
+          tipo_participante: "convidado",
+          nome_participante: nomeComprador.trim(),
+          cpf_participante: cpfSelf,
+          data_nascimento_participante: compradorExternoData?.data_nascimento || null,
+          email_participante: compradorExternoData?.email || user.email || null,
+          celular_participante: compradorExternoData?.celular || null,
+          tipo_ingresso: isMeia ? "meia" : "inteira",
+          categoria_meia: isMeia ? m.categoria_meia : null,
+          declaracao_meia_aceita: isMeia ? m.declaracao : false,
+          declaracao_meia_aceita_em: isMeia && m.declaracao ? nowIso : null,
+        });
+      }
 
       // Alunos
       for (const codigo of alunosSelecionados) {
@@ -552,44 +598,77 @@ const EventoCompra = () => {
           <CardContent className="space-y-4">
             {/* Nome do comprador */}
             <div>
-              <label className="text-sm font-medium">Nome do responsável (comprador) *</label>
+              <label className="text-sm font-medium">Nome do comprador *</label>
               <Input value={nomeComprador} onChange={(e) => setNomeComprador(e.target.value)} placeholder="Seu nome completo" />
             </div>
 
-            {/* Seleção de alunos */}
-            <div className="border-t pt-4">
-              <label className="text-sm font-medium mb-2 block">Selecione os alunos</label>
-              {loadingAlunos ? (
-                <p className="text-sm text-muted-foreground">Carregando alunos...</p>
-              ) : alunos.length === 0 ? (
-                <p className="text-sm text-muted-foreground">Nenhum aluno encontrado para este CPF.</p>
-              ) : (
-                <div className="space-y-2">
-                  {alunos.map((aluno) => {
-                    const jaTemIngresso = alunosComIngresso.includes(aluno.codigo_aluno);
-                    return (
-                      <div
-                        key={aluno.codigo_aluno}
-                        className={`flex items-center space-x-3 p-2 rounded-md border ${jaTemIngresso ? "opacity-50 cursor-not-allowed bg-muted/30" : "hover:bg-muted/50 cursor-pointer"}`}
-                        onClick={() => !jaTemIngresso && toggleAluno(aluno.codigo_aluno)}
-                      >
-                        <Checkbox
-                          checked={alunosSelecionados.includes(aluno.codigo_aluno)}
-                          onCheckedChange={() => !jaTemIngresso && toggleAluno(aluno.codigo_aluno)}
-                          disabled={jaTemIngresso}
-                        />
-                        <div>
-                          <p className="text-sm font-medium">{aluno.nome_aluno}</p>
-                          <p className="text-xs text-muted-foreground">
-                            Código: {aluno.codigo_aluno} {aluno.curso && `— ${aluno.curso}`}
-                          </p>
-                          {jaTemIngresso && (
-                            <p className="text-xs text-orange-600 font-medium">✅ Já possui ingresso para este evento</p>
-                          )}
-                        </div>
+            {/* Quem vai participar */}
+            <div className="border-t pt-4 space-y-3">
+              <label className="text-sm font-medium block">Quem vai participar do evento?</label>
+
+              {/* Card: Você (comprador) */}
+              {permiteConvidados && (
+                <div
+                  className={`flex items-start space-x-3 p-3 rounded-md border-2 cursor-pointer transition ${comprarParaSi ? "border-zampieri-green bg-zampieri-cream/40" : "border-border hover:bg-muted/40"}`}
+                  onClick={() => { setComprarParaSiTouched(true); setComprarParaSi((v) => !v); }}
+                >
+                  <Checkbox
+                    checked={comprarParaSi}
+                    onCheckedChange={(c) => { setComprarParaSiTouched(true); setComprarParaSi(c === true); }}
+                  />
+                  <div className="flex-1">
+                    <p className="text-sm font-semibold text-zampieri-green-dark">
+                      Eu também vou participar
+                      {nomeComprador.trim() && <span className="text-muted-foreground font-normal"> — {nomeComprador.trim()}</span>}
+                    </p>
+                    <p className="text-xs text-muted-foreground mt-0.5">
+                      Marque se o ingresso é para você. Já preenchido com seus dados de cadastro.
+                    </p>
+                  </div>
+                </div>
+              )}
+
+              {/* Alunos vinculados */}
+              {tipoComprador !== "externo" && (
+                <div>
+                  {loadingAlunos ? (
+                    <p className="text-sm text-muted-foreground">Carregando alunos vinculados...</p>
+                  ) : alunos.length === 0 ? (
+                    <p className="text-xs text-muted-foreground">
+                      Não localizamos alunos vinculados ao seu CPF. Marque a opção acima para comprar para você ou adicione convidados abaixo.
+                    </p>
+                  ) : (
+                    <>
+                      <p className="text-xs font-medium text-muted-foreground mb-2">Alunos vinculados ao seu CPF</p>
+                      <div className="space-y-2">
+                        {alunos.map((aluno) => {
+                          const jaTemIngresso = alunosComIngresso.includes(aluno.codigo_aluno);
+                          return (
+                            <div
+                              key={aluno.codigo_aluno}
+                              className={`flex items-center space-x-3 p-2 rounded-md border ${jaTemIngresso ? "opacity-50 cursor-not-allowed bg-muted/30" : "hover:bg-muted/50 cursor-pointer"}`}
+                              onClick={() => !jaTemIngresso && toggleAluno(aluno.codigo_aluno)}
+                            >
+                              <Checkbox
+                                checked={alunosSelecionados.includes(aluno.codigo_aluno)}
+                                onCheckedChange={() => !jaTemIngresso && toggleAluno(aluno.codigo_aluno)}
+                                disabled={jaTemIngresso}
+                              />
+                              <div>
+                                <p className="text-sm font-medium">{aluno.nome_aluno}</p>
+                                <p className="text-xs text-muted-foreground">
+                                  Código: {aluno.codigo_aluno} {aluno.curso && `— ${aluno.curso}`}
+                                </p>
+                                {jaTemIngresso && (
+                                  <p className="text-xs text-orange-600 font-medium">✅ Já possui ingresso para este evento</p>
+                                )}
+                              </div>
+                            </div>
+                          );
+                        })}
                       </div>
-                    );
-                  })}
+                    </>
+                  )}
                 </div>
               )}
             </div>
@@ -598,10 +677,13 @@ const EventoCompra = () => {
             {permiteConvidados && (
               <div className="border-t pt-4">
                 <div className="flex items-center justify-between mb-2">
-                  <label className="text-sm font-medium">Convidados extras</label>
+                  <div>
+                    <label className="text-sm font-medium block">Outros convidados</label>
+                    <p className="text-xs text-muted-foreground">Cônjuge, avô, primo, amigo etc.</p>
+                  </div>
                   <Button type="button" variant="outline" size="sm" onClick={addConvidado}>
                     <UserPlus className="w-4 h-4 mr-1" />
-                    Adicionar
+                    Adicionar convidado
                   </Button>
                 </div>
                 {convidados.length === 0 && (
@@ -676,9 +758,12 @@ const EventoCompra = () => {
 
                 {participantKeys.map((key) => {
                   const isAluno = key.startsWith("aluno-");
-                  const label = isAluno
-                    ? alunos.find((a) => `aluno-${a.codigo_aluno}` === key)?.nome_aluno ?? "Aluno"
-                    : convidados[Number(key.replace("convidado-", ""))]?.nome?.trim() || `Convidado ${Number(key.replace("convidado-", "")) + 1}`;
+                  const isSelf = key === "comprador-self";
+                  const label = isSelf
+                    ? `${nomeComprador.trim() || "Você"} (comprador)`
+                    : isAluno
+                      ? alunos.find((a) => `aluno-${a.codigo_aluno}` === key)?.nome_aluno ?? "Aluno"
+                      : convidados[Number(key.replace("convidado-", ""))]?.nome?.trim() || `Convidado ${Number(key.replace("convidado-", "")) + 1}`;
                   const m = getMeia(key);
                   const categoriasPermitidas = evento.categorias_meia ?? [];
                   return (
