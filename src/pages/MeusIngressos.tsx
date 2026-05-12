@@ -122,7 +122,7 @@ const MeusIngressos = () => {
                         </p>
                       </div>
                       <Badge className={`border ${statusStyles[ingresso.status] || ""} capitalize`}>
-                        {ingresso.status}
+                        {ingresso.cortesia ? "Cortesia" : ingresso.status}
                       </Badge>
                     </div>
                     {ingresso.status === "pago" && (
