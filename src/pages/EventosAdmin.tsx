@@ -513,6 +513,20 @@ const EventosAdmin = () => {
                   </div>
               </RadioGroup>
               </div>
+              <div>
+                <label className="text-sm font-medium mb-2 block">Público-alvo (quem pode comprar)</label>
+                <Select value={publicoAlvo} onValueChange={(v) => setPublicoAlvo(v as any)}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="apenas_alunos">Apenas alunos matriculados</SelectItem>
+                    <SelectItem value="alunos_e_convidados">Alunos e convidados (padrão)</SelectItem>
+                    <SelectItem value="aberto_ao_publico">Aberto ao público (inclui não-alunos)</SelectItem>
+                  </SelectContent>
+                </Select>
+                <p className="text-xs text-muted-foreground mt-1">
+                  "Aberto ao público" permite que compradores externos (sem matrícula) comprem ingressos.
+                </p>
+              </div>
               <div className="flex items-center space-x-2">
                 <Checkbox
                   id="is-excursao"
