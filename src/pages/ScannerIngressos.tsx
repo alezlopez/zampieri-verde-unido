@@ -131,21 +131,23 @@ const ScannerIngressos = () => {
   }, []);
 
   const markAsUsed = async () => {
-    if (!ingresso) return;
+    if (!ingresso || !user) return;
     if (ingresso.tipo_ingresso === "meia" && !ingresso.meia_validada_portaria) {
       toast({ title: "Valide o documento de meia primeiro", variant: "destructive" });
       return;
     }
     setMarking(true);
+    const agora = new Date().toISOString();
     const { error: err } = await supabase
       .from("ingressos")
-      .update({ utilizado: true })
+      .update({ utilizado: true, utilizado_em: agora, utilizado_por: user.id })
       .eq("id", ingresso.id);
 
     if (err) {
       toast({ title: "Erro ao marcar ingresso", variant: "destructive" });
     } else {
-      setIngresso({ ...ingresso, utilizado: true });
+      setIngresso({ ...ingresso, utilizado: true, utilizado_em: agora, utilizado_por: user.id });
+      fetchValidadores([user.id]);
       toast({ title: "Ingresso marcado como utilizado!" });
     }
     setMarking(false);
@@ -154,11 +156,12 @@ const ScannerIngressos = () => {
   const validarDocMeia = async () => {
     if (!ingresso || !user) return;
     setMarking(true);
+    const agora = new Date().toISOString();
     const { error: err } = await supabase
       .from("ingressos")
       .update({
         meia_validada_portaria: true,
-        meia_validada_em: new Date().toISOString(),
+        meia_validada_em: agora,
         meia_validada_por: user.id,
       })
       .eq("id", ingresso.id);
