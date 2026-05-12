@@ -1,63 +1,51 @@
+## Inclusão manual de ingressos no painel admin
 
-# Reformulação Visual — Home do Colégio Zampieri
+Adicionar um botão "Adicionar ingresso manual" para cada evento no `EventosAdmin`, abrindo um formulário que permite ao admin lançar ingressos já pagos (cortesia, pagamento externo, dinheiro, etc.) com os dados completos dos participantes.
 
-## Escopo
-Apenas a rota `/` (página `Index.tsx`) e seus componentes visuais. **Nenhuma alteração** em:
-- Webhooks, Supabase, autenticação, RPCs
-- Rotas de eventos, login, admin, ingressos, reset password
-- `AuthContext`, `EventosLogin.tsx`, edge functions, `.env`
+### Fluxo de uso
 
-## Identidade Visual (design system)
+1. Admin clica em "Ingressos" no card do evento (já existente).
+2. Acima da lista aparece o botão "+ Adicionar ingresso manual".
+3. Abre um formulário inline com:
+   - Dados do comprador: nome, CPF (usado para vincular usuário).
+   - Lista dinâmica de participantes (botão "+ Adicionar participante"), cada um com: tipo (aluno/convidado), nome, CPF, data de nascimento, e-mail, celular. Para tipo aluno, campo "código do aluno".
+   - Observação opcional.
+4. Ao salvar:
+   - Valida vagas disponíveis no evento (busca `vagas_disponiveis` atualizado).
+   - Tenta resolver `user_id` via CPF do comprador (RPC nova `find_user_id_by_cpf`); se não achar, usa `auth.uid()` do admin.
+   - Insere 1 registro por participante em `ingressos` com `status = 'pago'` (trigger `atualizar_vagas_disponiveis` desconta vagas automaticamente).
+   - Marca `nome_comprador`, `cpf_participante`, `tipo_participante`, etc.
+5. Lista de ingressos é recarregada e mostra os novos registros como "pago".
 
-Atualizar `src/index.css` e `tailwind.config.ts` com tokens HSL semânticos:
+### Mudanças
 
-```text
---zampieri-green-dark:    #0f3d24
---zampieri-green:         #1a5c38
---zampieri-green-light:   #2d7a4e
---zampieri-wine:          #8b1a1a
---zampieri-gold:          #b8860b
---zampieri-gold-light:    #d4a017
---zampieri-cream:         #f5f0e8
---zampieri-cream-light:   #faf8f4
---zampieri-footer:        #071f12
-```
+**1. Migração (Supabase)** — nova RPC `find_user_id_by_cpf(p_cpf text)`:
+- `SECURITY DEFINER`, `search_path = public`.
+- Procura em `alunos_26.cpf_pai`/`cpf_mae`, pega `email` correspondente, e busca `auth.users` por esse e-mail. Retorna `user_id uuid` ou `NULL`.
 
-Fontes via Google Fonts (`<link>` em `index.html`):
-- **Playfair Display** (400/600/700 + italic) — títulos
-- **Lato** (300/400/700) — corpo
+**2. `src/pages/EventosAdmin.tsx`**:
+- Novo estado: `showManualForm`, `manualEventoId`, `compradorNome`, `compradorCpf`, lista `participantes[]`.
+- Função `handleAddParticipante`, `handleRemoveParticipante`, `handleSaveManual`.
+- Botão "+ Adicionar ingresso manual" dentro do bloco `selectedEventoIngressos === evento.id`.
+- Formulário inline (Card) com os campos descritos.
+- `handleSaveManual`:
+  - Valida nome do comprador e ao menos 1 participante com nome.
+  - Chama `supabase.rpc("find_user_id_by_cpf", { p_cpf })` se CPF informado; fallback `user.id` do admin.
+  - Recarrega `vagas_disponiveis` do evento; se < participantes, bloqueia.
+  - Insert em massa em `ingressos` com `status: "pago"`, `tipo_participante`, dados do participante.
+  - Toast de sucesso, fecha formulário, recarrega ingressos + eventos.
 
-Configurar `font-serif` (Playfair) e `font-sans` (Lato) no Tailwind.
+### Observações técnicas
 
-## Estrutura de seções (substituir conteúdo atual)
+- A RLS atual (`Users can create own tickets`) exige `auth.uid() = user_id`. Como o admin sempre está autenticado, vincular ao admin (fallback) ou ao próprio usuário do CPF ambos passam — quando vinculado a outro usuário, a policy bloqueia. **Solução**: o INSERT vai sempre com `user_id = auth.uid() (admin)`; em paralelo, gravamos o `user_id` real do responsável em uma coluna nova... 
+  
+  Mais simples: **manter `user_id = auth.uid() do admin`** sempre (ingresso é administrativo). Se a RPC encontrar um usuário pelo CPF, usamos esse `user_id` mas precisaremos relaxar a policy via política nova "Admins can create tickets for any user" (`has_role(auth.uid(), 'admin')`). Vou adicionar essa policy na migração para permitir que o ingresso apareça em "Meus Ingressos" do responsável real.
 
-A página `Index.tsx` passará a renderizar, nesta ordem:
+- O trigger `atualizar_vagas_disponiveis` cuida de descontar vagas automaticamente para `status` diferente de cancelado/estornado.
 
-1. `TopBar` — novo componente, fundo verde escuro, endereço esquerda / contatos + Portal do Aluno direita. Oculta no mobile.
-2. `Header` — refatorado: fundo branco, borda inferior dourada 3px, logo + nome + "Tradição em Educação · Desde 1980", links (A Escola, Ensino, Horários, Depoimentos, Estrutura, Localização) e botão "Matrículas 2027" (link já existente para `espera.colegiozampieri.com.br`).
-3. `HeroSection` — refatorado: gradiente verde diagonal, bloco vinho diagonal à direita, faixa dourada, badge "✦ Tradição em Educação · Desde 1980", H1 com "caráter" em itálico dourado, dois CTAs, barra de stats (46+, +10 mil, 2.000m², 3 níveis, Zona Sul SP).
-4. `HistorySection` — fundo creme, 3 parágrafos novos, badge vinho "1980 · Fundação", grid 2 colunas de valores.
-5. `SistemaArcoSection` — **novo componente**, fundo verde escuro, 2 cards (SAE Digital 📘 dourado / Nave a Vela ⛵ vinho).
-6. `CoursesSection` (Níveis de Ensino) — refatorado para 3 cards (Infantil verde, Fundamental vinho, Médio dourado) com tags coloridas.
-7. `DiferenciaisSection` — **novo componente**, fundo verde escuro, grid 4 colunas (46+, +10 mil, 2.000m², SAE).
-8. `ScheduleSection` — refatorado com novos horários (Infantil só tarde; Fund I/II manhã+tarde + nota 5º/8º/9º; Médio só manhã).
-9. `TestimonialsSection` — refatorado: fundo creme, grid 2x2 com **iframes embutidos** (não mais thumbnail com redirect), borda superior dourada, nome da família abaixo.
-10. `StructureSection` — refatorado: fundo branco, grid 3x2 de cards creme com 6 itens (16 salas, quadra, lab maker, núcleo ambiental, parque, pátios).
-11. `LocationSection` — refatorado: fundo creme, layout 2 colunas (info + mapa), botão "Ver rotas no Google Maps".
-12. `MatriculasCTASection` — **novo componente**, fundo verde escuro, "agosto de 2026" destacado em dourado, 3 botões (telefone, WhatsApp, e-mail).
-13. `Footer` — refatorado: fundo `#071f12`, faixa tricolor verde/branco/vermelho, 2 colunas de links, copyright 2026.
+- Não altera webhooks, edge functions, fluxo público de compra ou Asaas.
 
-`EnrollmentBanner` atual: manter desativado/removido da home (substituído pelo botão Matrículas 2027 do header e seção 12) — não toca o componente em si para preservar o link existente.
+### Arquivos afetados
 
-## Detalhes técnicos
-
-- **Componentes novos**: `TopBar.tsx`, `SistemaArcoSection.tsx`, `DiferenciaisSection.tsx`, `MatriculasCTASection.tsx`.
-- **Componentes refatorados** (somente JSX/estilos): `Header`, `HeroSection`, `HistorySection`, `CoursesSection`, `ScheduleSection`, `TestimonialsSection`, `StructureSection`, `LocationSection`, `Footer`, `Index.tsx`.
-- Todas as cores via tokens semânticos (`bg-zampieri-green-dark`, `text-zampieri-gold`, etc.) — sem cores hardcoded.
-- Responsivo: grids colapsam <900px, hero sem diagonais no mobile, topbar oculta no mobile, menu hamburger preservado.
-- SEO: atualizar `<title>` e `<meta description>` em `index.html` ("Colégio Zampieri — Tradição em Educação desde 1980 · Educação Infantil, Fundamental e Médio · São Paulo SP"), manter H1 único no Hero.
-- Links externos preservados: matrículas → `https://espera.colegiozampieri.com.br`, WhatsApp → `https://wa.me/5511993796214`, e-mail → `secretaria@colegiozampieri.com.br`, Maps → URL fornecida.
-- Thumbnails YouTube serão substituídas por iframes (`youtube.com/embed/...`) — mais simples, sem fallback de imagem.
-
-## Não será alterado
-- `App.tsx` (rotas), `AuthContext`, `supabase/`, `EventosLogin.tsx`, `EventoCompra.tsx`, `EventosAdmin.tsx`, `MeusIngressos.tsx`, `IngressoDetalhe.tsx`, `ScannerIngressos.tsx`, `ResetPassword.tsx`, `ChatWindow.tsx`, `ContactForm.tsx`, `FloatingChat.tsx`, `MapadaSuaProximaGrandeAventura.tsx`, edge functions, types, secrets.
+- `supabase/migrations/*` (nova RPC + nova RLS policy de INSERT para admins).
+- `src/pages/EventosAdmin.tsx` (UI + lógica).
