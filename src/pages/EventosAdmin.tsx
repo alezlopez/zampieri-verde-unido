@@ -149,7 +149,6 @@ const EventosAdmin = () => {
     setMaxParcelas(String(evento.max_parcelas));
     setVagasTotal(String(evento.vagas_total));
     setRequerAutorizacao(evento.requer_autorizacao);
-    setTipoEvento((evento.tipo_evento as "somente_alunos" | "alunos_convidados") || "alunos_convidados");
     setIsExcursao(evento.is_excursao || false);
     setPublicoAlvo((evento.publico_alvo as any) || "alunos_e_convidados");
     setImagemFile(null);
