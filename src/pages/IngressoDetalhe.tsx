@@ -18,6 +18,8 @@ interface IngressoCompleto {
   nome_comprador: string;
   nome_participante: string | null;
   tipo_participante: string;
+  tipo_ingresso: string;
+  categoria_meia: string | null;
   comprovante_estorno_url: string | null;
   created_at: string;
   eventos: {
@@ -28,6 +30,14 @@ interface IngressoCompleto {
     is_excursao: boolean;
   } | null;
 }
+
+const CATEGORIA_MEIA_LABEL: Record<string, string> = {
+  estudante: "Estudante",
+  idoso: "Idoso (60+)",
+  pcd: "PCD",
+  pcd_acompanhante: "Acompanhante de PCD",
+  professor: "Professor da rede pública",
+};
 
 const Shell = ({ children }: { children: React.ReactNode }) => (
   <div className="min-h-screen bg-background flex flex-col">
