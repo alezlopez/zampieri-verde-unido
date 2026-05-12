@@ -741,7 +741,14 @@ const EventoCompra = () => {
                     </p>
                   ) : (
                     <>
-                      <p className="text-xs font-medium text-muted-foreground mb-2">Alunos vinculados ao seu CPF</p>
+                      <p className="text-xs font-medium text-muted-foreground mb-2">
+                        Alunos vinculados ao seu CPF
+                        {alunoCortesia && (
+                          <span className="ml-2 inline-block px-2 py-0.5 rounded-full text-[10px] font-bold bg-zampieri-gold/20 text-zampieri-green-dark border border-zampieri-gold/40">
+                            CORTESIA — não paga
+                          </span>
+                        )}
+                      </p>
                       <div className="space-y-2">
                         {alunos.map((aluno) => {
                           const jaTemIngresso = alunosComIngresso.includes(aluno.codigo_aluno);
