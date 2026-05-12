@@ -318,57 +318,26 @@ const EventoCompra = () => {
       const { data: insertedData, error } = await supabase.from("ingressos").insert(records).select("id");
       if (error) throw error;
 
-      const insertedIds = insertedData?.map((r: any) => r.id) || [];
+      const insertedIds = (insertedData?.map((r: any) => r.id) || []) as string[];
 
-      // Send to webhook
-      // Send to webhook (fire and forget, n8n handles checkout_url/checkout_id update)
-      try {
-        let imagemBase64: string | null = null;
-        if (evento.imagem_url) {
-          try {
-            const imgResponse = await fetch(evento.imagem_url);
-            const blob = await imgResponse.blob();
-            imagemBase64 = await new Promise<string>((resolve) => {
-              const reader = new FileReader();
-              reader.onloadend = () => resolve(reader.result as string);
-              reader.readAsDataURL(blob);
-            });
-          } catch (imgErr) {
-            console.error("Erro ao converter imagem:", imgErr);
-          }
-        }
+      // Asaas: cria/recupera cobrança
+      const formaAsaas = formaPagamento === "parcelado" ? "credit_card" : "pix";
+      const parcelas = formaPagamento === "parcelado" ? evento.max_parcelas : 1;
+      const { data: checkoutData, error: checkoutErr } = await supabase.functions.invoke(
+        "asaas-create-checkout",
+        { body: { ingresso_ids: insertedIds, forma_pagamento: formaAsaas, parcelas } }
+      );
 
-        let imagemExtensao: string | null = null;
-        let imagemNomeArquivo: string | null = null;
-        if (evento.imagem_url) {
-          const urlPath = evento.imagem_url.split('?')[0];
-          const ext = urlPath.split('.').pop()?.toLowerCase() || null;
-          if (ext && ['png', 'jpg', 'jpeg', 'gif', 'webp', 'svg', 'bmp'].includes(ext)) {
-            imagemExtensao = ext;
-          }
-          const segments = urlPath.split('/');
-          imagemNomeArquivo = decodeURIComponent(segments[segments.length - 1]) || null;
-        }
-
-        await fetch("https://n8n.colegiozampieri.com/webhook/20c571e8-7740-40c6-add5-579e40a25ffc", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            "key_eventos": "qTAA7iUixsaRt9P4bhDB9zUYTFmuamfmeFxJNmk",
-          },
-          body: JSON.stringify({
-            evento: { ...evento, imagem_base64: imagemBase64, imagem_extensao: imagemExtensao, imagem_nome_arquivo: imagemNomeArquivo },
-            comprador: nomeComprador.trim(),
-            cpf_responsavel: user.user_metadata?.cpf ? (user.user_metadata.cpf as string).replace(/\D/g, "") : null,
-            user_id: user.id,
-            participantes: records,
-            ingresso_ids: insertedIds,
-            forma_pagamento: formaPagamento,
-            total,
-          }),
+      if (checkoutErr || (checkoutData as any)?.error) {
+        const msg = (checkoutData as any)?.error || checkoutErr?.message || "Falha ao gerar cobrança";
+        toast({
+          title: "Ingressos reservados, mas o checkout falhou",
+          description: `${msg}. Acesse "Meus Ingressos" para tentar novamente.`,
+          variant: "destructive",
         });
-      } catch (webhookErr) {
-        console.error("Webhook error:", webhookErr);
+        setTotalIngressosReservados(records.length);
+        setRedirectCountdown(10);
+        return;
       }
 
       setTotalIngressosReservados(records.length);
