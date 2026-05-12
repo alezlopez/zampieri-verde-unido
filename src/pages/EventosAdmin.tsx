@@ -90,7 +90,6 @@ const EventosAdmin = () => {
   const [precoParcelado, setPrecoParcelado] = useState("");
   const [maxParcelas, setMaxParcelas] = useState("");
   const [requerAutorizacao, setRequerAutorizacao] = useState(false);
-  const [tipoEvento, setTipoEvento] = useState<"somente_alunos" | "alunos_convidados">("alunos_convidados");
   const [isExcursao, setIsExcursao] = useState(false);
   const [publicoAlvo, setPublicoAlvo] = useState<"apenas_alunos" | "alunos_e_convidados" | "aberto_ao_publico">("alunos_e_convidados");
   const [syncingId, setSyncingId] = useState<string | null>(null);
@@ -130,7 +129,6 @@ const EventosAdmin = () => {
     setMaxParcelas("");
     setVagasTotal("");
     setRequerAutorizacao(false);
-    setTipoEvento("alunos_convidados");
     setIsExcursao(false);
     setPublicoAlvo("alunos_e_convidados");
     setImagemFile(null);
@@ -151,7 +149,6 @@ const EventosAdmin = () => {
     setMaxParcelas(String(evento.max_parcelas));
     setVagasTotal(String(evento.vagas_total));
     setRequerAutorizacao(evento.requer_autorizacao);
-    setTipoEvento((evento.tipo_evento as "somente_alunos" | "alunos_convidados") || "alunos_convidados");
     setIsExcursao(evento.is_excursao || false);
     setPublicoAlvo((evento.publico_alvo as any) || "alunos_e_convidados");
     setImagemFile(null);
@@ -212,7 +209,7 @@ const EventosAdmin = () => {
       vagas_total: vagasNum,
       vagas_disponiveis: vagasNum,
       requer_autorizacao: requerAutorizacao,
-      tipo_evento: tipoEvento,
+      tipo_evento: publicoAlvo === "apenas_alunos" ? "somente_alunos" : "alunos_convidados",
       is_excursao: isExcursao,
       publico_alvo: publicoAlvo,
     };
@@ -495,23 +492,6 @@ const EventosAdmin = () => {
                 <label htmlFor="requer-autorizacao" className="text-sm font-medium cursor-pointer">
                   Requer autorização?
                 </label>
-              </div>
-              <div>
-                <label className="text-sm font-medium mb-2 block">Tipo de Evento</label>
-                <RadioGroup
-                  value={tipoEvento}
-                  onValueChange={(val) => setTipoEvento(val as "somente_alunos" | "alunos_convidados")}
-                  className="flex gap-4"
-                >
-                  <div className="flex items-center space-x-2">
-                    <RadioGroupItem value="somente_alunos" id="somente_alunos" />
-                    <Label htmlFor="somente_alunos" className="cursor-pointer">Somente alunos</Label>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <RadioGroupItem value="alunos_convidados" id="alunos_convidados" />
-                    <Label htmlFor="alunos_convidados" className="cursor-pointer">Alunos + Convidados</Label>
-                  </div>
-              </RadioGroup>
               </div>
               <div>
                 <label className="text-sm font-medium mb-2 block">Público-alvo (quem pode comprar)</label>

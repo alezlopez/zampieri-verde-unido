@@ -392,7 +392,10 @@ const EventoCompra = () => {
     return date.toLocaleDateString("pt-BR", { day: "2-digit", month: "long", year: "numeric" });
   };
 
-  const permiteConvidados = evento.tipo_evento === "alunos_convidados";
+  // Novo modelo usa publico_alvo; eventos antigos sem publico_alvo caem no tipo_evento.
+  const permiteConvidados = (evento as any).publico_alvo
+    ? (evento as any).publico_alvo !== "apenas_alunos"
+    : evento.tipo_evento === "alunos_convidados";
 
   return (
     <div className="min-h-screen bg-background flex flex-col">
