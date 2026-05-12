@@ -24,11 +24,13 @@ interface Evento {
   vagas_disponiveis: number;
   ativo: boolean;
   requer_autorizacao: boolean;
+  publico_alvo: "apenas_alunos" | "alunos_e_convidados" | "aberto_ao_publico";
 }
 
 const Eventos = () => {
   const [eventos, setEventos] = useState<Evento[]>([]);
   const [loading, setLoading] = useState(true);
+  const [tipoComprador, setTipoComprador] = useState<"aluno" | "externo" | null>(null);
   const { user, isAdmin, signOut } = useAuth();
 
   useEffect(() => {
@@ -39,11 +41,36 @@ const Eventos = () => {
         .eq("ativo", true)
         .order("data_evento", { ascending: true });
 
-      if (!error && data) setEventos(data);
+      if (!error && data) setEventos(data as any);
       setLoading(false);
     };
     fetchEventos();
   }, []);
+
+  // Resolve tipo de comprador para filtrar/avisar
+  useEffect(() => {
+    const resolve = async () => {
+      if (!user) { setTipoComprador(null); return; }
+      const { data } = await supabase
+        .from("compradores_externos")
+        .select("id")
+        .eq("user_id", user.id)
+        .maybeSingle();
+      setTipoComprador(data ? "externo" : "aluno");
+    };
+    resolve();
+  }, [user]);
+
+  const podeComprar = (e: Evento) => {
+    if (e.publico_alvo === "aberto_ao_publico") return true;
+    if (!user) return true; // mostra; ao clicar vai para login
+    if (tipoComprador === "aluno") return true;
+    return false; // externo só pode comprar aberto_ao_publico
+  };
+
+  const labelPublico = (p: Evento["publico_alvo"]) =>
+    p === "aberto_ao_publico" ? "Aberto ao público" :
+    p === "apenas_alunos" ? "Apenas alunos" : "Alunos e convidados";
 
   const formatDate = (dateStr: string) => {
     const date = new Date(dateStr + "T00:00:00");
@@ -136,6 +163,9 @@ const Eventos = () => {
                     {evento.vagas_disponiveis <= 0 && (
                       <Badge variant="destructive">ESGOTADO</Badge>
                     )}
+                    <Badge variant="outline" className="text-[10px] border-zampieri-gold/60 text-zampieri-green-dark">
+                      {labelPublico(evento.publico_alvo)}
+                    </Badge>
                   </div>
                 </CardHeader>
                 <CardContent className="space-y-2">
@@ -167,15 +197,17 @@ const Eventos = () => {
                   </div>
                 </CardContent>
                 <CardFooter>
-                  {evento.vagas_disponiveis > 0 ? (
+                  {evento.vagas_disponiveis <= 0 ? (
+                    <Button disabled className="w-full">Esgotado</Button>
+                  ) : !podeComprar(evento) ? (
+                    <Button disabled className="w-full">Exclusivo para alunos</Button>
+                  ) : (
                     <Link to={user ? `/eventos/comprar/${evento.id}` : "/eventos/login"} className="w-full">
                       <Button className="w-full bg-zampieri-green-dark hover:bg-zampieri-green text-white">
                         <Ticket className="w-4 h-4 mr-2" />
                         Comprar Ingresso
                       </Button>
                     </Link>
-                  ) : (
-                    <Button disabled className="w-full">Esgotado</Button>
                   )}
                 </CardFooter>
               </Card>

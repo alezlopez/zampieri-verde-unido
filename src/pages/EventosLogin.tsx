@@ -32,6 +32,13 @@ const EventosLogin = () => {
   const [resendCooldown, setResendCooldown] = useState(0);
   const [resending, setResending] = useState(false);
 
+  // Cadastro externo (não-aluno)
+  const [showExternoForm, setShowExternoForm] = useState(false);
+  const [externoNome, setExternoNome] = useState("");
+  const [externoEmail, setExternoEmail] = useState("");
+  const [externoCelular, setExternoCelular] = useState("");
+  const [externoNascimento, setExternoNascimento] = useState("");
+
   useEffect(() => {
     if (resendCooldown <= 0) return;
     const t = setInterval(() => setResendCooldown((s) => Math.max(0, s - 1)), 1000);
@@ -150,7 +157,14 @@ const EventosLogin = () => {
         const { error, needsConfirmation, email } = await registerWithCpf(cpf, password);
         if (error) {
           const msg = error.message?.toLowerCase() || "";
-          if (msg.includes("already registered") || msg.includes("user already") || msg.includes("já cadastrado")) {
+          if (msg.includes("não encontrado") || msg.includes("nao encontrado")) {
+            // CPF não está em alunos_26 → oferece cadastro externo
+            setShowExternoForm(true);
+            toast({
+              title: "CPF não encontrado entre alunos",
+              description: "Crie uma conta como comprador externo para participar dos eventos abertos ao público.",
+            });
+          } else if (msg.includes("already registered") || msg.includes("user already") || msg.includes("já cadastrado")) {
             const { data } = await supabase.rpc("find_email_by_cpf", { p_cpf: cpf.replace(/\D/g, "") });
             if (data && data.length > 0) {
               setUnconfirmedEmail(data[0].email);
@@ -179,6 +193,25 @@ const EventosLogin = () => {
             } else {
               toast({ title: "E-mail não confirmado", description: "Confirme seu cadastro pelo link enviado por e-mail.", variant: "destructive" });
             }
+          } else if (msg.includes("não encontrado") || msg.includes("nao encontrado")) {
+            // Tentar como comprador externo
+            const { data: ctx } = await supabase.rpc("find_user_context_by_cpf", { p_cpf: cpf.replace(/\D/g, "") });
+            const ctxRow = ctx?.[0];
+            if (ctxRow?.origem === "externo" && ctxRow.email) {
+              const r = await signIn(ctxRow.email, password);
+              if (r.error) {
+                toast({ title: "Erro no login", description: r.error.message, variant: "destructive" });
+              } else {
+                toast({ title: "Login realizado!" });
+                navigate("/eventos");
+              }
+            } else {
+              setShowExternoForm(true);
+              toast({
+                title: "CPF não cadastrado",
+                description: "Crie uma conta como comprador externo abaixo.",
+              });
+            }
           } else {
             toast({ title: "Erro no login", description: error.message, variant: "destructive" });
           }
@@ -189,6 +222,45 @@ const EventosLogin = () => {
       }
     } catch (err: any) {
       toast({ title: "Erro", description: "Ocorreu um erro inesperado.", variant: "destructive" });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleExternoSignup = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!cpf || !password || !externoNome.trim() || !externoEmail.trim()) {
+      toast({ title: "Preencha todos os campos obrigatórios", variant: "destructive" });
+      return;
+    }
+    setLoading(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("comprador-externo-signup", {
+        body: {
+          cpf: cpf.replace(/\D/g, ""),
+          nome: externoNome.trim(),
+          email: externoEmail.trim().toLowerCase(),
+          celular: externoCelular,
+          data_nascimento: externoNascimento || undefined,
+          password,
+        },
+      });
+      if (error || (data && (data as any).error)) {
+        const msg = (data as any)?.error || error?.message || "Falha ao criar conta";
+        toast({ title: "Erro no cadastro", description: msg, variant: "destructive" });
+        return;
+      }
+      // Login automático
+      const r = await signIn(externoEmail.trim().toLowerCase(), password);
+      if (r.error) {
+        toast({ title: "Conta criada", description: "Faça login para continuar." });
+        setShowExternoForm(false);
+      } else {
+        toast({ title: "Bem-vindo!", description: "Conta criada e logada com sucesso." });
+        navigate("/eventos");
+      }
+    } catch (err: any) {
+      toast({ title: "Erro", description: err.message || "Falha inesperada", variant: "destructive" });
     } finally {
       setLoading(false);
     }
@@ -354,6 +426,33 @@ const EventosLogin = () => {
                       {loading ? "Aguarde..." : isAdminLogin ? "Entrar" : isRegister ? "Cadastrar" : "Entrar"}
                     </Button>
                   </form>
+
+                  {showExternoForm && !isAdminLogin && (
+                    <div className="mt-6 p-4 border border-zampieri-gold/40 bg-zampieri-cream rounded-lg">
+                      <p className="text-sm font-semibold text-zampieri-green-dark mb-2">
+                        Cadastro de comprador externo
+                      </p>
+                      <p className="text-xs text-muted-foreground mb-3">
+                        Não é aluno? Crie sua conta para comprar ingressos de eventos abertos ao público. Usaremos o CPF e a senha já digitados acima.
+                      </p>
+                      <form onSubmit={handleExternoSignup} className="space-y-3">
+                        <Input placeholder="Nome completo *" value={externoNome} onChange={(e) => setExternoNome(e.target.value)} required />
+                        <Input type="email" placeholder="E-mail *" value={externoEmail} onChange={(e) => setExternoEmail(e.target.value)} required />
+                        <div className="grid grid-cols-2 gap-2">
+                          <Input placeholder="Celular" value={externoCelular} onChange={(e) => setExternoCelular(e.target.value)} />
+                          <Input type="date" placeholder="Nascimento" value={externoNascimento} onChange={(e) => setExternoNascimento(e.target.value)} />
+                        </div>
+                        <div className="flex gap-2">
+                          <Button type="submit" disabled={loading} className="flex-1 bg-zampieri-green-dark hover:bg-zampieri-green text-white">
+                            {loading ? "Criando..." : "Criar conta e entrar"}
+                          </Button>
+                          <Button type="button" variant="outline" onClick={() => setShowExternoForm(false)}>
+                            Cancelar
+                          </Button>
+                        </div>
+                      </form>
+                    </div>
+                  )}
 
                   <div className="mt-4 text-center space-y-2">
                     {!isRegister && (
