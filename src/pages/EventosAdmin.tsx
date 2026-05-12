@@ -32,6 +32,7 @@ interface Evento {
   requer_autorizacao: boolean;
   tipo_evento: string;
   is_excursao: boolean;
+  publico_alvo: string;
 }
 
 interface Ingresso {
@@ -41,6 +42,9 @@ interface Ingresso {
   status: string;
   codigo_aluno: string | null;
   created_at: string;
+  tipo_comprador: string | null;
+  asaas_payment_id: string | null;
+  checkout_url: string | null;
 }
 
 const EventosAdmin = () => {
