@@ -129,7 +129,7 @@ const EventosAdmin = () => {
     setMaxParcelas("");
     setVagasTotal("");
     setRequerAutorizacao(false);
-    setTipoEvento("alunos_convidados");
+    setIsExcursao(false);
     setIsExcursao(false);
     setPublicoAlvo("alunos_e_convidados");
     setImagemFile(null);
