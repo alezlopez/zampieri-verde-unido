@@ -192,6 +192,7 @@ const EventosAdmin = () => {
     setPublicoAlvo("alunos_e_convidados");
     setMeiaHabilitada(true);
     setCategoriasMeia(["estudante", "idoso", "pcd", "pcd_acompanhante", "professor"]);
+    setAlunoCortesia(false);
     setImagemFile(null);
     setImagemPreview(null);
     setEditingId(null);
