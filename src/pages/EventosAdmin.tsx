@@ -333,40 +333,40 @@ const EventosAdmin = () => {
   if (authLoading || loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-green-600"></div>
+        <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-zampieri-green"></div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-green-50 to-white py-8 px-4">
+    <div className="min-h-screen bg-background py-8 px-4">
       <div className="container mx-auto max-w-4xl">
         <div className="flex items-center justify-between mb-6">
-          <Link to="/eventos" className="inline-flex items-center text-green-700 hover:text-green-800">
+          <Link to="/eventos" className="inline-flex items-center text-zampieri-green-dark hover:text-zampieri-gold">
             <ArrowLeft className="w-4 h-4 mr-2" />
             Eventos
           </Link>
           <div className="flex gap-2">
             <Link to="/eventos/admin/scanner">
-              <Button variant="outline" className="border-green-300 text-green-700 hover:bg-green-50">
+              <Button variant="outline" className="border-zampieri-green-dark text-zampieri-green-dark hover:bg-zampieri-cream">
                 <ScanLine className="w-4 h-4 mr-2" />
                 Scanner QR
               </Button>
             </Link>
-            <Button onClick={() => { resetForm(); setShowForm(true); }} className="bg-green-600 hover:bg-green-700">
+            <Button onClick={() => { resetForm(); setShowForm(true); }} className="bg-zampieri-green-dark hover:bg-zampieri-green text-white">
               <Plus className="w-4 h-4 mr-2" />
               Novo Evento
             </Button>
           </div>
         </div>
 
-        <h1 className="text-2xl font-bold text-green-800 mb-6">Painel Administrativo — Eventos</h1>
+        <h1 className="text-2xl font-bold text-zampieri-green-dark mb-6">Painel Administrativo — Eventos</h1>
 
         {/* Form */}
         {showForm && (
-          <Card className="mb-6 border-green-200">
+          <Card className="mb-6 border-border">
             <CardHeader>
-              <CardTitle className="text-green-800">{editingId ? "Editar Evento" : "Novo Evento"}</CardTitle>
+              <CardTitle className="text-zampieri-green-dark">{editingId ? "Editar Evento" : "Novo Evento"}</CardTitle>
             </CardHeader>
             <CardContent className="space-y-3">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
@@ -416,7 +416,7 @@ const EventosAdmin = () => {
                 <label className="text-sm font-medium">Imagem do Evento</label>
                 <div className="mt-1">
                   <label className="flex items-center gap-2 cursor-pointer border border-input rounded-md px-3 py-2 text-sm hover:bg-muted/50 transition-colors">
-                    <Upload className="w-4 h-4 text-green-600" />
+                    <Upload className="w-4 h-4 text-zampieri-gold" />
                     <span>{imagemFile ? imagemFile.name : "Selecionar imagem..."}</span>
                     <input type="file" accept="image/*" className="hidden" onChange={handleImageSelect} />
                   </label>
@@ -472,7 +472,7 @@ const EventosAdmin = () => {
                 </label>
               </div>
               <div className="flex gap-2">
-                <Button onClick={handleSave} className="bg-green-600 hover:bg-green-700" disabled={uploading}>
+                <Button onClick={handleSave} className="bg-zampieri-green-dark hover:bg-zampieri-green text-white" disabled={uploading}>
                   {uploading ? "Salvando..." : "Salvar"}
                 </Button>
                 <Button variant="outline" onClick={resetForm}>Cancelar</Button>
@@ -484,12 +484,12 @@ const EventosAdmin = () => {
         {/* Events list */}
         <div className="space-y-4">
           {eventos.map((evento) => (
-            <Card key={evento.id} className={`border-green-100 ${!evento.ativo ? "opacity-60" : ""}`}>
+            <Card key={evento.id} className={`border-border ${!evento.ativo ? "opacity-60" : ""}`}>
               <CardContent className="p-4">
                 <div className="flex flex-col md:flex-row md:items-center justify-between gap-3">
                   <div className="flex-1">
                     <div className="flex items-center gap-2">
-                      <h3 className="font-semibold text-green-800">{evento.titulo}</h3>
+                      <h3 className="font-semibold text-zampieri-green-dark">{evento.titulo}</h3>
                       <Badge variant={evento.ativo ? "default" : "secondary"}>
                         {evento.ativo ? "Ativo" : "Inativo"}
                       </Badge>
@@ -530,7 +530,7 @@ const EventosAdmin = () => {
                       <Button
                         size="sm"
                         variant="outline"
-                        className="border-green-300 text-green-700 hover:bg-green-50"
+                        className="border-zampieri-green-dark text-zampieri-green-dark hover:bg-zampieri-cream"
                         onClick={() => { resetManualForm(); setShowManualForm(true); }}
                       >
                         <UserPlus className="w-4 h-4 mr-1" />
@@ -539,9 +539,9 @@ const EventosAdmin = () => {
                     </div>
 
                     {showManualForm && (
-                      <Card className="border-green-200 bg-green-50/30">
+                      <Card className="border-zampieri-gold/40 bg-zampieri-cream">
                         <CardContent className="p-4 space-y-3">
-                          <h5 className="font-semibold text-sm text-green-800">Novo ingresso manual (status: pago)</h5>
+                          <h5 className="font-semibold text-sm text-zampieri-green-dark">Novo ingresso manual (status: pago)</h5>
                           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                             <div>
                               <label className="text-xs font-medium">Nome do comprador *</label>
@@ -566,9 +566,9 @@ const EventosAdmin = () => {
                               </Button>
                             </div>
                             {participantes.map((p, idx) => (
-                              <div key={idx} className="border border-green-200 rounded-md p-3 space-y-2 bg-white">
+                              <div key={idx} className="border border-border rounded-md p-3 space-y-2 bg-white">
                                 <div className="flex items-center justify-between">
-                                  <span className="text-xs font-semibold text-green-700">Participante {idx + 1}</span>
+                                  <span className="text-xs font-semibold text-zampieri-green-dark">Participante {idx + 1}</span>
                                   {participantes.length > 1 && (
                                     <button
                                       type="button"
@@ -608,7 +608,7 @@ const EventosAdmin = () => {
                           </div>
 
                           <div className="flex gap-2">
-                            <Button onClick={() => handleSaveManual(evento.id)} disabled={savingManual} className="bg-green-600 hover:bg-green-700">
+                            <Button onClick={() => handleSaveManual(evento.id)} disabled={savingManual} className="bg-zampieri-green-dark hover:bg-zampieri-green text-white">
                               {savingManual ? "Salvando..." : "Salvar ingressos"}
                             </Button>
                             <Button variant="outline" onClick={resetManualForm}>Cancelar</Button>
@@ -629,7 +629,7 @@ const EventosAdmin = () => {
                               <span className="text-muted-foreground ml-2">Qtd: {ing.quantidade}</span>
                             </div>
                             <Badge className={
-                              ing.status === "pago" ? "bg-green-100 text-green-800" :
+                              ing.status === "pago" ? "bg-zampieri-green/15 text-zampieri-green-dark border border-zampieri-green/40" :
                               ing.status === "cancelado" ? "bg-red-100 text-red-800" :
                               "bg-yellow-100 text-yellow-800"
                             }>
