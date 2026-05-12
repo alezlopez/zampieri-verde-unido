@@ -231,9 +231,17 @@ const ScannerIngressos = () => {
             <Card className={`mt-4 ${ingresso.utilizado ? "border-destructive/40 bg-destructive/5" : ingresso.status === "pago" ? "border-zampieri-green/40 bg-zampieri-green/5" : "border-zampieri-gold/40 bg-zampieri-cream"}`}>
               <CardContent className="p-6">
                 {ingresso.utilizado && (
-                  <div className="flex items-center gap-2 bg-destructive/15 border border-destructive/40 rounded-lg p-3 mb-4">
-                    <AlertTriangle className="w-5 h-5 text-destructive shrink-0" />
-                    <p className="text-sm font-bold text-destructive">ATENÇÃO: Este ingresso já foi utilizado!</p>
+                  <div className="bg-destructive/15 border border-destructive/40 rounded-lg p-3 mb-4">
+                    <div className="flex items-center gap-2">
+                      <AlertTriangle className="w-5 h-5 text-destructive shrink-0" />
+                      <p className="text-sm font-bold text-destructive">ATENÇÃO: Este ingresso já foi utilizado!</p>
+                    </div>
+                    {(ingresso.utilizado_em || ingresso.utilizado_por) && (
+                      <p className="text-xs text-destructive/90 mt-2 ml-7">
+                        {ingresso.utilizado_em && new Date(ingresso.utilizado_em).toLocaleString("pt-BR")}
+                        {ingresso.utilizado_por && validadores[ingresso.utilizado_por] && ` · por ${validadores[ingresso.utilizado_por]}`}
+                      </p>
+                    )}
                   </div>
                 )}
 
