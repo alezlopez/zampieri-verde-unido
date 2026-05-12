@@ -65,9 +65,10 @@ const Eventos = () => {
 
   const podeComprar = (e: Evento) => {
     if (e.publico_alvo === "aberto_ao_publico") return true;
+    if (e.publico_alvo === "alunos_e_convidados") return true;
     if (!user) return true; // mostra; ao clicar vai para login
     if (tipoComprador === "aluno") return true;
-    return false; // externo só pode comprar aberto_ao_publico
+    return false; // externo só pode comprar aberto_ao_publico ou alunos_e_convidados
   };
 
   const labelPublico = (p: Evento["publico_alvo"]) =>
