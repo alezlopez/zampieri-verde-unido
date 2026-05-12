@@ -114,7 +114,14 @@ const EventoCompra = () => {
   const [termosDialogOpen, setTermosDialogOpen] = useState(false);
   const [autorizacaoDialogOpen, setAutorizacaoDialogOpen] = useState(false);
 
-  // Meia-entrada por participante (chave: `aluno-<codigo>` ou `convidado-<idx>`)
+  // Comprador como participante
+  const [comprarParaSi, setComprarParaSi] = useState(false);
+  const [comprarParaSiTouched, setComprarParaSiTouched] = useState(false);
+  const [compradorExternoData, setCompradorExternoData] = useState<{
+    cpf?: string; email?: string; celular?: string; data_nascimento?: string;
+  } | null>(null);
+
+  // Meia-entrada por participante (chave: `aluno-<codigo>`, `convidado-<idx>` ou `comprador-self`)
   const [meiaConfigs, setMeiaConfigs] = useState<Record<string, MeiaConfig>>({});
   const [meiaInfo, setMeiaInfo] = useState<{ vagas_meia_total: number; meias_vendidas: number; meias_disponiveis: number } | null>(null);
 
