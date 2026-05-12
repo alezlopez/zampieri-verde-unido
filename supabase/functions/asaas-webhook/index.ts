@@ -40,9 +40,11 @@ Deno.serve(async (req) => {
     });
   }
 
-  const eventId: string = payload?.id || `${payload?.event}-${payload?.payment?.id}-${Date.now()}`;
+  const eventId: string = payload?.id || `${payload?.event}-${payload?.payment?.id || payload?.checkout?.id}-${Date.now()}`;
   const eventType: string = payload?.event || "UNKNOWN";
   const paymentId: string | null = payload?.payment?.id || null;
+  const checkoutObj: any = payload?.checkout || null;
+  const checkoutId: string | null = checkoutObj?.id || null;
 
   // Idempotência
   const { error: insErr } = await admin.from("asaas_webhook_events").insert({
@@ -54,7 +56,6 @@ Deno.serve(async (req) => {
 
   if (insErr) {
     if (insErr.code === "23505") {
-      // Duplicado: ok
       return new Response(JSON.stringify({ ok: true, duplicate: true }), {
         status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
@@ -63,22 +64,49 @@ Deno.serve(async (req) => {
   }
 
   try {
-    const newStatus = STATUS_MAP[eventType];
-    const externalRef: string | null = payload?.payment?.externalReference || null;
+    // Mapeamento de eventos de checkout
+    const CHECKOUT_STATUS_MAP: Record<string, string> = {
+      CHECKOUT_PAID: "pago",
+      CHECKOUT_CANCELED: "pendente",
+      CHECKOUT_EXPIRED: "pendente",
+    };
 
-    if (newStatus && paymentId) {
-      const update: any = { status: newStatus, asaas_payment_id: paymentId };
+    const newStatus = STATUS_MAP[eventType] || CHECKOUT_STATUS_MAP[eventType];
+    const externalRef: string | null =
+      payload?.payment?.externalReference ||
+      checkoutObj?.externalReference ||
+      null;
+
+    if (newStatus) {
+      const update: any = { status: newStatus };
+      if (paymentId) update.asaas_payment_id = paymentId;
       if (newStatus === "pago") update.utilizado = false;
 
-      // 1) Tenta casar pelo asaas_payment_id (caso já tenha sido salvo antes)
-      let { data: matched, error: updErr } = await admin
-        .from("ingressos")
-        .update(update)
-        .eq("asaas_payment_id", paymentId)
-        .select("id");
-      if (updErr) throw updErr;
+      let matched: any[] | null = null;
 
-      // 2) Fallback: casar pelos ids vindos no externalReference (Asaas Checkout)
+      // 1) Tenta casar pelo asaas_payment_id (eventos PAYMENT_*)
+      if (paymentId) {
+        const r = await admin
+          .from("ingressos")
+          .update(update)
+          .eq("asaas_payment_id", paymentId)
+          .select("id");
+        if (r.error) throw r.error;
+        matched = r.data;
+      }
+
+      // 2) Casar pelo checkout_id (eventos CHECKOUT_*)
+      if ((!matched || matched.length === 0) && checkoutId) {
+        const r = await admin
+          .from("ingressos")
+          .update(update)
+          .eq("checkout_id", checkoutId)
+          .select("id");
+        if (r.error) throw r.error;
+        matched = r.data;
+      }
+
+      // 3) Fallback: casar pelos ids vindos no externalReference
       if ((!matched || matched.length === 0) && externalRef) {
         const ids = externalRef.split(",").map((s) => s.trim()).filter(Boolean);
         if (ids.length > 0) {
@@ -92,8 +120,8 @@ Deno.serve(async (req) => {
         }
       }
 
-      // Dispara e-mail de confirmação (best-effort, não bloqueia webhook)
-      if (newStatus === "pago" && matched && matched.length > 0) {
+      // Dispara e-mail de confirmação (best-effort)
+      if (newStatus === "pago" && matched && matched.length > 0 && paymentId) {
         admin.functions.invoke("enviar-confirmacao-ingresso", {
           body: { payment_id: paymentId },
         }).catch((e) => console.error("[asaas-webhook] envio email falhou", e));
