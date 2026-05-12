@@ -156,27 +156,41 @@ Deno.serve(async (req) => {
       valor_total: valorTotal, parcelado: isParcelado, parcelas: maxParcelas,
     });
 
-    const payment = await createPayment({
+    const origin =
+      req.headers.get("origin") ||
+      req.headers.get("referer")?.replace(/\/[^/]*$/, "") ||
+      "https://colegiozampieri.com.br";
+    const successUrl = `${origin.replace(/\/+$/, "")}/eventos/meus-ingressos?status=success`;
+    const cancelUrl = `${origin.replace(/\/+$/, "")}/eventos/meus-ingressos?status=cancel`;
+
+    const billingTypes = isParcelado
+      ? (["CREDIT_CARD"] as const)
+      : (["PIX", "CREDIT_CARD"] as const);
+    const chargeTypes = isParcelado
+      ? (["INSTALLMENT"] as const)
+      : (["DETACHED"] as const);
+
+    const checkout = await createCheckout({
       customer: customer.id,
-      billingType: body.forma_pagamento === "pix" ? "PIX" : "CREDIT_CARD",
-      value: valorTotal,
-      totalValue: isParcelado ? valorTotal : undefined,
-      installmentCount: isParcelado ? maxParcelas : undefined,
-      dueDate,
-      description: `${evento.titulo} — ${ingressos.length} ingresso(s)`,
+      billingTypes: billingTypes as any,
+      chargeTypes: chargeTypes as any,
+      items: items.map((i) => ({ description: i.description, quantity: i.quantity, value: i.value })),
+      successUrl,
+      cancelUrl,
       externalReference: ingressos.map((i: any) => i.id).join(","),
+      minutesToExpire: 2880,
+      maxInstallmentCount: isParcelado ? maxParcelas : undefined,
     });
 
-    const checkoutUrl = payment.invoiceUrl || payment.bankSlipUrl;
-    const paymentId = payment.id;
+    const checkoutUrl = checkout.link || checkout.url || checkout.checkoutUrl;
+    const checkoutId = checkout.id;
 
     await admin
       .from("ingressos")
       .update({
         asaas_customer_id: customer.id,
-        asaas_payment_id: paymentId,
         checkout_url: checkoutUrl,
-        checkout_id: paymentId,
+        checkout_id: checkoutId,
         forma_pagamento: body.forma_pagamento,
         parcelas: isParcelado ? maxParcelas : 1,
         valor_total: valorTotal,
@@ -185,7 +199,7 @@ Deno.serve(async (req) => {
       .in("id", body.ingresso_ids);
 
     return new Response(
-      JSON.stringify({ checkout_url: checkoutUrl, payment_id: paymentId, reused: false, valor_total: valorTotal }),
+      JSON.stringify({ checkout_url: checkoutUrl, checkout_id: checkoutId, reused: false, valor_total: valorTotal }),
       { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } },
     );
   } catch (e: any) {
