@@ -64,7 +64,7 @@ const MapadaSuaProximaGrandeAventura = () => {
   };
 
   return (
-    <div className="min-h-screen bg-white">
+    <div className="min-h-screen bg-background">
       <EnrollmentBanner />
       <Header activeSection="formulario" />
       
@@ -76,7 +76,7 @@ const MapadaSuaProximaGrandeAventura = () => {
               <Button
                 variant="ghost"
                 onClick={() => window.history.back()}
-                className="text-green-700 hover:text-green-800 hover:bg-green-50 text-sm md:text-base"
+                className="text-zampieri-green-dark hover:text-zampieri-gold hover:bg-zampieri-cream text-sm md:text-base"
               >
                 <ArrowLeft className="mr-2 h-4 w-4" />
                 Voltar
@@ -85,19 +85,19 @@ const MapadaSuaProximaGrandeAventura = () => {
 
             {/* Header Section */}
             <div className="text-center mb-6 md:mb-8 lg:mb-12">
-              <div className="inline-flex items-center justify-center w-12 h-12 md:w-16 md:h-16 bg-green-100 rounded-full mb-4 md:mb-6">
-                <Compass className="h-6 w-6 md:h-8 md:w-8 text-green-600" />
+              <div className="inline-flex items-center justify-center w-12 h-12 md:w-16 md:h-16 bg-zampieri-cream rounded-full mb-4 md:mb-6">
+                <Compass className="h-6 w-6 md:h-8 md:w-8 text-zampieri-gold" />
               </div>
-              <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold text-green-800 mb-3 md:mb-4 px-4">
+              <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-serif font-bold text-zampieri-green-dark mb-3 md:mb-4 px-4">
                 Mapa da Sua Próxima Grande Aventura
               </h1>
-              <p className="text-base md:text-lg text-gray-600 max-w-2xl mx-auto px-4">
+              <p className="text-base md:text-lg text-muted-foreground max-w-2xl mx-auto px-4">
                 Descubra seu caminho através de perguntas que revelam seus interesses e aspirações para o futuro
               </p>
             </div>
 
             {/* Form Container */}
-            <div className="bg-white rounded-xl shadow-lg border border-gray-100 p-4 md:p-6 lg:p-8 xl:p-10">
+            <div className="bg-card rounded-xl shadow-lg border border-border p-4 md:p-6 lg:p-8 xl:p-10">
               <Form {...form}>
                 <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6 md:space-y-8">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
@@ -107,11 +107,11 @@ const MapadaSuaProximaGrandeAventura = () => {
                     rules={{ required: "Nome completo é obrigatório" }}
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel className="text-green-800 font-semibold text-sm md:text-base">1. Nome completo</FormLabel>
+                        <FormLabel className="text-zampieri-green-dark font-semibold text-sm md:text-base">1. Nome completo</FormLabel>
                         <FormControl>
                           <Input 
                             placeholder="Digite seu nome completo" 
-                            className="border-green-200 focus:border-green-500 focus:ring-green-500 text-sm md:text-base"
+                            className="border-input focus:border-zampieri-green focus:ring-zampieri-gold text-sm md:text-base"
                             {...field} 
                           />
                         </FormControl>
@@ -132,12 +132,12 @@ const MapadaSuaProximaGrandeAventura = () => {
                     }}
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel className="text-green-800 font-semibold text-sm md:text-base">2. Idade</FormLabel>
+                        <FormLabel className="text-zampieri-green-dark font-semibold text-sm md:text-base">2. Idade</FormLabel>
                         <FormControl>
                           <Input 
                             type="number" 
                             placeholder="Digite sua idade"
-                            className="border-green-200 focus:border-green-500 focus:ring-green-500 text-sm md:text-base"
+                            className="border-input focus:border-zampieri-green focus:ring-zampieri-gold text-sm md:text-base"
                             {...field} 
                           />
                         </FormControl>
@@ -153,14 +153,14 @@ const MapadaSuaProximaGrandeAventura = () => {
                   rules={{ required: "Série é obrigatória" }}
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel className="text-green-800 font-semibold text-sm md:text-base">3. Série</FormLabel>
+                      <FormLabel className="text-zampieri-green-dark font-semibold text-sm md:text-base">3. Série</FormLabel>
                       <Select onValueChange={field.onChange} defaultValue={field.value}>
                         <FormControl>
-                          <SelectTrigger className="border-green-200 focus:border-green-500 focus:ring-green-500 text-sm md:text-base">
+                          <SelectTrigger className="border-input focus:border-zampieri-green focus:ring-zampieri-gold text-sm md:text-base">
                             <SelectValue placeholder="Selecione sua série" />
                           </SelectTrigger>
                         </FormControl>
-                        <SelectContent className="bg-white border-green-200">
+                        <SelectContent className="bg-popover border-border">
                           <SelectItem value="1º Médio">1º Médio</SelectItem>
                           <SelectItem value="2º Médio">2º Médio</SelectItem>
                           <SelectItem value="3º Médio">3º Médio</SelectItem>
@@ -177,13 +177,13 @@ const MapadaSuaProximaGrandeAventura = () => {
                   rules={{ required: "Esta pergunta é obrigatória" }}
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel className="text-green-800 font-semibold text-sm md:text-base">
+                      <FormLabel className="text-zampieri-green-dark font-semibold text-sm md:text-base">
                         4. Se você pudesse passar o dia inteiro fazendo uma única coisa (sem se preocupar com escola ou tarefas), o que seria?
                       </FormLabel>
                       <FormControl>
                         <Textarea 
                           placeholder="Descreva o que você faria..."
-                          className="min-h-[80px] md:min-h-[100px] border-green-200 focus:border-green-500 focus:ring-green-500 text-sm md:text-base"
+                          className="min-h-[80px] md:min-h-[100px] border-input focus:border-zampieri-green focus:ring-zampieri-gold text-sm md:text-base"
                           {...field} 
                         />
                       </FormControl>
@@ -198,13 +198,13 @@ const MapadaSuaProximaGrandeAventura = () => {
                   rules={{ required: "Esta pergunta é obrigatória" }}
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel className="text-green-800 font-semibold text-base">
+                      <FormLabel className="text-zampieri-green-dark font-semibold text-base">
                         5. No mundo dos games ou filmes, qual tipo de personagem você mais admira? O herói, o inventor, o líder da equipe, o gênio da estratégia ou o(a) artista?
                       </FormLabel>
                       <FormControl>
                         <Textarea 
                           placeholder="Conte-nos sobre o personagem que você admira..."
-                          className="min-h-[100px] border-green-200 focus:border-green-500 focus:ring-green-500"
+                          className="min-h-[100px] border-input focus:border-zampieri-green focus:ring-zampieri-gold"
                           {...field} 
                         />
                       </FormControl>
@@ -219,13 +219,13 @@ const MapadaSuaProximaGrandeAventura = () => {
                   rules={{ required: "Esta pergunta é obrigatória" }}
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel className="text-green-800 font-semibold text-base">
+                      <FormLabel className="text-zampieri-green-dark font-semibold text-base">
                         6. Qual sua matéria favorita na escola e qual você acha mais útil para a vida real?
                       </FormLabel>
                       <FormControl>
                         <Textarea 
                           placeholder="Fale sobre sua matéria favorita..."
-                          className="min-h-[100px] border-green-200 focus:border-green-500 focus:ring-green-500"
+                          className="min-h-[100px] border-input focus:border-zampieri-green focus:ring-zampieri-gold"
                           {...field} 
                         />
                       </FormControl>
@@ -240,13 +240,13 @@ const MapadaSuaProximaGrandeAventura = () => {
                   rules={{ required: "Esta pergunta é obrigatória" }}
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel className="text-green-800 font-semibold text-base">
+                      <FormLabel className="text-zampieri-green-dark font-semibold text-base">
                         7. Quando você está online, o que mais gosta de fazer? (Ex: Criar vídeos, jogar online, ver tutoriais, seguir contas de tecnologia ou arte, debater sobre temas polêmicos)
                       </FormLabel>
                       <FormControl>
                         <Textarea 
                           placeholder="Descreva suas atividades online favoritas..."
-                          className="min-h-[100px] border-green-200 focus:border-green-500 focus:ring-green-500"
+                          className="min-h-[100px] border-input focus:border-zampieri-green focus:ring-zampieri-gold"
                           {...field} 
                         />
                       </FormControl>
@@ -261,13 +261,13 @@ const MapadaSuaProximaGrandeAventura = () => {
                   rules={{ required: "Esta pergunta é obrigatória" }}
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel className="text-green-800 font-semibold text-base">
+                      <FormLabel className="text-zampieri-green-dark font-semibold text-base">
                         8. Se você pudesse criar um aplicativo ou projeto que resolvesse um problema, qual seria?
                       </FormLabel>
                       <FormControl>
                         <Textarea 
                           placeholder="Descreva sua ideia de aplicativo..."
-                          className="min-h-[100px] border-green-200 focus:border-green-500 focus:ring-green-500"
+                          className="min-h-[100px] border-input focus:border-zampieri-green focus:ring-zampieri-gold"
                           {...field} 
                         />
                       </FormControl>
@@ -282,13 +282,13 @@ const MapadaSuaProximaGrandeAventura = () => {
                   rules={{ required: "Esta pergunta é obrigatória" }}
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel className="text-green-800 font-semibold text-base">
+                      <FormLabel className="text-zampieri-green-dark font-semibold text-base">
                         9. Qual é o seu maior medo em relação ao futuro?
                       </FormLabel>
                       <FormControl>
                         <Textarea 
                           placeholder="Compartilhe seus receios sobre o futuro..."
-                          className="min-h-[100px] border-green-200 focus:border-green-500 focus:ring-green-500"
+                          className="min-h-[100px] border-input focus:border-zampieri-green focus:ring-zampieri-gold"
                           {...field} 
                         />
                       </FormControl>
@@ -300,7 +300,7 @@ const MapadaSuaProximaGrandeAventura = () => {
                 <div className="pt-3 md:pt-4">
                   <Button 
                     type="submit" 
-                    className="w-full bg-green-600 hover:bg-green-700 text-white font-semibold py-2.5 md:py-3 px-4 md:px-6 rounded-lg transition-colors duration-200 text-base md:text-lg" 
+                    className="w-full bg-zampieri-green-dark hover:bg-zampieri-green text-white font-semibold py-2.5 md:py-3 px-4 md:px-6 rounded-lg transition-colors duration-200 text-base md:text-lg" 
                     disabled={isLoading}
                   >
                     {isLoading ? (
