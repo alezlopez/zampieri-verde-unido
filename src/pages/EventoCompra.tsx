@@ -971,14 +971,22 @@ const EventoCompra = () => {
                   totalParticipantes === 0 ||
                   totalParticipantes > evento.vagas_disponiveis ||
                   !termosAceitos ||
-                  (evento.requer_autorizacao && !autorizacaoAceita)
+                  (evento.requer_autorizacao && !autorizacaoAceita) ||
+                  meiasInvalidas ||
+                  cotaMeiaExcedida
                 }
               >
                 {submitting ? "Processando..." : "Reservar Ingressos"}
               </Button>
-              {(!termosAceitos || (evento.requer_autorizacao && !autorizacaoAceita)) && totalParticipantes > 0 && (
+              {(!termosAceitos || (evento.requer_autorizacao && !autorizacaoAceita) || meiasInvalidas || cotaMeiaExcedida) && totalParticipantes > 0 && (
                 <p className="text-xs text-amber-600 text-center mt-2">
-                  {!termosAceitos ? "Aceite os termos de compra para continuar." : "Aceite a autorização de participação para continuar."}
+                  {!termosAceitos
+                    ? "Aceite os termos de compra para continuar."
+                    : evento.requer_autorizacao && !autorizacaoAceita
+                    ? "Aceite a autorização de participação para continuar."
+                    : meiasInvalidas
+                    ? "Selecione a categoria e aceite a declaração de cada meia-entrada."
+                    : "Cota de meia-entrada excedida."}
                 </p>
               )}
               <p className="text-xs text-muted-foreground text-center mt-2">
