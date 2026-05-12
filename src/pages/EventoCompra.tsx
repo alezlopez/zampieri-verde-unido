@@ -906,17 +906,23 @@ const EventoCompra = () => {
                   onValueChange={(val) => setFormaPagamento(val as "avista" | "parcelado")}
                   className="space-y-2"
                 >
-                  <div className="flex items-center space-x-2">
-                    <RadioGroupItem value="avista" id="avista" />
+                  <div className="flex items-start space-x-2">
+                    <RadioGroupItem value="avista" id="avista" className="mt-1" />
                     <Label htmlFor="avista" className="cursor-pointer">
-                      À vista — R$ {(qtdInteiras * evento.preco + qtdMeias * Number(evento.preco_meia ?? 0)).toFixed(2).replace(".", ",")}
+                      <span className="font-medium">
+                        À vista — R$ {(qtdInteiras * evento.preco + qtdMeias * Number(evento.preco_meia ?? 0)).toFixed(2).replace(".", ",")}
+                      </span>
+                      <span className="block text-xs text-muted-foreground">PIX ou cartão de crédito (1x)</span>
                     </Label>
                   </div>
-                  <div className="flex items-center space-x-2">
-                    <RadioGroupItem value="parcelado" id="parcelado" />
+                  <div className="flex items-start space-x-2">
+                    <RadioGroupItem value="parcelado" id="parcelado" className="mt-1" />
                     <Label htmlFor="parcelado" className="cursor-pointer">
-                      {evento.max_parcelas}x de R$ {valorParcela.toFixed(2).replace(".", ",")} (Total: R${" "}
-                      {(qtdInteiras * evento.preco_parcelado + qtdMeias * Number(evento.preco_meia_parcelado ?? 0)).toFixed(2).replace(".", ",")})
+                      <span className="font-medium">
+                        {evento.max_parcelas}x de R$ {valorParcela.toFixed(2).replace(".", ",")} (Total: R${" "}
+                        {(qtdInteiras * evento.preco_parcelado + qtdMeias * Number(evento.preco_meia_parcelado ?? 0)).toFixed(2).replace(".", ",")})
+                      </span>
+                      <span className="block text-xs text-muted-foreground">Cartão de crédito parcelado</span>
                     </Label>
                   </div>
                 </RadioGroup>
