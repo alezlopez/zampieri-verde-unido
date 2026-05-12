@@ -169,7 +169,8 @@ const ScannerIngressos = () => {
     if (err) {
       toast({ title: "Erro ao validar documento", variant: "destructive" });
     } else {
-      setIngresso({ ...ingresso, meia_validada_portaria: true });
+      setIngresso({ ...ingresso, meia_validada_portaria: true, meia_validada_em: agora, meia_validada_por: user.id });
+      fetchValidadores([user.id]);
       toast({ title: "Documento de meia validado!" });
     }
     setMarking(false);
