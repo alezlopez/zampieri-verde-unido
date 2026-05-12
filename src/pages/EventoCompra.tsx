@@ -288,19 +288,22 @@ const EventoCompra = () => {
   }, [tipoComprador, alunos.length, loadingAlunos, comprarParaSiTouched]);
 
   const totalParticipantes = (comprarParaSi ? 1 : 0) + alunosSelecionados.length + convidados.length;
+  const alunoCortesia = !!evento?.aluno_cortesia;
+  const qtdAlunosCortesia = alunoCortesia ? alunosSelecionados.length : 0;
 
   const temParcelamento = evento ? evento.preco_parcelado > 0 && evento.max_parcelas > 1 : false;
   const meiaHabilitada = !!evento?.meia_entrada_habilitada && Number(evento?.preco_meia ?? 0) > 0;
 
-  // Identificadores de cada participante (para meia config)
+  // Identificadores de cada participante (para meia config) — alunos cortesia não entram em meia
   const participantKeys: string[] = [
     ...(comprarParaSi ? ["comprador-self"] : []),
-    ...alunosSelecionados.map((c) => `aluno-${c}`),
+    ...(alunoCortesia ? [] : alunosSelecionados.map((c) => `aluno-${c}`)),
     ...convidados.map((_, i) => `convidado-${i}`),
   ];
 
   const qtdMeias = participantKeys.filter((k) => getMeia(k).tipo_ingresso === "meia").length;
-  const qtdInteiras = totalParticipantes - qtdMeias;
+  const qtdParticipantesPagantes = totalParticipantes - qtdAlunosCortesia;
+  const qtdInteiras = qtdParticipantesPagantes - qtdMeias;
 
   const precoInteiraUnit = formaPagamento === "parcelado" && temParcelamento && evento
     ? evento.preco_parcelado
