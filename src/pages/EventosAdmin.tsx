@@ -171,6 +171,12 @@ const EventosAdmin = () => {
     setRequerAutorizacao(evento.requer_autorizacao);
     setIsExcursao(evento.is_excursao || false);
     setPublicoAlvo((evento.publico_alvo as any) || "alunos_e_convidados");
+    setMeiaHabilitada(evento.meia_entrada_habilitada ?? true);
+    setCategoriasMeia(
+      Array.isArray(evento.categorias_meia) && evento.categorias_meia.length > 0
+        ? evento.categorias_meia
+        : ["estudante", "idoso", "pcd", "pcd_acompanhante", "professor"]
+    );
     setImagemFile(null);
     setImagemPreview(evento.imagem_url || null);
     setEditingId(evento.id);
