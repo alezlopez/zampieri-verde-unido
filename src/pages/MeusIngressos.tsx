@@ -6,6 +6,8 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { ArrowLeft, Ticket, LogOut, ExternalLink, Eye } from "lucide-react";
+import { EventosHeader } from "@/components/EventosHeader";
+import { Footer } from "@/components/Footer";
 
 interface IngressoComEvento {
   id: string;
@@ -20,11 +22,11 @@ interface IngressoComEvento {
   eventos: { titulo: string; data_evento: string; horario: string | null; local: string | null } | null;
 }
 
-const statusColors: Record<string, string> = {
-  pendente: "bg-yellow-100 text-yellow-800 border-yellow-300",
-  pago: "bg-green-100 text-green-800 border-green-300",
-  cancelado: "bg-red-100 text-red-800 border-red-300",
-  estornado: "bg-purple-100 text-purple-800 border-purple-300",
+const statusStyles: Record<string, string> = {
+  pendente: "bg-zampieri-gold/20 text-zampieri-green-dark border-zampieri-gold/40",
+  pago: "bg-zampieri-green/15 text-zampieri-green-dark border-zampieri-green/40",
+  cancelado: "bg-destructive/15 text-destructive border-destructive/40",
+  estornado: "bg-zampieri-wine/15 text-zampieri-wine border-zampieri-wine/40",
 };
 
 const MeusIngressos = () => {
@@ -59,113 +61,120 @@ const MeusIngressos = () => {
 
   if (loading || authLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-green-600"></div>
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-zampieri-green" />
       </div>
     );
   }
 
+  const headerActions = (
+    <Button variant="ghost" size="sm" onClick={handleLogout} className="text-zampieri-wine hover:bg-zampieri-cream">
+      <LogOut className="w-4 h-4 mr-2" />
+      Sair
+    </Button>
+  );
+
   return (
-    <div className="min-h-screen bg-gradient-to-b from-green-50 to-white py-8 px-4">
-      <div className="container mx-auto max-w-2xl">
-        <div className="flex items-center justify-between mb-6">
-          <Link to="/eventos" className="inline-flex items-center text-green-700 hover:text-green-800">
+    <div className="min-h-screen bg-background flex flex-col">
+      <EventosHeader subtitle="Meus Ingressos" actions={headerActions} />
+
+      <div className="flex-1 py-8 px-4">
+        <div className="container mx-auto max-w-2xl">
+          <Link to="/eventos" className="inline-flex items-center text-zampieri-green-dark hover:text-zampieri-gold mb-6 text-sm font-semibold">
             <ArrowLeft className="w-4 h-4 mr-2" />
             Eventos
           </Link>
-          <Button variant="ghost" size="sm" onClick={handleLogout} className="text-muted-foreground">
-            <LogOut className="w-4 h-4 mr-2" />
-            Sair
-          </Button>
-        </div>
 
-        <h1 className="text-2xl font-bold text-green-800 mb-6">
-          <Ticket className="w-6 h-6 inline mr-2" />
-          Meus Ingressos
-        </h1>
+          <h1 className="font-serif text-2xl md:text-3xl font-bold text-zampieri-green-dark mb-6 flex items-center gap-2">
+            <Ticket className="w-6 h-6 text-zampieri-gold" />
+            Meus Ingressos
+          </h1>
 
-        {ingressos.length === 0 ? (
-          <div className="text-center py-16">
-            <Ticket className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-            <p className="text-muted-foreground">Você ainda não comprou nenhum ingresso.</p>
-            <Link to="/eventos">
-              <Button className="mt-4 bg-green-600 hover:bg-green-700">Ver Eventos</Button>
-            </Link>
-          </div>
-        ) : (
-          <div className="space-y-4">
-            {ingressos.map((ingresso) => (
-              <Card key={ingresso.id} className="border-green-100">
-                <CardContent className="p-4">
-                  <div className="flex justify-between items-start">
-                    <div>
-                      <h3 className="font-semibold text-green-800">
-                        {ingresso.eventos?.titulo || "Evento"}
-                      </h3>
-                      <p className="text-sm text-muted-foreground">
-                        {ingresso.eventos?.data_evento &&
-                          new Date(ingresso.eventos.data_evento + "T00:00:00").toLocaleDateString("pt-BR")}
-                        {ingresso.eventos?.horario && ` às ${ingresso.eventos.horario}`}
-                      </p>
-                      <p className="text-sm text-muted-foreground mt-1">
-                        {ingresso.nome_participante || ingresso.nome_comprador}
-                        {ingresso.tipo_participante === "convidado" && (
-                          <span className="ml-1 text-xs text-orange-600">(convidado)</span>
+          {ingressos.length === 0 ? (
+            <div className="text-center py-16">
+              <Ticket className="w-16 h-16 text-muted-foreground/40 mx-auto mb-4" />
+              <p className="text-muted-foreground">Você ainda não comprou nenhum ingresso.</p>
+              <Link to="/eventos">
+                <Button className="mt-4 bg-zampieri-green-dark hover:bg-zampieri-green text-white">Ver Eventos</Button>
+              </Link>
+            </div>
+          ) : (
+            <div className="space-y-4">
+              {ingressos.map((ingresso) => (
+                <Card key={ingresso.id} className="border-border bg-card">
+                  <CardContent className="p-4">
+                    <div className="flex justify-between items-start gap-3">
+                      <div>
+                        <h3 className="font-serif font-semibold text-zampieri-green-dark">
+                          {ingresso.eventos?.titulo || "Evento"}
+                        </h3>
+                        <p className="text-sm text-muted-foreground">
+                          {ingresso.eventos?.data_evento &&
+                            new Date(ingresso.eventos.data_evento + "T00:00:00").toLocaleDateString("pt-BR")}
+                          {ingresso.eventos?.horario && ` às ${ingresso.eventos.horario}`}
+                        </p>
+                        <p className="text-sm text-muted-foreground mt-1">
+                          {ingresso.nome_participante || ingresso.nome_comprador}
+                          {ingresso.tipo_participante === "convidado" && (
+                            <span className="ml-1 text-xs text-zampieri-wine">(convidado)</span>
+                          )}
+                        </p>
+                      </div>
+                      <Badge className={`border ${statusStyles[ingresso.status] || ""} capitalize`}>
+                        {ingresso.status}
+                      </Badge>
+                    </div>
+                    {ingresso.status === "pago" && (
+                      <div className="mt-3">
+                        <Link to={`/eventos/ingresso/${ingresso.id}`}>
+                          <Button size="sm" className="bg-zampieri-green-dark hover:bg-zampieri-green text-white w-full">
+                            <Eye className="w-4 h-4 mr-2" />
+                            Ver Ingresso
+                          </Button>
+                        </Link>
+                      </div>
+                    )}
+                    {ingresso.status === "estornado" && (
+                      <div className="mt-3">
+                        {ingresso.comprovante_estorno_url ? (
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            className="border-zampieri-wine/40 text-zampieri-wine hover:bg-zampieri-wine/10 w-full"
+                            onClick={() => window.open(ingresso.comprovante_estorno_url!, "_blank")}
+                          >
+                            <ExternalLink className="w-4 h-4 mr-2" />
+                            Ver Comprovante de Estorno
+                          </Button>
+                        ) : (
+                          <p className="text-xs text-muted-foreground">Estorno realizado. Comprovante ainda não disponível.</p>
                         )}
-                      </p>
-                    </div>
-                    <Badge className={statusColors[ingresso.status] || ""}>
-                      {ingresso.status}
-                    </Badge>
-                  </div>
-                  {ingresso.status === "pago" && (
-                    <div className="mt-3">
-                      <Link to={`/eventos/ingresso/${ingresso.id}`}>
-                        <Button size="sm" className="bg-green-600 hover:bg-green-700 w-full">
-                          <Eye className="w-4 h-4 mr-2" />
-                          Ver Ingresso
-                        </Button>
-                      </Link>
-                    </div>
-                  )}
-                  {ingresso.status === "estornado" && (
-                    <div className="mt-3">
-                      {ingresso.comprovante_estorno_url ? (
+                      </div>
+                    )}
+                    {ingresso.status === "pendente" && ingresso.checkout_url && (
+                      <div className="mt-3">
                         <Button
                           size="sm"
-                          variant="outline"
-                          className="border-purple-300 text-purple-700 hover:bg-purple-50 w-full"
-                          onClick={() => window.open(ingresso.comprovante_estorno_url!, "_blank")}
+                          className="bg-zampieri-gold hover:bg-zampieri-gold-light text-zampieri-green-dark w-full"
+                          onClick={() => window.open(ingresso.checkout_url!, "_blank")}
                         >
                           <ExternalLink className="w-4 h-4 mr-2" />
-                          Ver Comprovante de Estorno
+                          Pagar
                         </Button>
-                      ) : (
-                        <p className="text-xs text-muted-foreground">Estorno realizado. Comprovante ainda não disponível.</p>
-                      )}
-                    </div>
-                  )}
-                  {ingresso.status === "pendente" && ingresso.checkout_url && (
-                    <div className="mt-3">
-                     <Button
-                        size="sm"
-                        className="bg-green-600 hover:bg-green-700 w-full"
-                        onClick={() => window.open(ingresso.checkout_url!, "_blank")}
-                      >
-                        <ExternalLink className="w-4 h-4 mr-2" />
-                        Pagar
-                      </Button>
-                      <p className="text-xs text-muted-foreground mt-2">
-                        Ao clicar no botão pagar, você será redirecionado para um ambiente seguro de pagamento do sistema Asaas. Na tela, insira os dados do responsável pela compra e não os do(a) aluno(a).
-                      </p>
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-        )}
+                        <p className="text-xs text-muted-foreground mt-2">
+                          Ao clicar em Pagar, você será redirecionado para o ambiente seguro do sistema Asaas. Insira os dados do responsável pela compra, não os do(a) aluno(a).
+                        </p>
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          )}
+        </div>
       </div>
+
+      <Footer />
     </div>
   );
 };

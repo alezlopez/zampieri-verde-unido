@@ -7,7 +7,8 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
 import { Eye, EyeOff, ArrowLeft, MailWarning } from "lucide-react";
-import logoZampieri from "@/assets/logo-zampieri.png";
+import { EventosHeader } from "@/components/EventosHeader";
+import { Footer } from "@/components/Footer";
 
 const maskEmail = (email: string): string => {
   const [local, domain] = email.split("@");
@@ -150,7 +151,6 @@ const EventosLogin = () => {
         if (error) {
           const msg = error.message?.toLowerCase() || "";
           if (msg.includes("already registered") || msg.includes("user already") || msg.includes("já cadastrado")) {
-            // Conta já existe — pode estar não-confirmada. Buscar e-mail e oferecer reenvio.
             const { data } = await supabase.rpc("find_email_by_cpf", { p_cpf: cpf.replace(/\D/g, "") });
             if (data && data.length > 0) {
               setUnconfirmedEmail(data[0].email);
@@ -195,125 +195,53 @@ const EventosLogin = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-green-50 to-white flex items-center justify-center px-4">
-      <div className="w-full max-w-md">
-        <Link to="/eventos" className="inline-flex items-center text-green-700 hover:text-green-800 mb-6">
-          <ArrowLeft className="w-4 h-4 mr-2" />
-          Voltar para eventos
-        </Link>
+    <div className="min-h-screen bg-background flex flex-col">
+      <EventosHeader subtitle="Acesso ao portal de eventos" />
 
-        <Card className="border-green-100 shadow-lg">
-          <CardHeader className="text-center">
-            <img
-                src={logoZampieri}
-              alt="Logo"
-              className="h-20 w-auto mx-auto mb-3"
-            />
-            <CardTitle className="text-green-800">
-              {isForgotPassword ? "Esqueci minha senha" : isAdminLogin ? "Login Administrativo" : isRegister ? "Criar Conta" : "Entrar"}
-            </CardTitle>
-            <CardDescription>
-              {isForgotPassword
-                ? isAdminLogin ? "Informe seu e-mail para receber o link de redefinição" : "Informe seu CPF para receber o link de redefinição"
-                : isAdminLogin
-                ? "Acesse com seu e-mail administrativo"
-                : isRegister
-                ? "Cadastre-se com seu CPF para comprar ingressos"
-                : "Use seu CPF cadastrado na escola"}
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            {!isForgotPassword && !isAdminLogin && (
-              <div className="mb-4 p-3 bg-green-50 border border-green-200 rounded-lg text-sm text-green-800">
-                Utilize o mesmo login do portal do aluno. Caso não tenha cadastro,{" "}
-                <button
-                  type="button"
-                  onClick={() => setIsRegister(true)}
-                  className="font-semibold underline hover:text-green-900"
-                >
-                  cadastre sua senha clicando aqui
-                </button>.
-              </div>
-            )}
-            {isForgotPassword ? (
-              <form onSubmit={handleForgotPassword} className="space-y-4">
-                {isAdminLogin ? (
-                  <div>
-                    <label className="text-sm font-medium text-foreground">E-mail</label>
-                    <Input
-                      type="email"
-                      value={forgotEmail}
-                      onChange={(e) => setForgotEmail(e.target.value)}
-                      placeholder="seu@email.com"
-                      required
-                    />
-                  </div>
-                ) : (
-                  <div>
-                    <label className="text-sm font-medium text-foreground">CPF</label>
-                    <Input
-                      value={forgotCpf}
-                      onChange={(e) => setForgotCpf(formatCpf(e.target.value))}
-                      placeholder="000.000.000-00"
-                      required
-                      maxLength={14}
-                    />
-                  </div>
-                )}
+      <div className="flex-1 flex items-center justify-center px-4 py-10">
+        <div className="w-full max-w-md">
+          <Link to="/eventos" className="inline-flex items-center text-zampieri-green-dark hover:text-zampieri-gold mb-6 text-sm font-semibold">
+            <ArrowLeft className="w-4 h-4 mr-2" />
+            Voltar para eventos
+          </Link>
 
-                <Button type="submit" className="w-full bg-green-600 hover:bg-green-700" disabled={loading}>
-                  {loading ? "Aguarde..." : "Enviar link de redefinição"}
-                </Button>
-
-                <div className="text-center">
+          <Card className="border-border shadow-lg">
+            <CardHeader className="text-center border-b border-zampieri-gold/30 pb-6">
+              <CardTitle className="font-serif text-2xl text-zampieri-green-dark">
+                {isForgotPassword ? "Esqueci minha senha" : isAdminLogin ? "Login Administrativo" : isRegister ? "Criar Conta" : "Entrar"}
+              </CardTitle>
+              <CardDescription>
+                {isForgotPassword
+                  ? isAdminLogin ? "Informe seu e-mail para receber o link de redefinição" : "Informe seu CPF para receber o link de redefinição"
+                  : isAdminLogin
+                  ? "Acesse com seu e-mail administrativo"
+                  : isRegister
+                  ? "Cadastre-se com seu CPF para comprar ingressos"
+                  : "Use seu CPF cadastrado na escola"}
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="pt-6">
+              {!isForgotPassword && !isAdminLogin && (
+                <div className="mb-4 p-3 bg-zampieri-cream border border-zampieri-gold/40 rounded-lg text-sm text-zampieri-green-dark">
+                  Utilize o mesmo login do portal do aluno. Caso não tenha cadastro,{" "}
                   <button
                     type="button"
-                    onClick={() => setIsForgotPassword(false)}
-                    className="text-sm text-green-700 hover:underline"
+                    onClick={() => setIsRegister(true)}
+                    className="font-semibold underline hover:text-zampieri-gold"
                   >
-                    Voltar ao login
-                  </button>
+                    cadastre sua senha clicando aqui
+                  </button>.
                 </div>
-              </form>
-            ) : (
-              <>
-                {unconfirmedEmail && !isAdminLogin && (
-                  <div className="mb-4 p-4 bg-amber-50 border border-amber-200 rounded-lg">
-                    <div className="flex items-start gap-3">
-                      <MailWarning className="w-5 h-5 text-amber-600 mt-0.5 shrink-0" />
-                      <div className="flex-1">
-                        <p className="text-sm font-semibold text-amber-900">
-                          Confirme seu cadastro
-                        </p>
-                        <p className="text-xs text-amber-800 mt-1">
-                          Enviamos um link de confirmação para <strong>{maskEmail(unconfirmedEmail)}</strong>.
-                          Verifique sua caixa de entrada e a pasta de spam. Se não recebeu, reenvie abaixo.
-                        </p>
-                        <Button
-                          type="button"
-                          size="sm"
-                          onClick={handleResendConfirmation}
-                          disabled={resending || resendCooldown > 0}
-                          className="mt-3 bg-amber-600 hover:bg-amber-700 text-white"
-                        >
-                          {resending
-                            ? "Enviando..."
-                            : resendCooldown > 0
-                            ? `Reenviar em ${resendCooldown}s`
-                            : "Reenviar link de confirmação"}
-                        </Button>
-                      </div>
-                    </div>
-                  </div>
-                )}
-                <form onSubmit={handleSubmit} className="space-y-4">
+              )}
+              {isForgotPassword ? (
+                <form onSubmit={handleForgotPassword} className="space-y-4">
                   {isAdminLogin ? (
                     <div>
                       <label className="text-sm font-medium text-foreground">E-mail</label>
                       <Input
                         type="email"
-                        value={adminEmail}
-                        onChange={(e) => setAdminEmail(e.target.value)}
+                        value={forgotEmail}
+                        onChange={(e) => setForgotEmail(e.target.value)}
                         placeholder="seu@email.com"
                         required
                       />
@@ -322,8 +250,8 @@ const EventosLogin = () => {
                     <div>
                       <label className="text-sm font-medium text-foreground">CPF</label>
                       <Input
-                        value={cpf}
-                        onChange={handleCpfChange}
+                        value={forgotCpf}
+                        onChange={(e) => setForgotCpf(formatCpf(e.target.value))}
                         placeholder="000.000.000-00"
                         required
                         maxLength={14}
@@ -331,66 +259,139 @@ const EventosLogin = () => {
                     </div>
                   )}
 
-                  <div>
-                    <label className="text-sm font-medium text-foreground">Senha</label>
-                    <div className="relative">
-                      <Input
-                        type={showPassword ? "text" : "password"}
-                        value={password}
-                        onChange={(e) => setPassword(e.target.value)}
-                        placeholder={isRegister ? "Crie uma senha (mín. 6 caracteres)" : "Sua senha"}
-                        required
-                        minLength={6}
-                      />
-                      <button
-                        type="button"
-                        onClick={() => setShowPassword(!showPassword)}
-                        className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground"
-                      >
-                        {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                      </button>
-                    </div>
-                  </div>
-
-                  <Button type="submit" className="w-full bg-green-600 hover:bg-green-700" disabled={loading}>
-                    {loading ? "Aguarde..." : isAdminLogin ? "Entrar" : isRegister ? "Cadastrar" : "Entrar"}
+                  <Button type="submit" className="w-full bg-zampieri-green-dark hover:bg-zampieri-green text-white" disabled={loading}>
+                    {loading ? "Aguarde..." : "Enviar link de redefinição"}
                   </Button>
-                </form>
 
-                <div className="mt-4 text-center space-y-2">
-                  {!isRegister && (
+                  <div className="text-center">
                     <button
-                      onClick={() => setIsForgotPassword(true)}
-                      className="text-sm text-green-700 hover:underline block w-full"
+                      type="button"
+                      onClick={() => setIsForgotPassword(false)}
+                      className="text-sm text-zampieri-green-dark hover:text-zampieri-gold hover:underline"
                     >
-                      Esqueci minha senha
+                      Voltar ao login
                     </button>
+                  </div>
+                </form>
+              ) : (
+                <>
+                  {unconfirmedEmail && !isAdminLogin && (
+                    <div className="mb-4 p-4 bg-zampieri-cream border border-zampieri-gold rounded-lg">
+                      <div className="flex items-start gap-3">
+                        <MailWarning className="w-5 h-5 text-zampieri-gold mt-0.5 shrink-0" />
+                        <div className="flex-1">
+                          <p className="text-sm font-semibold text-zampieri-green-dark">
+                            Confirme seu cadastro
+                          </p>
+                          <p className="text-xs text-muted-foreground mt-1">
+                            Enviamos um link de confirmação para <strong>{maskEmail(unconfirmedEmail)}</strong>.
+                            Verifique sua caixa de entrada e a pasta de spam. Se não recebeu, reenvie abaixo.
+                          </p>
+                          <Button
+                            type="button"
+                            size="sm"
+                            onClick={handleResendConfirmation}
+                            disabled={resending || resendCooldown > 0}
+                            className="mt-3 bg-zampieri-gold hover:bg-zampieri-gold-light text-zampieri-green-dark"
+                          >
+                            {resending
+                              ? "Enviando..."
+                              : resendCooldown > 0
+                              ? `Reenviar em ${resendCooldown}s`
+                              : "Reenviar link de confirmação"}
+                          </Button>
+                        </div>
+                      </div>
+                    </div>
                   )}
-                  {!isAdminLogin && (
+                  <form onSubmit={handleSubmit} className="space-y-4">
+                    {isAdminLogin ? (
+                      <div>
+                        <label className="text-sm font-medium text-foreground">E-mail</label>
+                        <Input
+                          type="email"
+                          value={adminEmail}
+                          onChange={(e) => setAdminEmail(e.target.value)}
+                          placeholder="seu@email.com"
+                          required
+                        />
+                      </div>
+                    ) : (
+                      <div>
+                        <label className="text-sm font-medium text-foreground">CPF</label>
+                        <Input
+                          value={cpf}
+                          onChange={handleCpfChange}
+                          placeholder="000.000.000-00"
+                          required
+                          maxLength={14}
+                        />
+                      </div>
+                    )}
+
+                    <div>
+                      <label className="text-sm font-medium text-foreground">Senha</label>
+                      <div className="relative">
+                        <Input
+                          type={showPassword ? "text" : "password"}
+                          value={password}
+                          onChange={(e) => setPassword(e.target.value)}
+                          placeholder={isRegister ? "Crie uma senha (mín. 6 caracteres)" : "Sua senha"}
+                          required
+                          minLength={6}
+                        />
+                        <button
+                          type="button"
+                          onClick={() => setShowPassword(!showPassword)}
+                          className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground"
+                        >
+                          {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                        </button>
+                      </div>
+                    </div>
+
+                    <Button type="submit" className="w-full bg-zampieri-green-dark hover:bg-zampieri-green text-white" disabled={loading}>
+                      {loading ? "Aguarde..." : isAdminLogin ? "Entrar" : isRegister ? "Cadastrar" : "Entrar"}
+                    </Button>
+                  </form>
+
+                  <div className="mt-4 text-center space-y-2">
+                    {!isRegister && (
+                      <button
+                        onClick={() => setIsForgotPassword(true)}
+                        className="text-sm text-zampieri-green-dark hover:text-zampieri-gold hover:underline block w-full"
+                      >
+                        Esqueci minha senha
+                      </button>
+                    )}
+                    {!isAdminLogin && (
+                      <button
+                        onClick={() => { setIsRegister(!isRegister); clearUnconfirmed(); }}
+                        className="text-sm text-zampieri-green-dark hover:text-zampieri-gold hover:underline block w-full"
+                      >
+                        {isRegister ? "Já tem conta? Faça login" : "Não tem conta? Cadastre-se"}
+                      </button>
+                    )}
                     <button
-                      onClick={() => { setIsRegister(!isRegister); clearUnconfirmed(); }}
-                      className="text-sm text-green-700 hover:underline block w-full"
+                      onClick={() => {
+                        setIsAdminLogin(!isAdminLogin);
+                        setIsRegister(false);
+                        setIsForgotPassword(false);
+                        clearUnconfirmed();
+                      }}
+                      className="text-xs text-muted-foreground hover:text-zampieri-green-dark hover:underline block w-full"
                     >
-                      {isRegister ? "Já tem conta? Faça login" : "Não tem conta? Cadastre-se"}
+                      {isAdminLogin ? "Login como responsável" : "Acesso administrativo"}
                     </button>
-                  )}
-                  <button
-                    onClick={() => {
-                      setIsAdminLogin(!isAdminLogin);
-                      setIsRegister(false);
-                      setIsForgotPassword(false);
-                      clearUnconfirmed();
-                    }}
-                    className="text-xs text-muted-foreground hover:underline block w-full"
-                  >
-                    {isAdminLogin ? "Login como responsável" : "Acesso administrativo"}
-                  </button>
-                </div>
-              </>
-            )}
-          </CardContent>
-        </Card>
+                  </div>
+                </>
+              )}
+            </CardContent>
+          </Card>
+        </div>
       </div>
+
+      <Footer />
     </div>
   );
 };
