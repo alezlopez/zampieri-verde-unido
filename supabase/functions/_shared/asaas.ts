@@ -120,10 +120,11 @@ export async function createCheckout(input: {
       expiredUrl: input.expiredUrl || input.cancelUrl || input.successUrl,
     },
     items: input.items.map((i) => {
-      const name = (i.name || i.description || "Ingresso").slice(0, 100);
+      const rawName = (i.name || i.description || "Ingresso");
+      const name = rawName.slice(0, 30);
       return {
         name,
-        description: (i.description ?? name).slice(0, 500),
+        description: (i.description ?? rawName).slice(0, 500),
         quantity: i.quantity,
         value: Number(i.value.toFixed(2)),
       };
