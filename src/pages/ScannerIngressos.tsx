@@ -18,10 +18,14 @@ interface IngressoScanned {
   tipo_participante: string;
   status: string;
   utilizado: boolean;
+  utilizado_em: string | null;
+  utilizado_por: string | null;
   codigo_aluno: string | null;
   tipo_ingresso: string;
   categoria_meia: string | null;
   meia_validada_portaria: boolean;
+  meia_validada_em: string | null;
+  meia_validada_por: string | null;
   eventos: {
     titulo: string;
     data_evento: string;
@@ -43,6 +47,7 @@ const ScannerIngressos = () => {
   const [ingresso, setIngresso] = useState<IngressoScanned | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [marking, setMarking] = useState(false);
+  const [validadores, setValidadores] = useState<Record<string, string>>({});
   const scannerRef = useRef<Html5Qrcode | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
 
@@ -57,6 +62,22 @@ const ScannerIngressos = () => {
     setScanning(false);
   }, []);
 
+  const fetchValidadores = useCallback(async (ids: string[]) => {
+    const unicos = Array.from(new Set(ids.filter(Boolean)));
+    if (!unicos.length) return;
+    const { data } = await supabase
+      .from("user_profiles")
+      .select("user_id, username")
+      .in("user_id", unicos);
+    if (data) {
+      setValidadores((prev) => {
+        const next = { ...prev };
+        for (const r of data as any[]) next[r.user_id] = r.username;
+        return next;
+      });
+    }
+  }, []);
+
   const handleScan = useCallback(async (decodedText: string) => {
     await stopScanner();
     setError(null);
@@ -64,7 +85,7 @@ const ScannerIngressos = () => {
 
     const { data, error: err } = await supabase
       .from("ingressos")
-      .select("id, nome_comprador, nome_participante, tipo_participante, status, utilizado, codigo_aluno, tipo_ingresso, categoria_meia, meia_validada_portaria, eventos(titulo, data_evento)")
+      .select("id, nome_comprador, nome_participante, tipo_participante, status, utilizado, utilizado_em, utilizado_por, codigo_aluno, tipo_ingresso, categoria_meia, meia_validada_portaria, meia_validada_em, meia_validada_por, eventos(titulo, data_evento)")
       .eq("id", decodedText)
       .single();
 
@@ -73,8 +94,10 @@ const ScannerIngressos = () => {
       return;
     }
 
-    setIngresso(data as unknown as IngressoScanned);
-  }, [stopScanner]);
+    const ing = data as unknown as IngressoScanned;
+    setIngresso(ing);
+    fetchValidadores([ing.utilizado_por, ing.meia_validada_por].filter(Boolean) as string[]);
+  }, [stopScanner, fetchValidadores]);
 
   const startScanner = useCallback(async () => {
     setIngresso(null);
@@ -108,21 +131,23 @@ const ScannerIngressos = () => {
   }, []);
 
   const markAsUsed = async () => {
-    if (!ingresso) return;
+    if (!ingresso || !user) return;
     if (ingresso.tipo_ingresso === "meia" && !ingresso.meia_validada_portaria) {
       toast({ title: "Valide o documento de meia primeiro", variant: "destructive" });
       return;
     }
     setMarking(true);
+    const agora = new Date().toISOString();
     const { error: err } = await supabase
       .from("ingressos")
-      .update({ utilizado: true })
+      .update({ utilizado: true, utilizado_em: agora, utilizado_por: user.id })
       .eq("id", ingresso.id);
 
     if (err) {
       toast({ title: "Erro ao marcar ingresso", variant: "destructive" });
     } else {
-      setIngresso({ ...ingresso, utilizado: true });
+      setIngresso({ ...ingresso, utilizado: true, utilizado_em: agora, utilizado_por: user.id });
+      fetchValidadores([user.id]);
       toast({ title: "Ingresso marcado como utilizado!" });
     }
     setMarking(false);
@@ -131,11 +156,12 @@ const ScannerIngressos = () => {
   const validarDocMeia = async () => {
     if (!ingresso || !user) return;
     setMarking(true);
+    const agora = new Date().toISOString();
     const { error: err } = await supabase
       .from("ingressos")
       .update({
         meia_validada_portaria: true,
-        meia_validada_em: new Date().toISOString(),
+        meia_validada_em: agora,
         meia_validada_por: user.id,
       })
       .eq("id", ingresso.id);
@@ -143,7 +169,8 @@ const ScannerIngressos = () => {
     if (err) {
       toast({ title: "Erro ao validar documento", variant: "destructive" });
     } else {
-      setIngresso({ ...ingresso, meia_validada_portaria: true });
+      setIngresso({ ...ingresso, meia_validada_portaria: true, meia_validada_em: agora, meia_validada_por: user.id });
+      fetchValidadores([user.id]);
       toast({ title: "Documento de meia validado!" });
     }
     setMarking(false);
@@ -204,9 +231,17 @@ const ScannerIngressos = () => {
             <Card className={`mt-4 ${ingresso.utilizado ? "border-destructive/40 bg-destructive/5" : ingresso.status === "pago" ? "border-zampieri-green/40 bg-zampieri-green/5" : "border-zampieri-gold/40 bg-zampieri-cream"}`}>
               <CardContent className="p-6">
                 {ingresso.utilizado && (
-                  <div className="flex items-center gap-2 bg-destructive/15 border border-destructive/40 rounded-lg p-3 mb-4">
-                    <AlertTriangle className="w-5 h-5 text-destructive shrink-0" />
-                    <p className="text-sm font-bold text-destructive">ATENÇÃO: Este ingresso já foi utilizado!</p>
+                  <div className="bg-destructive/15 border border-destructive/40 rounded-lg p-3 mb-4">
+                    <div className="flex items-center gap-2">
+                      <AlertTriangle className="w-5 h-5 text-destructive shrink-0" />
+                      <p className="text-sm font-bold text-destructive">ATENÇÃO: Este ingresso já foi utilizado!</p>
+                    </div>
+                    {(ingresso.utilizado_em || ingresso.utilizado_por) && (
+                      <p className="text-xs text-destructive/90 mt-2 ml-7">
+                        {ingresso.utilizado_em && new Date(ingresso.utilizado_em).toLocaleString("pt-BR")}
+                        {ingresso.utilizado_por && validadores[ingresso.utilizado_por] && ` · por ${validadores[ingresso.utilizado_por]}`}
+                      </p>
+                    )}
                   </div>
                 )}
 
@@ -240,6 +275,12 @@ const ScannerIngressos = () => {
                       <p className="text-xs text-muted-foreground mt-1">
                         Confira o documento original (carteira de estudante, RG, laudo PCD ou identificação profissional) antes de liberar a entrada.
                       </p>
+                      {ingresso.meia_validada_portaria && (ingresso.meia_validada_em || ingresso.meia_validada_por) && (
+                        <p className="text-xs text-zampieri-green-dark mt-2 font-medium">
+                          Validado{ingresso.meia_validada_em ? ` em ${new Date(ingresso.meia_validada_em).toLocaleString("pt-BR")}` : ""}
+                          {ingresso.meia_validada_por && validadores[ingresso.meia_validada_por] ? ` por ${validadores[ingresso.meia_validada_por]}` : ""}
+                        </p>
+                      )}
                     </div>
                   )}
 

@@ -72,6 +72,13 @@ Deno.serve(async (req) => {
         .update(update)
         .eq("asaas_payment_id", paymentId);
       if (updErr) throw updErr;
+
+      // Dispara e-mail de confirmação (best-effort, não bloqueia webhook)
+      if (newStatus === "pago") {
+        admin.functions.invoke("enviar-confirmacao-ingresso", {
+          body: { payment_id: paymentId },
+        }).catch((e) => console.error("[asaas-webhook] envio email falhou", e));
+      }
     }
 
     await admin
