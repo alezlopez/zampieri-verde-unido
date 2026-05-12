@@ -90,7 +90,6 @@ const EventosAdmin = () => {
   const [precoParcelado, setPrecoParcelado] = useState("");
   const [maxParcelas, setMaxParcelas] = useState("");
   const [requerAutorizacao, setRequerAutorizacao] = useState(false);
-  const [tipoEvento, setTipoEvento] = useState<"somente_alunos" | "alunos_convidados">("alunos_convidados");
   const [isExcursao, setIsExcursao] = useState(false);
   const [publicoAlvo, setPublicoAlvo] = useState<"apenas_alunos" | "alunos_e_convidados" | "aberto_ao_publico">("alunos_e_convidados");
   const [syncingId, setSyncingId] = useState<string | null>(null);
