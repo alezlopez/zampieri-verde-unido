@@ -688,19 +688,43 @@ const EventosAdmin = () => {
                     ) : (
                       <div className="space-y-2">
                         {ingressos.map((ing) => (
-                          <div key={ing.id} className="flex justify-between items-center text-sm bg-muted/50 rounded p-2">
-                            <div>
+                          <div key={ing.id} className="flex flex-col md:flex-row md:justify-between md:items-center gap-2 text-sm bg-muted/50 rounded p-2">
+                            <div className="flex-1">
                               <span className="font-medium">{ing.nome_comprador}</span>
                               {ing.codigo_aluno && <span className="text-muted-foreground ml-2">Aluno: {ing.codigo_aluno}</span>}
                               <span className="text-muted-foreground ml-2">Qtd: {ing.quantidade}</span>
+                              {ing.tipo_comprador && (
+                                <Badge variant="outline" className="ml-2 text-[10px]">
+                                  {ing.tipo_comprador === "externo" ? "Externo" : "Aluno"}
+                                </Badge>
+                              )}
                             </div>
-                            <Badge className={
-                              ing.status === "pago" ? "bg-zampieri-green/15 text-zampieri-green-dark border border-zampieri-green/40" :
-                              ing.status === "cancelado" ? "bg-red-100 text-red-800" :
-                              "bg-yellow-100 text-yellow-800"
-                            }>
-                              {ing.status}
-                            </Badge>
+                            <div className="flex items-center gap-2 flex-wrap">
+                              {ing.status === "pendente" && !ing.checkout_url && (
+                                <Button size="sm" variant="outline" disabled={syncingId === ing.id}
+                                  onClick={() => handleGerarCheckout(ing, evento.id)}>
+                                  <Link2 className="w-3 h-3 mr-1" /> Gerar checkout
+                                </Button>
+                              )}
+                              {ing.status === "pendente" && ing.asaas_payment_id && (
+                                <Button size="sm" variant="outline" disabled={syncingId === ing.id}
+                                  onClick={() => handleReconciliar(ing, evento.id)}>
+                                  <RefreshCw className={`w-3 h-3 mr-1 ${syncingId === ing.id ? "animate-spin" : ""}`} /> Reconciliar
+                                </Button>
+                              )}
+                              {ing.checkout_url && (
+                                <a href={ing.checkout_url} target="_blank" rel="noreferrer" className="text-xs underline text-zampieri-green-dark">
+                                  Link
+                                </a>
+                              )}
+                              <Badge className={
+                                ing.status === "pago" ? "bg-zampieri-green/15 text-zampieri-green-dark border border-zampieri-green/40" :
+                                ing.status === "cancelado" ? "bg-red-100 text-red-800" :
+                                "bg-yellow-100 text-yellow-800"
+                              }>
+                                {ing.status}
+                              </Badge>
+                            </div>
                           </div>
                         ))}
                       </div>
