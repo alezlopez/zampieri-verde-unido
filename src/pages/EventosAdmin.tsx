@@ -379,6 +379,8 @@ const EventosAdmin = () => {
       setSyncingId(null);
     }
   };
+
+  if (authLoading || loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-zampieri-green"></div>
