@@ -411,15 +411,15 @@ const EventoCompra = () => {
 
     setSubmitting(true);
     try {
-      // Re-fetch vagas disponíveis para garantir dados atualizados
+      // Re-fetch vagas + aluno_cortesia para garantir dados atualizados
       const { data: eventoAtual } = await supabase
         .from("eventos")
-        .select("vagas_disponiveis")
+        .select("vagas_disponiveis, aluno_cortesia")
         .eq("id", evento.id)
         .single();
 
       if (eventoAtual) {
-        setEvento((prev) => prev ? { ...prev, vagas_disponiveis: eventoAtual.vagas_disponiveis } : prev);
+        setEvento((prev) => prev ? { ...prev, vagas_disponiveis: eventoAtual.vagas_disponiveis, aluno_cortesia: (eventoAtual as any).aluno_cortesia } : prev);
         if (eventoAtual.vagas_disponiveis < totalParticipantes) {
           toast({
             title: "Vagas insuficientes",
@@ -464,7 +464,9 @@ const EventoCompra = () => {
       }
 
       // Alunos
-      const alunoCortesia = !!evento.aluno_cortesia;
+      const alunoCortesia = (eventoAtual as any)?.aluno_cortesia !== undefined
+        ? !!(eventoAtual as any).aluno_cortesia
+        : !!evento.aluno_cortesia;
       for (const codigo of alunosSelecionados) {
         const aluno = alunos.find((a) => a.codigo_aluno === codigo);
         const m = getMeia(`aluno-${codigo}`);
