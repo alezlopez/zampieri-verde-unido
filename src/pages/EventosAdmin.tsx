@@ -74,6 +74,7 @@ const EventosAdmin = () => {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [selectedEventoIngressos, setSelectedEventoIngressos] = useState<string | null>(null);
   const [ingressos, setIngressos] = useState<Ingresso[]>([]);
+  const [filtroMeiaNaoValidada, setFiltroMeiaNaoValidada] = useState(false);
 
   // Manual ticket form
   type Participante = {
