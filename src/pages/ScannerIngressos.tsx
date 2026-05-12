@@ -64,7 +64,7 @@ const ScannerIngressos = () => {
 
     const { data, error: err } = await supabase
       .from("ingressos")
-      .select("id, nome_comprador, nome_participante, tipo_participante, status, utilizado, codigo_aluno, eventos(titulo, data_evento)")
+      .select("id, nome_comprador, nome_participante, tipo_participante, status, utilizado, codigo_aluno, tipo_ingresso, categoria_meia, meia_validada_portaria, eventos(titulo, data_evento)")
       .eq("id", decodedText)
       .single();
 
