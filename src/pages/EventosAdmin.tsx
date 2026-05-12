@@ -33,6 +33,11 @@ interface Evento {
   tipo_evento: string;
   is_excursao: boolean;
   publico_alvo: string;
+  meia_entrada_habilitada: boolean;
+  percentual_meia: number;
+  preco_meia: number;
+  preco_meia_parcelado: number;
+  categorias_meia: string[];
 }
 
 interface Ingresso {
@@ -45,7 +50,18 @@ interface Ingresso {
   tipo_comprador: string | null;
   asaas_payment_id: string | null;
   checkout_url: string | null;
+  tipo_ingresso: string | null;
+  categoria_meia: string | null;
+  meia_validada_portaria: boolean | null;
 }
+
+const CATEGORIAS_MEIA = [
+  { value: "estudante", label: "Estudante" },
+  { value: "idoso", label: "Idoso (60+)" },
+  { value: "pcd", label: "PCD" },
+  { value: "pcd_acompanhante", label: "Acompanhante de PCD" },
+  { value: "professor", label: "Professor rede pública" },
+];
 
 const EventosAdmin = () => {
   const { user, isAdmin, loading: authLoading } = useAuth();
@@ -92,6 +108,8 @@ const EventosAdmin = () => {
   const [requerAutorizacao, setRequerAutorizacao] = useState(false);
   const [isExcursao, setIsExcursao] = useState(false);
   const [publicoAlvo, setPublicoAlvo] = useState<"apenas_alunos" | "alunos_e_convidados" | "aberto_ao_publico">("alunos_e_convidados");
+  const [meiaHabilitada, setMeiaHabilitada] = useState(true);
+  const [categoriasMeia, setCategoriasMeia] = useState<string[]>(["estudante", "idoso", "pcd", "pcd_acompanhante", "professor"]);
   const [syncingId, setSyncingId] = useState<string | null>(null);
   const [imagemFile, setImagemFile] = useState<File | null>(null);
   const [imagemPreview, setImagemPreview] = useState<string | null>(null);
@@ -131,6 +149,8 @@ const EventosAdmin = () => {
     setRequerAutorizacao(false);
     setIsExcursao(false);
     setPublicoAlvo("alunos_e_convidados");
+    setMeiaHabilitada(true);
+    setCategoriasMeia(["estudante", "idoso", "pcd", "pcd_acompanhante", "professor"]);
     setImagemFile(null);
     setImagemPreview(null);
     setEditingId(null);
@@ -151,6 +171,12 @@ const EventosAdmin = () => {
     setRequerAutorizacao(evento.requer_autorizacao);
     setIsExcursao(evento.is_excursao || false);
     setPublicoAlvo((evento.publico_alvo as any) || "alunos_e_convidados");
+    setMeiaHabilitada(evento.meia_entrada_habilitada ?? true);
+    setCategoriasMeia(
+      Array.isArray(evento.categorias_meia) && evento.categorias_meia.length > 0
+        ? evento.categorias_meia
+        : ["estudante", "idoso", "pcd", "pcd_acompanhante", "professor"]
+    );
     setImagemFile(null);
     setImagemPreview(evento.imagem_url || null);
     setEditingId(evento.id);
@@ -181,6 +207,16 @@ const EventosAdmin = () => {
       toast({ title: "Preencha título e data", variant: "destructive" });
       return;
     }
+    if (meiaHabilitada && categoriasMeia.length === 0) {
+      toast({ title: "Selecione ao menos uma categoria de meia-entrada", variant: "destructive" });
+      return;
+    }
+    const precoNum = parseFloat(preco) || 0;
+    const precoParceladoNum = parseFloat(precoParcelado) || 0;
+    if (precoParceladoNum > 0 && precoParceladoNum < precoNum) {
+      toast({ title: "Preço parcelado não pode ser menor que o à vista", variant: "destructive" });
+      return;
+    }
 
     setUploading(true);
     let finalImagemUrl = imagemUrl || null;
@@ -192,9 +228,9 @@ const EventosAdmin = () => {
     }
 
     const vagasNum = parseInt(vagasTotal) || 0;
-    const precoNum = parseFloat(preco) || 0;
-    const precoParceladoNum = parseFloat(precoParcelado) || 0;
-    const maxParcelasNum = parseInt(maxParcelas) || 1;
+    const maxParcelasNum = Math.max(1, Math.min(parseInt(maxParcelas) || 1, 12));
+    const precoMeia = Number((precoNum / 2).toFixed(2));
+    const precoMeiaParcelado = Number((precoParceladoNum / 2).toFixed(2));
 
     const payload = {
       titulo,
@@ -207,12 +243,17 @@ const EventosAdmin = () => {
       preco_parcelado: precoParceladoNum,
       max_parcelas: maxParcelasNum,
       vagas_total: vagasNum,
-      vagas_disponiveis: vagasNum,
+      vagas_disponiveis: editingId ? undefined : vagasNum, // não sobrescrever em edição
       requer_autorizacao: requerAutorizacao,
       tipo_evento: publicoAlvo === "apenas_alunos" ? "somente_alunos" : "alunos_convidados",
       is_excursao: isExcursao,
       publico_alvo: publicoAlvo,
+      meia_entrada_habilitada: meiaHabilitada,
+      preco_meia: precoMeia,
+      preco_meia_parcelado: precoMeiaParcelado,
+      categorias_meia: categoriasMeia,
     };
+    if (payload.vagas_disponiveis === undefined) delete (payload as any).vagas_disponiveis;
 
     if (editingId) {
       const { error } = await supabase.from("eventos").update(payload).eq("id", editingId);
@@ -517,6 +558,67 @@ const EventosAdmin = () => {
                   Evento é excursão?
                 </label>
               </div>
+
+              {/* Meia-entrada (Lei 12.933/2013) */}
+              <div className="border-t pt-4 space-y-3">
+                <div className="flex items-center space-x-2">
+                  <Checkbox
+                    id="meia-habilitada"
+                    checked={meiaHabilitada}
+                    onCheckedChange={(checked) => setMeiaHabilitada(checked === true)}
+                  />
+                  <label htmlFor="meia-habilitada" className="text-sm font-medium cursor-pointer">
+                    Habilitar meia-entrada (Lei 12.933/2013)
+                  </label>
+                </div>
+                {meiaHabilitada && (
+                  <div className="bg-zampieri-cream/40 border border-zampieri-gold/30 rounded-md p-3 space-y-3">
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-3 text-sm">
+                      <div>
+                        <p className="text-xs text-muted-foreground">Cota legal (40%)</p>
+                        <p className="font-semibold text-zampieri-green-dark">
+                          {Math.floor((parseInt(vagasTotal) || 0) * 0.4)} de {parseInt(vagasTotal) || 0} vagas
+                        </p>
+                      </div>
+                      <div>
+                        <p className="text-xs text-muted-foreground">Meia à vista</p>
+                        <p className="font-semibold text-zampieri-green-dark">
+                          R$ {((parseFloat(preco) || 0) / 2).toFixed(2).replace(".", ",")}
+                        </p>
+                      </div>
+                      <div>
+                        <p className="text-xs text-muted-foreground">Meia parcelado total</p>
+                        <p className="font-semibold text-zampieri-green-dark">
+                          R$ {((parseFloat(precoParcelado) || 0) / 2).toFixed(2).replace(".", ",")}
+                        </p>
+                      </div>
+                    </div>
+                    <div>
+                      <p className="text-xs font-medium mb-2">Categorias aceitas:</p>
+                      <div className="flex flex-wrap gap-3">
+                        {CATEGORIAS_MEIA.map((cat) => (
+                          <label key={cat.value} className="flex items-center gap-2 text-xs cursor-pointer">
+                            <Checkbox
+                              checked={categoriasMeia.includes(cat.value)}
+                              onCheckedChange={(checked) =>
+                                setCategoriasMeia((prev) =>
+                                  checked === true
+                                    ? Array.from(new Set([...prev, cat.value]))
+                                    : prev.filter((c) => c !== cat.value)
+                                )
+                              }
+                            />
+                            {cat.label}
+                          </label>
+                        ))}
+                      </div>
+                    </div>
+                    <p className="text-[11px] text-muted-foreground italic">
+                      Documento original será exigido na portaria conforme Lei 12.933/2013.
+                    </p>
+                  </div>
+                )}
+              </div>
               <div className="flex gap-2">
                 <Button onClick={handleSave} className="bg-zampieri-green-dark hover:bg-zampieri-green text-white" disabled={uploading}>
                   {uploading ? "Salvando..." : "Salvar"}
@@ -676,6 +778,12 @@ const EventosAdmin = () => {
                               {ing.tipo_comprador && (
                                 <Badge variant="outline" className="ml-2 text-[10px]">
                                   {ing.tipo_comprador === "externo" ? "Externo" : "Aluno"}
+                                </Badge>
+                              )}
+                              {ing.tipo_ingresso === "meia" && (
+                                <Badge className="ml-2 text-[10px] bg-orange-100 text-orange-800 border border-orange-300">
+                                  MEIA{ing.categoria_meia ? ` · ${ing.categoria_meia}` : ""}
+                                  {ing.meia_validada_portaria ? " ✓" : ""}
                                 </Badge>
                               )}
                             </div>

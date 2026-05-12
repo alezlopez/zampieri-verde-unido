@@ -29,6 +29,11 @@ interface Evento {
   vagas_disponiveis: number;
   requer_autorizacao: boolean;
   tipo_evento: string;
+  publico_alvo?: string;
+  meia_entrada_habilitada?: boolean;
+  preco_meia?: number;
+  preco_meia_parcelado?: number;
+  categorias_meia?: string[];
 }
 
 interface Aluno {
@@ -44,6 +49,22 @@ interface Convidado {
   email: string;
   celular: string;
 }
+
+interface MeiaConfig {
+  tipo_ingresso: "inteira" | "meia";
+  categoria_meia: string;
+  declaracao: boolean;
+}
+
+const CATEGORIAS_LABELS: Record<string, string> = {
+  estudante: "Estudante",
+  idoso: "Idoso (60+)",
+  pcd: "PCD",
+  pcd_acompanhante: "Acompanhante de PCD",
+  professor: "Professor rede pública",
+};
+
+const emptyMeiaConfig = (): MeiaConfig => ({ tipo_ingresso: "inteira", categoria_meia: "", declaracao: false });
 
 const emptyConvidado = (): Convidado => ({
   nome: "",
