@@ -62,6 +62,22 @@ const ScannerIngressos = () => {
     setScanning(false);
   }, []);
 
+  const fetchValidadores = useCallback(async (ids: string[]) => {
+    const unicos = Array.from(new Set(ids.filter(Boolean)));
+    if (!unicos.length) return;
+    const { data } = await supabase
+      .from("user_profiles")
+      .select("user_id, username")
+      .in("user_id", unicos);
+    if (data) {
+      setValidadores((prev) => {
+        const next = { ...prev };
+        for (const r of data as any[]) next[r.user_id] = r.username;
+        return next;
+      });
+    }
+  }, []);
+
   const handleScan = useCallback(async (decodedText: string) => {
     await stopScanner();
     setError(null);
@@ -69,7 +85,7 @@ const ScannerIngressos = () => {
 
     const { data, error: err } = await supabase
       .from("ingressos")
-      .select("id, nome_comprador, nome_participante, tipo_participante, status, utilizado, codigo_aluno, tipo_ingresso, categoria_meia, meia_validada_portaria, eventos(titulo, data_evento)")
+      .select("id, nome_comprador, nome_participante, tipo_participante, status, utilizado, utilizado_em, utilizado_por, codigo_aluno, tipo_ingresso, categoria_meia, meia_validada_portaria, meia_validada_em, meia_validada_por, eventos(titulo, data_evento)")
       .eq("id", decodedText)
       .single();
 
@@ -78,8 +94,10 @@ const ScannerIngressos = () => {
       return;
     }
 
-    setIngresso(data as unknown as IngressoScanned);
-  }, [stopScanner]);
+    const ing = data as unknown as IngressoScanned;
+    setIngresso(ing);
+    fetchValidadores([ing.utilizado_por, ing.meia_validada_por].filter(Boolean) as string[]);
+  }, [stopScanner, fetchValidadores]);
 
   const startScanner = useCallback(async () => {
     setIngresso(null);
