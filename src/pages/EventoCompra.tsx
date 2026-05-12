@@ -121,6 +121,11 @@ const EventoCompra = () => {
     cpf?: string; email?: string; celular?: string; data_nascimento?: string;
   } | null>(null);
 
+  // Form de auto-cadastro do comprador (quando não há aluno vinculado e não é externo cadastrado)
+  const [compradorForm, setCompradorForm] = useState<{ cpf: string; celular: string; data_nascimento: string }>({
+    cpf: "", celular: "", data_nascimento: "",
+  });
+
   // Meia-entrada por participante (chave: `aluno-<codigo>`, `convidado-<idx>` ou `comprador-self`)
   const [meiaConfigs, setMeiaConfigs] = useState<Record<string, MeiaConfig>>({});
   const [meiaInfo, setMeiaInfo] = useState<{ vagas_meia_total: number; meias_vendidas: number; meias_disponiveis: number } | null>(null);
