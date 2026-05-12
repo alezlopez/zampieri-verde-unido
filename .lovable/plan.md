@@ -1,63 +1,30 @@
-## Objetivo
+## Diagnóstico
 
-Permitir que eventos do tipo "alunos + convidados" tenham uma configuração que marca o ingresso do **aluno como cortesia** (gratuito). Nesse caso:
-- O ingresso do aluno é criado já como **pago** (cortesia), sem valor.
-- O ingresso do aluno **não entra** no checkout do Asaas.
-- Convidados (e o próprio comprador, se marcado) continuam pagando normalmente.
+Verifiquei o banco. O ingresso do teste (CPF pai 37119355830, evento "Festa Junina", aluno 2717) foi inserido às **23:35:58** com `cortesia=false` e `valor_total=15`. Mas o evento só foi atualizado com `aluno_cortesia=true` às **23:54:37** — ou seja, o teste foi feito **antes** de salvar o toggle. Por isso o aluno foi somado.
 
-## Mudanças
+A lógica atual em `EventoCompra.tsx` está correta (`alunoCortesia = !!evento?.aluno_cortesia` exclui o aluno do total e marca `cortesia=true` no insert). O problema é que ela depende do `evento` carregado em estado, que pode ficar desatualizado se o admin alterar o toggle enquanto a página de compra estiver aberta em outra aba/sessão.
 
-### 1. Banco de dados (migração)
+## Plano (1 mudança defensiva, sem afetar fluxo)
 
-**Tabela `eventos`** — novo campo:
-- `aluno_cortesia` boolean NOT NULL DEFAULT false — quando true, ingressos do tipo aluno deste evento são cortesia.
+Em `src/pages/EventoCompra.tsx`, no `handleComprar` (linha ~414): a query que já refaz `vagas_disponiveis` passa a buscar também `aluno_cortesia`. Esse valor fresco é usado em vez de `evento.aluno_cortesia` para:
 
-**Tabela `ingressos`** — novo campo (para auditoria e exibição):
-- `cortesia` boolean NOT NULL DEFAULT false — marca o ingresso individual como cortesia.
+- decidir `cortesia: true` e `valor_total: 0` no insert dos alunos
+- decidir `status: "pago"` para alunos cortesia
+- recalcular o total final caso a flag tenha mudado entre o load da página e o clique
 
-Nenhum dado existente é alterado, apenas defaults para novos registros — exatamente o que você pediu.
+```ts
+const { data: eventoAtual } = await supabase
+  .from("eventos")
+  .select("vagas_disponiveis, aluno_cortesia")
+  .eq("id", evento.id)
+  .single();
 
-### 2. Painel admin (`src/pages/EventosAdmin.tsx`)
+const alunoCortesiaFresh = !!eventoAtual?.aluno_cortesia;
+// usar alunoCortesiaFresh nas linhas 467, 478, 479, 486, 487
+```
 
-No formulário de criar/editar evento, adicionar um switch:
-- **"Aluno é cortesia (não paga)"** — só aparece/é aplicável quando o evento permite alunos (tipo `apenas_alunos` ou `alunos_e_convidados`).
-- Texto auxiliar: "O ingresso do aluno será emitido automaticamente como pago, sem cobrança. Convidados continuam pagando."
+Nada muda no UI, no checkout Asaas, nas RLS, na edge function, no webhook ou em ingressos já existentes. Apenas garante que o estado mais recente do evento é usado no momento do insert.
 
-### 3. Fluxo de compra (`src/pages/EventoCompra.tsx`)
+## Próximo passo do teste
 
-Ao montar o carrinho:
-
-- Para cada aluno selecionado, se `evento.aluno_cortesia === true`:
-  - Criar o ingresso com `status: "pago"`, `cortesia: true`, `valor_total: 0`, `tipo_ingresso: "inteira"`, `forma_pagamento: null`, `parcelas: 1`.
-  - **Não incluir** o id desse ingresso na chamada `asaas-create-checkout`.
-  - Não exibir esse participante no bloco de meia-entrada (cortesia não tem meia).
-- Convidados e comprador-self continuam no fluxo normal (entram no Asaas).
-
-UI:
-- Mostrar tag "Cortesia" ao lado do nome do aluno na lista de participantes.
-- No resumo de valores, exibir "Aluno (cortesia): R$ 0,00" e somar apenas convidados/comprador no total.
-- Se **só houver alunos cortesia** (nenhum convidado, comprador não marcado): pular o checkout completamente, mostrar tela de sucesso e redirecionar para `/eventos/meus-ingressos`.
-
-### 4. Edge function (`supabase/functions/asaas-create-checkout/index.ts`)
-
-Defesa adicional no servidor:
-- Filtrar `ingresso_ids` recebidos, ignorando qualquer ingresso com `cortesia = true` ou `status = 'pago'`.
-- Se após o filtro a lista ficar vazia, retornar 400 "Nenhum ingresso elegível para cobrança" (não deveria acontecer se o frontend estiver correto).
-
-### 5. Exibição (`src/pages/MeusIngressos.tsx` e `IngressoDetalhe.tsx`)
-
-- Mostrar badge "Cortesia" quando `cortesia === true`.
-- Não mostrar botão "Pagar" para ingressos cortesia (já estão como `pago`).
-
-### 6. Admin de vendas (`EventosAdmin.tsx`, dashboard de valores recebidos)
-
-- Cortesias não somam em "Recebido" nem "Pendente" — ficam em uma linha separada "Cortesias emitidas (qtd)".
-
-## Considerações
-
-- Não mexe em ingressos já vendidos.
-- Não altera webhook nem sync — cortesia já nasce paga.
-- Função `contar_meias_evento` não é afetada (cortesia é sempre inteira).
-- Estorno não se aplica a cortesia (sem cobrança no Asaas).
-
-Posso seguir?
+Após implementar, faça novo teste com o mesmo CPF. Como `aluno_cortesia` agora está `true` no banco, o aluno será inserido com `cortesia=true`, `valor_total=0`, `status=pago`, e ficará fora do checkout Asaas (apenas os 2 convidados a R$30 vão para pagamento).
