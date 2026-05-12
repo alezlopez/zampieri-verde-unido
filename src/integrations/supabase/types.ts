@@ -953,6 +953,7 @@ export type Database = {
           nome: string
         }[]
       }
+      find_user_id_by_cpf: { Args: { p_cpf: string }; Returns: string }
       get_current_message_period: {
         Args: never
         Returns: {

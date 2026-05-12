@@ -7,7 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useToast } from "@/hooks/use-toast";
-import { ArrowLeft, Plus, Pencil, Trash2, Eye, EyeOff, Users, Upload, X, ScanLine } from "lucide-react";
+import { ArrowLeft, Plus, Pencil, Trash2, Eye, EyeOff, Users, Upload, X, ScanLine, UserPlus } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
@@ -51,6 +51,25 @@ const EventosAdmin = () => {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [selectedEventoIngressos, setSelectedEventoIngressos] = useState<string | null>(null);
   const [ingressos, setIngressos] = useState<Ingresso[]>([]);
+
+  // Manual ticket form
+  type Participante = {
+    tipo: "aluno" | "convidado";
+    nome: string;
+    cpf: string;
+    data_nascimento: string;
+    email: string;
+    celular: string;
+    codigo_aluno: string;
+  };
+  const emptyParticipante = (): Participante => ({
+    tipo: "aluno", nome: "", cpf: "", data_nascimento: "", email: "", celular: "", codigo_aluno: "",
+  });
+  const [showManualForm, setShowManualForm] = useState(false);
+  const [compradorNome, setCompradorNome] = useState("");
+  const [compradorCpf, setCompradorCpf] = useState("");
+  const [participantes, setParticipantes] = useState<Participante[]>([emptyParticipante()]);
+  const [savingManual, setSavingManual] = useState(false);
 
   // Form state
   const [titulo, setTitulo] = useState("");
@@ -233,6 +252,82 @@ const EventosAdmin = () => {
       .order("created_at", { ascending: false });
     if (data) setIngressos(data);
     setSelectedEventoIngressos(eventoId);
+  };
+
+  const resetManualForm = () => {
+    setCompradorNome("");
+    setCompradorCpf("");
+    setParticipantes([emptyParticipante()]);
+    setShowManualForm(false);
+  };
+
+  const updateParticipante = (idx: number, patch: Partial<Participante>) => {
+    setParticipantes((prev) => prev.map((p, i) => (i === idx ? { ...p, ...patch } : p)));
+  };
+
+  const handleSaveManual = async (eventoId: string) => {
+    if (!user) return;
+    if (!compradorNome.trim()) {
+      toast({ title: "Informe o nome do comprador", variant: "destructive" });
+      return;
+    }
+    const validos = participantes.filter((p) => p.nome.trim());
+    if (validos.length === 0) {
+      toast({ title: "Adicione ao menos um participante", variant: "destructive" });
+      return;
+    }
+
+    setSavingManual(true);
+    try {
+      // Recheck vagas
+      const { data: ev } = await supabase.from("eventos").select("vagas_disponiveis").eq("id", eventoId).single();
+      if (ev && ev.vagas_disponiveis < validos.length) {
+        toast({ title: "Vagas insuficientes", description: `Restam ${ev.vagas_disponiveis} vaga(s).`, variant: "destructive" });
+        setSavingManual(false);
+        return;
+      }
+
+      // Resolve user_id by CPF (fallback: admin)
+      let targetUserId = user.id;
+      const cpfClean = compradorCpf.replace(/\D/g, "");
+      if (cpfClean) {
+        const { data: foundId } = await supabase.rpc("find_user_id_by_cpf", { p_cpf: cpfClean });
+        if (foundId) targetUserId = foundId as string;
+      }
+
+      const records = validos.map((p) => ({
+        evento_id: eventoId,
+        user_id: targetUserId,
+        nome_comprador: compradorNome.trim(),
+        codigo_aluno: p.tipo === "aluno" ? (p.codigo_aluno.trim() || null) : null,
+        quantidade: 1,
+        status: "pago",
+        tipo_participante: p.tipo,
+        nome_participante: p.nome.trim(),
+        cpf_participante: p.cpf.replace(/\D/g, "") || null,
+        data_nascimento_participante: p.data_nascimento || null,
+        email_participante: p.email.trim() || null,
+        celular_participante: p.celular.replace(/\D/g, "") || null,
+      }));
+
+      const { error } = await supabase.from("ingressos").insert(records);
+      if (error) {
+        toast({ title: "Erro ao criar ingressos", description: error.message, variant: "destructive" });
+        setSavingManual(false);
+        return;
+      }
+
+      toast({ title: `${records.length} ingresso(s) criado(s)!` });
+      resetManualForm();
+      // Refresh
+      const { data: ings } = await supabase.from("ingressos").select("*").eq("evento_id", eventoId).order("created_at", { ascending: false });
+      if (ings) setIngressos(ings);
+      fetchEventos();
+    } catch (err: any) {
+      toast({ title: "Erro inesperado", description: err.message, variant: "destructive" });
+    } finally {
+      setSavingManual(false);
+    }
   };
 
   if (authLoading || loading) {
@@ -429,8 +524,99 @@ const EventosAdmin = () => {
 
                 {/* Ingressos list */}
                 {selectedEventoIngressos === evento.id && (
-                  <div className="mt-4 border-t pt-4">
-                    <h4 className="font-medium text-sm mb-2">Ingressos vendidos:</h4>
+                  <div className="mt-4 border-t pt-4 space-y-3">
+                    <div className="flex items-center justify-between">
+                      <h4 className="font-medium text-sm">Ingressos vendidos:</h4>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="border-green-300 text-green-700 hover:bg-green-50"
+                        onClick={() => { resetManualForm(); setShowManualForm(true); }}
+                      >
+                        <UserPlus className="w-4 h-4 mr-1" />
+                        Adicionar ingresso manual
+                      </Button>
+                    </div>
+
+                    {showManualForm && (
+                      <Card className="border-green-200 bg-green-50/30">
+                        <CardContent className="p-4 space-y-3">
+                          <h5 className="font-semibold text-sm text-green-800">Novo ingresso manual (status: pago)</h5>
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                            <div>
+                              <label className="text-xs font-medium">Nome do comprador *</label>
+                              <Input value={compradorNome} onChange={(e) => setCompradorNome(e.target.value)} />
+                            </div>
+                            <div>
+                              <label className="text-xs font-medium">CPF do comprador (vincula usuário)</label>
+                              <Input value={compradorCpf} onChange={(e) => setCompradorCpf(e.target.value)} placeholder="000.000.000-00" />
+                            </div>
+                          </div>
+
+                          <div className="space-y-3">
+                            <div className="flex items-center justify-between">
+                              <span className="text-xs font-medium">Participantes ({participantes.length})</span>
+                              <Button
+                                type="button"
+                                size="sm"
+                                variant="ghost"
+                                onClick={() => setParticipantes((p) => [...p, emptyParticipante()])}
+                              >
+                                <Plus className="w-3 h-3 mr-1" /> Adicionar
+                              </Button>
+                            </div>
+                            {participantes.map((p, idx) => (
+                              <div key={idx} className="border border-green-200 rounded-md p-3 space-y-2 bg-white">
+                                <div className="flex items-center justify-between">
+                                  <span className="text-xs font-semibold text-green-700">Participante {idx + 1}</span>
+                                  {participantes.length > 1 && (
+                                    <button
+                                      type="button"
+                                      onClick={() => setParticipantes((prev) => prev.filter((_, i) => i !== idx))}
+                                      className="text-destructive"
+                                    >
+                                      <X className="w-4 h-4" />
+                                    </button>
+                                  )}
+                                </div>
+                                <RadioGroup
+                                  value={p.tipo}
+                                  onValueChange={(v) => updateParticipante(idx, { tipo: v as "aluno" | "convidado" })}
+                                  className="flex gap-4"
+                                >
+                                  <div className="flex items-center space-x-2">
+                                    <RadioGroupItem value="aluno" id={`tp-aluno-${idx}`} />
+                                    <Label htmlFor={`tp-aluno-${idx}`} className="cursor-pointer text-xs">Aluno</Label>
+                                  </div>
+                                  <div className="flex items-center space-x-2">
+                                    <RadioGroupItem value="convidado" id={`tp-conv-${idx}`} />
+                                    <Label htmlFor={`tp-conv-${idx}`} className="cursor-pointer text-xs">Convidado</Label>
+                                  </div>
+                                </RadioGroup>
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                                  <Input placeholder="Nome *" value={p.nome} onChange={(e) => updateParticipante(idx, { nome: e.target.value })} />
+                                  <Input placeholder="CPF" value={p.cpf} onChange={(e) => updateParticipante(idx, { cpf: e.target.value })} />
+                                  {p.tipo === "aluno" && (
+                                    <Input placeholder="Código do aluno" value={p.codigo_aluno} onChange={(e) => updateParticipante(idx, { codigo_aluno: e.target.value })} />
+                                  )}
+                                  <Input type="date" placeholder="Data de nascimento" value={p.data_nascimento} onChange={(e) => updateParticipante(idx, { data_nascimento: e.target.value })} />
+                                  <Input type="email" placeholder="E-mail" value={p.email} onChange={(e) => updateParticipante(idx, { email: e.target.value })} />
+                                  <Input placeholder="Celular" value={p.celular} onChange={(e) => updateParticipante(idx, { celular: e.target.value })} />
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+
+                          <div className="flex gap-2">
+                            <Button onClick={() => handleSaveManual(evento.id)} disabled={savingManual} className="bg-green-600 hover:bg-green-700">
+                              {savingManual ? "Salvando..." : "Salvar ingressos"}
+                            </Button>
+                            <Button variant="outline" onClick={resetManualForm}>Cancelar</Button>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    )}
+
                     {ingressos.length === 0 ? (
                       <p className="text-sm text-muted-foreground">Nenhum ingresso vendido.</p>
                     ) : (
