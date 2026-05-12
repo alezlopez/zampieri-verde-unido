@@ -66,12 +66,11 @@ Deno.serve(async (req) => {
       });
     }
 
-    // Idempotência
-    const existing = ingressos.find((i: any) => i.asaas_payment_id && i.checkout_url);
+    // Idempotência: se já tem checkout gerado, reutiliza
+    const existing = ingressos.find((i: any) => i.checkout_url);
     if (existing) {
       return new Response(JSON.stringify({
         checkout_url: existing.checkout_url,
-        payment_id: existing.asaas_payment_id,
         reused: true,
       }), { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
