@@ -808,11 +808,13 @@ const EventosAdmin = () => {
                       </Card>
                     )}
 
-                    {ingressos.length === 0 ? (
-                      <p className="text-sm text-muted-foreground">Nenhum ingresso vendido.</p>
+                    {ingressosVisiveis.length === 0 ? (
+                      <p className="text-sm text-muted-foreground">
+                        {filtroMeiaNaoValidada ? "Nenhuma meia aguardando validação." : "Nenhum ingresso vendido."}
+                      </p>
                     ) : (
                       <div className="space-y-2">
-                        {ingressos.map((ing) => (
+                        {ingressosVisiveis.map((ing) => (
                           <div key={ing.id} className="flex flex-col md:flex-row md:justify-between md:items-center gap-2 text-sm bg-muted/50 rounded p-2">
                             <div className="flex-1">
                               <span className="font-medium">{ing.nome_comprador}</span>
@@ -861,7 +863,8 @@ const EventosAdmin = () => {
                       </div>
                     )}
                   </div>
-                )}
+                  );
+                })()}
               </CardContent>
             </Card>
           ))}
