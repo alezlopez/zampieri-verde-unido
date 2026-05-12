@@ -624,6 +624,23 @@ const EventosAdmin = () => {
                   "Aberto ao público" permite que compradores externos (sem matrícula) comprem ingressos.
                 </p>
               </div>
+              {publicoAlvo !== "aberto_ao_publico" && (
+                <div className="flex items-start space-x-2 rounded-md border border-zampieri-green/30 bg-zampieri-cream/30 p-3">
+                  <Checkbox
+                    id="aluno-cortesia"
+                    checked={alunoCortesia}
+                    onCheckedChange={(checked) => setAlunoCortesia(checked === true)}
+                  />
+                  <div className="flex-1">
+                    <label htmlFor="aluno-cortesia" className="text-sm font-medium cursor-pointer text-zampieri-green-dark">
+                      Aluno é cortesia (não paga)
+                    </label>
+                    <p className="text-xs text-muted-foreground">
+                      Quando marcado, o ingresso do aluno é emitido automaticamente como pago, sem entrar no checkout. Convidados continuam pagando normalmente.
+                    </p>
+                  </div>
+                </div>
+              )}
               <div className="flex items-center space-x-2">
                 <Checkbox
                   id="is-excursao"
