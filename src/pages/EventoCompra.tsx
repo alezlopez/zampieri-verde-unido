@@ -646,6 +646,88 @@ const EventoCompra = () => {
               </div>
             )}
 
+            {/* Meia-entrada por participante (Lei 12.933/2013) */}
+            {meiaHabilitada && totalParticipantes > 0 && (
+              <div className="border-t pt-4 space-y-3">
+                <div>
+                  <label className="text-sm font-medium block">Tipo de ingresso por participante</label>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Conforme Lei 12.933/2013, há cota de meia-entrada (estudantes, idosos 60+, PCD + acompanhante e professores da rede pública). É exigida comprovação na portaria.
+                  </p>
+                  {meiaInfo && (
+                    <p className="text-xs mt-1">
+                      <span className="font-medium">Meias disponíveis no evento: </span>
+                      <span className={meiaInfo.meias_disponiveis <= 0 ? "text-destructive font-bold" : "text-zampieri-green-dark font-bold"}>
+                        {meiaInfo.meias_disponiveis} de {meiaInfo.vagas_meia_total}
+                      </span>
+                    </p>
+                  )}
+                </div>
+
+                {participantKeys.map((key) => {
+                  const isAluno = key.startsWith("aluno-");
+                  const label = isAluno
+                    ? alunos.find((a) => `aluno-${a.codigo_aluno}` === key)?.nome_aluno ?? "Aluno"
+                    : convidados[Number(key.replace("convidado-", ""))]?.nome?.trim() || `Convidado ${Number(key.replace("convidado-", "")) + 1}`;
+                  const m = getMeia(key);
+                  const categoriasPermitidas = evento.categorias_meia ?? [];
+                  return (
+                    <div key={key} className="border rounded-md p-3 space-y-2 bg-muted/20">
+                      <p className="text-xs font-semibold text-zampieri-green-dark">{label}</p>
+                      <RadioGroup
+                        value={m.tipo_ingresso}
+                        onValueChange={(v) => setMeiaField(key, { tipo_ingresso: v as "inteira" | "meia", categoria_meia: v === "inteira" ? "" : m.categoria_meia, declaracao: v === "inteira" ? false : m.declaracao })}
+                        className="flex gap-4"
+                      >
+                        <div className="flex items-center space-x-2">
+                          <RadioGroupItem value="inteira" id={`${key}-inteira`} />
+                          <Label htmlFor={`${key}-inteira`} className="cursor-pointer text-sm">Inteira</Label>
+                        </div>
+                        <div className="flex items-center space-x-2">
+                          <RadioGroupItem value="meia" id={`${key}-meia`} />
+                          <Label htmlFor={`${key}-meia`} className="cursor-pointer text-sm">Meia (50%)</Label>
+                        </div>
+                      </RadioGroup>
+
+                      {m.tipo_ingresso === "meia" && (
+                        <div className="space-y-2 pt-1">
+                          <div>
+                            <Label className="text-xs">Categoria *</Label>
+                            <select
+                              className="w-full border rounded-md p-2 text-sm bg-background"
+                              value={m.categoria_meia}
+                              onChange={(e) => setMeiaField(key, { categoria_meia: e.target.value })}
+                            >
+                              <option value="">Selecione...</option>
+                              {categoriasPermitidas.map((c) => (
+                                <option key={c} value={c}>{CATEGORIAS_LABELS[c] ?? c}</option>
+                              ))}
+                            </select>
+                          </div>
+                          <div className="flex items-start space-x-2">
+                            <Checkbox
+                              id={`${key}-decl`}
+                              checked={m.declaracao}
+                              onCheckedChange={(c) => setMeiaField(key, { declaracao: c === true })}
+                            />
+                            <label htmlFor={`${key}-decl`} className="text-xs cursor-pointer">
+                              Declaro, sob as penas da lei, que o participante se enquadra na categoria selecionada e apresentarei o documento comprobatório original na portaria do evento. Caso contrário, será necessário pagar a diferença para ingresso inteira.
+                            </label>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+
+                {cotaMeiaExcedida && (
+                  <p className="text-xs text-destructive font-medium">
+                    ⚠️ Cota de meia-entrada excedida. Restam {meiaInfo?.meias_disponiveis ?? 0} meia(s).
+                  </p>
+                )}
+              </div>
+            )}
+
             {/* Forma de pagamento */}
             {temParcelamento && totalParticipantes > 0 && (
               <div className="border-t pt-4">
@@ -658,14 +740,14 @@ const EventoCompra = () => {
                   <div className="flex items-center space-x-2">
                     <RadioGroupItem value="avista" id="avista" />
                     <Label htmlFor="avista" className="cursor-pointer">
-                      À vista — R$ {(evento.preco * totalParticipantes).toFixed(2).replace(".", ",")}
+                      À vista — R$ {(qtdInteiras * evento.preco + qtdMeias * Number(evento.preco_meia ?? 0)).toFixed(2).replace(".", ",")}
                     </Label>
                   </div>
                   <div className="flex items-center space-x-2">
                     <RadioGroupItem value="parcelado" id="parcelado" />
                     <Label htmlFor="parcelado" className="cursor-pointer">
                       {evento.max_parcelas}x de R$ {valorParcela.toFixed(2).replace(".", ",")} (Total: R${" "}
-                      {(evento.preco_parcelado * totalParticipantes).toFixed(2).replace(".", ",")})
+                      {(qtdInteiras * evento.preco_parcelado + qtdMeias * Number(evento.preco_meia_parcelado ?? 0)).toFixed(2).replace(".", ",")})
                     </Label>
                   </div>
                 </RadioGroup>
