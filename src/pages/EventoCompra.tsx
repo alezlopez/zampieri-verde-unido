@@ -335,6 +335,9 @@ const EventoCompra = () => {
   });
   const cotaMeiaExcedida = meiaHabilitada && meiaInfo ? qtdMeias > meiaInfo.meias_disponiveis : false;
 
+  const precisaCompletarPerfil =
+    tipoComprador === "aluno" && !loadingAlunos && alunos.length === 0 && !compradorExternoData?.cpf;
+
   const handleComprar = async () => {
     if (!evento || !user) return;
     if (!nomeComprador.trim()) {
@@ -345,6 +348,43 @@ const EventoCompra = () => {
       toast({ title: "Selecione ao menos um participante", variant: "destructive" });
       return;
     }
+
+    // Auto-cadastro do comprador (caso não seja aluno vinculado nem externo já cadastrado)
+    let compradorExternoLocal = compradorExternoData;
+    if (precisaCompletarPerfil) {
+      const cpfClean = compradorForm.cpf.replace(/\D/g, "");
+      if (cpfClean.length !== 11) {
+        toast({ title: "Informe um CPF válido (11 dígitos)", variant: "destructive" });
+        return;
+      }
+      const celClean = compradorForm.celular.replace(/\D/g, "") || null;
+      const { error: upErr } = await supabase
+        .from("compradores_externos")
+        .upsert(
+          {
+            user_id: user.id,
+            nome: nomeComprador.trim(),
+            cpf: cpfClean,
+            email: user.email || "",
+            celular: celClean,
+            data_nascimento: compradorForm.data_nascimento || null,
+          },
+          { onConflict: "user_id" }
+        );
+      if (upErr) {
+        toast({ title: "Não foi possível salvar seus dados", description: upErr.message, variant: "destructive" });
+        return;
+      }
+      compradorExternoLocal = {
+        cpf: cpfClean,
+        email: user.email || undefined,
+        celular: celClean || undefined,
+        data_nascimento: compradorForm.data_nascimento || undefined,
+      };
+      setCompradorExternoData(compradorExternoLocal);
+      setTipoComprador("externo");
+    }
+
 
     // Validate convidados
     for (let i = 0; i < convidados.length; i++) {
