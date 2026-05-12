@@ -400,6 +400,7 @@ export type Database = {
       }
       eventos: {
         Row: {
+          aluno_cortesia: boolean
           ativo: boolean
           categorias_meia: string[]
           created_at: string
@@ -426,6 +427,7 @@ export type Database = {
           vagas_total: number
         }
         Insert: {
+          aluno_cortesia?: boolean
           ativo?: boolean
           categorias_meia?: string[]
           created_at?: string
@@ -452,6 +454,7 @@ export type Database = {
           vagas_total?: number
         }
         Update: {
+          aluno_cortesia?: boolean
           ativo?: boolean
           categorias_meia?: string[]
           created_at?: string
@@ -489,6 +492,7 @@ export type Database = {
           checkout_url: string | null
           codigo_aluno: string | null
           comprovante_estorno_url: string | null
+          cortesia: boolean
           cpf_participante: string | null
           created_at: string
           data_nascimento_participante: string | null
@@ -526,6 +530,7 @@ export type Database = {
           checkout_url?: string | null
           codigo_aluno?: string | null
           comprovante_estorno_url?: string | null
+          cortesia?: boolean
           cpf_participante?: string | null
           created_at?: string
           data_nascimento_participante?: string | null
@@ -563,6 +568,7 @@ export type Database = {
           checkout_url?: string | null
           codigo_aluno?: string | null
           comprovante_estorno_url?: string | null
+          cortesia?: boolean
           cpf_participante?: string | null
           created_at?: string
           data_nascimento_participante?: string | null
