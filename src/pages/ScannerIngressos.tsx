@@ -19,11 +19,22 @@ interface IngressoScanned {
   status: string;
   utilizado: boolean;
   codigo_aluno: string | null;
+  tipo_ingresso: string;
+  categoria_meia: string | null;
+  meia_validada_portaria: boolean;
   eventos: {
     titulo: string;
     data_evento: string;
   } | null;
 }
+
+const CATEGORIAS_LABELS: Record<string, string> = {
+  estudante: "Estudante",
+  idoso: "Idoso (60+)",
+  pcd: "PCD",
+  pcd_acompanhante: "Acompanhante de PCD",
+  professor: "Professor rede pública",
+};
 
 const ScannerIngressos = () => {
   const { user, isAdmin, loading: authLoading } = useAuth();
