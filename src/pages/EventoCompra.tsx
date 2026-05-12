@@ -180,12 +180,16 @@ const EventoCompra = () => {
     checkExistentes();
   }, [user, id]);
 
-  // Fetch alunos by CPF, fallback to email
+  // Fetch alunos by CPF, fallback to email (apenas se for aluno)
   useEffect(() => {
     const fetchAlunos = async () => {
+      if (tipoComprador === "externo") {
+        setAlunos([]);
+        setLoadingAlunos(false);
+        return;
+      }
       let foundAlunos: Aluno[] = [];
 
-      // Try by CPF first
       if (user?.user_metadata?.cpf) {
         const cpf = (user.user_metadata.cpf as string).replace(/\D/g, "");
         const { data } = await supabase.rpc("find_alunos_by_cpf", { p_cpf: cpf });
@@ -194,7 +198,6 @@ const EventoCompra = () => {
         }
       }
 
-      // Fallback: lookup by user email
       if (foundAlunos.length === 0 && user?.email) {
         const { data } = await supabase.rpc("find_alunos_by_email" as any, { p_email: user.email });
         if (data) {
@@ -205,8 +208,8 @@ const EventoCompra = () => {
       setAlunos(foundAlunos);
       setLoadingAlunos(false);
     };
-    if (user) fetchAlunos();
-  }, [user]);
+    if (user && tipoComprador) fetchAlunos();
+  }, [user, tipoComprador]);
 
   const toggleAluno = (codigo: string) => {
     setAlunosSelecionados((prev) =>
