@@ -758,9 +758,12 @@ const EventoCompra = () => {
 
                 {participantKeys.map((key) => {
                   const isAluno = key.startsWith("aluno-");
-                  const label = isAluno
-                    ? alunos.find((a) => `aluno-${a.codigo_aluno}` === key)?.nome_aluno ?? "Aluno"
-                    : convidados[Number(key.replace("convidado-", ""))]?.nome?.trim() || `Convidado ${Number(key.replace("convidado-", "")) + 1}`;
+                  const isSelf = key === "comprador-self";
+                  const label = isSelf
+                    ? `${nomeComprador.trim() || "Você"} (comprador)`
+                    : isAluno
+                      ? alunos.find((a) => `aluno-${a.codigo_aluno}` === key)?.nome_aluno ?? "Aluno"
+                      : convidados[Number(key.replace("convidado-", ""))]?.nome?.trim() || `Convidado ${Number(key.replace("convidado-", "")) + 1}`;
                   const m = getMeia(key);
                   const categoriasPermitidas = evento.categorias_meia ?? [];
                   return (
