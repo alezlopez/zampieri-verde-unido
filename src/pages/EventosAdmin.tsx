@@ -52,6 +52,25 @@ const EventosAdmin = () => {
   const [selectedEventoIngressos, setSelectedEventoIngressos] = useState<string | null>(null);
   const [ingressos, setIngressos] = useState<Ingresso[]>([]);
 
+  // Manual ticket form
+  type Participante = {
+    tipo: "aluno" | "convidado";
+    nome: string;
+    cpf: string;
+    data_nascimento: string;
+    email: string;
+    celular: string;
+    codigo_aluno: string;
+  };
+  const emptyParticipante = (): Participante => ({
+    tipo: "aluno", nome: "", cpf: "", data_nascimento: "", email: "", celular: "", codigo_aluno: "",
+  });
+  const [showManualForm, setShowManualForm] = useState(false);
+  const [compradorNome, setCompradorNome] = useState("");
+  const [compradorCpf, setCompradorCpf] = useState("");
+  const [participantes, setParticipantes] = useState<Participante[]>([emptyParticipante()]);
+  const [savingManual, setSavingManual] = useState(false);
+
   // Form state
   const [titulo, setTitulo] = useState("");
   const [descricao, setDescricao] = useState("");
