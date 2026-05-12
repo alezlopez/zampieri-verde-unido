@@ -12,6 +12,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Progress } from "@/components/ui/progress";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
+import { EventosHeader } from "@/components/EventosHeader";
+import { Footer } from "@/components/Footer";
 
 interface Evento {
   id: string;
@@ -398,7 +400,9 @@ const EventoCompra = () => {
   const permiteConvidados = evento.tipo_evento === "alunos_convidados";
 
   return (
-    <div className="min-h-screen bg-background py-8 px-4">
+    <div className="min-h-screen bg-background flex flex-col">
+      <EventosHeader subtitle="Compra de ingressos" />
+      <div className="flex-1 py-8 px-4">
       {/* Countdown overlay */}
       {redirectCountdown !== null && (
         <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center">
@@ -810,6 +814,8 @@ const EventoCompra = () => {
           </CardContent>
         </Card>
       </div>
+      </div>
+      <Footer />
     </div>
   );
 };

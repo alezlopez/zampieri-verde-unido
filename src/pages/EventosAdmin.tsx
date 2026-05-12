@@ -11,6 +11,8 @@ import { ArrowLeft, Plus, Pencil, Trash2, Eye, EyeOff, Users, Upload, X, ScanLin
 import { Badge } from "@/components/ui/badge";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
+import { EventosHeader } from "@/components/EventosHeader";
+import { Footer } from "@/components/Footer";
 
 interface Evento {
   id: string;
@@ -339,7 +341,9 @@ const EventosAdmin = () => {
   }
 
   return (
-    <div className="min-h-screen bg-background py-8 px-4">
+    <div className="min-h-screen bg-background flex flex-col">
+      <EventosHeader subtitle="Painel Administrativo" />
+      <div className="flex-1 py-8 px-4">
       <div className="container mx-auto max-w-4xl">
         <div className="flex items-center justify-between mb-6">
           <Link to="/eventos" className="inline-flex items-center text-zampieri-green-dark hover:text-zampieri-gold">
@@ -646,6 +650,8 @@ const EventosAdmin = () => {
           ))}
         </div>
       </div>
+      </div>
+      <Footer />
     </div>
   );
 };
