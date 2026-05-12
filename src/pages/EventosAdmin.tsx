@@ -219,6 +219,7 @@ const EventosAdmin = () => {
         ? evento.categorias_meia
         : ["estudante", "idoso", "pcd", "pcd_acompanhante", "professor"]
     );
+    setAlunoCortesia(!!(evento as any).aluno_cortesia);
     setImagemFile(null);
     setImagemPreview(evento.imagem_url || null);
     setEditingId(evento.id);
