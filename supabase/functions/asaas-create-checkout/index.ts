@@ -197,7 +197,7 @@ Deno.serve(async (req) => {
         valor_total: valorTotal,
         tipo_comprador: comprador.origem === "externo" ? "externo" : "aluno",
       })
-      .in("id", body.ingresso_ids);
+      .in("id", ingressos.map((i: any) => i.id));
 
     return new Response(
       JSON.stringify({ checkout_url: checkoutUrl, checkout_id: checkoutId, reused: false, valor_total: valorTotal }),
