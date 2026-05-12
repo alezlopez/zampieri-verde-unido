@@ -18,6 +18,7 @@ interface IngressoComEvento {
   tipo_participante: string;
   checkout_url: string | null;
   comprovante_estorno_url: string | null;
+  cortesia: boolean | null;
   created_at: string;
   eventos: { titulo: string; data_evento: string; horario: string | null; local: string | null } | null;
 }
