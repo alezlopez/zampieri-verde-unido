@@ -342,7 +342,43 @@ const EventosAdmin = () => {
     }
   };
 
-  if (authLoading || loading) {
+  const refreshIngressos = async (eventoId: string) => {
+    const { data } = await supabase.from("ingressos").select("*").eq("evento_id", eventoId).order("created_at", { ascending: false });
+    if (data) setIngressos(data);
+  };
+
+  const handleGerarCheckout = async (ing: Ingresso, eventoId: string) => {
+    setSyncingId(ing.id);
+    try {
+      const { data, error } = await supabase.functions.invoke("asaas-create-checkout", {
+        body: { ingresso_ids: [ing.id], forma_pagamento: "pix", parcelas: 1 },
+      });
+      if (error) throw error;
+      toast({ title: "Checkout gerado", description: data?.checkout_url ? "Link disponível." : "Concluído." });
+      await refreshIngressos(eventoId);
+    } catch (e: any) {
+      toast({ title: "Erro ao gerar checkout", description: e.message || String(e), variant: "destructive" });
+    } finally {
+      setSyncingId(null);
+    }
+  };
+
+  const handleReconciliar = async (ing: Ingresso, eventoId: string) => {
+    setSyncingId(ing.id);
+    try {
+      const { error } = await supabase.functions.invoke("asaas-sync-payment", {
+        body: ing.asaas_payment_id ? { payment_id: ing.asaas_payment_id } : { ingresso_id: ing.id },
+      });
+      if (error) throw error;
+      toast({ title: "Pagamento reconciliado" });
+      await refreshIngressos(eventoId);
+      fetchEventos();
+    } catch (e: any) {
+      toast({ title: "Erro ao reconciliar", description: e.message || String(e), variant: "destructive" });
+    } finally {
+      setSyncingId(null);
+    }
+  };
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-zampieri-green"></div>
