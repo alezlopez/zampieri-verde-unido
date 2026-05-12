@@ -1,166 +1,180 @@
 ## Objetivo
 
-Substituir totalmente o webhook n8n por integração Asaas nativa em Edge Functions **e** abrir os eventos para compradores externos (não-alunos), sem quebrar nada do fluxo atual de alunos. Comprador externo pode se cadastrar pelo próprio fluxo de login com CPF; eventos passam a ter um campo de público-alvo que controla quem pode comprar.
+Tornar o cadastro de evento robusto para a Lei da Meia-Entrada (Lei 12.933/2013), garantir que **à vista** e **parcelado** funcionem corretamente no checkout Asaas, e blindar o fluxo contra falhas (validação, idempotência, cota).
 
-## Visão geral
+Decisões já travadas:
+- **Meia-entrada por declaração** + conferência do documento na portaria (Scanner QR).
+- **Cota fixa de 40%** das vagas totais reservada para meia.
+- **Categorias**: Estudante, Idoso 60+, PCD + acompanhante, Professor rede pública.
+
+---
+
+## 1. Banco de dados
+
+### Novos campos em `eventos`
+- `meia_entrada_habilitada boolean default true` — admin pode desligar para eventos institucionais (não comerciais, isentos da lei).
+- `percentual_meia integer default 40` — fica fixo em 40 mas exposto para futuro ajuste.
+- `preco_meia numeric` — valor calculado automaticamente como `preco / 2`, persistido para histórico.
+- `preco_meia_parcelado numeric` — `preco_parcelado / 2`.
+
+### Novos campos em `ingressos`
+- `tipo_ingresso text default 'inteira' check in ('inteira','meia')`.
+- `categoria_meia text` — `estudante` | `idoso` | `pcd` | `pcd_acompanhante` | `professor` (null se inteira).
+- `declaracao_meia_aceita boolean default false` + `declaracao_meia_aceita_em timestamptz` — registro legal da declaração.
+- `meia_validada_portaria boolean default false` + `meia_validada_em timestamptz` + `meia_validada_por uuid` — preenchido pelo Scanner.
+
+### Nova RPC `contar_meias_evento(p_evento_id uuid)` (SECURITY DEFINER)
+Retorna `{ vagas_total, vagas_meia_total, meias_vendidas, meias_disponiveis }`. Usada pelo frontend e pela edge function para enforcement da cota antes de gerar checkout.
 
 ```text
-┌── Login /eventos/login (CPF + senha) ──────────────────────────────┐
-│  CPF encontrado em alunos_26 → fluxo aluno (já existe)            │
-│  CPF NÃO encontrado          → oferecer "Criar conta como          │
-│                                 comprador externo" no mesmo card  │
-└────────────────────────────────────────────────────────────────────┘
-                       │
-                       ▼
-┌── /eventos (lista) ────────────────────────────────────────────────┐
-│  Filtra eventos pelo publico_alvo + tipo do usuário               │
-└────────────────────────────────────────────────────────────────────┘
-                       │
-                       ▼
-┌── /eventos/comprar/:id ────────────────────────────────────────────┐
-│  Aluno: dados vindos de alunos_26 (como hoje)                     │
-│  Externo: dados vindos de compradores_externos                    │
-│  INSERT ingressos (status=pendente)                                │
-│  → invoke("asaas-create-checkout")                                 │
-└────────────────────────────────────────────────────────────────────┘
-                       │
-                       ▼
-            Asaas (PIX / Cartão à vista e parcelado)
-                       │  webhook
-                       ▼
-┌── Edge Function asaas-webhook (público, token validado) ───────────┐
-│  Idempotente, atualiza status dos ingressos                       │
-└────────────────────────────────────────────────────────────────────┘
+vagas_meia_total = floor(vagas_total * percentual_meia / 100)
+meias_vendidas   = count(ingressos where tipo_ingresso='meia' and status in ('pendente','pago'))
 ```
 
-## 1. Banco de dados (migration única)
+### Trigger `validar_cota_meia` em `ingressos` (BEFORE INSERT)
+Se `tipo_ingresso = 'meia'`, recalcula `meias_vendidas` para o evento e bloqueia o INSERT com erro `cota_meia_esgotada` se passar de `vagas_meia_total`. Defesa de última camada — frontend e edge function também checam antes.
 
-### Nova tabela `compradores_externos`
-- `id uuid pk`, `user_id uuid` (FK lógica para auth.users, único), `cpf text unique not null`, `nome text not null`, `email text not null`, `celular text`, `data_nascimento date`, `created_at`, `updated_at`.
-- RLS: usuário lê/atualiza somente o próprio registro; admins leem tudo. Insert: usuário só insere com `auth.uid() = user_id`.
+---
 
-### `eventos` — novos campos (defaults seguros)
-- `publico_alvo text default 'alunos_e_convidados'` com check em (`apenas_alunos`, `alunos_e_convidados`, `aberto_ao_publico`).
-- Manter `tipo_evento`/`is_excursao` como estão (sem mexer).
-- Backfill: todos eventos atuais ficam com `alunos_e_convidados` → comportamento idêntico ao de hoje.
+## 2. Formulário de evento (`EventosAdmin.tsx`)
 
-### `ingressos` — novos campos
-- `asaas_customer_id text`
-- `asaas_payment_id text` + índice
-- `forma_pagamento text` (`pix` | `credit_card`)
-- `parcelas integer default 1`
-- `valor_total numeric`
-- `tipo_comprador text default 'aluno'` (`aluno` | `externo`) — não confundir com `tipo_participante`.
+Reorganizar em **5 seções colapsáveis** com validação Zod por seção. Sem mudar nada que já funciona — só reagrupando + acrescentando o bloco de meia.
 
-### Nova tabela `asaas_webhook_events` (auditoria + idempotência)
-- `event_id text unique`, `event_type text`, `payment_id text`, `payload jsonb`, `processed boolean`, `error text`, `created_at`.
-- RLS: somente admins leem; escrita só via service role na Edge Function.
+```text
+┌─ 1. Identificação ──────────────────┐
+│  Título* | Data* | Horário | Local  │
+│  Descrição | Imagem (upload)        │
+└─────────────────────────────────────┘
+┌─ 2. Vagas e público ────────────────┐
+│  Total de vagas* | Público-alvo*    │
+│  Requer autorização | É excursão    │
+└─────────────────────────────────────┘
+┌─ 3. Preço inteira ──────────────────┐
+│  Preço à vista*                     │
+│  Preço parcelado | Máx parcelas     │
+│  → Preview: "1× R$ X" e "Nx R$ Y"   │
+└─────────────────────────────────────┘
+┌─ 4. Meia-entrada (Lei 12.933) ──────┐
+│  [✓] Habilitar meia-entrada         │
+│  Cota: 40% = N de M vagas (read-only)│
+│  Preço meia à vista (auto: /2)      │
+│  Preço meia parcelado (auto: /2)    │
+│  Categorias aceitas (multi-select)  │
+│  Texto de aviso: "Documento exigido │
+│   na portaria conforme Lei 12.933"  │
+└─────────────────────────────────────┘
+┌─ 5. Compatibilidade ────────────────┐
+│  Ativo | (tipo_evento legacy oculto)│
+└─────────────────────────────────────┘
+```
 
-### Novas RPCs (SECURITY DEFINER)
-- `find_user_context_by_cpf(p_cpf)` → retorna `{ origem: 'aluno' | 'externo' | 'nenhum', email, nome }`. Usada pelo login para decidir o caminho.
-- `get_comprador_dados(p_user_id)` → retorna nome/cpf/email/celular/origem para a Edge Function montar o customer no Asaas, sem expor tabelas diretamente.
+Validações no submit:
+- `preco_parcelado >= preco` quando há parcelamento (juros embutidos OK; desigualdade impede preço parcelado abaixo do à vista por engano).
+- `max_parcelas` entre 1 e 12.
+- `vagas_total > 0`.
+- Se `meia_entrada_habilitada`, exigir ao menos 1 categoria selecionada.
+- Confirmação obrigatória antes de **diminuir** `vagas_total` em evento que já tem ingressos (refazer o cálculo de cota).
 
-## 2. Edge Functions (Supabase)
+---
 
-Todas com Zod, CORS, logs estruturados, e secrets `ASAAS_API_KEY`, `ASAAS_BASE_URL`, `ASAAS_WEBHOOK_TOKEN`.
+## 3. Tela de compra (`EventoCompra.tsx`)
 
-1. **`asaas-create-checkout`** (autenticada via `getClaims`)
-   - Input: `{ ingresso_ids, forma_pagamento, parcelas? }`.
-   - Confere ownership de todos os ingressos.
-   - Resolve dados do comprador via `get_comprador_dados` (aluno OU externo).
-   - Busca/cria customer no Asaas pelo CPF (`GET /customers?cpfCnpj=`, senão `POST /customers`).
-   - PIX: cria `payment` único (soma dos preços) e devolve QR + `invoiceUrl`.
-   - Cartão: cria `paymentLink` com `maxInstallmentCount = parcelas` (limitado por `evento.max_parcelas`).
-   - Persiste `asaas_payment_id`, `asaas_customer_id`, `checkout_url`, `checkout_id`, `forma_pagamento`, `parcelas`, `valor_total`, `tipo_comprador` em todos os ingressos da compra.
-   - **Idempotente**: se os ingressos já têm `asaas_payment_id`, devolve o checkout existente.
+### Bloco novo: "Tipo de ingresso por participante"
 
-2. **`asaas-webhook`** (público, `verify_jwt=false`)
-   - Valida header `asaas-access-token` contra `ASAAS_WEBHOOK_TOKEN`.
-   - Insere em `asaas_webhook_events` com `ON CONFLICT (event_id) DO NOTHING` → idempotência.
-   - Mapeia evento → status:
-     - `PAYMENT_CONFIRMED` / `PAYMENT_RECEIVED` → `pago`
-     - `PAYMENT_OVERDUE` → `pendente`
-     - `PAYMENT_REFUNDED` / `PAYMENT_DELETED` → `estornado`
-     - `PAYMENT_CHARGEBACK_REQUESTED` → `cancelado`
-   - `UPDATE ingressos WHERE asaas_payment_id = …` (atinge todos os ingressos da mesma cobrança).
-   - Sempre responde 200; erros vão para `asaas_webhook_events.error` e logs.
+Para cada aluno selecionado **e** cada convidado adicionado, aparece um sub-bloco:
 
-3. **`asaas-sync-payment`** (admin) — reconciliação
-   - Input `{ payment_id }` ou `{ ingresso_id }`. Consulta `GET /payments/{id}` e força update. Cobre webhooks perdidos.
+```text
+┌─ João Silva (aluno) ────────────────┐
+│  ( ) Inteira — R$ 50,00             │
+│  (•) Meia — R$ 25,00                │
+│       Categoria: [Estudante ▾]      │
+│       [✓] Declaro que apresentarei  │
+│            documento na portaria     │
+│            conforme Lei 12.933/2013  │
+│       ⚠ Sem documento = pago a       │
+│         diferença ou não entra       │
+└─────────────────────────────────────┘
+```
 
-4. **`comprador-externo-signup`** (autenticada)
-   - Input: `{ cpf, nome, email, celular, data_nascimento, password }`.
-   - Cria usuário no `auth.users` (admin API com service role) já confirmado, insere em `compradores_externos`. Retorna `{ ok: true }`. O frontend faz signIn em seguida.
-   - Garante CPF único e impede duplicar quando o CPF já existe em `alunos_26` (orienta a logar como aluno).
+Regras:
+- Botão "Comprar" desabilitado enquanto qualquer meia estiver sem categoria + declaração aceita.
+- Antes de inserir os ingressos, chamar `contar_meias_evento` e bloquear se a soma de meias do carrinho > `meias_disponiveis`. Mensagem clara: "Restam X meias para este evento. Reduza ou troque para inteira."
+- O preço total é recalculado dinamicamente: soma de inteiras × `preco`/`preco_parcelado` + soma de meias × `preco_meia`/`preco_meia_parcelado`.
+- Indicador visual da cota: "Meias disponíveis: 14 de 40".
 
-## 3. Frontend
+---
 
-### `EventosLogin.tsx`
-- Mantém o login por CPF.
-- Após digitar o CPF, se `find_user_context_by_cpf` devolver `nenhum`, mostrar bloco "Não é aluno? Crie sua conta de comprador" com formulário (nome, email, celular, data nascimento, senha) → chama `comprador-externo-signup` → faz login automático.
-- Reset de senha continua igual (já cobre auth.users em geral).
+## 4. Edge Function `asaas-create-checkout`
 
-### `Eventos.tsx` (vitrine)
-- Filtra cards por `publico_alvo`:
-  - usuário não logado → mostra todos com badge "Para quem pode comprar".
-  - logado aluno → todos os eventos.
-  - logado externo → só `aberto_ao_publico`.
-- Botão "Comprar" desabilitado com tooltip explicativo quando o público não permite.
+Mudanças:
+1. **Recalcular `valorTotal` no servidor** somando `preco_meia` para ingressos `tipo_ingresso='meia'` e `preco`/`preco_parcelado` para `inteira`. Nunca confiar no preço enviado pelo cliente.
+2. **Re-checar cota de meias** com `contar_meias_evento` antes de criar a cobrança. Se estourou (race condition entre carrinho e outro comprador), retorna 409 `cota_meia_esgotada` e o frontend orienta o usuário a trocar para inteira.
+3. **Parcelado robusto**: já existe (`installmentCount` + `totalValue`). Vou ajustar para:
+   - `installmentCount` só é enviado se `parcelas > 1` E `forma_pagamento === 'credit_card'`.
+   - PIX nunca recebe `installmentCount` (Asaas rejeita).
+   - `totalValue` é o valor total parcelado (com juros, vindo de `preco_parcelado × qtd`); `value` continua o unitário do parcelamento.
+4. **Validação Zod** do body (`ingresso_ids`, `forma_pagamento`, `parcelas` 1-12).
+5. **Logs estruturados** com `evento_id`, `qtd_inteira`, `qtd_meia`, `valor_total` para auditoria.
 
-### `EventoCompra.tsx`
-- Mantém UX e validações atuais.
-- Ramo aluno: igual a hoje.
-- Ramo externo (detectado por `tipo_comprador` resolvido no client via RPC): pula seleção de filhos/aluno, vai direto para "comprador + participantes" (todos como `convidado` por padrão; se `is_excursao`, exigir CPF/data_nascimento dos participantes como hoje).
-- **Remove o fetch para n8n** e a serialização base64 da imagem.
-- Após `INSERT` dos ingressos, chama `supabase.functions.invoke("asaas-create-checkout", { body: { ingresso_ids, forma_pagamento, parcelas } })`.
-- Em sucesso: usa `checkout_url` retornado (mantém o countdown atual).
-- Em erro: toast + botão "Tentar novamente" (chama de novo, idempotente).
+---
 
-### `EventosAdmin.tsx`
-- Novo campo "Público-alvo" no formulário de criar/editar evento (select com 3 opções).
-- Botão "Reconciliar pagamento" por ingresso pendente → chama `asaas-sync-payment`.
-- Botão "Gerar checkout" para ingressos pendentes sem `checkout_url`.
-- Lista mostra `tipo_comprador` (aluno/externo) por ingresso.
+## 5. Scanner QR (`ScannerIngressos.tsx`)
 
-### `MeusIngressos.tsx`
-- Sem mudança funcional (já consome `checkout_url` e status).
+Adicionar, ao escanear ingresso `tipo_ingresso='meia'`:
+- Badge vermelho "MEIA — exige documento".
+- Mostra `categoria_meia` ("Estudante", "Idoso 60+", etc).
+- Botão "Documento conferido — liberar entrada" → marca `meia_validada_portaria=true`, `meia_validada_em=now()`, `meia_validada_por=auth.uid()`.
+- Botão "Documento inválido — cobrar diferença" → mantém o ingresso utilizado=false e abre modal com instrução para o operador.
 
-## 4. Configuração externa (passos manuais que vou listar para você)
+Sem isso a portaria fica cega; é o que fecha o ciclo legal da declaração.
 
-- Painel Asaas → Webhooks:
-  - URL: `https://lzdhrtcugqnqmyapgmbs.supabase.co/functions/v1/asaas-webhook`
-  - Token de autenticação: mesmo valor do secret `ASAAS_WEBHOOK_TOKEN`.
-  - Eventos: `PAYMENT_CREATED`, `PAYMENT_CONFIRMED`, `PAYMENT_RECEIVED`, `PAYMENT_OVERDUE`, `PAYMENT_REFUNDED`, `PAYMENT_DELETED`, `PAYMENT_CHARGEBACK_REQUESTED`.
+---
 
-## 5. Secrets necessários (vou pedir antes de codificar as functions)
+## 6. Painel admin — relatório de meias
 
-- `ASAAS_API_KEY`
-- `ASAAS_BASE_URL` (sandbox: `https://api-sandbox.asaas.com/v3` / prod: `https://api.asaas.com/v3`)
-- `ASAAS_WEBHOOK_TOKEN` (qualquer string aleatória forte)
+Na lista de ingressos do evento (`EventosAdmin.tsx`), adicionar:
+- Coluna "Tipo" (Inteira / Meia + categoria).
+- Coluna "Validado portaria" (✓/✗) para meias.
+- Filtro "Apenas meias não validadas" — útil pós-evento para auditar.
+- Resumo no topo: "X inteiras vendidas | Y meias vendidas (Z% da cota)".
 
-## 6. Por que é "robusto, sem falhas"
+---
 
-- **Idempotência dupla**: cobrança não duplica (checa `asaas_payment_id` existente) e webhook não reprocessa (`event_id UNIQUE`).
-- **Auditoria total**: payload bruto fica em `asaas_webhook_events.payload`.
-- **Reconciliação manual** disponível no admin para qualquer caso de webhook perdido.
-- **Vagas**: trigger `atualizar_vagas_disponiveis` já trata transições — sem mexer.
-- **Compatibilidade**: defaults dos novos campos preservam comportamento atual; eventos antigos continuam funcionando.
-- **Segurança**: RLS estrita em `compradores_externos` e `asaas_webhook_events`; webhook valida token; service role só dentro de Edge Functions.
+## 7. Compatibilidade com eventos existentes
 
-## 7. Fora de escopo
+- Migration usa `DEFAULT` em todos os novos campos → eventos antigos continuam funcionando idênticos.
+- `meia_entrada_habilitada=true` por default, mas como `preco_meia` é calculado no salvar, eventos antigos só passam a oferecer meia depois que admin reabrir e salvar (ou por backfill `UPDATE eventos SET preco_meia = preco/2, preco_meia_parcelado = preco_parcelado/2 WHERE preco_meia IS NULL` que rodará na própria migration).
+- Ingressos antigos: `tipo_ingresso='inteira'` por default, sem alterar nada.
+- `tipo_evento` (legacy) continua no banco mas nunca mais é editado pelo formulário (já removido na rodada anterior).
 
-- Notificações por e-mail/WhatsApp pós-pagamento (próxima etapa, se quiser).
-- Migrar eventos existentes para outro `publico_alvo` (você muda manualmente quando quiser).
-- Apagar workflow no n8n (fica desconectado, você decide quando remover).
+---
 
-## 8. Ordem de execução
+## 8. Robustez ("100% de funcionamento")
 
-1. Migration: `compradores_externos`, novos campos em `eventos`/`ingressos`, `asaas_webhook_events`, RPCs novas, índices, RLS.
-2. Pedir os 3 secrets do Asaas.
-3. Criar Edge Functions: `asaas-create-checkout`, `asaas-webhook`, `asaas-sync-payment`, `comprador-externo-signup`.
-4. Atualizar `EventosLogin.tsx` (auto-cadastro).
-5. Atualizar `Eventos.tsx` (filtro por público).
-6. Atualizar `EventoCompra.tsx` (resolver origem + invoke da Edge Function, remover n8n).
-7. Atualizar `EventosAdmin.tsx` (campo público-alvo + botões de reconciliação).
-8. Você configura webhook no painel Asaas (vou te enviar URL e token).
-9. Teste end-to-end em sandbox: aluno PIX, aluno cartão parcelado, externo PIX, externo cartão.
+Camadas de defesa:
+1. **Frontend**: validação Zod nos formulários, botões desabilitados em estado inválido, recálculo de cota antes do submit.
+2. **Edge function**: revalidação completa (preço, cota, ownership), Zod no body, idempotência via `asaas_payment_id`.
+3. **Banco**: trigger `validar_cota_meia`, CHECK em `tipo_ingresso`, RLS já existente em `ingressos`.
+4. **Reconciliação**: botões "Reconciliar pagamento" e "Gerar checkout" no admin já existem e continuam funcionando.
+5. **Webhook Asaas**: já idempotente, sem mudança.
+
+---
+
+## 9. Ordem de execução
+
+1. Migration: novos campos em `eventos` + `ingressos`, trigger `validar_cota_meia`, RPC `contar_meias_evento`, backfill de `preco_meia`.
+2. Refatorar `EventosAdmin.tsx` em seções + bloco de meia + validação Zod.
+3. Adicionar bloco "Tipo de ingresso" em `EventoCompra.tsx` com cálculo dinâmico e bloqueio de cota.
+4. Atualizar `asaas-create-checkout` para recalcular preço, validar cota e blindar parcelado/PIX.
+5. Atualizar `ScannerIngressos.tsx` com validação de meia.
+6. Adicionar coluna "Tipo" e resumo de meias em `EventosAdmin.tsx` (lista de ingressos).
+7. Teste end-to-end: criar evento com meia → comprar 1 inteira PIX, 1 meia cartão parcelado, esgotar cota, validar na portaria.
+
+---
+
+## 10. Fora de escopo
+
+- Upload de comprovante (decidido: declaração + portaria).
+- Aprovação prévia de meia pelo admin (decidido: sem fricção).
+- Categoria "Jovem ID Jovem 15-29" (não selecionada).
+- Reembolso parcial automático (cobrança da diferença na portaria é manual).
