@@ -491,7 +491,39 @@ const EventosAdmin = () => {
 
         <h1 className="text-2xl font-bold text-zampieri-green-dark mb-6">Painel Administrativo — Eventos</h1>
 
+        {/* Resumo financeiro geral */}
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-3">
+          <Card className="border-border">
+            <CardContent className="p-4">
+              <p className="text-xs text-muted-foreground">Recebido</p>
+              <p className="text-xl font-bold text-zampieri-green-dark">{formatBRL(resumoGeral.recebido)}</p>
+            </CardContent>
+          </Card>
+          <Card className="border-border">
+            <CardContent className="p-4">
+              <p className="text-xs text-muted-foreground">Pendente</p>
+              <p className="text-xl font-bold text-zampieri-gold">{formatBRL(resumoGeral.pendente)}</p>
+            </CardContent>
+          </Card>
+          <Card className="border-border">
+            <CardContent className="p-4">
+              <p className="text-xs text-muted-foreground">Estornado</p>
+              <p className="text-xl font-bold text-zampieri-wine">{formatBRL(resumoGeral.estornado)}</p>
+            </CardContent>
+          </Card>
+          <Card className="border-border">
+            <CardContent className="p-4">
+              <p className="text-xs text-muted-foreground">Cancelado</p>
+              <p className="text-xl font-bold text-muted-foreground">{formatBRL(resumoGeral.cancelado)}</p>
+            </CardContent>
+          </Card>
+        </div>
+        <p className="text-[11px] text-muted-foreground mb-6">
+          Calculado a partir do valor de cada ingresso. Ingressos anteriores sem valor registrado não entram no total.
+        </p>
+
         {/* Form */}
+
         {showForm && (
           <Card className="mb-6 border-border">
             <CardHeader>
