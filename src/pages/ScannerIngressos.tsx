@@ -47,6 +47,7 @@ const ScannerIngressos = () => {
   const [ingresso, setIngresso] = useState<IngressoScanned | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [marking, setMarking] = useState(false);
+  const [validadores, setValidadores] = useState<Record<string, string>>({});
   const scannerRef = useRef<Html5Qrcode | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
 
