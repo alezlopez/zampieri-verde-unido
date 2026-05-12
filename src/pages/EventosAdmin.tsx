@@ -558,6 +558,67 @@ const EventosAdmin = () => {
                   Evento é excursão?
                 </label>
               </div>
+
+              {/* Meia-entrada (Lei 12.933/2013) */}
+              <div className="border-t pt-4 space-y-3">
+                <div className="flex items-center space-x-2">
+                  <Checkbox
+                    id="meia-habilitada"
+                    checked={meiaHabilitada}
+                    onCheckedChange={(checked) => setMeiaHabilitada(checked === true)}
+                  />
+                  <label htmlFor="meia-habilitada" className="text-sm font-medium cursor-pointer">
+                    Habilitar meia-entrada (Lei 12.933/2013)
+                  </label>
+                </div>
+                {meiaHabilitada && (
+                  <div className="bg-zampieri-cream/40 border border-zampieri-gold/30 rounded-md p-3 space-y-3">
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-3 text-sm">
+                      <div>
+                        <p className="text-xs text-muted-foreground">Cota legal (40%)</p>
+                        <p className="font-semibold text-zampieri-green-dark">
+                          {Math.floor((parseInt(vagasTotal) || 0) * 0.4)} de {parseInt(vagasTotal) || 0} vagas
+                        </p>
+                      </div>
+                      <div>
+                        <p className="text-xs text-muted-foreground">Meia à vista</p>
+                        <p className="font-semibold text-zampieri-green-dark">
+                          R$ {((parseFloat(preco) || 0) / 2).toFixed(2).replace(".", ",")}
+                        </p>
+                      </div>
+                      <div>
+                        <p className="text-xs text-muted-foreground">Meia parcelado total</p>
+                        <p className="font-semibold text-zampieri-green-dark">
+                          R$ {((parseFloat(precoParcelado) || 0) / 2).toFixed(2).replace(".", ",")}
+                        </p>
+                      </div>
+                    </div>
+                    <div>
+                      <p className="text-xs font-medium mb-2">Categorias aceitas:</p>
+                      <div className="flex flex-wrap gap-3">
+                        {CATEGORIAS_MEIA.map((cat) => (
+                          <label key={cat.value} className="flex items-center gap-2 text-xs cursor-pointer">
+                            <Checkbox
+                              checked={categoriasMeia.includes(cat.value)}
+                              onCheckedChange={(checked) =>
+                                setCategoriasMeia((prev) =>
+                                  checked === true
+                                    ? Array.from(new Set([...prev, cat.value]))
+                                    : prev.filter((c) => c !== cat.value)
+                                )
+                              }
+                            />
+                            {cat.label}
+                          </label>
+                        ))}
+                      </div>
+                    </div>
+                    <p className="text-[11px] text-muted-foreground italic">
+                      Documento original será exigido na portaria conforme Lei 12.933/2013.
+                    </p>
+                  </div>
+                )}
+              </div>
               <div className="flex gap-2">
                 <Button onClick={handleSave} className="bg-zampieri-green-dark hover:bg-zampieri-green text-white" disabled={uploading}>
                   {uploading ? "Salvando..." : "Salvar"}
