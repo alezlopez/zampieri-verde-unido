@@ -329,6 +329,16 @@ const EventoCompra = () => {
       }
     }
 
+    // Validar meias
+    if (meiasInvalidas) {
+      toast({ title: "Meia-entrada incompleta", description: "Selecione a categoria e aceite a declaração para todas as meias.", variant: "destructive" });
+      return;
+    }
+    if (cotaMeiaExcedida) {
+      toast({ title: "Cota de meia-entrada excedida", description: `Restam apenas ${meiaInfo?.meias_disponiveis ?? 0} meia(s) disponível(is).`, variant: "destructive" });
+      return;
+    }
+
     setSubmitting(true);
     try {
       // Re-fetch vagas disponíveis para garantir dados atualizados
@@ -351,10 +361,13 @@ const EventoCompra = () => {
         }
       }
       const records: any[] = [];
+      const nowIso = new Date().toISOString();
 
       // Alunos
       for (const codigo of alunosSelecionados) {
         const aluno = alunos.find((a) => a.codigo_aluno === codigo);
+        const m = getMeia(`aluno-${codigo}`);
+        const isMeia = m.tipo_ingresso === "meia";
         records.push({
           evento_id: evento.id,
           user_id: user.id,
@@ -364,11 +377,18 @@ const EventoCompra = () => {
           status: "pendente",
           tipo_participante: "aluno",
           nome_participante: aluno?.nome_aluno || null,
+          tipo_ingresso: isMeia ? "meia" : "inteira",
+          categoria_meia: isMeia ? m.categoria_meia : null,
+          declaracao_meia_aceita: isMeia ? m.declaracao : false,
+          declaracao_meia_aceita_em: isMeia && m.declaracao ? nowIso : null,
         });
       }
 
       // Convidados
-      for (const c of convidados) {
+      for (let i = 0; i < convidados.length; i++) {
+        const c = convidados[i];
+        const m = getMeia(`convidado-${i}`);
+        const isMeia = m.tipo_ingresso === "meia";
         records.push({
           evento_id: evento.id,
           user_id: user.id,
@@ -382,6 +402,10 @@ const EventoCompra = () => {
           data_nascimento_participante: c.data_nascimento || null,
           email_participante: c.email || null,
           celular_participante: c.celular || null,
+          tipo_ingresso: isMeia ? "meia" : "inteira",
+          categoria_meia: isMeia ? m.categoria_meia : null,
+          declaracao_meia_aceita: isMeia ? m.declaracao : false,
+          declaracao_meia_aceita_em: isMeia && m.declaracao ? nowIso : null,
         });
       }
 
