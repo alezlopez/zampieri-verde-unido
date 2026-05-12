@@ -174,7 +174,7 @@ Deno.serve(async (req) => {
       items: items.map((i) => ({ name: i.description, description: i.description, quantity: i.quantity, value: i.value })),
       successUrl,
       cancelUrl,
-      expiredUrl: cancelUrl,
+      expiredUrl,
       externalReference: ingressos.map((i: any) => i.id).join(","),
       minutesToExpire: 1440,
       maxInstallmentCount: isParcelado ? maxParcelas : undefined,
