@@ -723,7 +723,20 @@ const EventosAdmin = () => {
                       {evento.preco_parcelado > 0 && ` | Parcelado: ${evento.max_parcelas}x de R$ ${(evento.preco_parcelado / evento.max_parcelas).toFixed(2).replace(".", ",")}`}
                       {" "}— {evento.vagas_disponiveis}/{evento.vagas_total} vagas
                     </p>
+                    {(() => {
+                      const r = resumoPorEvento[evento.id];
+                      if (!r || (r.recebido + r.pendente + r.estornado + r.cancelado) === 0) return null;
+                      return (
+                        <div className="flex flex-wrap gap-x-3 gap-y-1 mt-1 text-xs">
+                          <span className="text-zampieri-green-dark font-medium">Recebido: {formatBRL(r.recebido)}</span>
+                          {r.pendente > 0 && <span className="text-zampieri-gold">Pendente: {formatBRL(r.pendente)}</span>}
+                          {r.estornado > 0 && <span className="text-zampieri-wine">Estornado: {formatBRL(r.estornado)}</span>}
+                          {r.cancelado > 0 && <span className="text-muted-foreground">Cancelado: {formatBRL(r.cancelado)}</span>}
+                        </div>
+                      );
+                    })()}
                   </div>
+
                   <div className="flex gap-2 flex-wrap">
                     <Button variant="outline" size="sm" onClick={() => fetchIngressos(evento.id)}>
                       <Users className="w-4 h-4 mr-1" />
