@@ -33,6 +33,11 @@ interface Evento {
   tipo_evento: string;
   is_excursao: boolean;
   publico_alvo: string;
+  meia_entrada_habilitada: boolean;
+  percentual_meia: number;
+  preco_meia: number;
+  preco_meia_parcelado: number;
+  categorias_meia: string[];
 }
 
 interface Ingresso {
@@ -45,7 +50,18 @@ interface Ingresso {
   tipo_comprador: string | null;
   asaas_payment_id: string | null;
   checkout_url: string | null;
+  tipo_ingresso: string | null;
+  categoria_meia: string | null;
+  meia_validada_portaria: boolean | null;
 }
+
+const CATEGORIAS_MEIA = [
+  { value: "estudante", label: "Estudante" },
+  { value: "idoso", label: "Idoso (60+)" },
+  { value: "pcd", label: "PCD" },
+  { value: "pcd_acompanhante", label: "Acompanhante de PCD" },
+  { value: "professor", label: "Professor rede pública" },
+];
 
 const EventosAdmin = () => {
   const { user, isAdmin, loading: authLoading } = useAuth();
