@@ -116,6 +116,12 @@ const EventosAdmin = () => {
   const [imagemPreview, setImagemPreview] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
 
+  // Resumo financeiro (calculado com base em valor_total + status dos ingressos)
+  type ResumoFinanceiro = { recebido: number; pendente: number; estornado: number; cancelado: number };
+  const emptyResumo = (): ResumoFinanceiro => ({ recebido: 0, pendente: 0, estornado: 0, cancelado: 0 });
+  const [resumoGeral, setResumoGeral] = useState<ResumoFinanceiro>(emptyResumo());
+  const [resumoPorEvento, setResumoPorEvento] = useState<Record<string, ResumoFinanceiro>>({});
+
   useEffect(() => {
     if (!authLoading && (!user || !isAdmin)) {
       navigate("/eventos/login");
@@ -132,9 +138,41 @@ const EventosAdmin = () => {
     setLoading(false);
   };
 
+  const fetchResumoFinanceiro = async () => {
+    const { data, error } = await supabase
+      .from("ingressos")
+      .select("evento_id, status, valor_total")
+      .not("valor_total", "is", null);
+    if (error || !data) return;
+    const geral = emptyResumo();
+    const porEvento: Record<string, ResumoFinanceiro> = {};
+    for (const row of data as any[]) {
+      const valor = Number(row.valor_total) || 0;
+      if (valor <= 0) continue;
+      const eid = row.evento_id as string;
+      if (!porEvento[eid]) porEvento[eid] = emptyResumo();
+      const bucket =
+        row.status === "pago" ? "recebido" :
+        row.status === "estornado" ? "estornado" :
+        row.status === "cancelado" ? "cancelado" :
+        row.status === "pendente" ? "pendente" : null;
+      if (!bucket) continue;
+      geral[bucket] += valor;
+      porEvento[eid][bucket] += valor;
+    }
+    setResumoGeral(geral);
+    setResumoPorEvento(porEvento);
+  };
+
   useEffect(() => {
-    if (isAdmin) fetchEventos();
+    if (isAdmin) {
+      fetchEventos();
+      fetchResumoFinanceiro();
+    }
   }, [isAdmin]);
+
+  const formatBRL = (v: number) =>
+    v.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 
   const resetForm = () => {
     setTitulo("");
@@ -453,7 +491,39 @@ const EventosAdmin = () => {
 
         <h1 className="text-2xl font-bold text-zampieri-green-dark mb-6">Painel Administrativo — Eventos</h1>
 
+        {/* Resumo financeiro geral */}
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-3">
+          <Card className="border-border">
+            <CardContent className="p-4">
+              <p className="text-xs text-muted-foreground">Recebido</p>
+              <p className="text-xl font-bold text-zampieri-green-dark">{formatBRL(resumoGeral.recebido)}</p>
+            </CardContent>
+          </Card>
+          <Card className="border-border">
+            <CardContent className="p-4">
+              <p className="text-xs text-muted-foreground">Pendente</p>
+              <p className="text-xl font-bold text-zampieri-gold">{formatBRL(resumoGeral.pendente)}</p>
+            </CardContent>
+          </Card>
+          <Card className="border-border">
+            <CardContent className="p-4">
+              <p className="text-xs text-muted-foreground">Estornado</p>
+              <p className="text-xl font-bold text-zampieri-wine">{formatBRL(resumoGeral.estornado)}</p>
+            </CardContent>
+          </Card>
+          <Card className="border-border">
+            <CardContent className="p-4">
+              <p className="text-xs text-muted-foreground">Cancelado</p>
+              <p className="text-xl font-bold text-muted-foreground">{formatBRL(resumoGeral.cancelado)}</p>
+            </CardContent>
+          </Card>
+        </div>
+        <p className="text-[11px] text-muted-foreground mb-6">
+          Calculado a partir do valor de cada ingresso. Ingressos anteriores sem valor registrado não entram no total.
+        </p>
+
         {/* Form */}
+
         {showForm && (
           <Card className="mb-6 border-border">
             <CardHeader>
@@ -653,7 +723,20 @@ const EventosAdmin = () => {
                       {evento.preco_parcelado > 0 && ` | Parcelado: ${evento.max_parcelas}x de R$ ${(evento.preco_parcelado / evento.max_parcelas).toFixed(2).replace(".", ",")}`}
                       {" "}— {evento.vagas_disponiveis}/{evento.vagas_total} vagas
                     </p>
+                    {(() => {
+                      const r = resumoPorEvento[evento.id];
+                      if (!r || (r.recebido + r.pendente + r.estornado + r.cancelado) === 0) return null;
+                      return (
+                        <div className="flex flex-wrap gap-x-3 gap-y-1 mt-1 text-xs">
+                          <span className="text-zampieri-green-dark font-medium">Recebido: {formatBRL(r.recebido)}</span>
+                          {r.pendente > 0 && <span className="text-zampieri-gold">Pendente: {formatBRL(r.pendente)}</span>}
+                          {r.estornado > 0 && <span className="text-zampieri-wine">Estornado: {formatBRL(r.estornado)}</span>}
+                          {r.cancelado > 0 && <span className="text-muted-foreground">Cancelado: {formatBRL(r.cancelado)}</span>}
+                        </div>
+                      );
+                    })()}
                   </div>
+
                   <div className="flex gap-2 flex-wrap">
                     <Button variant="outline" size="sm" onClick={() => fetchIngressos(evento.id)}>
                       <Users className="w-4 h-4 mr-1" />
