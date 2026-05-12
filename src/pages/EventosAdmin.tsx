@@ -7,7 +7,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useToast } from "@/hooks/use-toast";
-import { ArrowLeft, Plus, Pencil, Trash2, Eye, EyeOff, Users, Upload, X, ScanLine, UserPlus } from "lucide-react";
+import { ArrowLeft, Plus, Pencil, Trash2, Eye, EyeOff, Users, Upload, X, ScanLine, UserPlus, RefreshCw, Link2 } from "lucide-react";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
@@ -31,6 +32,7 @@ interface Evento {
   requer_autorizacao: boolean;
   tipo_evento: string;
   is_excursao: boolean;
+  publico_alvo: string;
 }
 
 interface Ingresso {
@@ -40,6 +42,9 @@ interface Ingresso {
   status: string;
   codigo_aluno: string | null;
   created_at: string;
+  tipo_comprador: string | null;
+  asaas_payment_id: string | null;
+  checkout_url: string | null;
 }
 
 const EventosAdmin = () => {
@@ -87,6 +92,8 @@ const EventosAdmin = () => {
   const [requerAutorizacao, setRequerAutorizacao] = useState(false);
   const [tipoEvento, setTipoEvento] = useState<"somente_alunos" | "alunos_convidados">("alunos_convidados");
   const [isExcursao, setIsExcursao] = useState(false);
+  const [publicoAlvo, setPublicoAlvo] = useState<"apenas_alunos" | "alunos_e_convidados" | "aberto_ao_publico">("alunos_e_convidados");
+  const [syncingId, setSyncingId] = useState<string | null>(null);
   const [imagemFile, setImagemFile] = useState<File | null>(null);
   const [imagemPreview, setImagemPreview] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
@@ -125,6 +132,7 @@ const EventosAdmin = () => {
     setRequerAutorizacao(false);
     setTipoEvento("alunos_convidados");
     setIsExcursao(false);
+    setPublicoAlvo("alunos_e_convidados");
     setImagemFile(null);
     setImagemPreview(null);
     setEditingId(null);
@@ -145,6 +153,7 @@ const EventosAdmin = () => {
     setRequerAutorizacao(evento.requer_autorizacao);
     setTipoEvento((evento.tipo_evento as "somente_alunos" | "alunos_convidados") || "alunos_convidados");
     setIsExcursao(evento.is_excursao || false);
+    setPublicoAlvo((evento.publico_alvo as any) || "alunos_e_convidados");
     setImagemFile(null);
     setImagemPreview(evento.imagem_url || null);
     setEditingId(evento.id);
@@ -205,6 +214,7 @@ const EventosAdmin = () => {
       requer_autorizacao: requerAutorizacao,
       tipo_evento: tipoEvento,
       is_excursao: isExcursao,
+      publico_alvo: publicoAlvo,
     };
 
     if (editingId) {
@@ -329,6 +339,44 @@ const EventosAdmin = () => {
       toast({ title: "Erro inesperado", description: err.message, variant: "destructive" });
     } finally {
       setSavingManual(false);
+    }
+  };
+
+  const refreshIngressos = async (eventoId: string) => {
+    const { data } = await supabase.from("ingressos").select("*").eq("evento_id", eventoId).order("created_at", { ascending: false });
+    if (data) setIngressos(data);
+  };
+
+  const handleGerarCheckout = async (ing: Ingresso, eventoId: string) => {
+    setSyncingId(ing.id);
+    try {
+      const { data, error } = await supabase.functions.invoke("asaas-create-checkout", {
+        body: { ingresso_ids: [ing.id], forma_pagamento: "pix", parcelas: 1 },
+      });
+      if (error) throw error;
+      toast({ title: "Checkout gerado", description: data?.checkout_url ? "Link disponível." : "Concluído." });
+      await refreshIngressos(eventoId);
+    } catch (e: any) {
+      toast({ title: "Erro ao gerar checkout", description: e.message || String(e), variant: "destructive" });
+    } finally {
+      setSyncingId(null);
+    }
+  };
+
+  const handleReconciliar = async (ing: Ingresso, eventoId: string) => {
+    setSyncingId(ing.id);
+    try {
+      const { error } = await supabase.functions.invoke("asaas-sync-payment", {
+        body: ing.asaas_payment_id ? { payment_id: ing.asaas_payment_id } : { ingresso_id: ing.id },
+      });
+      if (error) throw error;
+      toast({ title: "Pagamento reconciliado" });
+      await refreshIngressos(eventoId);
+      fetchEventos();
+    } catch (e: any) {
+      toast({ title: "Erro ao reconciliar", description: e.message || String(e), variant: "destructive" });
+    } finally {
+      setSyncingId(null);
     }
   };
 
@@ -464,6 +512,20 @@ const EventosAdmin = () => {
                     <Label htmlFor="alunos_convidados" className="cursor-pointer">Alunos + Convidados</Label>
                   </div>
               </RadioGroup>
+              </div>
+              <div>
+                <label className="text-sm font-medium mb-2 block">Público-alvo (quem pode comprar)</label>
+                <Select value={publicoAlvo} onValueChange={(v) => setPublicoAlvo(v as any)}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="apenas_alunos">Apenas alunos matriculados</SelectItem>
+                    <SelectItem value="alunos_e_convidados">Alunos e convidados (padrão)</SelectItem>
+                    <SelectItem value="aberto_ao_publico">Aberto ao público (inclui não-alunos)</SelectItem>
+                  </SelectContent>
+                </Select>
+                <p className="text-xs text-muted-foreground mt-1">
+                  "Aberto ao público" permite que compradores externos (sem matrícula) comprem ingressos.
+                </p>
               </div>
               <div className="flex items-center space-x-2">
                 <Checkbox
@@ -626,19 +688,43 @@ const EventosAdmin = () => {
                     ) : (
                       <div className="space-y-2">
                         {ingressos.map((ing) => (
-                          <div key={ing.id} className="flex justify-between items-center text-sm bg-muted/50 rounded p-2">
-                            <div>
+                          <div key={ing.id} className="flex flex-col md:flex-row md:justify-between md:items-center gap-2 text-sm bg-muted/50 rounded p-2">
+                            <div className="flex-1">
                               <span className="font-medium">{ing.nome_comprador}</span>
                               {ing.codigo_aluno && <span className="text-muted-foreground ml-2">Aluno: {ing.codigo_aluno}</span>}
                               <span className="text-muted-foreground ml-2">Qtd: {ing.quantidade}</span>
+                              {ing.tipo_comprador && (
+                                <Badge variant="outline" className="ml-2 text-[10px]">
+                                  {ing.tipo_comprador === "externo" ? "Externo" : "Aluno"}
+                                </Badge>
+                              )}
                             </div>
-                            <Badge className={
-                              ing.status === "pago" ? "bg-zampieri-green/15 text-zampieri-green-dark border border-zampieri-green/40" :
-                              ing.status === "cancelado" ? "bg-red-100 text-red-800" :
-                              "bg-yellow-100 text-yellow-800"
-                            }>
-                              {ing.status}
-                            </Badge>
+                            <div className="flex items-center gap-2 flex-wrap">
+                              {ing.status === "pendente" && !ing.checkout_url && (
+                                <Button size="sm" variant="outline" disabled={syncingId === ing.id}
+                                  onClick={() => handleGerarCheckout(ing, evento.id)}>
+                                  <Link2 className="w-3 h-3 mr-1" /> Gerar checkout
+                                </Button>
+                              )}
+                              {ing.status === "pendente" && ing.asaas_payment_id && (
+                                <Button size="sm" variant="outline" disabled={syncingId === ing.id}
+                                  onClick={() => handleReconciliar(ing, evento.id)}>
+                                  <RefreshCw className={`w-3 h-3 mr-1 ${syncingId === ing.id ? "animate-spin" : ""}`} /> Reconciliar
+                                </Button>
+                              )}
+                              {ing.checkout_url && (
+                                <a href={ing.checkout_url} target="_blank" rel="noreferrer" className="text-xs underline text-zampieri-green-dark">
+                                  Link
+                                </a>
+                              )}
+                              <Badge className={
+                                ing.status === "pago" ? "bg-zampieri-green/15 text-zampieri-green-dark border border-zampieri-green/40" :
+                                ing.status === "cancelado" ? "bg-red-100 text-red-800" :
+                                "bg-yellow-100 text-yellow-800"
+                              }>
+                                {ing.status}
+                              </Badge>
+                            </div>
                           </div>
                         ))}
                       </div>
