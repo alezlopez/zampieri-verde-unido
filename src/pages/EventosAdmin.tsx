@@ -132,6 +132,7 @@ const EventosAdmin = () => {
     setRequerAutorizacao(false);
     setTipoEvento("alunos_convidados");
     setIsExcursao(false);
+    setPublicoAlvo("alunos_e_convidados");
     setImagemFile(null);
     setImagemPreview(null);
     setEditingId(null);
