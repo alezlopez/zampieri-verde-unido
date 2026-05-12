@@ -34,6 +34,7 @@ interface Evento {
   preco_meia?: number;
   preco_meia_parcelado?: number;
   categorias_meia?: string[];
+  aluno_cortesia?: boolean;
 }
 
 interface Aluno {
@@ -287,19 +288,22 @@ const EventoCompra = () => {
   }, [tipoComprador, alunos.length, loadingAlunos, comprarParaSiTouched]);
 
   const totalParticipantes = (comprarParaSi ? 1 : 0) + alunosSelecionados.length + convidados.length;
+  const alunoCortesia = !!evento?.aluno_cortesia;
+  const qtdAlunosCortesia = alunoCortesia ? alunosSelecionados.length : 0;
 
   const temParcelamento = evento ? evento.preco_parcelado > 0 && evento.max_parcelas > 1 : false;
   const meiaHabilitada = !!evento?.meia_entrada_habilitada && Number(evento?.preco_meia ?? 0) > 0;
 
-  // Identificadores de cada participante (para meia config)
+  // Identificadores de cada participante (para meia config) — alunos cortesia não entram em meia
   const participantKeys: string[] = [
     ...(comprarParaSi ? ["comprador-self"] : []),
-    ...alunosSelecionados.map((c) => `aluno-${c}`),
+    ...(alunoCortesia ? [] : alunosSelecionados.map((c) => `aluno-${c}`)),
     ...convidados.map((_, i) => `convidado-${i}`),
   ];
 
   const qtdMeias = participantKeys.filter((k) => getMeia(k).tipo_ingresso === "meia").length;
-  const qtdInteiras = totalParticipantes - qtdMeias;
+  const qtdParticipantesPagantes = totalParticipantes - qtdAlunosCortesia;
+  const qtdInteiras = qtdParticipantesPagantes - qtdMeias;
 
   const precoInteiraUnit = formaPagamento === "parcelado" && temParcelamento && evento
     ? evento.preco_parcelado
@@ -460,24 +464,28 @@ const EventoCompra = () => {
       }
 
       // Alunos
+      const alunoCortesia = !!evento.aluno_cortesia;
       for (const codigo of alunosSelecionados) {
         const aluno = alunos.find((a) => a.codigo_aluno === codigo);
         const m = getMeia(`aluno-${codigo}`);
-        const isMeia = m.tipo_ingresso === "meia";
+        const isMeia = !alunoCortesia && m.tipo_ingresso === "meia";
         records.push({
           evento_id: evento.id,
           user_id: user.id,
           nome_comprador: nomeComprador.trim(),
           codigo_aluno: codigo,
           quantidade: 1,
-          status: "pendente",
+          status: alunoCortesia ? "pago" : "pendente",
+          cortesia: alunoCortesia,
           tipo_participante: "aluno",
           nome_participante: aluno?.nome_aluno || null,
           tipo_ingresso: isMeia ? "meia" : "inteira",
           categoria_meia: isMeia ? m.categoria_meia : null,
           declaracao_meia_aceita: isMeia ? m.declaracao : false,
           declaracao_meia_aceita_em: isMeia && m.declaracao ? nowIso : null,
-          valor_total: valorPara(isMeia),
+          valor_total: alunoCortesia ? 0 : valorPara(isMeia),
+          forma_pagamento: alunoCortesia ? null : undefined,
+          parcelas: 1,
         });
       }
 
@@ -507,17 +515,30 @@ const EventoCompra = () => {
         });
       }
 
-      const { data: insertedData, error } = await supabase.from("ingressos").insert(records).select("id");
+      const { data: insertedData, error } = await supabase.from("ingressos").insert(records).select("id, cortesia");
       if (error) throw error;
 
-      const insertedIds = (insertedData?.map((r: any) => r.id) || []) as string[];
+      const payableIds = (insertedData || [])
+        .filter((r: any) => r.cortesia !== true)
+        .map((r: any) => r.id) as string[];
 
-      // Asaas: cria/recupera cobrança
+      // Se não há nada a cobrar (todos cortesia), pular checkout
+      if (payableIds.length === 0) {
+        toast({
+          title: "Ingresso(s) de cortesia emitido(s)!",
+          description: "Sem cobrança. Acesse 'Meus Ingressos' para visualizar.",
+        });
+        setTotalIngressosReservados(records.length);
+        setRedirectCountdown(5);
+        return;
+      }
+
+      // Asaas: cria/recupera cobrança apenas para os ingressos pagos
       const formaAsaas = formaPagamento === "parcelado" ? "credit_card" : "pix";
       const parcelas = formaPagamento === "parcelado" ? evento.max_parcelas : 1;
       const { data: checkoutData, error: checkoutErr } = await supabase.functions.invoke(
         "asaas-create-checkout",
-        { body: { ingresso_ids: insertedIds, forma_pagamento: formaAsaas, parcelas } }
+        { body: { ingresso_ids: payableIds, forma_pagamento: formaAsaas, parcelas } }
       );
 
       if (checkoutErr || (checkoutData as any)?.error) {
@@ -720,7 +741,14 @@ const EventoCompra = () => {
                     </p>
                   ) : (
                     <>
-                      <p className="text-xs font-medium text-muted-foreground mb-2">Alunos vinculados ao seu CPF</p>
+                      <p className="text-xs font-medium text-muted-foreground mb-2">
+                        Alunos vinculados ao seu CPF
+                        {alunoCortesia && (
+                          <span className="ml-2 inline-block px-2 py-0.5 rounded-full text-[10px] font-bold bg-zampieri-gold/20 text-zampieri-green-dark border border-zampieri-gold/40">
+                            CORTESIA — não paga
+                          </span>
+                        )}
+                      </p>
                       <div className="space-y-2">
                         {alunos.map((aluno) => {
                           const jaTemIngresso = alunosComIngresso.includes(aluno.codigo_aluno);

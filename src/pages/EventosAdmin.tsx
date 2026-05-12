@@ -38,6 +38,7 @@ interface Evento {
   preco_meia: number;
   preco_meia_parcelado: number;
   categorias_meia: string[];
+  aluno_cortesia: boolean;
 }
 
 interface Ingresso {
@@ -111,6 +112,7 @@ const EventosAdmin = () => {
   const [publicoAlvo, setPublicoAlvo] = useState<"apenas_alunos" | "alunos_e_convidados" | "aberto_ao_publico">("alunos_e_convidados");
   const [meiaHabilitada, setMeiaHabilitada] = useState(true);
   const [categoriasMeia, setCategoriasMeia] = useState<string[]>(["estudante", "idoso", "pcd", "pcd_acompanhante", "professor"]);
+  const [alunoCortesia, setAlunoCortesia] = useState(false);
   const [syncingId, setSyncingId] = useState<string | null>(null);
   const [imagemFile, setImagemFile] = useState<File | null>(null);
   const [imagemPreview, setImagemPreview] = useState<string | null>(null);
@@ -141,12 +143,13 @@ const EventosAdmin = () => {
   const fetchResumoFinanceiro = async () => {
     const { data, error } = await supabase
       .from("ingressos")
-      .select("evento_id, status, valor_total")
+      .select("evento_id, status, valor_total, cortesia")
       .not("valor_total", "is", null);
     if (error || !data) return;
     const geral = emptyResumo();
     const porEvento: Record<string, ResumoFinanceiro> = {};
     for (const row of data as any[]) {
+      if (row.cortesia === true) continue; // cortesias não somam
       const valor = Number(row.valor_total) || 0;
       if (valor <= 0) continue;
       const eid = row.evento_id as string;
@@ -190,6 +193,7 @@ const EventosAdmin = () => {
     setPublicoAlvo("alunos_e_convidados");
     setMeiaHabilitada(true);
     setCategoriasMeia(["estudante", "idoso", "pcd", "pcd_acompanhante", "professor"]);
+    setAlunoCortesia(false);
     setImagemFile(null);
     setImagemPreview(null);
     setEditingId(null);
@@ -216,6 +220,7 @@ const EventosAdmin = () => {
         ? evento.categorias_meia
         : ["estudante", "idoso", "pcd", "pcd_acompanhante", "professor"]
     );
+    setAlunoCortesia(!!(evento as any).aluno_cortesia);
     setImagemFile(null);
     setImagemPreview(evento.imagem_url || null);
     setEditingId(evento.id);
@@ -291,6 +296,7 @@ const EventosAdmin = () => {
       preco_meia: precoMeia,
       preco_meia_parcelado: precoMeiaParcelado,
       categorias_meia: categoriasMeia,
+      aluno_cortesia: alunoCortesia,
     };
     if (payload.vagas_disponiveis === undefined) delete (payload as any).vagas_disponiveis;
 
@@ -619,6 +625,23 @@ const EventosAdmin = () => {
                   "Aberto ao público" permite que compradores externos (sem matrícula) comprem ingressos.
                 </p>
               </div>
+              {publicoAlvo !== "aberto_ao_publico" && (
+                <div className="flex items-start space-x-2 rounded-md border border-zampieri-green/30 bg-zampieri-cream/30 p-3">
+                  <Checkbox
+                    id="aluno-cortesia"
+                    checked={alunoCortesia}
+                    onCheckedChange={(checked) => setAlunoCortesia(checked === true)}
+                  />
+                  <div className="flex-1">
+                    <label htmlFor="aluno-cortesia" className="text-sm font-medium cursor-pointer text-zampieri-green-dark">
+                      Aluno é cortesia (não paga)
+                    </label>
+                    <p className="text-xs text-muted-foreground">
+                      Quando marcado, o ingresso do aluno é emitido automaticamente como pago, sem entrar no checkout. Convidados continuam pagando normalmente.
+                    </p>
+                  </div>
+                </div>
+              )}
               <div className="flex items-center space-x-2">
                 <Checkbox
                   id="is-excursao"

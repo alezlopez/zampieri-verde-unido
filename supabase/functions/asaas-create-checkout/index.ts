@@ -49,10 +49,13 @@ Deno.serve(async (req) => {
     const parcelasReq = Math.max(1, Math.min(Number(body.parcelas) || 1, 12));
 
     // Carrega ingressos + evento (inclui preços de meia)
-    const { data: ingressos, error: ingErr } = await admin
+    const { data: ingressosRaw, error: ingErr } = await admin
       .from("ingressos")
-      .select("id, user_id, evento_id, asaas_payment_id, checkout_url, status, tipo_ingresso, nome_participante, eventos:evento_id(id,titulo,preco,preco_parcelado,max_parcelas,preco_meia,preco_meia_parcelado)")
+      .select("id, user_id, evento_id, asaas_payment_id, checkout_url, status, tipo_ingresso, nome_participante, cortesia, eventos:evento_id(id,titulo,preco,preco_parcelado,max_parcelas,preco_meia,preco_meia_parcelado)")
       .in("id", body.ingresso_ids);
+
+    // Defesa: ignora ingressos cortesia ou já pagos
+    const ingressos = (ingressosRaw || []).filter((i: any) => i.cortesia !== true && i.status !== "pago");
 
     if (ingErr || !ingressos || ingressos.length === 0) {
       return new Response(JSON.stringify({ error: "Ingressos não encontrados" }), {
@@ -194,7 +197,7 @@ Deno.serve(async (req) => {
         valor_total: valorTotal,
         tipo_comprador: comprador.origem === "externo" ? "externo" : "aluno",
       })
-      .in("id", body.ingresso_ids);
+      .in("id", ingressos.map((i: any) => i.id));
 
     return new Response(
       JSON.stringify({ checkout_url: checkoutUrl, checkout_id: checkoutId, reused: false, valor_total: valorTotal }),

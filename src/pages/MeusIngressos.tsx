@@ -18,6 +18,7 @@ interface IngressoComEvento {
   tipo_participante: string;
   checkout_url: string | null;
   comprovante_estorno_url: string | null;
+  cortesia: boolean | null;
   created_at: string;
   eventos: { titulo: string; data_evento: string; horario: string | null; local: string | null } | null;
 }
@@ -44,7 +45,7 @@ const MeusIngressos = () => {
       if (!user) return;
       const { data } = await supabase
         .from("ingressos")
-        .select("id, quantidade, status, nome_comprador, nome_participante, tipo_participante, checkout_url, comprovante_estorno_url, created_at, eventos(titulo, data_evento, horario, local)")
+        .select("id, quantidade, status, nome_comprador, nome_participante, tipo_participante, checkout_url, comprovante_estorno_url, cortesia, created_at, eventos(titulo, data_evento, horario, local)")
         .eq("user_id", user.id)
         .order("created_at", { ascending: false });
 
@@ -121,7 +122,7 @@ const MeusIngressos = () => {
                         </p>
                       </div>
                       <Badge className={`border ${statusStyles[ingresso.status] || ""} capitalize`}>
-                        {ingresso.status}
+                        {ingresso.cortesia ? "Cortesia" : ingresso.status}
                       </Badge>
                     </div>
                     {ingresso.status === "pago" && (
