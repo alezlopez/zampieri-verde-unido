@@ -76,6 +76,24 @@ Deno.serve(async (req) => {
         .eq("asaas_payment_id", paymentId);
     }
 
+    // Recalcula financeiro (bruto/líquido/taxa)
+    try {
+      const { data: ing } = await admin
+        .from("ingressos")
+        .select("id, checkout_id")
+        .eq("asaas_payment_id", paymentId)
+        .limit(1)
+        .maybeSingle();
+      const externalRef: string = payment.externalReference || (ing ? ing.id : "");
+      await recomputeIngressosFinancials(admin, {
+        checkoutId: ing?.checkout_id || null,
+        paymentId,
+        externalRef,
+      });
+    } catch (e) {
+      console.error("[asaas-sync-payment] recomputeFinancials falhou", e);
+    }
+
     return new Response(JSON.stringify({ ok: true, asaas_status: payment.status, mapped: newStatus }), {
       status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
