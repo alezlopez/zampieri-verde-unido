@@ -139,6 +139,27 @@ const Eventos = () => {
         </div>
       </div>
 
+      {/* Banner produtos avulsos */}
+      {hasProdutos && (
+        <div className="container mx-auto px-4 pt-6">
+          <Link
+            to="/produtos"
+            className="block rounded-lg border border-zampieri-gold/40 bg-gradient-to-r from-zampieri-cream to-zampieri-cream/40 p-4 hover:shadow-md transition-shadow"
+          >
+            <div className="flex items-center gap-3">
+              <div className="shrink-0 w-10 h-10 rounded-full bg-zampieri-gold/20 flex items-center justify-center">
+                <Package className="w-5 h-5 text-zampieri-green-dark" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="font-serif font-bold text-zampieri-green-dark">Confira nossos produtos avulsos</p>
+                <p className="text-sm text-muted-foreground">Cartelas de bingo, kits e muito mais — direto no seu carrinho.</p>
+              </div>
+              <ArrowRight className="w-5 h-5 text-zampieri-green-dark" />
+            </div>
+          </Link>
+        </div>
+      )}
+
       {/* Events list */}
       <div className="container mx-auto px-4 py-10 flex-1">
         {loading ? (
