@@ -215,7 +215,7 @@ const EventosAdmin = () => {
     setShowForm(false);
   };
 
-  const handleEdit = (evento: Evento) => {
+  const handleEdit = async (evento: Evento) => {
     setTitulo(evento.titulo);
     setDescricao(evento.descricao || "");
     setDataEvento(evento.data_evento);
@@ -239,6 +239,12 @@ const EventosAdmin = () => {
     setImagemFile(null);
     setImagemPreview(evento.imagem_url || null);
     setEditingId(evento.id);
+    // Carregar produtos vinculados
+    const { data: vinc } = await supabase
+      .from("evento_produtos")
+      .select("produto_id")
+      .eq("evento_id", evento.id);
+    setProdutosVinculados((vinc || []).map((v: any) => v.produto_id));
     setShowForm(true);
   };
 
