@@ -1,6 +1,7 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
 import { corsHeaders } from "../_shared/cors.ts";
 import { recomputeIngressosFinancials, resolveIngressosFromAsaas } from "../_shared/financeiro.ts";
+import { getCheckout, listPayments } from "../_shared/asaas.ts";
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
