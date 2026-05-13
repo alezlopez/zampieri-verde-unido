@@ -96,6 +96,35 @@ Deno.serve(async (req) => {
           stableId = resolvedInstallmentId || resolvedPaymentId || "";
         }
 
+        // Fallback: consulta a API do Asaas pelo checkoutId
+        if (!stableId) {
+          try {
+            const ck = await getCheckout(checkoutId);
+            // Tenta extrair payment/installment do retorno do checkout
+            const ckPaymentId = ck?.payment?.id || ck?.payment || null;
+            const ckInstallmentId = ck?.installment?.id || ck?.installment || null;
+            if (ckInstallmentId) {
+              resolvedInstallmentId = ckInstallmentId;
+              stableId = ckInstallmentId;
+            } else if (ckPaymentId) {
+              resolvedPaymentId = ckPaymentId;
+              stableId = ckPaymentId;
+            } else {
+              // Última tentativa: lista pagamentos filtrando por checkoutSession
+              const lp = await listPayments({ "checkout[in]": checkoutId, limit: 100 } as any).catch(() => null)
+                || await listPayments({ checkoutSession: checkoutId, limit: 100 } as any).catch(() => null);
+              const pays = lp?.data || [];
+              if (pays.length > 0) {
+                const inst = pays.find((p: any) => p.installment)?.installment || null;
+                if (inst) { resolvedInstallmentId = inst; stableId = inst; }
+                else { resolvedPaymentId = pays[0].id; stableId = pays[0].id; }
+              }
+            }
+          } catch (e) {
+            console.warn("[backfill] fallback Asaas falhou para", checkoutId, (e as Error).message);
+          }
+        }
+
         const isInstallment = !!resolvedInstallmentId || (stableId && !stableId.startsWith("pay_"));
         const isPayment = !resolvedInstallmentId && stableId && stableId.startsWith("pay_");
 
