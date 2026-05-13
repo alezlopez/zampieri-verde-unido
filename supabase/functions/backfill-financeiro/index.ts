@@ -115,8 +115,11 @@ Deno.serve(async (req) => {
           } catch (e) {
             console.warn("[backfill] getCheckout falhou", checkoutId, (e as Error).message);
           }
-          // 2) Lista pagamentos via filtros conhecidos do Asaas
+          // 2) Lista pagamentos do Asaas e VALIDA via externalReference que pertencem a esses ingressos.
+          //    Sem essa validação, filtros desconhecidos pelo Asaas eram ignorados e retornavam pagamentos
+          //    aleatórios — gerando contaminação cruzada (mesmo asaas_payment_id em vários checkouts).
           if (!stableId) {
+            const ingressoIdSet = new Set(g.ids);
             const filtros: Record<string, any>[] = [
               { checkoutSession: checkoutId },
               { "checkout[in]": checkoutId },
@@ -126,10 +129,15 @@ Deno.serve(async (req) => {
               try {
                 const lp = await listPayments({ ...f, limit: 100 } as any);
                 const pays = lp?.data || [];
-                if (pays.length > 0) {
-                  const inst = pays.find((p: any) => p.installment)?.installment || null;
+                // Mantém só pagamentos cujo externalReference contém ao menos um dos ingressos do grupo
+                const validos = pays.filter((p: any) => {
+                  const refs = String(p.externalReference || "").split(",").map((s) => s.trim()).filter(Boolean);
+                  return refs.some((r) => ingressoIdSet.has(r));
+                });
+                if (validos.length > 0) {
+                  const inst = validos.find((p: any) => p.installment)?.installment || null;
                   if (inst) { resolvedInstallmentId = inst; stableId = inst; }
-                  else { resolvedPaymentId = pays[0].id; stableId = pays[0].id; }
+                  else { resolvedPaymentId = validos[0].id; stableId = validos[0].id; }
                   break;
                 }
               } catch (e) {
