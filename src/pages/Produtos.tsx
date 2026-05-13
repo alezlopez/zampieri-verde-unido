@@ -151,7 +151,7 @@ const Produtos = () => {
                     {p.imagem_url && <img src={p.imagem_url} alt={p.nome} className="w-24 h-24 object-cover rounded" />}
                     <div className="flex-1">
                       <h3 className="font-serif font-bold text-lg text-zampieri-green-dark">{p.nome}</h3>
-                      {p.descricao && <p className="text-sm text-muted-foreground">{p.descricao}</p>}
+                      {p.descricao && <p className="text-sm text-muted-foreground whitespace-pre-line">{p.descricao}</p>}
                     </div>
                   </div>
                   <div className="mt-3 space-y-2">
