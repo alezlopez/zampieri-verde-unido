@@ -1,97 +1,103 @@
 ## Objetivo
 
-Adicionar venda de **produtos com variações** (ex.: cartelas de bingo) que podem ser:
-- comprados como **add-on** dentro do checkout de um evento, ou
-- comprados **avulsos** (sem ingresso de evento).
+Aumentar a conversão e a clareza no fluxo de vendas (eventos + produtos) com **navegação unificada**, **upsell pós-compra** e **área única "Minhas compras"** — sem alterar nenhuma regra de negócio, edge function, RLS, schema ou cálculo financeiro existentes.
 
-Cada item gera **1 QR de retirada por linha de pedido** (ex.: 5 cartelas = 1 QR com quantidade 5), validado na portaria de forma análoga à validação de meia-entrada de ingresso.
-
-Sem alterar o fluxo atual de eventos/ingressos.
+Mudanças puramente de **frontend + navegação + 1 página de sucesso**.
 
 ---
 
-## Arquitetura
+## 1. Menu unificado no header
 
-### Banco (novas tabelas)
+`EventosHeader` ganha um menu de navegação com as 4 áreas do sistema (visível para usuário logado):
 
 ```text
-produtos
-  id, nome, descricao, imagem_url, ativo,
-  estoque_controlado (bool), estoque_total (int|null),
-  is_global (bool)        -- aparece em catálogo avulso
-  created_at, updated_at
-
-produto_variacoes
-  id, produto_id, nome (ex: "Cartela simples"),
-  preco, preco_parcelado, max_parcelas,
-  estoque_total (int|null),     -- opcional por variação
-  ativo
-
-evento_produtos              -- vincula produto a um evento (opcional)
-  id, evento_id, produto_id, ordem, ativo
-  unique (evento_id, produto_id)
-
-pedidos_produtos             -- 1 linha por variação no carrinho
-  id, user_id, evento_id (nullable), produto_id, variacao_id,
-  nome_comprador, cpf_comprador,
-  quantidade, valor_unitario, valor_total,
-  status ('pendente'|'pago'|'cancelado'|'estornado'|'retirado'),
-  forma_pagamento, parcelas,
-  asaas_payment_id, asaas_customer_id,
-  checkout_id, checkout_url,
-  valor_bruto, valor_liquido, taxa_total,
-  data_pagamento, data_credito,
-  retirado_em, retirado_por,
-  qr_token (uuid único, usado no QR),
-  created_at
+[Eventos]  [Produtos]  [Meus ingressos]  [Meus comprovantes]
 ```
 
-Triggers:
-- `validar_estoque_pedido_produto` — se `estoque_controlado`, conta `pedidos_produtos` com status `pendente|pago|retirado` e bloqueia excedente (mesma lógica de cota de meia).
-- RPC `contar_estoque_produto(produto_id, variacao_id)` para frontend.
+- Mobile: drawer/menu hambúrguer.
+- Item ativo destacado pela rota atual.
+- Não-logado: vê apenas Eventos / Produtos + botão Entrar.
+- Admin continua com botão "Painel Admin" do lado.
 
-RLS:
-- `produtos` / `produto_variacoes` / `evento_produtos`: SELECT público em `ativo=true`; ALL para admin.
-- `pedidos_produtos`: SELECT/INSERT do próprio usuário; admin tudo.
+Aplicado em: `Eventos`, `Produtos`, `EventoDetalhe`, `MeusIngressos`, `ComprovanteProduto` e a nova "Minhas compras".
 
-### Edge functions (novas/alteradas)
+---
 
-**Novas**
-- `produtos-create-checkout` — recebe `{ itens: [{variacao_id, qtd}], evento_id?, forma_pagamento, parcelas? }`, valida estoque, cria pedidos pendentes, monta `items` Asaas (1 item por variação) e cria checkout. Reaproveita `_shared/asaas.ts` (sem mudanças).
+## 2. Tela "Minhas compras" unificada
 
-**Alteradas**
-- `asaas-create-checkout` (ingressos): aceita parâmetro opcional `produto_itens` para incluir add-ons no **mesmo** checkout. Cria registros em `pedidos_produtos` e adiciona items Asaas. `externalReference` passa a ser `"ing:id1,id2|prod:p1,p2"` (parser atualizado).
-- `_shared/financeiro.ts`: parser do `externalReference` reconhece prefixos `ing:` e `prod:` e roteia o rateio bruto/líquido entre as duas tabelas (proporcional ao `valor_total`). Sem prefixo = comportamento antigo (compat).
-- `asaas-webhook`: ao confirmar pagamento, marca `pedidos_produtos.status='pago'` além dos ingressos.
+Nova rota `/eventos/minhas-compras` (mantém `/eventos/meus-ingressos` como alias para não quebrar links antigos) com 2 abas:
 
-### Frontend
+- **Ingressos** — conteúdo atual de `MeusIngressos`.
+- **Comprovantes (produtos)** — lista de `pedidos_produtos` do usuário, com:
+  - Nome do produto + variação, qtd, valor.
+  - Status colorido (pendente / pago / retirado / cancelado / estornado).
+  - Botão "Ver comprovante" (→ `/comprovante/:qr_token`) quando `pago`.
+  - Botão "Pagar" (abre `checkout_url`) quando `pendente`.
+  - Selo "Retirado" quando `status='retirado'`, com data/hora.
 
-- **Admin** (`EventosAdmin.tsx` ou nova `/eventos/admin/produtos`):
-  - CRUD de `produtos` + `produto_variacoes`.
-  - No editor de evento: aba "Produtos extras" para anexar produtos via `evento_produtos`.
-- **EventoCompra.tsx**: nova seção "Produtos extras" lista produtos vinculados ao evento. Cliente escolhe variação + qtd. Total atualiza junto com ingressos. Bloco isolado, sem alterar lógica de participantes.
-- **Nova página `/eventos/:id/produtos`** (e `/produtos` para catálogo global): permite comprar só produtos.
-- **MeusIngressos**: nova aba "Meus comprovantes" listando `pedidos_produtos` com QR (link para `/comprovante/:qr_token`).
-- **Nova página `/comprovante/:qr_token`**: mostra QR + dados (compatível com `ScannerIngressos`).
-- **ScannerIngressos**: detecta tokens de produto (prefixo `prod_` no payload do QR) e marca `retirado_em` via RPC `marcar_produto_retirado`.
+Sem nenhuma alteração nas tabelas — apenas SELECT do que já existe.
+
+---
+
+## 3. Upsell pós-checkout (a peça-chave)
+
+Hoje, após criar o checkout, o cliente é jogado direto pro Asaas. Após pagar (ou cancelar), a `successUrl` aponta direto pra `/eventos/meus-ingressos`. Vamos inserir uma **tela intermediária de sucesso** com upsell.
+
+### Fluxo novo
+
+1. Cliente conclui pagamento no Asaas.
+2. Asaas redireciona para **`/eventos/sucesso?ref=<checkout_id>&tipo=ingresso|produto`** (nova rota).
+3. Página "sucesso" mostra:
+   - Confirmação visual (✓ "Pagamento recebido — em até 5 min seu ingresso/comprovante estará liberado em Minhas compras").
+   - Resumo do pedido (busca pelos próprios checkout_id em `ingressos` ou `pedidos_produtos`).
+   - **Bloco "Você também pode gostar"** — produtos vinculados ao mesmo `evento_id` (via `evento_produtos`) que ainda não estão no pedido; se for compra avulsa de produto, mostra outros produtos `is_global=true`.
+   - CTAs: **"Adicionar ao meu pedido"** (abre `/eventos/:id/produtos` ou `/produtos` já com o produto sugerido pré-selecionado via querystring) e **"Ir para Minhas compras"**.
+
+### Onde mexer
+
+- Edge functions `asaas-create-checkout` e `produtos-create-checkout`: trocar `successUrl` para a nova rota `/eventos/sucesso?...` (mesma URL, nada muda no cálculo). É a **única mudança de backend**, e é apenas o destino da `successUrl`.
+- Nova página `src/pages/CompraSucesso.tsx`.
+
+Sem mudar webhook, RLS, schema, valores ou external references.
+
+---
+
+## 4. Cross-promo no detalhe do evento
+
+Em `EventoDetalhe.tsx`, abaixo do bloco de compra/CTAs, adicionar **"Produtos extras deste evento"**: cards horizontais dos produtos em `evento_produtos` daquele evento, com botão "Comprar à parte" → `/eventos/:id/produtos`.
+
+Se o evento não tiver produtos vinculados, o bloco simplesmente não aparece (zero impacto).
+
+---
+
+## 5. Entrada de "Produtos" a partir de `/eventos`
+
+Banner enxuto entre o hero e a grid de eventos: "🎁 Confira também nossos produtos avulsos" → link `/produtos`. Só renderiza se houver pelo menos 1 produto `is_global=true`.
+
+---
+
+## 6. Refinamentos visuais menores
+
+- `MeusIngressos`: status com ícone (✓ pago, ⏳ pendente, 🚫 cancelado).
+- Card de ingresso pago ganha mini-preview do QR (já há `IngressoDetalhe`).
+- `Produtos`: badges "Mais vendido" / "Estoque baixo" quando `disponivel < 10` (usa RPC já existente `contar_estoque_produto`).
+- Toast de sucesso após adicionar ao carrinho.
 
 ---
 
 ## Garantias de não-regressão
 
-- Nenhum schema existente alterado (apenas adições).
-- Fluxos atuais sem `produto_itens` continuam idênticos.
-- `externalReference` sem prefixo trata como ingresso (legado).
-- Tabela `ingressos` intocada — produtos vivem em `pedidos_produtos`.
-- Admin/relatórios financeiros: relatório atual segue funcionando; em passo futuro pode somar `pedidos_produtos`.
+- Nenhuma mudança em: schema, RLS, triggers, webhook, cálculo de líquido, formato de `externalReference`, fluxo de checkout do Asaas, autenticação/CPF.
+- `successUrl` apenas troca de destino — quem já paga e cai em `/eventos/meus-ingressos` continua funcionando (a nova `/eventos/sucesso` redireciona pra lá depois).
+- Rotas atuais permanecem (`/eventos/meus-ingressos`, `/comprovante/:token`, `/produtos`, `/eventos/:id/produtos`).
+- Scanner da portaria continua igual (já lê tanto ingresso quanto produto).
 
 ---
 
 ## Entregas em ordem
 
-1. Migration: tabelas + RLS + triggers de estoque.
-2. Edge function `produtos-create-checkout` + alteração de `_shared/financeiro.ts`.
-3. Webhook Asaas reconhece pedidos de produto.
-4. Admin: CRUD produtos/variações + vínculo a evento.
-5. Frontend: seção add-on em `EventoCompra` + página avulsa.
-6. Comprovante + scanner.
+1. Menu unificado no header (`EventosHeader` + uso nas páginas).
+2. Página `CompraSucesso` + ajuste das 2 `successUrl`s nas edge functions.
+3. Aba "Comprovantes" em `MeusIngressos` (renomear visualmente para "Minhas compras").
+4. Bloco de produtos extras em `EventoDetalhe`.
+5. Refinamentos visuais (badges, ícones de status, toast).

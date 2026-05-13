@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
-import { Calendar, MapPin, Users, Ticket, LogOut } from "lucide-react";
+import { Calendar, MapPin, Users, Ticket, LogOut, Package, ArrowRight } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
@@ -31,6 +31,7 @@ const Eventos = () => {
   const [eventos, setEventos] = useState<Evento[]>([]);
   const [loading, setLoading] = useState(true);
   const [tipoComprador, setTipoComprador] = useState<"aluno" | "externo" | null>(null);
+  const [hasProdutos, setHasProdutos] = useState(false);
   const { user, isAdmin, signOut } = useAuth();
 
   useEffect(() => {
@@ -47,6 +48,14 @@ const Eventos = () => {
       setLoading(false);
     };
     fetchEventos();
+
+    // verifica se há produtos avulsos para mostrar o banner
+    supabase
+      .from("produtos")
+      .select("id", { count: "exact", head: true })
+      .eq("ativo", true)
+      .eq("is_global", true)
+      .then(({ count }) => setHasProdutos((count || 0) > 0));
   }, []);
 
   // Resolve tipo de comprador para filtrar/avisar
@@ -129,6 +138,27 @@ const Eventos = () => {
           </p>
         </div>
       </div>
+
+      {/* Banner produtos avulsos */}
+      {hasProdutos && (
+        <div className="container mx-auto px-4 pt-6">
+          <Link
+            to="/produtos"
+            className="block rounded-lg border border-zampieri-gold/40 bg-gradient-to-r from-zampieri-cream to-zampieri-cream/40 p-4 hover:shadow-md transition-shadow"
+          >
+            <div className="flex items-center gap-3">
+              <div className="shrink-0 w-10 h-10 rounded-full bg-zampieri-gold/20 flex items-center justify-center">
+                <Package className="w-5 h-5 text-zampieri-green-dark" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="font-serif font-bold text-zampieri-green-dark">Confira nossos produtos avulsos</p>
+                <p className="text-sm text-muted-foreground">Cartelas de bingo, kits e muito mais — direto no seu carrinho.</p>
+              </div>
+              <ArrowRight className="w-5 h-5 text-zampieri-green-dark" />
+            </div>
+          </Link>
+        </div>
+      )}
 
       {/* Events list */}
       <div className="container mx-auto px-4 py-10 flex-1">
