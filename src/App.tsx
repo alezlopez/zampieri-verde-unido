@@ -22,6 +22,7 @@ import ResetPassword from "./pages/ResetPassword";
 import ProdutosAdmin from "./pages/ProdutosAdmin";
 import Produtos from "./pages/Produtos";
 import ComprovanteProduto from "./pages/ComprovanteProduto";
+import CompraSucesso from "./pages/CompraSucesso";
 
 const queryClient = new QueryClient();
 
@@ -51,6 +52,8 @@ const App = () => (
             <Route path="/produtos" element={<Produtos />} />
             <Route path="/eventos/:eventoId/produtos" element={<Produtos />} />
             <Route path="/comprovante/:token" element={<ComprovanteProduto />} />
+            <Route path="/eventos/sucesso" element={<CompraSucesso />} />
+            <Route path="/eventos/minhas-compras" element={<MeusIngressos />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>
