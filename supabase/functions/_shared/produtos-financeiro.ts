@@ -110,7 +110,8 @@ export async function recomputePedidosProdutos(admin: any, opts: {
       taxa_total: Number((vb - vl).toFixed(2)),
       data_pagamento: dataPagISO, data_credito: dataCred,
     };
-    if (stableId) upd.asaas_payment_id = stableId;
+    // Só grava asaas_payment_id se ainda não houver (evita contaminação cruzada)
+    if (stableId && !p.asaas_payment_id) upd.asaas_payment_id = stableId;
     await admin.from("pedidos_produtos").update(upd).eq("id", p.id);
   }
   return { updated: pedidos.length, bruto, liquido };
