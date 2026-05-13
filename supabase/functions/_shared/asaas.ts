@@ -96,6 +96,10 @@ export async function getInstallment(installmentId: string) {
   return await call(`/installments/${installmentId}`, { method: "GET" });
 }
 
+export async function getCheckout(checkoutId: string) {
+  return await call(`/checkouts/${checkoutId}`, { method: "GET" });
+}
+
 export async function listPayments(params: Record<string, string | number | undefined>) {
   const qs = new URLSearchParams(
     Object.entries(params)
