@@ -1,49 +1,68 @@
 ## Objetivo
 
-Criar uma tela exclusiva do evento, onde a descrição completa apareça sem cortes. O fluxo de compra atual continua funcionando exatamente como está — apenas adicionamos uma etapa intermediária entre o card do evento e o checkout.
+Adicionar no painel admin (`/eventos/admin`) uma aba **"Relatório Financeiro"** com vendas detalhadas e **valor líquido recebido** (já descontadas taxas de transação e de antecipação do parcelado), usando como fonte a API do Asaas — que entrega o líquido pronto no campo `netValue` de cada pagamento.
 
-## Fluxo novo
+## Por que usar `netValue` do Asaas
 
-```
-/eventos  →  /eventos/:id  (detalhe — NOVO)  →  /eventos/comprar/:id  (checkout — inalterado)
-```
+O Asaas calcula e retorna por cobrança o `netValue` (valor líquido depositado na conta), que já considera:
+- Taxa de transação (PIX / cartão à vista / parcelado)
+- Taxa de antecipação (no parcelado, quando há antecipação)
+- Estornos parciais
 
-- O card em `/eventos` deixa de apontar direto para `/eventos/comprar/:id` e passa a apontar para `/eventos/:id`.
-- A página de detalhe mostra todas as informações do evento (imagem grande, título, data, horário, local, vagas, preço, parcelamento, público-alvo, badges, e a **descrição completa** com quebras de linha preservadas).
-- Um botão "Comprar Ingresso" leva para `/eventos/comprar/:id` (mesma página de hoje, sem alterações de lógica).
-- Se o usuário não estiver logado, o botão leva para `/eventos/login` (mesmo comportamento atual do card).
+Assim evitamos manter uma tabela de taxas que pode ficar desatualizada — o número bate com o que cai no extrato Asaas.
 
-## Tela de detalhe (`/eventos/:id`)
+## Mudanças
 
-Layout:
-- `EventosHeader` no topo (mesmo padrão das outras telas).
-- Hero com `imagem_url` em destaque (full width, altura ~ 320–420px).
-- Bloco principal:
-  - Título (`font-serif`, verde escuro).
-  - Badges: público-alvo, "Esgotado" (se aplicável), "Aluno cortesia" (se `aluno_cortesia`), "Requer autorização" (se aplicável).
-  - Linhas com ícones: data, horário, local, vagas disponíveis.
-  - Preço grande + parcelamento + meia-entrada (quando habilitada).
-  - **Descrição completa** sem `line-clamp`, com `whitespace-pre-line` para preservar quebras de linha que o admin digitou.
-- CTA fixo/destacado: "Comprar Ingresso" (ou "Esgotado" / "Exclusivo para alunos" / "Entrar para comprar", reaproveitando a mesma lógica `podeComprar` de `Eventos.tsx`).
-- Link "← Voltar para eventos".
-- Estados: loading (spinner), evento não encontrado / inativo (mensagem + voltar).
-- SEO: `<title>` e meta description com base no título e descrição do evento.
+### 1. Banco — colunas novas em `ingressos` (migration)
 
-## Alterações nos arquivos
+Adicionar (todas nullable, preenchidas via webhook/sync):
+- `valor_bruto` numeric — valor cobrado
+- `valor_liquido` numeric — `netValue` do Asaas
+- `taxa_total` numeric — `valor_bruto - valor_liquido`
+- `data_pagamento` timestamptz — data de confirmação
+- `data_credito` date — `creditDate` (quando cai na conta)
 
-1. **Novo:** `src/pages/EventoDetalhe.tsx` — tela descrita acima.
-2. **`src/App.tsx`** — adicionar rota `<Route path="/eventos/:id" element={<EventoDetalhe />} />` acima da rota catch-all e abaixo das rotas mais específicas (`/eventos/comprar/:id`, `/eventos/login`, `/eventos/admin`, `/eventos/meus-ingressos`, `/eventos/ingresso/:id`, `/eventos/admin/scanner` continuam tendo prioridade por serem definidas com paths fixos antes — React Router v6 não usa ordem para match, então não há risco de conflito).
-3. **`src/pages/Eventos.tsx`** — trocar o destino do botão "Comprar Ingresso" do card: `to={user ? \`/eventos/comprar/${evento.id}\` : "/eventos/login"}` passa a ser `to={\`/eventos/${evento.id}\`}` (a tela de detalhe é pública; o gate de login acontece ao clicar em comprar lá dentro). Tudo o mais permanece igual.
+Sem alteração de RLS (já restrito a admin / dono).
+
+### 2. Edge function `asaas-webhook` (e `asaas-sync-payment`)
+
+Quando recebe `PAYMENT_CONFIRMED` / `PAYMENT_RECEIVED`:
+- Buscar o pagamento no Asaas (`GET /payments/:id`) para ler `value`, `netValue`, `paymentDate`, `creditDate`.
+- Gravar nas novas colunas dos ingressos vinculados ao `asaas_payment_id`.
+
+Para parcelados (`installment`): chamar `GET /installments/:id/payments` e somar `netValue` de todas as parcelas confirmadas; ratear proporcionalmente entre os ingressos do mesmo checkout (mesmo `checkout_id`).
+
+### 3. Edge function nova `relatorio-vendas` (admin only)
+
+Recebe filtros (período, evento, status, forma de pagamento) e devolve:
+- Lista detalhada de ingressos com bruto, líquido, taxa, % taxa, evento, comprador, forma, parcelas, datas.
+- Totais agregados: bruto, líquido, taxa, ticket médio, qtd ingressos, qtd cortesias.
+- Quebra por evento e por forma de pagamento (PIX vs cartão à vista vs cartão parcelado).
+- Para ingressos `pago` sem `valor_liquido` ainda preenchido (legado), faz fallback ao vivo no Asaas.
+
+Protegida por `has_role(auth.uid(), 'admin')`.
+
+### 4. Frontend — nova aba no `EventosAdmin.tsx`
+
+Aba **"Relatório Financeiro"** com:
+- Filtros: intervalo de datas (data de pagamento), evento (select), forma de pagamento, status.
+- Cards de KPI: Bruto, Líquido, Taxas (R$ e %), Ingressos pagos, Cortesias.
+- Tabela detalhada (paginada): evento, comprador, participante, forma, parcelas, data pagamento, bruto, líquido, taxa.
+- Quebra por evento (mini-tabela) e por forma de pagamento.
+- Botão **Exportar CSV** com as mesmas colunas + linha de totais.
+
+### 5. Tela do comprador (`MeusIngressos.tsx`)
+
+Sem mudança — campos novos são internos do admin.
 
 ## O que NÃO muda
 
-- `EventoCompra.tsx` permanece intacto (lógica de seleção de alunos, cortesia, checkout, n8n/Asaas).
-- `EventosAdmin.tsx`, `MeusIngressos.tsx`, edge functions, RLS, banco — nada é tocado.
-- Comportamento de "Esgotado" e "Exclusivo para alunos" no card continua igual.
+- Fluxo de compra, checkout, RLS existentes, cortesias, `EventoCompra.tsx`, `EventoDetalhe.tsx`.
+- Tabela `eventos` e demais relatórios atuais.
 
 ## Detalhes técnicos
 
-- Fetch do evento: `supabase.from("eventos").select("*").eq("id", id).eq("ativo", true).maybeSingle()`.
-- Reuso do hook `useAuth` e da consulta a `compradores_externos` para resolver `tipoComprador` (mesmo padrão de `Eventos.tsx`) e decidir o rótulo do CTA.
-- Tipagem do evento copiada da interface já existente em `Eventos.tsx` (poderemos extrair depois para `src/types/evento.ts` se quiser; nesta rodada mantenho local para não mexer em outros arquivos).
-- Tokens semânticos do design system (`zampieri-green-dark`, `zampieri-gold`, etc.) — sem cores hardcoded.
+- Reuso de `supabase/functions/_shared/asaas.ts` (adicionar helpers `getPayment(id)` e `listInstallmentPayments(id)`).
+- Frontend chama a edge via `supabase.functions.invoke("relatorio-vendas", { body: filtros })`.
+- Cortesias entram no relatório com bruto=0, líquido=0 e flag `cortesia=true` (não distorcem ticket médio — calculado só sobre ingressos pagos não-cortesia).
+- Backfill: script único (botão "Sincronizar líquidos pendentes" no painel) que percorre ingressos `pago` sem `valor_liquido` e busca no Asaas — sem migração de dados destrutiva.
