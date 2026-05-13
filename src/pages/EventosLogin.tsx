@@ -155,10 +155,19 @@ const EventosLogin = () => {
           navigate("/eventos");
         }
       } else if (isRegister) {
+        const pwErr = validatePasswordStrength(password);
+        if (pwErr) {
+          toast({ title: "Senha inválida", description: `${pwErr} ${PASSWORD_REQUIREMENTS_TEXT}`, variant: "destructive" });
+          setLoading(false);
+          return;
+        }
         const { error, needsConfirmation, email } = await registerWithCpf(cpf, password);
         if (error) {
           const msg = error.message?.toLowerCase() || "";
-          if (msg.includes("não encontrado") || msg.includes("nao encontrado")) {
+          const friendlyPw = translatePasswordError(error.message);
+          if (friendlyPw) {
+            toast({ title: "Senha não atende aos requisitos", description: friendlyPw, variant: "destructive" });
+          } else if (msg.includes("não encontrado") || msg.includes("nao encontrado")) {
             // CPF não está em alunos_26 → oferece cadastro externo
             setShowExternoForm(true);
             toast({
