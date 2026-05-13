@@ -98,30 +98,37 @@ Deno.serve(async (req) => {
 
         // Fallback: consulta a API do Asaas pelo checkoutId
         if (!stableId) {
+          // 1) Tenta GET /checkouts/{id}
           try {
             const ck = await getCheckout(checkoutId);
-            // Tenta extrair payment/installment do retorno do checkout
-            const ckPaymentId = ck?.payment?.id || ck?.payment || null;
-            const ckInstallmentId = ck?.installment?.id || ck?.installment || null;
-            if (ckInstallmentId) {
-              resolvedInstallmentId = ckInstallmentId;
-              stableId = ckInstallmentId;
-            } else if (ckPaymentId) {
-              resolvedPaymentId = ckPaymentId;
-              stableId = ckPaymentId;
-            } else {
-              // Última tentativa: lista pagamentos filtrando por checkoutSession
-              const lp = await listPayments({ "checkout[in]": checkoutId, limit: 100 } as any).catch(() => null)
-                || await listPayments({ checkoutSession: checkoutId, limit: 100 } as any).catch(() => null);
-              const pays = lp?.data || [];
-              if (pays.length > 0) {
-                const inst = pays.find((p: any) => p.installment)?.installment || null;
-                if (inst) { resolvedInstallmentId = inst; stableId = inst; }
-                else { resolvedPaymentId = pays[0].id; stableId = pays[0].id; }
+            const ckPaymentId = ck?.payment?.id || (typeof ck?.payment === "string" ? ck.payment : null);
+            const ckInstallmentId = ck?.installment?.id || (typeof ck?.installment === "string" ? ck.installment : null);
+            if (ckInstallmentId) { resolvedInstallmentId = ckInstallmentId; stableId = ckInstallmentId; }
+            else if (ckPaymentId) { resolvedPaymentId = ckPaymentId; stableId = ckPaymentId; }
+          } catch (e) {
+            console.warn("[backfill] getCheckout falhou", checkoutId, (e as Error).message);
+          }
+          // 2) Lista pagamentos via filtros conhecidos do Asaas
+          if (!stableId) {
+            const filtros: Record<string, any>[] = [
+              { checkoutSession: checkoutId },
+              { "checkout[in]": checkoutId },
+              { checkout: checkoutId },
+            ];
+            for (const f of filtros) {
+              try {
+                const lp = await listPayments({ ...f, limit: 100 } as any);
+                const pays = lp?.data || [];
+                if (pays.length > 0) {
+                  const inst = pays.find((p: any) => p.installment)?.installment || null;
+                  if (inst) { resolvedInstallmentId = inst; stableId = inst; }
+                  else { resolvedPaymentId = pays[0].id; stableId = pays[0].id; }
+                  break;
+                }
+              } catch (e) {
+                console.warn("[backfill] listPayments falhou", JSON.stringify(f), (e as Error).message);
               }
             }
-          } catch (e) {
-            console.warn("[backfill] fallback Asaas falhou para", checkoutId, (e as Error).message);
           }
         }
 
