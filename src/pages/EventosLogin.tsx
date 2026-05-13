@@ -428,7 +428,7 @@ const EventosLogin = () => {
                           type={showPassword ? "text" : "password"}
                           value={password}
                           onChange={(e) => setPassword(e.target.value)}
-                          placeholder={isRegister ? "Crie uma senha (mín. 6 caracteres)" : "Sua senha"}
+                          placeholder={isRegister ? "Crie uma senha forte" : "Sua senha"}
                           required
                           minLength={6}
                         />
@@ -440,6 +440,11 @@ const EventosLogin = () => {
                           {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                         </button>
                       </div>
+                      {isRegister && (
+                        <p className="mt-1 text-xs text-muted-foreground">
+                          {PASSWORD_REQUIREMENTS_TEXT}
+                        </p>
+                      )}
                     </div>
 
                     <Button type="submit" className="w-full bg-zampieri-green-dark hover:bg-zampieri-green text-white" disabled={loading}>
