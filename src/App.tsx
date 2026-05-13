@@ -12,6 +12,7 @@ import TermosDeUso from "./pages/TermosDeUso";
 import Eventos from "./pages/Eventos";
 import EventosLogin from "./pages/EventosLogin";
 import EventoCompra from "./pages/EventoCompra";
+import EventoDetalhe from "./pages/EventoDetalhe";
 import EventosAdmin from "./pages/EventosAdmin";
 import MeusIngressos from "./pages/MeusIngressos";
 import IngressoDetalhe from "./pages/IngressoDetalhe";
