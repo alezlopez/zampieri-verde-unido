@@ -482,6 +482,12 @@ const EventosAdmin = () => {
             Eventos
           </Link>
           <div className="flex gap-2">
+            <Link to="/eventos/admin/relatorio">
+              <Button variant="outline" className="border-zampieri-green-dark text-zampieri-green-dark hover:bg-zampieri-cream">
+                <BarChart3 className="w-4 h-4 mr-2" />
+                Relatório
+              </Button>
+            </Link>
             <Link to="/eventos/admin/scanner">
               <Button variant="outline" className="border-zampieri-green-dark text-zampieri-green-dark hover:bg-zampieri-cream">
                 <ScanLine className="w-4 h-4 mr-2" />
