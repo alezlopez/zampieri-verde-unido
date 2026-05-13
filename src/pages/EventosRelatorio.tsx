@@ -120,10 +120,11 @@ const EventosRelatorio = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user, isAdmin]);
 
-  const sincronizarLiquidos = async () => {
+  const sincronizarLiquidos = async (force = false) => {
+    if (force && !confirm("Recalcular líquido de TODOS os ingressos pagos (inclusive os já preenchidos)? Isso aplica as taxas de antecipação atualizadas.")) return;
     setBackfillLoading(true);
     try {
-      const { data: resp, error } = await supabase.functions.invoke("backfill-financeiro", { body: {} });
+      const { data: resp, error } = await supabase.functions.invoke("backfill-financeiro", { body: { force } });
       if (error) throw error;
       toast({
         title: "Sincronização concluída",
