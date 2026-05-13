@@ -44,8 +44,9 @@ const ResetPassword = () => {
       return;
     }
 
-    if (password.length < 6) {
-      toast({ title: "Erro", description: "A senha deve ter no mínimo 6 caracteres.", variant: "destructive" });
+    const pwErr = validatePasswordStrength(password);
+    if (pwErr) {
+      toast({ title: "Senha inválida", description: `${pwErr} ${PASSWORD_REQUIREMENTS_TEXT}`, variant: "destructive" });
       return;
     }
 
@@ -53,7 +54,12 @@ const ResetPassword = () => {
     try {
       const { error } = await supabase.auth.updateUser({ password });
       if (error) {
-        toast({ title: "Erro", description: error.message, variant: "destructive" });
+        const friendlyPw = translatePasswordError(error.message);
+        toast({
+          title: friendlyPw ? "Senha não atende aos requisitos" : "Erro",
+          description: friendlyPw || error.message,
+          variant: "destructive",
+        });
       } else {
         setSuccess(true);
         toast({ title: "Senha alterada com sucesso!" });
