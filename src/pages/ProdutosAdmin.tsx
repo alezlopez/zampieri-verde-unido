@@ -154,9 +154,16 @@ const ProdutosAdmin = () => {
             <h1 className="font-serif text-2xl md:text-3xl font-bold text-zampieri-green-dark flex items-center gap-2">
               <Package className="w-6 h-6" /> Produtos
             </h1>
-            <Button onClick={() => setEditing(emptyProduto())} className="bg-zampieri-green-dark hover:bg-zampieri-green text-white">
-              <Plus className="w-4 h-4 mr-2" />Novo produto
-            </Button>
+            <div className="flex gap-2">
+              <Link to="/eventos/admin/produtos/relatorio">
+                <Button variant="outline" className="border-zampieri-green-dark text-zampieri-green-dark hover:bg-zampieri-cream">
+                  Relatório
+                </Button>
+              </Link>
+              <Button onClick={() => setEditing(emptyProduto())} className="bg-zampieri-green-dark hover:bg-zampieri-green text-white">
+                <Plus className="w-4 h-4 mr-2" />Novo produto
+              </Button>
+            </div>
           </div>
 
           {editing && (
