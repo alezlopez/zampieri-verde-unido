@@ -69,6 +69,39 @@ const EventoDetalhe = () => {
   }, [id]);
 
   useEffect(() => {
+    if (!id) return;
+    const loadProdutos = async () => {
+      const { data: ep } = await supabase
+        .from("evento_produtos")
+        .select("produto_id")
+        .eq("evento_id", id)
+        .eq("ativo", true);
+      const prodIds = (ep || []).map((r: any) => r.produto_id);
+      if (prodIds.length === 0) { setProdutosExtras([]); return; }
+      const { data: prods } = await supabase
+        .from("produtos")
+        .select("id,nome,descricao,imagem_url,produto_variacoes(preco,ativo)")
+        .in("id", prodIds)
+        .eq("ativo", true);
+      const list = (prods || []).map((p: any) => {
+        const precos = (p.produto_variacoes || [])
+          .filter((v: any) => v.ativo)
+          .map((v: any) => Number(v.preco))
+          .filter((n: number) => n > 0);
+        return {
+          id: p.id,
+          nome: p.nome,
+          descricao: p.descricao,
+          imagem_url: p.imagem_url,
+          preco_min: precos.length > 0 ? Math.min(...precos) : null,
+        };
+      });
+      setProdutosExtras(list);
+    };
+    loadProdutos();
+  }, [id]);
+
+  useEffect(() => {
     const resolve = async () => {
       if (!user) { setTipoComprador(null); return; }
       const { data } = await supabase
