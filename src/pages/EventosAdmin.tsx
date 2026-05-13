@@ -118,6 +118,11 @@ const EventosAdmin = () => {
   const [imagemPreview, setImagemPreview] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
 
+  // Produtos vinculados ao evento
+  type ProdutoOpt = { id: string; nome: string; is_global: boolean; ativo: boolean };
+  const [produtosDisponiveis, setProdutosDisponiveis] = useState<ProdutoOpt[]>([]);
+  const [produtosVinculados, setProdutosVinculados] = useState<string[]>([]);
+
   // Resumo financeiro (calculado com base em valor_total + status dos ingressos)
   type ResumoFinanceiro = { recebido: number; pendente: number; estornado: number; cancelado: number };
   const emptyResumo = (): ResumoFinanceiro => ({ recebido: 0, pendente: 0, estornado: 0, cancelado: 0 });
