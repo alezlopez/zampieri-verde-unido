@@ -83,6 +83,25 @@ const ScannerIngressos = () => {
     setError(null);
     setIngresso(null);
 
+    // QR de PRODUTO: payload "prod:<qr_token>"
+    if (decodedText.startsWith("prod:")) {
+      const token = decodedText.slice(5);
+      const { data: rpcData, error: rpcErr } = await supabase.rpc("marcar_produto_retirado", { p_qr_token: token });
+      const row = Array.isArray(rpcData) ? rpcData[0] : rpcData;
+      if (rpcErr || !row) {
+        setError("Comprovante de produto não encontrado.");
+        return;
+      }
+      if (!row.ok) {
+        if (row.message === "ja_retirado") setError(`Produto JÁ RETIRADO em ${row.retirado_em ? new Date(row.retirado_em).toLocaleString("pt-BR") : "—"} (${row.produto} - ${row.variacao}, qtd ${row.quantidade}).`);
+        else if (row.message?.startsWith("status_invalido")) setError(`Pagamento ainda não confirmado (${row.message.split(":")[1]}).`);
+        else setError(`Erro: ${row.message}`);
+        return;
+      }
+      toast({ title: "Produto retirado!", description: `${row.produto} - ${row.variacao} · qtd ${row.quantidade}` });
+      return;
+    }
+
     const { data, error: err } = await supabase
       .from("ingressos")
       .select("id, nome_comprador, nome_participante, tipo_participante, status, utilizado, utilizado_em, utilizado_por, codigo_aluno, tipo_ingresso, categoria_meia, meia_validada_portaria, meia_validada_em, meia_validada_por, eventos(titulo, data_evento)")
