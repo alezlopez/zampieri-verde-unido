@@ -243,6 +243,11 @@ const EventosLogin = () => {
       toast({ title: "Preencha todos os campos obrigatórios", variant: "destructive" });
       return;
     }
+    const pwErr = validatePasswordStrength(password);
+    if (pwErr) {
+      toast({ title: "Senha inválida", description: `${pwErr} ${PASSWORD_REQUIREMENTS_TEXT}`, variant: "destructive" });
+      return;
+    }
     setLoading(true);
     try {
       const { data, error } = await supabase.functions.invoke("comprador-externo-signup", {
