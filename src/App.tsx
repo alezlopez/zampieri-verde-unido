@@ -12,6 +12,7 @@ import TermosDeUso from "./pages/TermosDeUso";
 import Eventos from "./pages/Eventos";
 import EventosLogin from "./pages/EventosLogin";
 import EventoCompra from "./pages/EventoCompra";
+import EventoDetalhe from "./pages/EventoDetalhe";
 import EventosAdmin from "./pages/EventosAdmin";
 import MeusIngressos from "./pages/MeusIngressos";
 import IngressoDetalhe from "./pages/IngressoDetalhe";
@@ -35,6 +36,7 @@ const App = () => (
             <Route path="/eventos" element={<Eventos />} />
             <Route path="/eventos/login" element={<EventosLogin />} />
             <Route path="/eventos/comprar/:id" element={<EventoCompra />} />
+            <Route path="/eventos/:id" element={<EventoDetalhe />} />
             <Route path="/eventos/admin" element={<EventosAdmin />} />
             <Route path="/eventos/meus-ingressos" element={<MeusIngressos />} />
             <Route path="/eventos/ingresso/:id" element={<IngressoDetalhe />} />
