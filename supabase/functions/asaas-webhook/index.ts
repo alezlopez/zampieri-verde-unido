@@ -80,6 +80,37 @@ Deno.serve(async (req) => {
       checkoutObj?.externalReference ||
       null;
 
+    // ============ ROTEAMENTO: pedidos de PRODUTO (prefixo "prod:") ============
+    const isProdRef = !!(externalRef && externalRef.startsWith("prod:"));
+    if (newStatus && isProdRef) {
+      const prodIds = externalRef!.slice(5).split(",").map((s) => s.trim()).filter(Boolean);
+      const stableId = installmentId || paymentId;
+      const updateP: any = { status: newStatus };
+      if (stableId) updateP.asaas_payment_id = stableId;
+      let matchedP: any[] | null = null;
+      if (checkoutId) {
+        const r = await admin.from("pedidos_produtos").update(updateP).eq("checkout_id", checkoutId).select("id");
+        if (!r.error) matchedP = r.data;
+      }
+      if ((!matchedP || matchedP.length === 0) && prodIds.length > 0) {
+        const r = await admin.from("pedidos_produtos").update(updateP).in("id", prodIds).select("id");
+        if (!r.error) matchedP = r.data;
+      }
+      if (newStatus === "pago" && matchedP && matchedP.length > 0) {
+        // Recalcula valor_bruto/líquido/taxa via Asaas (best-effort, simples)
+        try {
+          const { recomputePedidosProdutos } = await import("../_shared/produtos-financeiro.ts");
+          await recomputePedidosProdutos(admin, { checkoutId, paymentId, installmentId, pedidoIds: prodIds });
+        } catch (e) {
+          console.error("[asaas-webhook] recompute produtos falhou", e);
+        }
+      }
+      await admin.from("asaas_webhook_events").update({ processed: true }).eq("event_id", eventId);
+      return new Response(JSON.stringify({ ok: true, kind: "produto" }), {
+        status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
     if (newStatus) {
       const update: any = { status: newStatus };
       // Para parcelado guardamos o id do PARCELAMENTO (estável entre as N parcelas).
