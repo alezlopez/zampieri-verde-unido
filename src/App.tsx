@@ -20,6 +20,7 @@ import IngressoDetalhe from "./pages/IngressoDetalhe";
 import ScannerIngressos from "./pages/ScannerIngressos";
 import ResetPassword from "./pages/ResetPassword";
 import ProdutosAdmin from "./pages/ProdutosAdmin";
+import ProdutosRelatorio from "./pages/ProdutosRelatorio";
 import Produtos from "./pages/Produtos";
 import ComprovanteProduto from "./pages/ComprovanteProduto";
 import CompraSucesso from "./pages/CompraSucesso";
@@ -49,6 +50,7 @@ const App = () => (
             <Route path="/eventos/admin/relatorio" element={<EventosRelatorio />} />
             <Route path="/reset-password" element={<ResetPassword />} />
             <Route path="/eventos/admin/produtos" element={<ProdutosAdmin />} />
+            <Route path="/eventos/admin/produtos/relatorio" element={<ProdutosRelatorio />} />
             <Route path="/produtos" element={<Produtos />} />
             <Route path="/eventos/:eventoId/produtos" element={<Produtos />} />
             <Route path="/comprovante/:token" element={<ComprovanteProduto />} />
