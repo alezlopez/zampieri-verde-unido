@@ -1,5 +1,6 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
 import { corsHeaders } from "../_shared/cors.ts";
+import { recomputeIngressosFinancials } from "../_shared/financeiro.ts";
 
 const STATUS_MAP: Record<string, string> = {
   PAYMENT_CONFIRMED: "pago",
