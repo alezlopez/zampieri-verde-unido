@@ -321,6 +321,7 @@ const EventosAdmin = () => {
     };
     if (payload.vagas_disponiveis === undefined) delete (payload as any).vagas_disponiveis;
 
+    let eventoIdSalvo: string | null = editingId;
     if (editingId) {
       const { error } = await supabase.from("eventos").update(payload).eq("id", editingId);
       if (error) {
@@ -330,13 +331,31 @@ const EventosAdmin = () => {
       }
       toast({ title: "Evento atualizado!" });
     } else {
-      const { error } = await supabase.from("eventos").insert(payload);
+      const { data: novo, error } = await supabase.from("eventos").insert(payload).select("id").single();
       if (error) {
         toast({ title: "Erro ao criar", description: error.message, variant: "destructive" });
         setUploading(false);
         return;
       }
+      eventoIdSalvo = novo?.id || null;
       toast({ title: "Evento criado!" });
+    }
+
+    // Sincronizar produtos vinculados
+    if (eventoIdSalvo) {
+      await supabase.from("evento_produtos").delete().eq("evento_id", eventoIdSalvo);
+      if (produtosVinculados.length > 0) {
+        const rows = produtosVinculados.map((produto_id, idx) => ({
+          evento_id: eventoIdSalvo!,
+          produto_id,
+          ordem: idx,
+          ativo: true,
+        }));
+        const { error: vErr } = await supabase.from("evento_produtos").insert(rows);
+        if (vErr) {
+          toast({ title: "Aviso: produtos não vinculados", description: vErr.message, variant: "destructive" });
+        }
+      }
     }
 
     setUploading(false);
