@@ -132,12 +132,15 @@ Deno.serve(async (req) => {
         matched = r.data;
       }
 
-      // 2) Casa pelo asaas_payment_id já gravado (installmentId ou paymentId)
-      if ((!matched || matched.length === 0) && stableId) {
+      // 2) Casa pelo asaas_payment_id já gravado (installmentId ou paymentId).
+      //    Restringe sempre por checkout_id quando disponível para evitar contaminar
+      //    ingressos de outros compradores que possam compartilhar o mesmo id por bug histórico.
+      if ((!matched || matched.length === 0) && stableId && checkoutId) {
         const r = await admin
           .from("ingressos")
           .update(update)
           .eq("asaas_payment_id", stableId)
+          .eq("checkout_id", checkoutId)
           .select("id");
         if (r.error) throw r.error;
         matched = r.data;
