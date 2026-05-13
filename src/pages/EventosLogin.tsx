@@ -262,7 +262,12 @@ const EventosLogin = () => {
       });
       if (error || (data && (data as any).error)) {
         const msg = (data as any)?.error || error?.message || "Falha ao criar conta";
-        toast({ title: "Erro no cadastro", description: msg, variant: "destructive" });
+        const friendlyPw = translatePasswordError(msg);
+        if (friendlyPw) {
+          toast({ title: "Senha não atende aos requisitos", description: friendlyPw, variant: "destructive" });
+        } else {
+          toast({ title: "Erro no cadastro", description: msg, variant: "destructive" });
+        }
         return;
       }
       // Login automático
