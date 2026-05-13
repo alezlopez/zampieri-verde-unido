@@ -199,12 +199,21 @@ const EventosRelatorio = () => {
             <div className="flex gap-2">
               <Button
                 variant="outline"
-                onClick={sincronizarLiquidos}
+                onClick={() => sincronizarLiquidos(false)}
                 disabled={backfillLoading}
                 className="border-zampieri-green-dark text-zampieri-green-dark hover:bg-zampieri-cream"
               >
                 <Wand2 className={`w-4 h-4 mr-2 ${backfillLoading ? "animate-spin" : ""}`} />
                 Sincronizar líquidos
+              </Button>
+              <Button
+                variant="outline"
+                onClick={() => sincronizarLiquidos(true)}
+                disabled={backfillLoading}
+                className="border-zampieri-green-dark text-zampieri-green-dark hover:bg-zampieri-cream"
+              >
+                <Wand2 className={`w-4 h-4 mr-2 ${backfillLoading ? "animate-spin" : ""}`} />
+                Forçar recálculo
               </Button>
               <Button onClick={exportarCSV} disabled={!data} className="bg-zampieri-green-dark hover:bg-zampieri-green text-white">
                 <Download className="w-4 h-4 mr-2" />
