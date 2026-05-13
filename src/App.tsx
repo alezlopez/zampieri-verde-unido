@@ -20,6 +20,7 @@ import IngressoDetalhe from "./pages/IngressoDetalhe";
 import ScannerIngressos from "./pages/ScannerIngressos";
 import ResetPassword from "./pages/ResetPassword";
 import ProdutosAdmin from "./pages/ProdutosAdmin";
+import ProdutosRelatorio from "./pages/ProdutosRelatorio";
 import Produtos from "./pages/Produtos";
 import ComprovanteProduto from "./pages/ComprovanteProduto";
 import CompraSucesso from "./pages/CompraSucesso";
