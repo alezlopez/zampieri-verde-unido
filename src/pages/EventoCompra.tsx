@@ -765,8 +765,15 @@ const EventoCompra = () => {
                                 onCheckedChange={() => !jaTemIngresso && toggleAluno(aluno.codigo_aluno)}
                                 disabled={jaTemIngresso}
                               />
-                              <div>
-                                <p className="text-sm font-medium">{aluno.nome_aluno}</p>
+                              <div className="flex-1">
+                                <div className="flex items-center justify-between gap-2">
+                                  <p className="text-sm font-medium">{aluno.nome_aluno}</p>
+                                  {alunoCortesia && alunosSelecionados.includes(aluno.codigo_aluno) && (
+                                    <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-zampieri-gold/20 text-zampieri-green-dark border border-zampieri-gold/40 whitespace-nowrap">
+                                      Cortesia · R$ 0,00
+                                    </span>
+                                  )}
+                                </div>
                                 <p className="text-xs text-muted-foreground">
                                   Código: {aluno.codigo_aluno} {aluno.curso && `— ${aluno.curso}`}
                                 </p>
