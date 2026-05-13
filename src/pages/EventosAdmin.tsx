@@ -118,6 +118,11 @@ const EventosAdmin = () => {
   const [imagemPreview, setImagemPreview] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
 
+  // Produtos vinculados ao evento
+  type ProdutoOpt = { id: string; nome: string; is_global: boolean; ativo: boolean };
+  const [produtosDisponiveis, setProdutosDisponiveis] = useState<ProdutoOpt[]>([]);
+  const [produtosVinculados, setProdutosVinculados] = useState<string[]>([]);
+
   // Resumo financeiro (calculado com base em valor_total + status dos ingressos)
   type ResumoFinanceiro = { recebido: number; pendente: number; estornado: number; cancelado: number };
   const emptyResumo = (): ResumoFinanceiro => ({ recebido: 0, pendente: 0, estornado: 0, cancelado: 0 });
@@ -167,10 +172,19 @@ const EventosAdmin = () => {
     setResumoPorEvento(porEvento);
   };
 
+  const fetchProdutos = async () => {
+    const { data } = await supabase
+      .from("produtos")
+      .select("id, nome, is_global, ativo")
+      .order("nome");
+    if (data) setProdutosDisponiveis(data as ProdutoOpt[]);
+  };
+
   useEffect(() => {
     if (isAdmin) {
       fetchEventos();
       fetchResumoFinanceiro();
+      fetchProdutos();
     }
   }, [isAdmin]);
 
@@ -196,11 +210,12 @@ const EventosAdmin = () => {
     setAlunoCortesia(false);
     setImagemFile(null);
     setImagemPreview(null);
+    setProdutosVinculados([]);
     setEditingId(null);
     setShowForm(false);
   };
 
-  const handleEdit = (evento: Evento) => {
+  const handleEdit = async (evento: Evento) => {
     setTitulo(evento.titulo);
     setDescricao(evento.descricao || "");
     setDataEvento(evento.data_evento);
@@ -224,6 +239,12 @@ const EventosAdmin = () => {
     setImagemFile(null);
     setImagemPreview(evento.imagem_url || null);
     setEditingId(evento.id);
+    // Carregar produtos vinculados
+    const { data: vinc } = await supabase
+      .from("evento_produtos")
+      .select("produto_id")
+      .eq("evento_id", evento.id);
+    setProdutosVinculados((vinc || []).map((v: any) => v.produto_id));
     setShowForm(true);
   };
 
@@ -300,6 +321,7 @@ const EventosAdmin = () => {
     };
     if (payload.vagas_disponiveis === undefined) delete (payload as any).vagas_disponiveis;
 
+    let eventoIdSalvo: string | null = editingId;
     if (editingId) {
       const { error } = await supabase.from("eventos").update(payload).eq("id", editingId);
       if (error) {
@@ -309,13 +331,31 @@ const EventosAdmin = () => {
       }
       toast({ title: "Evento atualizado!" });
     } else {
-      const { error } = await supabase.from("eventos").insert(payload);
+      const { data: novo, error } = await supabase.from("eventos").insert(payload).select("id").single();
       if (error) {
         toast({ title: "Erro ao criar", description: error.message, variant: "destructive" });
         setUploading(false);
         return;
       }
+      eventoIdSalvo = novo?.id || null;
       toast({ title: "Evento criado!" });
+    }
+
+    // Sincronizar produtos vinculados
+    if (eventoIdSalvo) {
+      await supabase.from("evento_produtos").delete().eq("evento_id", eventoIdSalvo);
+      if (produtosVinculados.length > 0) {
+        const rows = produtosVinculados.map((produto_id, idx) => ({
+          evento_id: eventoIdSalvo!,
+          produto_id,
+          ordem: idx,
+          ativo: true,
+        }));
+        const { error: vErr } = await supabase.from("evento_produtos").insert(rows);
+        if (vErr) {
+          toast({ title: "Aviso: produtos não vinculados", description: vErr.message, variant: "destructive" });
+        }
+      }
     }
 
     setUploading(false);
@@ -722,6 +762,44 @@ const EventosAdmin = () => {
                     <p className="text-[11px] text-muted-foreground italic">
                       Documento original será exigido na portaria conforme Lei 12.933/2013.
                     </p>
+                  </div>
+                )}
+              </div>
+
+              {/* Produtos vinculados */}
+              <div className="border-t pt-3 mt-3">
+                <label className="text-sm font-medium flex items-center gap-2">
+                  <Link2 className="w-4 h-4" /> Produtos vinculados a este evento
+                </label>
+                <p className="text-xs text-muted-foreground mb-2">
+                  Aparecerão como upsell na página do evento e após a compra do ingresso.
+                </p>
+                {produtosDisponiveis.length === 0 ? (
+                  <p className="text-xs text-muted-foreground italic">
+                    Nenhum produto cadastrado.{" "}
+                    <Link to="/eventos/admin/produtos" className="text-zampieri-green-dark underline">
+                      Cadastrar produto
+                    </Link>
+                  </p>
+                ) : (
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-2 max-h-56 overflow-y-auto border rounded-md p-2">
+                    {produtosDisponiveis.map((p) => (
+                      <label key={p.id} className="flex items-center gap-2 text-sm cursor-pointer hover:bg-muted/50 p-1 rounded">
+                        <Checkbox
+                          checked={produtosVinculados.includes(p.id)}
+                          onCheckedChange={(checked) =>
+                            setProdutosVinculados((prev) =>
+                              checked === true
+                                ? Array.from(new Set([...prev, p.id]))
+                                : prev.filter((x) => x !== p.id)
+                            )
+                          }
+                        />
+                        <span className="flex-1">{p.nome}</span>
+                        {p.is_global && <Badge variant="secondary" className="text-[10px]">Global</Badge>}
+                        {!p.ativo && <Badge variant="outline" className="text-[10px]">Inativo</Badge>}
+                      </label>
+                    ))}
                   </div>
                 )}
               </div>
