@@ -188,7 +188,8 @@ export async function recomputeIngressosFinancials(admin: any, opts: RecomputeOp
       data_pagamento: dataPagISO,
       data_credito: dataCred,
     };
-    if (stableId) update.asaas_payment_id = stableId;
+    // Só grava asaas_payment_id se o ingresso ainda não tiver um (evita contaminação cruzada)
+    if (stableId && !ing.asaas_payment_id) update.asaas_payment_id = stableId;
 
     await admin.from("ingressos").update(update).eq("id", ing.id);
   }
