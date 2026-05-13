@@ -205,10 +205,10 @@ const Eventos = () => {
                   ) : !podeComprar(evento) ? (
                     <Button disabled className="w-full">Exclusivo para alunos</Button>
                   ) : (
-                    <Link to={user ? `/eventos/comprar/${evento.id}` : "/eventos/login"} className="w-full">
+                    <Link to={`/eventos/${evento.id}`} className="w-full">
                       <Button className="w-full bg-zampieri-green-dark hover:bg-zampieri-green text-white">
                         <Ticket className="w-4 h-4 mr-2" />
-                        Comprar Ingresso
+                        Ver detalhes
                       </Button>
                     </Link>
                   )}
