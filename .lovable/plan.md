@@ -1,68 +1,45 @@
-## Objetivo
+## Problema
 
-Adicionar no painel admin (`/eventos/admin`) uma aba **"Relatório Financeiro"** com vendas detalhadas e **valor líquido recebido** (já descontadas taxas de transação e de antecipação do parcelado), usando como fonte a API do Asaas — que entrega o líquido pronto no campo `netValue` de cada pagamento.
+Para compras **parceladas**, o Asaas envia um `PAYMENT_CONFIRMED` por parcela. Hoje o `recomputeIngressosFinancials` só busca **uma** parcela por vez (via `getPayment`) e ainda recebe `externalReference = null`, então grava no relatório apenas o líquido de 1 parcela — e cada novo webhook sobrescreve com o líquido da próxima. Resultado: `valor_liquido`, `valor_bruto`, `taxa_total` e `data_pagamento` ficam zerados/errados nos ingressos parcelados.
 
-## Por que usar `netValue` do Asaas
+Para PIX/cartão à vista funciona porque há um único `payment` e o `getPayment` já traz tudo.
 
-O Asaas calcula e retorna por cobrança o `netValue` (valor líquido depositado na conta), que já considera:
-- Taxa de transação (PIX / cartão à vista / parcelado)
-- Taxa de antecipação (no parcelado, quando há antecipação)
-- Estornos parciais
+## Correções
 
-Assim evitamos manter uma tabela de taxas que pode ficar desatualizada — o número bate com o que cai no extrato Asaas.
+### 1. `supabase/functions/_shared/asaas.ts`
+Adicionar helper:
+```ts
+export async function listInstallmentPayments(installmentId: string)
+// GET /installments/:id/payments  → lista todas as parcelas com value/netValue/status/paymentDate/creditDate
+```
 
-## Mudanças
+### 2. `supabase/functions/_shared/financeiro.ts` (reescrever a coleta de pagamentos)
+Nova lógica para montar o conjunto de pagamentos:
+- Receber também `installmentId` opcional.
+- Se `installmentId` estiver presente → `listInstallmentPayments(installmentId)` e usar todas as parcelas (filtradas por status pago).
+- Senão se `paymentId` → `getPayment(paymentId)`. Se a resposta tiver campo `installment`, automaticamente expandir via `listInstallmentPayments`.
+- Senão se `externalRef` → `listPayments({ externalReference })` (fluxo legado).
 
-### 1. Banco — colunas novas em `ingressos` (migration)
+Soma `value` em `bruto` e `netValue` em `liquido` de todas as parcelas confirmadas, pega `paymentDate`/`creditDate` mais recentes. Distribuição proporcional entre ingressos não-cortesia segue igual.
 
-Adicionar (todas nullable, preenchidas via webhook/sync):
-- `valor_bruto` numeric — valor cobrado
-- `valor_liquido` numeric — `netValue` do Asaas
-- `taxa_total` numeric — `valor_bruto - valor_liquido`
-- `data_pagamento` timestamptz — data de confirmação
-- `data_credito` date — `creditDate` (quando cai na conta)
+### 3. `supabase/functions/asaas-webhook/index.ts`
+- Extrair `installmentId = payload.payment.installment || null`.
+- Ao montar o `update` dos ingressos, se `installmentId` existir, gravar `asaas_payment_id = installmentId` (id estável do parcelamento) em vez do id da parcela individual — evita sobrescrita a cada webhook e dá um identificador único para o conjunto.
+- Passar `installmentId` para `recomputeIngressosFinancials`.
+- Idempotência por `event_id` já cobre a chegada de N parcelas: cada uma vai disparar o recompute, mas como agora a função soma **todas** as parcelas do parcelamento, o valor final converge sempre para o total correto (a última parcela paga "fecha" o valor).
 
-Sem alteração de RLS (já restrito a admin / dono).
+### 4. `supabase/functions/asaas-sync-payment/index.ts`
+- Após `getPayment`, se `payment.installment` estiver presente, passar `installmentId` para o recompute (mesma assinatura nova).
 
-### 2. Edge function `asaas-webhook` (e `asaas-sync-payment`)
+### 5. `supabase/functions/backfill-financeiro/index.ts`
+- Para ingressos pagos sem `valor_liquido`: se o `asaas_payment_id` corresponde a um id de parcelamento (prefixo diferente de `pay_`), usa direto como `installmentId`; senão chama `getPayment` e segue o mesmo caminho do item 2.
+- Permite recuperar retroativamente os ingressos parcelados que já passaram com dados zerados.
 
-Quando recebe `PAYMENT_CONFIRMED` / `PAYMENT_RECEIVED`:
-- Buscar o pagamento no Asaas (`GET /payments/:id`) para ler `value`, `netValue`, `paymentDate`, `creditDate`.
-- Gravar nas novas colunas dos ingressos vinculados ao `asaas_payment_id`.
+### 6. (Sem mudança de schema)
+Nenhuma migration nova — colunas já existem. Nenhuma mudança de RLS, frontend ou fluxo de compra.
 
-Para parcelados (`installment`): chamar `GET /installments/:id/payments` e somar `netValue` de todas as parcelas confirmadas; ratear proporcionalmente entre os ingressos do mesmo checkout (mesmo `checkout_id`).
+## Verificação
 
-### 3. Edge function nova `relatorio-vendas` (admin only)
-
-Recebe filtros (período, evento, status, forma de pagamento) e devolve:
-- Lista detalhada de ingressos com bruto, líquido, taxa, % taxa, evento, comprador, forma, parcelas, datas.
-- Totais agregados: bruto, líquido, taxa, ticket médio, qtd ingressos, qtd cortesias.
-- Quebra por evento e por forma de pagamento (PIX vs cartão à vista vs cartão parcelado).
-- Para ingressos `pago` sem `valor_liquido` ainda preenchido (legado), faz fallback ao vivo no Asaas.
-
-Protegida por `has_role(auth.uid(), 'admin')`.
-
-### 4. Frontend — nova aba no `EventosAdmin.tsx`
-
-Aba **"Relatório Financeiro"** com:
-- Filtros: intervalo de datas (data de pagamento), evento (select), forma de pagamento, status.
-- Cards de KPI: Bruto, Líquido, Taxas (R$ e %), Ingressos pagos, Cortesias.
-- Tabela detalhada (paginada): evento, comprador, participante, forma, parcelas, data pagamento, bruto, líquido, taxa.
-- Quebra por evento (mini-tabela) e por forma de pagamento.
-- Botão **Exportar CSV** com as mesmas colunas + linha de totais.
-
-### 5. Tela do comprador (`MeusIngressos.tsx`)
-
-Sem mudança — campos novos são internos do admin.
-
-## O que NÃO muda
-
-- Fluxo de compra, checkout, RLS existentes, cortesias, `EventoCompra.tsx`, `EventoDetalhe.tsx`.
-- Tabela `eventos` e demais relatórios atuais.
-
-## Detalhes técnicos
-
-- Reuso de `supabase/functions/_shared/asaas.ts` (adicionar helpers `getPayment(id)` e `listInstallmentPayments(id)`).
-- Frontend chama a edge via `supabase.functions.invoke("relatorio-vendas", { body: filtros })`.
-- Cortesias entram no relatório com bruto=0, líquido=0 e flag `cortesia=true` (não distorcem ticket médio — calculado só sobre ingressos pagos não-cortesia).
-- Backfill: script único (botão "Sincronizar líquidos pendentes" no painel) que percorre ingressos `pago` sem `valor_liquido` e busca no Asaas — sem migração de dados destrutiva.
+1. Rodar o backfill (botão "Sincronizar líquidos pendentes" no painel admin) para os ingressos parcelados de hoje (ex.: checkouts `274c5bca…` 5x, `aa44c2aa…` 3x).
+2. Conferir no Relatório Financeiro que `Bruto`, `Líquido` e `Taxa` agora batem com a soma das parcelas no extrato Asaas (ex.: 3 parcelas de 11,66 + 11,66 + 11,68 → bruto 35,00; líquido 33,53).
+3. Fazer (ou aguardar) uma nova compra parcelada e confirmar que após a confirmação da última parcela os valores ficam corretos sem precisar do backfill.

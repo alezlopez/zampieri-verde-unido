@@ -76,7 +76,7 @@ Deno.serve(async (req) => {
         .eq("asaas_payment_id", paymentId);
     }
 
-    // Recalcula financeiro (bruto/líquido/taxa)
+    // Recalcula financeiro (bruto/líquido/taxa) — em parcelado, expande para o installment
     try {
       const { data: ing } = await admin
         .from("ingressos")
@@ -88,6 +88,7 @@ Deno.serve(async (req) => {
       await recomputeIngressosFinancials(admin, {
         checkoutId: ing?.checkout_id || null,
         paymentId,
+        installmentId: payment?.installment || null,
         externalRef,
       });
     } catch (e) {

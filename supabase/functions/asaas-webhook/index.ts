@@ -44,6 +44,7 @@ Deno.serve(async (req) => {
   const eventId: string = payload?.id || `${payload?.event}-${payload?.payment?.id || payload?.checkout?.id}-${Date.now()}`;
   const eventType: string = payload?.event || "UNKNOWN";
   const paymentId: string | null = payload?.payment?.id || null;
+  const installmentId: string | null = payload?.payment?.installment || null;
   const checkoutObj: any = payload?.checkout || null;
   const checkoutId: string | null = checkoutObj?.id || null;
 
@@ -80,23 +81,26 @@ Deno.serve(async (req) => {
 
     if (newStatus) {
       const update: any = { status: newStatus };
-      if (paymentId) update.asaas_payment_id = paymentId;
+      // Para parcelado guardamos o id do PARCELAMENTO (estável entre as N parcelas).
+      // Para pagamento simples guardamos o paymentId.
+      const stableId = installmentId || paymentId;
+      if (stableId) update.asaas_payment_id = stableId;
       if (newStatus === "pago") update.utilizado = false;
 
       let matched: any[] | null = null;
 
-      // 1) Tenta casar pelo asaas_payment_id (eventos PAYMENT_*)
-      if (paymentId) {
+      // 1) Casa pelo asaas_payment_id já gravado (installmentId ou paymentId)
+      if (stableId) {
         const r = await admin
           .from("ingressos")
           .update(update)
-          .eq("asaas_payment_id", paymentId)
+          .eq("asaas_payment_id", stableId)
           .select("id");
         if (r.error) throw r.error;
         matched = r.data;
       }
 
-      // 2) Casar pelo checkout_id (eventos CHECKOUT_*)
+      // 2) Casa pelo checkout_id
       if ((!matched || matched.length === 0) && checkoutId) {
         const r = await admin
           .from("ingressos")
@@ -107,7 +111,7 @@ Deno.serve(async (req) => {
         matched = r.data;
       }
 
-      // 3) Fallback: casar pelos ids vindos no externalReference
+      // 3) Fallback: ids vindos no externalReference
       if ((!matched || matched.length === 0) && externalRef) {
         const ids = externalRef.split(",").map((s) => s.trim()).filter(Boolean);
         if (ids.length > 0) {
@@ -123,11 +127,13 @@ Deno.serve(async (req) => {
 
       // Dispara e-mail de confirmação (best-effort)
       if (newStatus === "pago" && matched && matched.length > 0) {
-        // Recalcula valor líquido / taxas via API Asaas (best-effort)
+        // Recalcula valor líquido / taxas via API Asaas (best-effort).
+        // Em parcelado, soma TODAS as parcelas via installmentId.
         try {
           await recomputeIngressosFinancials(admin, {
             checkoutId,
             paymentId,
+            installmentId,
             externalRef,
           });
         } catch (e) {
