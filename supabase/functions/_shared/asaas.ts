@@ -88,6 +88,14 @@ export async function getPayment(paymentId: string) {
   return await call(`/payments/${paymentId}`, { method: "GET" });
 }
 
+export async function listInstallmentPayments(installmentId: string) {
+  return await call(`/installments/${installmentId}/payments`, { method: "GET" });
+}
+
+export async function getInstallment(installmentId: string) {
+  return await call(`/installments/${installmentId}`, { method: "GET" });
+}
+
 export async function listPayments(params: Record<string, string | number | undefined>) {
   const qs = new URLSearchParams(
     Object.entries(params)
