@@ -123,6 +123,17 @@ Deno.serve(async (req) => {
 
       // Dispara e-mail de confirmação (best-effort)
       if (newStatus === "pago" && matched && matched.length > 0) {
+        // Recalcula valor líquido / taxas via API Asaas (best-effort)
+        try {
+          await recomputeIngressosFinancials(admin, {
+            checkoutId,
+            paymentId,
+            externalRef,
+          });
+        } catch (e) {
+          console.error("[asaas-webhook] recomputeFinancials falhou", e);
+        }
+
         if (paymentId) {
           admin.functions.invoke("enviar-confirmacao-ingresso", {
             body: { payment_id: paymentId },
