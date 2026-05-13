@@ -72,17 +72,40 @@ Deno.serve(async (req) => {
     // Processa grupos por checkout_id
     for (const [checkoutId, g] of porCheckout) {
       try {
-        const stableId = g.stableId || "";
-        const isInstallment = stableId && !stableId.startsWith("pay_");
-        const isPayment = stableId && stableId.startsWith("pay_");
+        let stableId = g.stableId || "";
+        let resolvedPaymentId: string | null = null;
+        let resolvedInstallmentId: string | null = null;
+
+        // Se não temos stableId, tenta resolver via webhook events (PAYMENT_*) com checkoutSession = checkoutId
+        if (!stableId) {
+          const { data: evs } = await admin
+            .from("asaas_webhook_events")
+            .select("payload, payment_id")
+            .in("event_type", ["PAYMENT_CONFIRMED", "PAYMENT_RECEIVED", "PAYMENT_RECEIVED_IN_CASH", "PAYMENT_CREATED"])
+            .order("created_at", { ascending: false })
+            .limit(1000);
+          for (const ev of evs || []) {
+            const cs = ev.payload?.payment?.checkoutSession;
+            if (cs !== checkoutId) continue;
+            const inst = ev.payload?.payment?.installment || null;
+            const pid = ev.payload?.payment?.id || ev.payment_id || null;
+            if (inst) { resolvedInstallmentId = inst; break; }
+            if (pid && !resolvedPaymentId) resolvedPaymentId = pid;
+          }
+          stableId = resolvedInstallmentId || resolvedPaymentId || "";
+        }
+
+        const isInstallment = !!resolvedInstallmentId || (stableId && !stableId.startsWith("pay_"));
+        const isPayment = !resolvedInstallmentId && stableId && stableId.startsWith("pay_");
+
         const res = await recomputeIngressosFinancials(admin, {
           checkoutId,
           paymentId: isPayment ? stableId : null,
-          installmentId: isInstallment ? stableId : null,
+          installmentId: isInstallment ? (resolvedInstallmentId || stableId) : null,
           ingressoIds: g.ids,
         });
         if ((res as any).updated > 0) processados += (res as any).updated;
-        else detalhes.push({ checkoutId, motivo: (res as any).reason });
+        else detalhes.push({ checkoutId, motivo: (res as any).reason, stableId });
       } catch (e: any) {
         console.error("[backfill] erro checkout", checkoutId, e);
         erros += g.ids.length;
