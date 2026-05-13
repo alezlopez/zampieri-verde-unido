@@ -32,18 +32,25 @@ Deno.serve(async (req) => {
       });
     }
 
+    // Lê body opcional: { force: true } recalcula também ingressos com valor_liquido já preenchido
+    let force = false;
+    try {
+      const body = await req.json();
+      if (body?.force === true) force = true;
+    } catch (_) { /* sem body */ }
+
     let processados = 0;
     let erros = 0;
     const detalhes: any[] = [];
 
-    // 1) Ingressos pagos não-cortesia sem valor_liquido
-    const { data: pendentes, error } = await admin
+    // 1) Ingressos pagos não-cortesia (sem líquido OU todos, se force)
+    let q = admin
       .from("ingressos")
       .select("id, checkout_id, asaas_payment_id, cortesia")
       .eq("status", "pago")
-      .eq("cortesia", false)
-      .is("valor_liquido", null)
-      .limit(1000);
+      .eq("cortesia", false);
+    if (!force) q = q.is("valor_liquido", null);
+    const { data: pendentes, error } = await q.limit(2000);
     if (error) throw error;
     const total = pendentes?.length || 0;
 

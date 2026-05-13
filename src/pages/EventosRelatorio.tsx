@@ -120,10 +120,11 @@ const EventosRelatorio = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user, isAdmin]);
 
-  const sincronizarLiquidos = async () => {
+  const sincronizarLiquidos = async (force = false) => {
+    if (force && !confirm("Recalcular líquido de TODOS os ingressos pagos (inclusive os já preenchidos)? Isso aplica as taxas de antecipação atualizadas.")) return;
     setBackfillLoading(true);
     try {
-      const { data: resp, error } = await supabase.functions.invoke("backfill-financeiro", { body: {} });
+      const { data: resp, error } = await supabase.functions.invoke("backfill-financeiro", { body: { force } });
       if (error) throw error;
       toast({
         title: "Sincronização concluída",
@@ -198,12 +199,21 @@ const EventosRelatorio = () => {
             <div className="flex gap-2">
               <Button
                 variant="outline"
-                onClick={sincronizarLiquidos}
+                onClick={() => sincronizarLiquidos(false)}
                 disabled={backfillLoading}
                 className="border-zampieri-green-dark text-zampieri-green-dark hover:bg-zampieri-cream"
               >
                 <Wand2 className={`w-4 h-4 mr-2 ${backfillLoading ? "animate-spin" : ""}`} />
                 Sincronizar líquidos
+              </Button>
+              <Button
+                variant="outline"
+                onClick={() => sincronizarLiquidos(true)}
+                disabled={backfillLoading}
+                className="border-zampieri-green-dark text-zampieri-green-dark hover:bg-zampieri-cream"
+              >
+                <Wand2 className={`w-4 h-4 mr-2 ${backfillLoading ? "animate-spin" : ""}`} />
+                Forçar recálculo
               </Button>
               <Button onClick={exportarCSV} disabled={!data} className="bg-zampieri-green-dark hover:bg-zampieri-green text-white">
                 <Download className="w-4 h-4 mr-2" />
