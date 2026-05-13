@@ -8,6 +8,7 @@ import { useToast } from "@/hooks/use-toast";
 import { Eye, EyeOff, ArrowLeft, CheckCircle } from "lucide-react";
 import { EventosHeader } from "@/components/EventosHeader";
 import { Footer } from "@/components/Footer";
+import { validatePasswordStrength, translatePasswordError, PASSWORD_REQUIREMENTS_TEXT } from "@/lib/passwordValidation";
 
 const ResetPassword = () => {
   const [password, setPassword] = useState("");
