@@ -92,18 +92,23 @@ Deno.serve(async (req) => {
         const r = await admin.from("pedidos_produtos").update(updateP).eq("checkout_id", checkoutId).select("id");
         if (!r.error) matchedP = r.data;
       }
-      if ((!matchedP || matchedP.length === 0) && prodIds.length > 0) {
+      // Fallback por IDs explícitos só se NÃO houver checkoutId (evita propagar erradamente)
+      if ((!matchedP || matchedP.length === 0) && !checkoutId && prodIds.length > 0) {
         const r = await admin.from("pedidos_produtos").update(updateP).in("id", prodIds).select("id");
         if (!r.error) matchedP = r.data;
       }
       if (newStatus === "pago" && matchedP && matchedP.length > 0) {
-        // Recalcula valor_bruto/líquido/taxa via Asaas (best-effort, simples)
         try {
           const { recomputePedidosProdutos } = await import("../_shared/produtos-financeiro.ts");
           await recomputePedidosProdutos(admin, { checkoutId, paymentId, installmentId, pedidoIds: prodIds });
         } catch (e) {
           console.error("[asaas-webhook] recompute produtos falhou", e);
         }
+      } else if (newStatus === "estornado" && matchedP && matchedP.length > 0) {
+        // Zera valores em estorno
+        await admin.from("pedidos_produtos").update({
+          valor_bruto: 0, valor_liquido: 0, taxa_total: 0, data_credito: null,
+        }).in("id", matchedP.map((m) => m.id));
       }
       await admin.from("asaas_webhook_events").update({ processed: true }).eq("event_id", eventId);
       return new Response(JSON.stringify({ ok: true, kind: "produto" }), {
