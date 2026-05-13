@@ -192,6 +192,11 @@ Deno.serve(async (req) => {
             }).catch((e) => console.error("[asaas-webhook] envio email (checkout) falhou", e));
           }
         }
+      } else if (newStatus === "estornado" && matched && matched.length > 0) {
+        // Zera valores financeiros em estorno
+        await admin.from("ingressos").update({
+          valor_bruto: 0, valor_liquido: 0, taxa_total: 0, data_credito: null,
+        }).in("id", matched.map((m) => m.id));
       }
     }
 
