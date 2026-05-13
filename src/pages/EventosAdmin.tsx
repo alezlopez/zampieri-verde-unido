@@ -210,6 +210,7 @@ const EventosAdmin = () => {
     setAlunoCortesia(false);
     setImagemFile(null);
     setImagemPreview(null);
+    setProdutosVinculados([]);
     setEditingId(null);
     setShowForm(false);
   };
