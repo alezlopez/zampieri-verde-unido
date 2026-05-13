@@ -565,7 +565,7 @@ export type Database = {
           utilizado_por: string | null
           valor_bruto: number | null
           valor_liquido: number | null
-          valor_total: number | null
+          valor_total: number
           webhook_payment_id: string | null
         }
         Insert: {
@@ -608,7 +608,7 @@ export type Database = {
           utilizado_por?: string | null
           valor_bruto?: number | null
           valor_liquido?: number | null
-          valor_total?: number | null
+          valor_total?: number
           webhook_payment_id?: string | null
         }
         Update: {
@@ -651,7 +651,7 @@ export type Database = {
           utilizado_por?: string | null
           valor_bruto?: number | null
           valor_liquido?: number | null
-          valor_total?: number | null
+          valor_total?: number
           webhook_payment_id?: string | null
         }
         Relationships: [
@@ -1438,6 +1438,7 @@ export type Database = {
           similarity: number
         }[]
       }
+      purgar_asaas_webhook_events: { Args: never; Returns: undefined }
       rematricula_by_codigo_aluno: {
         Args: { p_cod_aluno: number }
         Returns: {
