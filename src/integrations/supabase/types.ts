@@ -398,6 +398,48 @@ export type Database = {
         }
         Relationships: []
       }
+      evento_produtos: {
+        Row: {
+          ativo: boolean
+          created_at: string
+          evento_id: string
+          id: string
+          ordem: number
+          produto_id: string
+        }
+        Insert: {
+          ativo?: boolean
+          created_at?: string
+          evento_id: string
+          id?: string
+          ordem?: number
+          produto_id: string
+        }
+        Update: {
+          ativo?: boolean
+          created_at?: string
+          evento_id?: string
+          id?: string
+          ordem?: number
+          produto_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "evento_produtos_evento_id_fkey"
+            columns: ["evento_id"]
+            isOneToOne: false
+            referencedRelation: "eventos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "evento_produtos_produto_id_fkey"
+            columns: ["produto_id"]
+            isOneToOne: false
+            referencedRelation: "produtos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       eventos: {
         Row: {
           aluno_cortesia: boolean
@@ -688,6 +730,124 @@ export type Database = {
         }
         Relationships: []
       }
+      pedidos_produtos: {
+        Row: {
+          asaas_customer_id: string | null
+          asaas_payment_id: string | null
+          celular_comprador: string | null
+          checkout_id: string | null
+          checkout_url: string | null
+          cpf_comprador: string | null
+          created_at: string
+          data_credito: string | null
+          data_pagamento: string | null
+          email_comprador: string | null
+          evento_id: string | null
+          forma_pagamento: string | null
+          id: string
+          nome_comprador: string
+          parcelas: number
+          produto_id: string
+          qr_token: string
+          quantidade: number
+          retirado_em: string | null
+          retirado_por: string | null
+          status: string
+          taxa_total: number | null
+          updated_at: string
+          user_id: string
+          valor_bruto: number | null
+          valor_liquido: number | null
+          valor_total: number
+          valor_unitario: number
+          variacao_id: string
+        }
+        Insert: {
+          asaas_customer_id?: string | null
+          asaas_payment_id?: string | null
+          celular_comprador?: string | null
+          checkout_id?: string | null
+          checkout_url?: string | null
+          cpf_comprador?: string | null
+          created_at?: string
+          data_credito?: string | null
+          data_pagamento?: string | null
+          email_comprador?: string | null
+          evento_id?: string | null
+          forma_pagamento?: string | null
+          id?: string
+          nome_comprador: string
+          parcelas?: number
+          produto_id: string
+          qr_token?: string
+          quantidade?: number
+          retirado_em?: string | null
+          retirado_por?: string | null
+          status?: string
+          taxa_total?: number | null
+          updated_at?: string
+          user_id: string
+          valor_bruto?: number | null
+          valor_liquido?: number | null
+          valor_total?: number
+          valor_unitario?: number
+          variacao_id: string
+        }
+        Update: {
+          asaas_customer_id?: string | null
+          asaas_payment_id?: string | null
+          celular_comprador?: string | null
+          checkout_id?: string | null
+          checkout_url?: string | null
+          cpf_comprador?: string | null
+          created_at?: string
+          data_credito?: string | null
+          data_pagamento?: string | null
+          email_comprador?: string | null
+          evento_id?: string | null
+          forma_pagamento?: string | null
+          id?: string
+          nome_comprador?: string
+          parcelas?: number
+          produto_id?: string
+          qr_token?: string
+          quantidade?: number
+          retirado_em?: string | null
+          retirado_por?: string | null
+          status?: string
+          taxa_total?: number | null
+          updated_at?: string
+          user_id?: string
+          valor_bruto?: number | null
+          valor_liquido?: number | null
+          valor_total?: number
+          valor_unitario?: number
+          variacao_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pedidos_produtos_evento_id_fkey"
+            columns: ["evento_id"]
+            isOneToOne: false
+            referencedRelation: "eventos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pedidos_produtos_produto_id_fkey"
+            columns: ["produto_id"]
+            isOneToOne: false
+            referencedRelation: "produtos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pedidos_produtos_variacao_id_fkey"
+            columns: ["variacao_id"]
+            isOneToOne: false
+            referencedRelation: "produto_variacoes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       pre_matricula: {
         Row: {
           atendimentoEducacional: string | null
@@ -793,6 +953,95 @@ export type Database = {
           turnoPreferencia?: string | null
           usoMedicacao?: string | null
           whatsapp?: string | null
+        }
+        Relationships: []
+      }
+      produto_variacoes: {
+        Row: {
+          ativo: boolean
+          created_at: string
+          estoque_total: number | null
+          id: string
+          max_parcelas: number
+          nome: string
+          ordem: number
+          preco: number
+          preco_parcelado: number
+          produto_id: string
+          updated_at: string
+        }
+        Insert: {
+          ativo?: boolean
+          created_at?: string
+          estoque_total?: number | null
+          id?: string
+          max_parcelas?: number
+          nome: string
+          ordem?: number
+          preco?: number
+          preco_parcelado?: number
+          produto_id: string
+          updated_at?: string
+        }
+        Update: {
+          ativo?: boolean
+          created_at?: string
+          estoque_total?: number | null
+          id?: string
+          max_parcelas?: number
+          nome?: string
+          ordem?: number
+          preco?: number
+          preco_parcelado?: number
+          produto_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "produto_variacoes_produto_id_fkey"
+            columns: ["produto_id"]
+            isOneToOne: false
+            referencedRelation: "produtos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      produtos: {
+        Row: {
+          ativo: boolean
+          created_at: string
+          descricao: string | null
+          estoque_controlado: boolean
+          estoque_total: number | null
+          id: string
+          imagem_url: string | null
+          is_global: boolean
+          nome: string
+          updated_at: string
+        }
+        Insert: {
+          ativo?: boolean
+          created_at?: string
+          descricao?: string | null
+          estoque_controlado?: boolean
+          estoque_total?: number | null
+          id?: string
+          imagem_url?: string | null
+          is_global?: boolean
+          nome: string
+          updated_at?: string
+        }
+        Update: {
+          ativo?: boolean
+          created_at?: string
+          descricao?: string | null
+          estoque_controlado?: boolean
+          estoque_total?: number | null
+          id?: string
+          imagem_url?: string | null
+          is_global?: boolean
+          nome?: string
+          updated_at?: string
         }
         Relationships: []
       }
@@ -1065,6 +1314,14 @@ export type Database = {
           vagas_disponiveis: number
         }[]
       }
+      contar_estoque_produto: {
+        Args: { p_variacao_id: string }
+        Returns: {
+          disponivel: number
+          estoque_total: number
+          vendidos: number
+        }[]
+      }
       contar_meias_evento: {
         Args: { p_evento_id: string }
         Returns: {
@@ -1117,6 +1374,21 @@ export type Database = {
           origem: string
         }[]
       }
+      get_comprovante_produto: {
+        Args: { p_qr_token: string }
+        Returns: {
+          evento_data: string
+          evento_local: string
+          evento_titulo: string
+          nome_comprador: string
+          pedido_id: string
+          produto: string
+          quantidade: number
+          retirado_em: string
+          status: string
+          variacao: string
+        }[]
+      }
       get_current_message_period: {
         Args: never
         Returns: {
@@ -1145,6 +1417,18 @@ export type Database = {
         Returns: boolean
       }
       increment_message_count: { Args: { count: number }; Returns: undefined }
+      marcar_produto_retirado: {
+        Args: { p_qr_token: string }
+        Returns: {
+          message: string
+          ok: boolean
+          pedido_id: string
+          produto: string
+          quantidade: number
+          retirado_em: string
+          variacao: string
+        }[]
+      }
       match_documents: {
         Args: { filter?: Json; match_count?: number; query_embedding: string }
         Returns: {
