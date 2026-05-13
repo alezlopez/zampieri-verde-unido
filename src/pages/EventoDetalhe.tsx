@@ -298,6 +298,52 @@ const EventoDetalhe = () => {
                   </Button>
                 )}
               </div>
+
+              {produtosExtras.length > 0 && (
+                <section className="mt-10">
+                  <div className="flex items-center gap-2 mb-3">
+                    <Sparkles className="w-5 h-5 text-zampieri-gold" />
+                    <h2 className="font-serif text-xl font-semibold text-zampieri-green-dark">
+                      Produtos extras deste evento
+                    </h2>
+                  </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    {produtosExtras.map((p) => (
+                      <Card key={p.id} className="border-border hover:shadow-md transition-shadow">
+                        <CardContent className="p-4 flex gap-3">
+                          <div className="shrink-0">
+                            {p.imagem_url ? (
+                              <img src={p.imagem_url} alt={p.nome} className="w-16 h-16 object-cover rounded" />
+                            ) : (
+                              <div className="w-16 h-16 rounded bg-zampieri-cream flex items-center justify-center">
+                                <Package className="w-7 h-7 text-zampieri-gold" />
+                              </div>
+                            )}
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <h3 className="font-serif font-bold text-zampieri-green-dark line-clamp-1">{p.nome}</h3>
+                            {p.descricao && (
+                              <p className="text-xs text-muted-foreground line-clamp-2 mt-0.5">{p.descricao}</p>
+                            )}
+                            {p.preco_min !== null && (
+                              <p className="text-sm font-bold text-zampieri-green-dark mt-1">
+                                a partir de R$ {p.preco_min.toFixed(2).replace(".", ",")}
+                              </p>
+                            )}
+                          </div>
+                        </CardContent>
+                      </Card>
+                    ))}
+                  </div>
+                  <div className="mt-4 text-center">
+                    <Link to={`/eventos/${evento.id}/produtos`}>
+                      <Button variant="outline" className="border-zampieri-gold text-zampieri-green-dark hover:bg-zampieri-cream">
+                        Comprar produtos
+                      </Button>
+                    </Link>
+                  </div>
+                </section>
+              )}
             </article>
           </>
         )}
