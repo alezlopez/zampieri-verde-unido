@@ -172,10 +172,19 @@ const EventosAdmin = () => {
     setResumoPorEvento(porEvento);
   };
 
+  const fetchProdutos = async () => {
+    const { data } = await supabase
+      .from("produtos")
+      .select("id, nome, is_global, ativo")
+      .order("nome");
+    if (data) setProdutosDisponiveis(data as ProdutoOpt[]);
+  };
+
   useEffect(() => {
     if (isAdmin) {
       fetchEventos();
       fetchResumoFinanceiro();
+      fetchProdutos();
     }
   }, [isAdmin]);
 
