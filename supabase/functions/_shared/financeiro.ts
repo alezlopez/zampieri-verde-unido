@@ -37,7 +37,23 @@ async function loadIngressos(admin: any, opts: RecomputeOpts) {
 
   const { data, error } = await query;
   if (error) throw error;
-  return data || [];
+  const rows = data || [];
+
+  // Defesa: nunca processar ingressos de checkouts diferentes em um mesmo recompute.
+  // Se múltiplos checkouts aparecerem (sintoma de asaas_payment_id contaminado),
+  // restringe ao checkoutId pedido (se houver) e descarta os demais.
+  const checkoutIds = new Set(rows.map((r: any) => r.checkout_id).filter(Boolean));
+  if (checkoutIds.size > 1) {
+    console.warn("[financeiro] múltiplos checkouts no mesmo grupo — possível contaminação de asaas_payment_id", {
+      paymentId: opts.paymentId, installmentId: opts.installmentId, checkouts: Array.from(checkoutIds),
+    });
+    if (opts.checkoutId) {
+      return rows.filter((r: any) => r.checkout_id === opts.checkoutId);
+    }
+    // Sem checkoutId explícito não é seguro continuar — aborta.
+    return [];
+  }
+  return rows;
 }
 
 async function collectPayments(opts: RecomputeOpts): Promise<any[]> {
@@ -172,7 +188,8 @@ export async function recomputeIngressosFinancials(admin: any, opts: RecomputeOp
       data_pagamento: dataPagISO,
       data_credito: dataCred,
     };
-    if (stableId) update.asaas_payment_id = stableId;
+    // Só grava asaas_payment_id se o ingresso ainda não tiver um (evita contaminação cruzada)
+    if (stableId && !ing.asaas_payment_id) update.asaas_payment_id = stableId;
 
     await admin.from("ingressos").update(update).eq("id", ing.id);
   }

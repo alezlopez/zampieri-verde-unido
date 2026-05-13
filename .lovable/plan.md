@@ -1,103 +1,59 @@
-## Objetivo
+## O que está errado
 
-Aumentar a conversão e a clareza no fluxo de vendas (eventos + produtos) com **navegação unificada**, **upsell pós-compra** e **área única "Minhas compras"** — sem alterar nenhuma regra de negócio, edge function, RLS, schema ou cálculo financeiro existentes.
+Evento: **Excursão - Aquário de São Paulo** (id `87f20c66...`).
+Preços corretos: inteira R$ 240 à vista / R$ 260 parcelado · meia R$ 120 / R$ 130.
 
-Mudanças puramente de **frontend + navegação + 1 página de sucesso**.
+Encontrei **16 ingressos pagos** com `valor_bruto = 35` e `valor_liquido = 31,79`.
+Todos os 16:
+- pertencem a **16 usuários diferentes**;
+- vieram de **16 checkouts diferentes**;
+- mas compartilham o **mesmo `asaas_payment_id`** (`bbfddd93-72d9-4430-99ae-f903a71da20a`);
+- somados, dão exatamente **R$ 560 → 560 / 16 = 35**.
 
----
+Ou seja: o sistema pegou **uma única cobrança Asaas de R$ 560** (provavelmente um parcelamento de 16× ou um único pagamento) e **distribuiu proporcionalmente entre 16 ingressos que não deveriam estar associados a ela**. Como `valor_total` desses ingressos está `NULL`, o rateio caiu no fallback "1/N" e gerou R$ 35 para cada.
 
-## 1. Menu unificado no header
+## Causa raiz no código
 
-`EventosHeader` ganha um menu de navegação com as 4 áreas do sistema (visível para usuário logado):
+Em `supabase/functions/_shared/financeiro.ts → recomputeIngressosFinancials`:
 
-```text
-[Eventos]  [Produtos]  [Meus ingressos]  [Meus comprovantes]
+1. `loadIngressos` aceita carregar por `asaas_payment_id` (quando só vem `paymentId`/`installmentId`). Se vários ingressos de checkouts diferentes já carregam o mesmo id, ele puxa todos juntos.
+2. Em seguida, ao final, faz `update ... eq("id", ing.id)` gravando `asaas_payment_id = stableId` em todos eles — propagando o vínculo errado.
+
+E em `supabase/functions/asaas-webhook/index.ts` (passo 2, linha ~136-144), quando o match por `checkout_id` falha (ex.: webhook de evento sem checkoutId, ou backfill), ele faz `update ... eq("asaas_payment_id", stableId)` **sem restringir ao checkout** — tagueando ingressos de outros compradores com o mesmo id. A partir desse ponto, qualquer reprocesso "contagia" mais ingressos.
+
+Provável gatilho histórico: rodada do `backfill-financeiro` ou um webhook de um comprador parcelado (16× × 35 = 560) que escapou do match por checkoutId e caiu no `eq(asaas_payment_id)` — ou o `externalRef` colou ids de ingressos que não eram desse pagamento.
+
+## Plano de correção
+
+### 1. Blindar o webhook (`asaas-webhook/index.ts`)
+- No passo 2 (match por `asaas_payment_id`), exigir também `checkout_id` quando disponível, ou ignorar o passo se não houver `checkoutId` confiável.
+- Nunca fazer update em massa por `asaas_payment_id` sem confirmar que todos os ingressos pertencem ao mesmo `checkout_id`/`user_id`.
+
+### 2. Blindar o recompute (`_shared/financeiro.ts`)
+- `loadIngressos`: quando carregar por `asaas_payment_id`, validar que todos os retornados compartilham o mesmo `checkout_id`. Se não, abortar com log e exigir `checkoutId` ou `ingressoIds` explícitos.
+- Só sobrescrever `asaas_payment_id` quando o ingresso ainda não tiver um, ou quando o novo for igual ao antigo.
+
+### 3. Limpeza dos 16 ingressos afetados
+Para cada um dos 16 ids:
+- Zerar `asaas_payment_id`, `valor_bruto`, `valor_liquido`, `taxa_total`, `data_pagamento`, `data_credito`.
+- Recompor `valor_total` a partir do `tipo_ingresso` + preço do evento (240 / 120 / 260 / 130 conforme parcelas).
+- Reexecutar o recompute **escopado por `checkout_id`** (um por vez) para reatribuir o pagamento Asaas correto de cada compra.
+- Validar manualmente os 1–2 compradores cujo pagamento real era o `bbfddd93...` (provavelmente um parcelamento 16×R$35 — confirmar no painel Asaas que ingresso é o legítimo dono).
+
+### 4. Auditoria preventiva
+Rodar uma query de sanidade depois do fix:
+```sql
+select asaas_payment_id, count(distinct checkout_id) as checkouts, count(*) as ingressos
+from ingressos
+where asaas_payment_id is not null
+group by 1
+having count(distinct checkout_id) > 1;
 ```
+Qualquer linha retornada indica outro caso do mesmo bug e precisa do mesmo tratamento.
 
-- Mobile: drawer/menu hambúrguer.
-- Item ativo destacado pela rota atual.
-- Não-logado: vê apenas Eventos / Produtos + botão Entrar.
-- Admin continua com botão "Painel Admin" do lado.
+### 5. (Opcional) Mesma blindagem em produtos
+`supabase/functions/_shared/produtos-financeiro.ts` segue padrão idêntico — aplicar a mesma proteção para evitar que o problema apareça em `pedidos_produtos`.
 
-Aplicado em: `Eventos`, `Produtos`, `EventoDetalhe`, `MeusIngressos`, `ComprovanteProduto` e a nova "Minhas compras".
+## Observação importante
 
----
-
-## 2. Tela "Minhas compras" unificada
-
-Nova rota `/eventos/minhas-compras` (mantém `/eventos/meus-ingressos` como alias para não quebrar links antigos) com 2 abas:
-
-- **Ingressos** — conteúdo atual de `MeusIngressos`.
-- **Comprovantes (produtos)** — lista de `pedidos_produtos` do usuário, com:
-  - Nome do produto + variação, qtd, valor.
-  - Status colorido (pendente / pago / retirado / cancelado / estornado).
-  - Botão "Ver comprovante" (→ `/comprovante/:qr_token`) quando `pago`.
-  - Botão "Pagar" (abre `checkout_url`) quando `pendente`.
-  - Selo "Retirado" quando `status='retirado'`, com data/hora.
-
-Sem nenhuma alteração nas tabelas — apenas SELECT do que já existe.
-
----
-
-## 3. Upsell pós-checkout (a peça-chave)
-
-Hoje, após criar o checkout, o cliente é jogado direto pro Asaas. Após pagar (ou cancelar), a `successUrl` aponta direto pra `/eventos/meus-ingressos`. Vamos inserir uma **tela intermediária de sucesso** com upsell.
-
-### Fluxo novo
-
-1. Cliente conclui pagamento no Asaas.
-2. Asaas redireciona para **`/eventos/sucesso?ref=<checkout_id>&tipo=ingresso|produto`** (nova rota).
-3. Página "sucesso" mostra:
-   - Confirmação visual (✓ "Pagamento recebido — em até 5 min seu ingresso/comprovante estará liberado em Minhas compras").
-   - Resumo do pedido (busca pelos próprios checkout_id em `ingressos` ou `pedidos_produtos`).
-   - **Bloco "Você também pode gostar"** — produtos vinculados ao mesmo `evento_id` (via `evento_produtos`) que ainda não estão no pedido; se for compra avulsa de produto, mostra outros produtos `is_global=true`.
-   - CTAs: **"Adicionar ao meu pedido"** (abre `/eventos/:id/produtos` ou `/produtos` já com o produto sugerido pré-selecionado via querystring) e **"Ir para Minhas compras"**.
-
-### Onde mexer
-
-- Edge functions `asaas-create-checkout` e `produtos-create-checkout`: trocar `successUrl` para a nova rota `/eventos/sucesso?...` (mesma URL, nada muda no cálculo). É a **única mudança de backend**, e é apenas o destino da `successUrl`.
-- Nova página `src/pages/CompraSucesso.tsx`.
-
-Sem mudar webhook, RLS, schema, valores ou external references.
-
----
-
-## 4. Cross-promo no detalhe do evento
-
-Em `EventoDetalhe.tsx`, abaixo do bloco de compra/CTAs, adicionar **"Produtos extras deste evento"**: cards horizontais dos produtos em `evento_produtos` daquele evento, com botão "Comprar à parte" → `/eventos/:id/produtos`.
-
-Se o evento não tiver produtos vinculados, o bloco simplesmente não aparece (zero impacto).
-
----
-
-## 5. Entrada de "Produtos" a partir de `/eventos`
-
-Banner enxuto entre o hero e a grid de eventos: "🎁 Confira também nossos produtos avulsos" → link `/produtos`. Só renderiza se houver pelo menos 1 produto `is_global=true`.
-
----
-
-## 6. Refinamentos visuais menores
-
-- `MeusIngressos`: status com ícone (✓ pago, ⏳ pendente, 🚫 cancelado).
-- Card de ingresso pago ganha mini-preview do QR (já há `IngressoDetalhe`).
-- `Produtos`: badges "Mais vendido" / "Estoque baixo" quando `disponivel < 10` (usa RPC já existente `contar_estoque_produto`).
-- Toast de sucesso após adicionar ao carrinho.
-
----
-
-## Garantias de não-regressão
-
-- Nenhuma mudança em: schema, RLS, triggers, webhook, cálculo de líquido, formato de `externalReference`, fluxo de checkout do Asaas, autenticação/CPF.
-- `successUrl` apenas troca de destino — quem já paga e cai em `/eventos/meus-ingressos` continua funcionando (a nova `/eventos/sucesso` redireciona pra lá depois).
-- Rotas atuais permanecem (`/eventos/meus-ingressos`, `/comprovante/:token`, `/produtos`, `/eventos/:id/produtos`).
-- Scanner da portaria continua igual (já lê tanto ingresso quanto produto).
-
----
-
-## Entregas em ordem
-
-1. Menu unificado no header (`EventosHeader` + uso nas páginas).
-2. Página `CompraSucesso` + ajuste das 2 `successUrl`s nas edge functions.
-3. Aba "Comprovantes" em `MeusIngressos` (renomear visualmente para "Minhas compras").
-4. Bloco de produtos extras em `EventoDetalhe`.
-5. Refinamentos visuais (badges, ícones de status, toast).
+Antes de corrigir os dados, precisamos identificar **qual comprador realmente pagou** o `bbfddd93...` no Asaas (consulta direta no painel ou via API `getInstallment/getPayment`), para não apagar o vínculo legítimo. Posso rodar essa consulta no Asaas e listar exatamente qual checkout é o dono antes de você aprovar a limpeza.
