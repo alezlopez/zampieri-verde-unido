@@ -27,6 +27,19 @@ export async function findCustomerByCpf(cpf: string) {
   return data?.data?.[0] || null;
 }
 
+// Endereço padrão (Colégio Zampieri) usado quando o comprador não tem endereço próprio.
+// Asaas exige `address` no customer para alguns tipos de checkout (ex.: excursões/eventos
+// configurados como produto físico no Asaas). Sem isso, a criação do checkout retorna 400.
+const DEFAULT_ADDRESS = {
+  address: "Rua Cesário Mota",
+  addressNumber: "428",
+  complement: "",
+  province: "Centro",
+  city: "São Paulo",
+  state: "SP",
+  postalCode: "01153000",
+};
+
 export async function createCustomer(input: {
   name: string;
   cpfCnpj: string;
@@ -41,8 +54,28 @@ export async function createCustomer(input: {
       email: input.email,
       mobilePhone: input.mobilePhone?.replace(/\D/g, "") || undefined,
       notificationDisabled: false,
+      ...DEFAULT_ADDRESS,
     }),
   });
+}
+
+export async function updateCustomer(customerId: string, fields: Record<string, unknown>) {
+  return await call(`/customers/${customerId}`, {
+    method: "POST",
+    body: JSON.stringify(fields),
+  });
+}
+
+export async function ensureCustomerAddress(customer: any) {
+  if (!customer?.id) return customer;
+  const hasAddress = customer.postalCode && customer.addressNumber;
+  if (hasAddress) return customer;
+  try {
+    return await updateCustomer(customer.id, DEFAULT_ADDRESS);
+  } catch (e) {
+    console.warn("[asaas] ensureCustomerAddress failed:", (e as Error).message);
+    return customer;
+  }
 }
 
 export async function getOrCreateCustomer(input: {
@@ -52,7 +85,7 @@ export async function getOrCreateCustomer(input: {
   mobilePhone?: string;
 }) {
   const found = await findCustomerByCpf(input.cpfCnpj);
-  if (found) return found;
+  if (found) return await ensureCustomerAddress(found);
   return await createCustomer(input);
 }
 
