@@ -765,6 +765,44 @@ const EventosAdmin = () => {
                   </div>
                 )}
               </div>
+
+              {/* Produtos vinculados */}
+              <div className="border-t pt-3 mt-3">
+                <label className="text-sm font-medium flex items-center gap-2">
+                  <Link2 className="w-4 h-4" /> Produtos vinculados a este evento
+                </label>
+                <p className="text-xs text-muted-foreground mb-2">
+                  Aparecerão como upsell na página do evento e após a compra do ingresso.
+                </p>
+                {produtosDisponiveis.length === 0 ? (
+                  <p className="text-xs text-muted-foreground italic">
+                    Nenhum produto cadastrado.{" "}
+                    <Link to="/eventos/admin/produtos" className="text-zampieri-green-dark underline">
+                      Cadastrar produto
+                    </Link>
+                  </p>
+                ) : (
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-2 max-h-56 overflow-y-auto border rounded-md p-2">
+                    {produtosDisponiveis.map((p) => (
+                      <label key={p.id} className="flex items-center gap-2 text-sm cursor-pointer hover:bg-muted/50 p-1 rounded">
+                        <Checkbox
+                          checked={produtosVinculados.includes(p.id)}
+                          onCheckedChange={(checked) =>
+                            setProdutosVinculados((prev) =>
+                              checked === true
+                                ? Array.from(new Set([...prev, p.id]))
+                                : prev.filter((x) => x !== p.id)
+                            )
+                          }
+                        />
+                        <span className="flex-1">{p.nome}</span>
+                        {p.is_global && <Badge variant="secondary" className="text-[10px]">Global</Badge>}
+                        {!p.ativo && <Badge variant="outline" className="text-[10px]">Inativo</Badge>}
+                      </label>
+                    ))}
+                  </div>
+                )}
+              </div>
               <div className="flex gap-2">
                 <Button onClick={handleSave} className="bg-zampieri-green-dark hover:bg-zampieri-green text-white" disabled={uploading}>
                   {uploading ? "Salvando..." : "Salvar"}
