@@ -14,6 +14,7 @@ import EventosLogin from "./pages/EventosLogin";
 import EventoCompra from "./pages/EventoCompra";
 import EventoDetalhe from "./pages/EventoDetalhe";
 import EventosAdmin from "./pages/EventosAdmin";
+import EventosRelatorio from "./pages/EventosRelatorio";
 import MeusIngressos from "./pages/MeusIngressos";
 import IngressoDetalhe from "./pages/IngressoDetalhe";
 import ScannerIngressos from "./pages/ScannerIngressos";
@@ -41,6 +42,7 @@ const App = () => (
             <Route path="/eventos/meus-ingressos" element={<MeusIngressos />} />
             <Route path="/eventos/ingresso/:id" element={<IngressoDetalhe />} />
             <Route path="/eventos/admin/scanner" element={<ScannerIngressos />} />
+            <Route path="/eventos/admin/relatorio" element={<EventosRelatorio />} />
             <Route path="/reset-password" element={<ResetPassword />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />

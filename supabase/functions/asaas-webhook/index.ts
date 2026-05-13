@@ -1,5 +1,6 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
 import { corsHeaders } from "../_shared/cors.ts";
+import { recomputeIngressosFinancials } from "../_shared/financeiro.ts";
 
 const STATUS_MAP: Record<string, string> = {
   PAYMENT_CONFIRMED: "pago",
@@ -122,6 +123,17 @@ Deno.serve(async (req) => {
 
       // Dispara e-mail de confirmação (best-effort)
       if (newStatus === "pago" && matched && matched.length > 0) {
+        // Recalcula valor líquido / taxas via API Asaas (best-effort)
+        try {
+          await recomputeIngressosFinancials(admin, {
+            checkoutId,
+            paymentId,
+            externalRef,
+          });
+        } catch (e) {
+          console.error("[asaas-webhook] recomputeFinancials falhou", e);
+        }
+
         if (paymentId) {
           admin.functions.invoke("enviar-confirmacao-ingresso", {
             body: { payment_id: paymentId },

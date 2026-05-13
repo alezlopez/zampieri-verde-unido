@@ -7,7 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useToast } from "@/hooks/use-toast";
-import { ArrowLeft, Plus, Pencil, Trash2, Eye, EyeOff, Users, Upload, X, ScanLine, UserPlus, RefreshCw, Link2 } from "lucide-react";
+import { ArrowLeft, Plus, Pencil, Trash2, Eye, EyeOff, Users, Upload, X, ScanLine, UserPlus, RefreshCw, Link2, BarChart3 } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
@@ -482,6 +482,12 @@ const EventosAdmin = () => {
             Eventos
           </Link>
           <div className="flex gap-2">
+            <Link to="/eventos/admin/relatorio">
+              <Button variant="outline" className="border-zampieri-green-dark text-zampieri-green-dark hover:bg-zampieri-cream">
+                <BarChart3 className="w-4 h-4 mr-2" />
+                Relatório
+              </Button>
+            </Link>
             <Link to="/eventos/admin/scanner">
               <Button variant="outline" className="border-zampieri-green-dark text-zampieri-green-dark hover:bg-zampieri-cream">
                 <ScanLine className="w-4 h-4 mr-2" />
