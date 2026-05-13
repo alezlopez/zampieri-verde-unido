@@ -33,10 +33,9 @@ Deno.serve(async (req) => {
 
     let processados = 0;
     let erros = 0;
-    let total = 0;
     const detalhes: any[] = [];
 
-    // 1) Caminho A: ingressos pagos sem valor_liquido com asaas_payment_id ou checkout_id
+    // 1) Ingressos pagos não-cortesia sem valor_liquido
     const { data: pendentes, error } = await admin
       .from("ingressos")
       .select("id, checkout_id, asaas_payment_id, cortesia")
@@ -45,42 +44,72 @@ Deno.serve(async (req) => {
       .is("valor_liquido", null)
       .limit(1000);
     if (error) throw error;
-    total = pendentes?.length || 0;
+    const total = pendentes?.length || 0;
 
-    // Agrupa por (asaas_payment_id || checkout_id)
-    const grupos = new Map<string, { checkoutId: string | null; stableId: string | null; ids: string[] }>();
+    // Agrupa primeiro por checkout_id (vínculo mais forte), depois por asaas_payment_id
+    const porCheckout = new Map<string, { ids: string[]; stableId: string | null }>();
+    const porPayment = new Map<string, { ids: string[]; checkoutId: string | null }>();
     const semChave: any[] = [];
+
     for (const p of pendentes || []) {
-      const key = p.asaas_payment_id || p.checkout_id;
-      if (!key) { semChave.push(p); continue; }
-      if (!grupos.has(key)) {
-        grupos.set(key, { checkoutId: p.checkout_id, stableId: p.asaas_payment_id, ids: [] });
+      if (p.checkout_id) {
+        if (!porCheckout.has(p.checkout_id)) {
+          porCheckout.set(p.checkout_id, { ids: [], stableId: p.asaas_payment_id });
+        }
+        const g = porCheckout.get(p.checkout_id)!;
+        g.ids.push(p.id);
+        if (!g.stableId && p.asaas_payment_id) g.stableId = p.asaas_payment_id;
+      } else if (p.asaas_payment_id) {
+        if (!porPayment.has(p.asaas_payment_id)) {
+          porPayment.set(p.asaas_payment_id, { ids: [], checkoutId: null });
+        }
+        porPayment.get(p.asaas_payment_id)!.ids.push(p.id);
+      } else {
+        semChave.push(p);
       }
-      grupos.get(key)!.ids.push(p.id);
     }
 
-    for (const [, g] of grupos) {
+    // Processa grupos por checkout_id
+    for (const [checkoutId, g] of porCheckout) {
       try {
         const stableId = g.stableId || "";
-        // Heurística: ids de pagamento Asaas começam com "pay_"; installment é uuid puro
         const isInstallment = stableId && !stableId.startsWith("pay_");
         const isPayment = stableId && stableId.startsWith("pay_");
-        await recomputeIngressosFinancials(admin, {
-          checkoutId: g.checkoutId,
+        const res = await recomputeIngressosFinancials(admin, {
+          checkoutId,
           paymentId: isPayment ? stableId : null,
           installmentId: isInstallment ? stableId : null,
           ingressoIds: g.ids,
         });
-        processados += g.ids.length;
+        if ((res as any).updated > 0) processados += (res as any).updated;
+        else detalhes.push({ checkoutId, motivo: (res as any).reason });
       } catch (e: any) {
-        console.error("[backfill] erro grupo", g, e);
+        console.error("[backfill] erro checkout", checkoutId, e);
         erros += g.ids.length;
-        detalhes.push({ grupo: g, erro: e.message });
+        detalhes.push({ checkoutId, erro: e.message });
       }
     }
 
-    // 2) Caminho B: ingressos sem stableId nem checkout_id usável.
-    // Varremos webhook events para tentar reconstruir o vínculo.
+    // Processa grupos só com asaas_payment_id
+    for (const [stableId, g] of porPayment) {
+      try {
+        const isInstallment = !stableId.startsWith("pay_");
+        const isPayment = stableId.startsWith("pay_");
+        const res = await recomputeIngressosFinancials(admin, {
+          paymentId: isPayment ? stableId : null,
+          installmentId: isInstallment ? stableId : null,
+          ingressoIds: g.ids,
+        });
+        if ((res as any).updated > 0) processados += (res as any).updated;
+        else detalhes.push({ stableId, motivo: (res as any).reason });
+      } catch (e: any) {
+        console.error("[backfill] erro payment", stableId, e);
+        erros += g.ids.length;
+        detalhes.push({ stableId, erro: e.message });
+      }
+    }
+
+    // 2) Ingressos sem chave: tenta resolver via webhook events recentes
     if (semChave.length > 0) {
       const { data: events } = await admin
         .from("asaas_webhook_events")
@@ -95,18 +124,32 @@ Deno.serve(async (req) => {
       for (const ev of events || []) {
         const pid = ev.payload?.payment?.id || ev.payment_id;
         const inst = ev.payload?.payment?.installment || null;
+        const ckSession = ev.payload?.payment?.checkoutSession || null;
         const chave = inst || pid;
         if (!chave || vistos.has(chave)) continue;
         vistos.add(chave);
 
         try {
           const { ingressoIds } = await resolveIngressosFromAsaas({ paymentId: pid, installmentId: inst });
-          const intersect = ingressoIds.filter((id) => ingressoIdsAlvo.has(id));
+
+          // Tenta também pelo checkout session
+          let resolvedIds = ingressoIds;
+          if ((!resolvedIds || resolvedIds.length === 0) && ckSession) {
+            const { data: ingsCk } = await admin
+              .from("ingressos")
+              .select("id")
+              .eq("checkout_id", ckSession);
+            resolvedIds = (ingsCk || []).map((r: any) => r.id);
+          }
+
+          const intersect = (resolvedIds || []).filter((id) => ingressoIdsAlvo.has(id));
           if (intersect.length === 0) continue;
+
           await recomputeIngressosFinancials(admin, {
+            checkoutId: ckSession,
             paymentId: inst ? null : pid,
             installmentId: inst,
-            ingressoIds,
+            ingressoIds: resolvedIds,
           });
           processados += intersect.length;
         } catch (e: any) {
@@ -116,7 +159,7 @@ Deno.serve(async (req) => {
       }
     }
 
-    return new Response(JSON.stringify({ ok: true, total, processados, erros, detalhes: detalhes.slice(0, 10) }), {
+    return new Response(JSON.stringify({ ok: true, total, processados, erros, detalhes: detalhes.slice(0, 20) }), {
       status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   } catch (e: any) {

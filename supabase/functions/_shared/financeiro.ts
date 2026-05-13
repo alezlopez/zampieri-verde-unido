@@ -1,5 +1,8 @@
 // Helper: recalcula valor_bruto / valor_liquido / taxa_total para um conjunto de ingressos
-// usando os pagamentos do Asaas. Suporta parcelado (soma todas as parcelas pagas do installment).
+// usando os pagamentos do Asaas. Suporta:
+//  - PIX / cartão à vista (1 pagamento)
+//  - Cartão parcelado (N pagamentos do mesmo installment)
+// Vínculo seguro (em ordem): ingressoIds explícitos, checkoutId, externalReference, paymentId.
 import { listPayments, getPayment, listInstallmentPayments, getInstallment } from "./asaas.ts";
 
 const PAID_STATUSES = new Set(["CONFIRMED", "RECEIVED", "RECEIVED_IN_CASH"]);
@@ -12,72 +15,107 @@ export interface RecomputeOpts {
   ingressoIds?: string[] | null;
 }
 
-export async function recomputeIngressosFinancials(admin: any, opts: RecomputeOpts) {
-  // 1) Busca ingressos relacionados
-  let query = admin.from("ingressos").select("id, cortesia, valor_total, asaas_payment_id, checkout_id");
+async function loadIngressos(admin: any, opts: RecomputeOpts) {
+  let query = admin
+    .from("ingressos")
+    .select("id, cortesia, valor_total, asaas_payment_id, checkout_id, status");
+
   if (opts.ingressoIds && opts.ingressoIds.length > 0) {
     query = query.in("id", opts.ingressoIds);
   } else if (opts.checkoutId) {
     query = query.eq("checkout_id", opts.checkoutId);
-  } else if (opts.paymentId) {
-    query = query.eq("asaas_payment_id", opts.paymentId);
   } else if (opts.externalRef) {
     const ids = opts.externalRef.split(",").map((s) => s.trim()).filter(Boolean);
-    if (ids.length === 0) return { updated: 0 };
+    if (ids.length === 0) return [];
     query = query.in("id", ids);
+  } else if (opts.paymentId || opts.installmentId) {
+    const stable = opts.installmentId || opts.paymentId;
+    query = query.eq("asaas_payment_id", stable);
   } else {
-    return { updated: 0 };
+    return [];
   }
 
-  const { data: ingressos, error } = await query;
+  const { data, error } = await query;
   if (error) throw error;
-  if (!ingressos || ingressos.length === 0) return { updated: 0 };
+  return data || [];
+}
 
-  const naoCortesia = ingressos.filter((i: any) => !i.cortesia);
-
-  // 2) Coleta pagamentos no Asaas — prioriza installment (parcelado)
+async function collectPayments(opts: RecomputeOpts): Promise<any[]> {
   let payments: any[] = [];
 
+  // 1) Se houver installment, lista todas as parcelas (única fonte autoritativa)
   if (opts.installmentId) {
     const data = await listInstallmentPayments(opts.installmentId);
-    payments = data?.data || [];
-  } else if (opts.paymentId) {
+    return data?.data || [];
+  }
+
+  // 2) Se houver paymentId, busca; se for parte de installment, expande
+  if (opts.paymentId) {
     const p = await getPayment(opts.paymentId);
     if (p?.installment) {
       const data = await listInstallmentPayments(p.installment);
-      payments = data?.data || [];
-    } else if (p) {
-      payments = [p];
+      return data?.data || [];
     }
-  } else if (opts.externalRef) {
+    return p ? [p] : [];
+  }
+
+  // 3) externalReference (ids dos ingressos serializados)
+  if (opts.externalRef) {
     const data = await listPayments({ externalReference: opts.externalRef, limit: 100 });
     payments = data?.data || [];
-    // Se algum dos pagamentos for de installment, expande para todas as parcelas
     const installmentIds = new Set(payments.map((p) => p.installment).filter(Boolean));
     if (installmentIds.size > 0) {
-      payments = [];
+      const expanded: any[] = [];
       for (const iid of installmentIds) {
         const d = await listInstallmentPayments(iid as string);
-        payments.push(...((d?.data) || []));
+        expanded.push(...((d?.data) || []));
       }
+      // pagamentos não-installment + expandidos
+      const nonInstall = payments.filter((p) => !p.installment);
+      return [...nonInstall, ...expanded];
     }
+    return payments;
   }
 
-  if (naoCortesia.length === 0 || payments.length === 0) {
-    // Mesmo sem pagamentos, zera cortesias para não ficar nulo
-    for (const c of ingressos.filter((i: any) => i.cortesia)) {
-      await admin.from("ingressos").update({
-        valor_bruto: 0, valor_liquido: 0, taxa_total: 0,
-      }).eq("id", c.id);
-    }
-    return { updated: 0 };
+  return [];
+}
+
+export async function recomputeIngressosFinancials(admin: any, opts: RecomputeOpts) {
+  const ingressos = await loadIngressos(admin, opts);
+  if (ingressos.length === 0) return { updated: 0, reason: "no_ingressos" };
+
+  const naoCortesia = ingressos.filter((i: any) => !i.cortesia);
+
+  // Garante cortesias zeradas sempre
+  for (const c of ingressos.filter((i: any) => i.cortesia)) {
+    await admin.from("ingressos").update({
+      valor_bruto: 0, valor_liquido: 0, taxa_total: 0,
+    }).eq("id", c.id);
   }
 
-  // Filtra só pagos
+  if (naoCortesia.length === 0) return { updated: 0, reason: "all_cortesia" };
+
+  // Coleta pagamentos
+  let payments: any[] = [];
+  try {
+    payments = await collectPayments(opts);
+  } catch (e) {
+    console.error("[financeiro] erro coletando pagamentos", e);
+    return { updated: 0, reason: "collect_failed", error: (e as Error).message };
+  }
+
   const pagos = payments.filter((p) => PAID_STATUSES.has(p.status));
-  if (pagos.length === 0) return { updated: 0 };
+  if (pagos.length === 0) return { updated: 0, reason: "no_paid_payments" };
 
-  // 3) Agrega
+  // Detecta installment para gravar como asaas_payment_id estável
+  const installmentSet = new Set(pagos.map((p) => p.installment).filter(Boolean));
+  const stableInstallmentId = installmentSet.size === 1
+    ? Array.from(installmentSet)[0] as string
+    : null;
+  const singlePaymentId = !stableInstallmentId && pagos.length === 1 ? pagos[0].id : null;
+  const stableId = stableInstallmentId || singlePaymentId || opts.installmentId || opts.paymentId || null;
+
+  // Agrega bruto/líquido/datas
   let bruto = 0;
   let liquido = 0;
   let dataPag: string | null = null;
@@ -89,40 +127,52 @@ export async function recomputeIngressosFinancials(admin: any, opts: RecomputeOp
     if (d && (!dataPag || d > dataPag)) dataPag = d;
     if (p.creditDate && (!dataCred || p.creditDate > dataCred)) dataCred = p.creditDate;
   }
+  bruto = Number(bruto.toFixed(2));
+  liquido = Number(liquido.toFixed(2));
 
-  // 4) Distribui entre ingressos não-cortesia
+  // Distribui proporcionalmente entre ingressos não-cortesia
   const baseSum = naoCortesia.reduce((s: number, i: any) => s + Number(i.valor_total || 0), 0);
   const usarProporcional = baseSum > 0;
-
   const dataPagISO = dataPag ? new Date(dataPag).toISOString() : null;
-  for (const ing of naoCortesia) {
+
+  // Para evitar perdas por arredondamento, atribui o saldo restante ao último
+  let restanteB = bruto;
+  let restanteL = liquido;
+  for (let idx = 0; idx < naoCortesia.length; idx++) {
+    const ing = naoCortesia[idx];
+    const isLast = idx === naoCortesia.length - 1;
     const peso = usarProporcional ? Number(ing.valor_total || 0) / baseSum : 1 / naoCortesia.length;
-    const vb = Number((bruto * peso).toFixed(2));
-    const vl = Number((liquido * peso).toFixed(2));
-    await admin.from("ingressos").update({
+    const vb = isLast ? Number(restanteB.toFixed(2)) : Number((bruto * peso).toFixed(2));
+    const vl = isLast ? Number(restanteL.toFixed(2)) : Number((liquido * peso).toFixed(2));
+    restanteB = Number((restanteB - vb).toFixed(2));
+    restanteL = Number((restanteL - vl).toFixed(2));
+
+    const update: any = {
       valor_bruto: vb,
       valor_liquido: vl,
       taxa_total: Number((vb - vl).toFixed(2)),
       data_pagamento: dataPagISO,
       data_credito: dataCred,
-    }).eq("id", ing.id);
+    };
+    if (stableId) update.asaas_payment_id = stableId;
+
+    await admin.from("ingressos").update(update).eq("id", ing.id);
   }
 
-  // Cortesias zeradas
-  for (const c of ingressos.filter((i: any) => i.cortesia)) {
-    await admin.from("ingressos").update({
-      valor_bruto: 0, valor_liquido: 0, taxa_total: 0,
-    }).eq("id", c.id);
-  }
-
-  return { updated: naoCortesia.length, bruto, liquido, parcelas: pagos.length };
+  return {
+    updated: naoCortesia.length,
+    bruto, liquido,
+    parcelas: pagos.length,
+    stableId,
+  };
 }
 
-// Resolve um pagamento Asaas (paymentId ou installmentId) para a lista de ingressos
+// Resolve um pagamento Asaas (paymentId/installmentId/checkoutSession) para a lista de ingressos
 // usando o externalReference que o create-checkout grava ("id1,id2,...").
 export async function resolveIngressosFromAsaas(opts: { paymentId?: string | null; installmentId?: string | null }) {
   let externalRef: string | null = null;
   let installmentId: string | null = opts.installmentId || null;
+  let checkoutSession: string | null = null;
 
   if (installmentId) {
     try {
@@ -131,11 +181,12 @@ export async function resolveIngressosFromAsaas(opts: { paymentId?: string | nul
     } catch (_) { /* ignore */ }
   }
 
-  if (!externalRef && opts.paymentId) {
+  if (opts.paymentId) {
     try {
       const p = await getPayment(opts.paymentId);
-      externalRef = p?.externalReference || null;
+      externalRef = externalRef || p?.externalReference || null;
       if (!installmentId && p?.installment) installmentId = p.installment;
+      checkoutSession = p?.checkoutSession || null;
       if (!externalRef && installmentId) {
         const inst = await getInstallment(installmentId);
         externalRef = inst?.externalReference || null;
@@ -144,5 +195,5 @@ export async function resolveIngressosFromAsaas(opts: { paymentId?: string | nul
   }
 
   const ids = (externalRef || "").split(",").map((s) => s.trim()).filter(Boolean);
-  return { ingressoIds: ids, installmentId, externalRef };
+  return { ingressoIds: ids, installmentId, externalRef, checkoutSession };
 }

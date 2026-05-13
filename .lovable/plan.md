@@ -1,45 +1,46 @@
-## Problema
+## Diagnóstico
 
-Para compras **parceladas**, o Asaas envia um `PAYMENT_CONFIRMED` por parcela. Hoje o `recomputeIngressosFinancials` só busca **uma** parcela por vez (via `getPayment`) e ainda recebe `externalReference = null`, então grava no relatório apenas o líquido de 1 parcela — e cada novo webhook sobrescreve com o líquido da próxima. Resultado: `valor_liquido`, `valor_bruto`, `taxa_total` e `data_pagamento` ficam zerados/errados nos ingressos parcelados.
+A lógica atual tenta recalcular o líquido buscando pagamentos no Asaas, mas falha em casos reais porque:
 
-Para PIX/cartão à vista funciona porque há um único `payment` e o `getPayment` já traz tudo.
+- Em checkout parcelado, os eventos `PAYMENT_CONFIRMED` vêm por parcela e nem sempre trazem `externalReference`; o vínculo confiável aparece em `payment.checkoutSession`, que hoje não é usado.
+- O webhook recalcula passando `paymentId/installmentId`, mas o helper primeiro tenta localizar ingressos por `asaas_payment_id`; como o pagamento ainda não está vinculado aos ingressos, o cálculo pode retornar vazio.
+- Para checkout parcelado, o `CHECKOUT_PAID` marca ingressos como pagos antes dos eventos de pagamento chegarem, deixando `valor_liquido` nulo até backfill.
+- O relatório mostra líquido como `0` quando ainda está pendente, o que distorce totais.
+- Há um problema separado de preço unitário: os dois ingressos da Flavia estão com `valor_total = 520` cada, mas o evento custa `260` parcelado por ingresso. O Asaas confirmou 4 parcelas de `130`, total bruto `520`, líquido `501,60`; isso deve ser distribuído como `260` bruto e `250,80` líquido por ingresso.
 
-## Correções
+## Plano de implementação
 
-### 1. `supabase/functions/_shared/asaas.ts`
-Adicionar helper:
-```ts
-export async function listInstallmentPayments(installmentId: string)
-// GET /installments/:id/payments  → lista todas as parcelas com value/netValue/status/paymentDate/creditDate
-```
+1. **Fortalecer vínculo Asaas → ingressos**
+   - Atualizar o helper financeiro para aceitar `checkoutSession`/`checkout_id` vindo de `payload.payment.checkoutSession`.
+   - Resolver ingressos por esta ordem segura: IDs explícitos, `checkout_id`, `externalReference`, `asaas_payment_id`.
+   - Ao receber pagamento parcelado, gravar o ID do parcelamento (`installment`) em todos os ingressos daquele checkout para futuras sincronizações.
 
-### 2. `supabase/functions/_shared/financeiro.ts` (reescrever a coleta de pagamentos)
-Nova lógica para montar o conjunto de pagamentos:
-- Receber também `installmentId` opcional.
-- Se `installmentId` estiver presente → `listInstallmentPayments(installmentId)` e usar todas as parcelas (filtradas por status pago).
-- Senão se `paymentId` → `getPayment(paymentId)`. Se a resposta tiver campo `installment`, automaticamente expandir via `listInstallmentPayments`.
-- Senão se `externalRef` → `listPayments({ externalReference })` (fluxo legado).
+2. **Corrigir cálculo financeiro para PIX, cartão à vista e cartão parcelado**
+   - Para PIX/cartão à vista: usar o pagamento único confirmado/recebido e gravar `valor_bruto`, `valor_liquido`, `taxa_total`, `data_pagamento`, `data_credito`.
+   - Para cartão parcelado: somar todas as parcelas confirmadas/recebidas do mesmo `installment`, sem duplicar eventos, e distribuir proporcionalmente pelos ingressos pagos.
+   - Usar o payload do webhook como fonte imediata quando disponível, e consultar API Asaas como complemento quando necessário.
 
-Soma `value` em `bruto` e `netValue` em `liquido` de todas as parcelas confirmadas, pega `paymentDate`/`creditDate` mais recentes. Distribuição proporcional entre ingressos não-cortesia segue igual.
+3. **Ajustar webhook sem quebrar fluxo atual**
+   - Manter resposta 200 e idempotência.
+   - Processar `CHECKOUT_PAID` apenas para status/e-mail, mas deixar financeiro ser consolidado pelos eventos `PAYMENT_CONFIRMED/RECEIVED`.
+   - Nos eventos de pagamento, usar `checkoutSession` para localizar o checkout, mesmo quando `externalReference` vier nulo.
 
-### 3. `supabase/functions/asaas-webhook/index.ts`
-- Extrair `installmentId = payload.payment.installment || null`.
-- Ao montar o `update` dos ingressos, se `installmentId` existir, gravar `asaas_payment_id = installmentId` (id estável do parcelamento) em vez do id da parcela individual — evita sobrescrita a cada webhook e dá um identificador único para o conjunto.
-- Passar `installmentId` para `recomputeIngressosFinancials`.
-- Idempotência por `event_id` já cobre a chegada de N parcelas: cada uma vai disparar o recompute, mas como agora a função soma **todas** as parcelas do parcelamento, o valor final converge sempre para o total correto (a última parcela paga "fecha" o valor).
+4. **Melhorar backfill/sincronização manual**
+   - Atualizar `backfill-financeiro` para buscar também eventos pelo `checkoutSession` e recalcular grupos pagos com líquido nulo.
+   - Permitir reprocessar grupos pagos com líquido nulo sem depender de `asaas_payment_id` já gravado.
 
-### 4. `supabase/functions/asaas-sync-payment/index.ts`
-- Após `getPayment`, se `payment.installment` estiver presente, passar `installmentId` para o recompute (mesma assinatura nova).
+5. **Corrigir relatório para não distorcer totais**
+   - Marcar líquido pendente como pendente e não somar `0` como se fosse valor real.
+   - Mostrar bruto com fallback em `valor_total`, mas líquido/taxa apenas quando calculados.
+   - Manter filtros atuais e quebrar cartão em à vista/parcelado pela coluna `parcelas`.
 
-### 5. `supabase/functions/backfill-financeiro/index.ts`
-- Para ingressos pagos sem `valor_liquido`: se o `asaas_payment_id` corresponde a um id de parcelamento (prefixo diferente de `pay_`), usa direto como `installmentId`; senão chama `getPayment` e segue o mesmo caminho do item 2.
-- Permite recuperar retroativamente os ingressos parcelados que já passaram com dados zerados.
+6. **Correção de dados existentes necessária após validar a lógica**
+   - Corrigir os dois ingressos da Flavia de `valor_total = 520` para `260` cada.
+   - Recalcular financeiro do checkout `274c5bca-9721-4b8d-83c1-2fdee8c27234` para ficar: bruto total `520`, líquido total `501,60`, taxa total `18,40`, distribuído entre os dois ingressos.
+   - Reprocessar os pagamentos já pagos com `valor_liquido` nulo usando a sincronização atualizada.
 
-### 6. (Sem mudança de schema)
-Nenhuma migration nova — colunas já existem. Nenhuma mudança de RLS, frontend ou fluxo de compra.
+## Validação
 
-## Verificação
-
-1. Rodar o backfill (botão "Sincronizar líquidos pendentes" no painel admin) para os ingressos parcelados de hoje (ex.: checkouts `274c5bca…` 5x, `aa44c2aa…` 3x).
-2. Conferir no Relatório Financeiro que `Bruto`, `Líquido` e `Taxa` agora batem com a soma das parcelas no extrato Asaas (ex.: 3 parcelas de 11,66 + 11,66 + 11,68 → bruto 35,00; líquido 33,53).
-3. Fazer (ou aguardar) uma nova compra parcelada e confirmar que após a confirmação da última parcela os valores ficam corretos sem precisar do backfill.
+- Consultar novamente os ingressos da Flavia para confirmar valores unitários e líquidos.
+- Testar a função de relatório para confirmar que os totais não tratam líquido pendente como zero.
+- Verificar logs das Edge Functions após deploy para garantir que webhook e backfill não geram erro.
