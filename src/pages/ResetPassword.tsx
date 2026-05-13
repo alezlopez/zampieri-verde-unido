@@ -8,6 +8,7 @@ import { useToast } from "@/hooks/use-toast";
 import { Eye, EyeOff, ArrowLeft, CheckCircle } from "lucide-react";
 import { EventosHeader } from "@/components/EventosHeader";
 import { Footer } from "@/components/Footer";
+import { validatePasswordStrength, translatePasswordError, PASSWORD_REQUIREMENTS_TEXT } from "@/lib/passwordValidation";
 
 const ResetPassword = () => {
   const [password, setPassword] = useState("");
@@ -43,8 +44,9 @@ const ResetPassword = () => {
       return;
     }
 
-    if (password.length < 6) {
-      toast({ title: "Erro", description: "A senha deve ter no mínimo 6 caracteres.", variant: "destructive" });
+    const pwErr = validatePasswordStrength(password);
+    if (pwErr) {
+      toast({ title: "Senha inválida", description: `${pwErr} ${PASSWORD_REQUIREMENTS_TEXT}`, variant: "destructive" });
       return;
     }
 
@@ -52,7 +54,12 @@ const ResetPassword = () => {
     try {
       const { error } = await supabase.auth.updateUser({ password });
       if (error) {
-        toast({ title: "Erro", description: error.message, variant: "destructive" });
+        const friendlyPw = translatePasswordError(error.message);
+        toast({
+          title: friendlyPw ? "Senha não atende aos requisitos" : "Erro",
+          description: friendlyPw || error.message,
+          variant: "destructive",
+        });
       } else {
         setSuccess(true);
         toast({ title: "Senha alterada com sucesso!" });
@@ -130,7 +137,7 @@ const ResetPassword = () => {
                   type={showPassword ? "text" : "password"}
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  placeholder="Mínimo 6 caracteres"
+                  placeholder="Crie uma senha forte"
                   required
                   minLength={6}
                 />
@@ -142,6 +149,7 @@ const ResetPassword = () => {
                   {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                 </button>
               </div>
+              <p className="mt-1 text-xs text-muted-foreground">{PASSWORD_REQUIREMENTS_TEXT}</p>
             </div>
 
             <div>

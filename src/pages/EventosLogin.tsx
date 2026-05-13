@@ -9,6 +9,7 @@ import { useToast } from "@/hooks/use-toast";
 import { Eye, EyeOff, ArrowLeft, MailWarning } from "lucide-react";
 import { EventosHeader } from "@/components/EventosHeader";
 import { Footer } from "@/components/Footer";
+import { validatePasswordStrength, translatePasswordError, PASSWORD_REQUIREMENTS_TEXT } from "@/lib/passwordValidation";
 
 const maskEmail = (email: string): string => {
   const [local, domain] = email.split("@");
@@ -154,10 +155,19 @@ const EventosLogin = () => {
           navigate("/eventos");
         }
       } else if (isRegister) {
+        const pwErr = validatePasswordStrength(password);
+        if (pwErr) {
+          toast({ title: "Senha inválida", description: `${pwErr} ${PASSWORD_REQUIREMENTS_TEXT}`, variant: "destructive" });
+          setLoading(false);
+          return;
+        }
         const { error, needsConfirmation, email } = await registerWithCpf(cpf, password);
         if (error) {
           const msg = error.message?.toLowerCase() || "";
-          if (msg.includes("não encontrado") || msg.includes("nao encontrado")) {
+          const friendlyPw = translatePasswordError(error.message);
+          if (friendlyPw) {
+            toast({ title: "Senha não atende aos requisitos", description: friendlyPw, variant: "destructive" });
+          } else if (msg.includes("não encontrado") || msg.includes("nao encontrado")) {
             // CPF não está em alunos_26 → oferece cadastro externo
             setShowExternoForm(true);
             toast({
@@ -233,6 +243,11 @@ const EventosLogin = () => {
       toast({ title: "Preencha todos os campos obrigatórios", variant: "destructive" });
       return;
     }
+    const pwErr = validatePasswordStrength(password);
+    if (pwErr) {
+      toast({ title: "Senha inválida", description: `${pwErr} ${PASSWORD_REQUIREMENTS_TEXT}`, variant: "destructive" });
+      return;
+    }
     setLoading(true);
     try {
       const { data, error } = await supabase.functions.invoke("comprador-externo-signup", {
@@ -247,7 +262,12 @@ const EventosLogin = () => {
       });
       if (error || (data && (data as any).error)) {
         const msg = (data as any)?.error || error?.message || "Falha ao criar conta";
-        toast({ title: "Erro no cadastro", description: msg, variant: "destructive" });
+        const friendlyPw = translatePasswordError(msg);
+        if (friendlyPw) {
+          toast({ title: "Senha não atende aos requisitos", description: friendlyPw, variant: "destructive" });
+        } else {
+          toast({ title: "Erro no cadastro", description: msg, variant: "destructive" });
+        }
         return;
       }
       // Login automático
@@ -408,7 +428,7 @@ const EventosLogin = () => {
                           type={showPassword ? "text" : "password"}
                           value={password}
                           onChange={(e) => setPassword(e.target.value)}
-                          placeholder={isRegister ? "Crie uma senha (mín. 6 caracteres)" : "Sua senha"}
+                          placeholder={isRegister ? "Crie uma senha forte" : "Sua senha"}
                           required
                           minLength={6}
                         />
@@ -420,6 +440,11 @@ const EventosLogin = () => {
                           {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                         </button>
                       </div>
+                      {isRegister && (
+                        <p className="mt-1 text-xs text-muted-foreground">
+                          {PASSWORD_REQUIREMENTS_TEXT}
+                        </p>
+                      )}
                     </div>
 
                     <Button type="submit" className="w-full bg-zampieri-green-dark hover:bg-zampieri-green text-white" disabled={loading}>
