@@ -88,6 +88,15 @@ export async function getPayment(paymentId: string) {
   return await call(`/payments/${paymentId}`, { method: "GET" });
 }
 
+export async function listPayments(params: Record<string, string | number | undefined>) {
+  const qs = new URLSearchParams(
+    Object.entries(params)
+      .filter(([, v]) => v !== undefined && v !== null && v !== "")
+      .map(([k, v]) => [k, String(v)]),
+  ).toString();
+  return await call(`/payments${qs ? `?${qs}` : ""}`, { method: "GET" });
+}
+
 export interface CheckoutItem {
   name: string;
   description?: string;
