@@ -192,7 +192,15 @@ const Produtos = () => {
                 ))}
                 <div className="border-t pt-2">
                   <Label className="text-xs">Forma de pagamento</Label>
-                  <RadioGroup value={forma} onValueChange={(v) => setForma(v as any)} className="flex gap-4 mt-1">
+                  <RadioGroup value={forma} onValueChange={(v) => {
+                    const novo = v as "pix" | "credit_card";
+                    setForma(novo);
+                    if (novo === "credit_card") {
+                      setParcelas((p) => (p < 2 ? Math.min(2, Math.max(2, maxParcelasGlobal)) : p));
+                    } else {
+                      setParcelas(1);
+                    }
+                  }} className="flex gap-4 mt-1">
                     <div className="flex items-center gap-2"><RadioGroupItem value="pix" id="f-pix" /><Label htmlFor="f-pix">PIX/Cartão à vista</Label></div>
                     <div className="flex items-center gap-2"><RadioGroupItem value="credit_card" id="f-cc" /><Label htmlFor="f-cc">Cartão parcelado</Label></div>
                   </RadioGroup>
