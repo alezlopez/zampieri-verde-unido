@@ -19,6 +19,9 @@ import MeusIngressos from "./pages/MeusIngressos";
 import IngressoDetalhe from "./pages/IngressoDetalhe";
 import ScannerIngressos from "./pages/ScannerIngressos";
 import ResetPassword from "./pages/ResetPassword";
+import ProdutosAdmin from "./pages/ProdutosAdmin";
+import Produtos from "./pages/Produtos";
+import ComprovanteProduto from "./pages/ComprovanteProduto";
 
 const queryClient = new QueryClient();
 
@@ -44,6 +47,10 @@ const App = () => (
             <Route path="/eventos/admin/scanner" element={<ScannerIngressos />} />
             <Route path="/eventos/admin/relatorio" element={<EventosRelatorio />} />
             <Route path="/reset-password" element={<ResetPassword />} />
+            <Route path="/eventos/admin/produtos" element={<ProdutosAdmin />} />
+            <Route path="/produtos" element={<Produtos />} />
+            <Route path="/eventos/:eventoId/produtos" element={<Produtos />} />
+            <Route path="/comprovante/:token" element={<ComprovanteProduto />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>
