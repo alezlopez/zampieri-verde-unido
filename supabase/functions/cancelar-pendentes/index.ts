@@ -17,20 +17,28 @@ Deno.serve(async (req) => {
   try {
     const cutoff = new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString();
 
-    const { data, error } = await admin
+    const { data: ings, error: errIng } = await admin
       .from("ingressos")
       .update({ status: "cancelado" })
       .eq("status", "pendente")
       .lt("created_at", cutoff)
       .select("id, evento_id, created_at");
+    if (errIng) throw errIng;
 
-    if (error) throw error;
+    const { data: peds, error: errPed } = await admin
+      .from("pedidos_produtos")
+      .update({ status: "cancelado" })
+      .eq("status", "pendente")
+      .lt("created_at", cutoff)
+      .select("id, produto_id, variacao_id, created_at");
+    if (errPed) throw errPed;
 
-    const cancelados = data?.length ?? 0;
-    console.log(`[cancelar-pendentes] cancelados=${cancelados} cutoff=${cutoff}`);
+    const cancelados = ings?.length ?? 0;
+    const cancelados_pedidos = peds?.length ?? 0;
+    console.log(`[cancelar-pendentes] ingressos=${cancelados} pedidos=${cancelados_pedidos} cutoff=${cutoff}`);
 
     return new Response(
-      JSON.stringify({ ok: true, cancelados, cutoff, ingressos: data }),
+      JSON.stringify({ ok: true, cancelados, cancelados_pedidos, cutoff, ingressos: ings, pedidos: peds }),
       { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } },
     );
   } catch (e: any) {
