@@ -116,13 +116,31 @@ export async function recomputeIngressosFinancials(admin: any, opts: RecomputeOp
   const stableId = stableInstallmentId || singlePaymentId || opts.installmentId || opts.paymentId || null;
 
   // Agrega bruto/líquido/datas
+  // Antecipação automática Asaas (cartão): à vista 2,15%/mês, parcelado 2,60%/mês × nº meses adiantados.
+  // Para parcelado: cada parcela N é antecipada em N meses (parcela 1 = 1 mês, parcela 2 = 2 meses...).
+  // Para crédito à vista: 1 mês.
+  // PIX/boleto: sem antecipação.
+  const ANTECIP_AVISTA = 0.0215;
+  const ANTECIP_PARCELADO = 0.026;
   let bruto = 0;
   let liquido = 0;
   let dataPag: string | null = null;
   let dataCred: string | null = null;
   for (const p of pagos) {
-    bruto += Number(p.value || 0);
-    liquido += Number(p.netValue ?? p.value ?? 0);
+    const value = Number(p.value || 0);
+    const netRaw = Number(p.netValue ?? p.value ?? 0);
+    const billing = String(p.billingType || "").toUpperCase();
+    let antecip = 0;
+    if (billing === "CREDIT_CARD" || billing === "CREDITCARD") {
+      if (p.installment) {
+        const n = Number(p.installmentNumber || 1);
+        antecip = netRaw * ANTECIP_PARCELADO * n;
+      } else {
+        antecip = netRaw * ANTECIP_AVISTA;
+      }
+    }
+    bruto += value;
+    liquido += netRaw - antecip;
     const d = p.paymentDate || p.confirmedDate || p.clientPaymentDate;
     if (d && (!dataPag || d > dataPag)) dataPag = d;
     if (p.creditDate && (!dataCred || p.creditDate > dataCred)) dataCred = p.creditDate;
