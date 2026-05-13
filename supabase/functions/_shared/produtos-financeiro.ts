@@ -18,8 +18,21 @@ export async function recomputePedidosProdutos(admin: any, opts: {
   else if (opts.pedidoIds && opts.pedidoIds.length > 0) q = q.in("id", opts.pedidoIds);
   else if (opts.installmentId || opts.paymentId) q = q.eq("asaas_payment_id", opts.installmentId || opts.paymentId);
   else return { updated: 0 };
-  const { data: pedidos } = await q;
-  if (!pedidos || pedidos.length === 0) return { updated: 0 };
+  const { data: pedidosRaw } = await q;
+  let pedidos = pedidosRaw || [];
+  if (pedidos.length === 0) return { updated: 0 };
+
+  // Defesa: nunca processar pedidos de checkouts diferentes em um mesmo recompute.
+  const checkoutIds = new Set(pedidos.map((p: any) => p.checkout_id).filter(Boolean));
+  if (checkoutIds.size > 1) {
+    if (opts.checkoutId) {
+      pedidos = pedidos.filter((p: any) => p.checkout_id === opts.checkoutId);
+      if (pedidos.length === 0) return { updated: 0, reason: "no_pedidos_for_checkout" } as any;
+    } else {
+      console.error("[produtos-financeiro] múltiplos checkouts no mesmo grupo — abortando", { count: checkoutIds.size });
+      return { updated: 0, reason: "multi_checkout_group" } as any;
+    }
+  }
 
   // Coleta pagamentos
   let payments: any[] = [];
@@ -97,7 +110,8 @@ export async function recomputePedidosProdutos(admin: any, opts: {
       taxa_total: Number((vb - vl).toFixed(2)),
       data_pagamento: dataPagISO, data_credito: dataCred,
     };
-    if (stableId) upd.asaas_payment_id = stableId;
+    // Só grava asaas_payment_id se ainda não houver (evita contaminação cruzada)
+    if (stableId && !p.asaas_payment_id) upd.asaas_payment_id = stableId;
     await admin.from("pedidos_produtos").update(upd).eq("id", p.id);
   }
   return { updated: pedidos.length, bruto, liquido };

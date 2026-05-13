@@ -69,11 +69,23 @@ Deno.serve(async (req) => {
     const payment = await getPayment(paymentId);
     const newStatus = STATUS_MAP[payment.status] || null;
 
+    // Identifica checkout do(s) ingresso(s) já vinculado(s) para restringir update e evitar contaminação cruzada
+    const { data: ingByPay } = await admin
+      .from("ingressos")
+      .select("id, checkout_id")
+      .eq("asaas_payment_id", paymentId);
+    const checkoutIds = Array.from(new Set((ingByPay || []).map((r: any) => r.checkout_id).filter(Boolean)));
+
     if (newStatus) {
-      await admin
-        .from("ingressos")
-        .update({ status: newStatus })
-        .eq("asaas_payment_id", paymentId);
+      let q = admin.from("ingressos").update({ status: newStatus }).eq("asaas_payment_id", paymentId);
+      if (checkoutIds.length === 1) q = q.eq("checkout_id", checkoutIds[0]);
+      else if (checkoutIds.length > 1) {
+        console.warn("[asaas-sync-payment] múltiplos checkouts no mesmo paymentId — abortando update de status", { paymentId, checkoutIds });
+        return new Response(JSON.stringify({ error: "multi_checkout_contamination", checkoutIds }), {
+          status: 409, headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+      await q;
     }
 
     // Recalcula financeiro (bruto/líquido/taxa) — em parcelado, expande para o installment
