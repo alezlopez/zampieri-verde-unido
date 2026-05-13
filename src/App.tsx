@@ -42,6 +42,7 @@ const App = () => (
             <Route path="/eventos/meus-ingressos" element={<MeusIngressos />} />
             <Route path="/eventos/ingresso/:id" element={<IngressoDetalhe />} />
             <Route path="/eventos/admin/scanner" element={<ScannerIngressos />} />
+            <Route path="/eventos/admin/relatorio" element={<EventosRelatorio />} />
             <Route path="/reset-password" element={<ResetPassword />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
