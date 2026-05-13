@@ -5,7 +5,8 @@ import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { ArrowLeft, Ticket, LogOut, ExternalLink, Eye } from "lucide-react";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import { ArrowLeft, Ticket, LogOut, ExternalLink, Eye, Package, QrCode, CheckCircle2 } from "lucide-react";
 import { EventosHeader } from "@/components/EventosHeader";
 import { Footer } from "@/components/Footer";
 
@@ -23,9 +24,26 @@ interface IngressoComEvento {
   eventos: { titulo: string; data_evento: string; horario: string | null; local: string | null } | null;
 }
 
+interface PedidoProduto {
+  id: string;
+  produto_id: string;
+  variacao_id: string;
+  quantidade: number;
+  valor_total: number;
+  status: string;
+  qr_token: string;
+  checkout_url: string | null;
+  retirado_em: string | null;
+  created_at: string;
+  produtos: { nome: string } | null;
+  produto_variacoes: { nome: string } | null;
+  eventos: { titulo: string; data_evento: string } | null;
+}
+
 const statusStyles: Record<string, string> = {
   pendente: "bg-zampieri-gold/20 text-zampieri-green-dark border-zampieri-gold/40",
   pago: "bg-zampieri-green/15 text-zampieri-green-dark border-zampieri-green/40",
+  retirado: "bg-zampieri-green/25 text-zampieri-green-dark border-zampieri-green/60",
   cancelado: "bg-destructive/15 text-destructive border-destructive/40",
   estornado: "bg-zampieri-wine/15 text-zampieri-wine border-zampieri-wine/40",
 };
@@ -34,6 +52,7 @@ const MeusIngressos = () => {
   const { user, loading: authLoading, signOut } = useAuth();
   const navigate = useNavigate();
   const [ingressos, setIngressos] = useState<IngressoComEvento[]>([]);
+  const [pedidos, setPedidos] = useState<PedidoProduto[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -41,18 +60,26 @@ const MeusIngressos = () => {
   }, [user, authLoading, navigate]);
 
   useEffect(() => {
-    const fetchIngressos = async () => {
+    const fetchAll = async () => {
       if (!user) return;
-      const { data } = await supabase
-        .from("ingressos")
-        .select("id, quantidade, status, nome_comprador, nome_participante, tipo_participante, checkout_url, comprovante_estorno_url, cortesia, created_at, eventos(titulo, data_evento, horario, local)")
-        .eq("user_id", user.id)
-        .order("created_at", { ascending: false });
+      const [{ data: ing }, { data: ped }] = await Promise.all([
+        supabase
+          .from("ingressos")
+          .select("id, quantidade, status, nome_comprador, nome_participante, tipo_participante, checkout_url, comprovante_estorno_url, cortesia, created_at, eventos(titulo, data_evento, horario, local)")
+          .eq("user_id", user.id)
+          .order("created_at", { ascending: false }),
+        supabase
+          .from("pedidos_produtos")
+          .select("id, produto_id, variacao_id, quantidade, valor_total, status, qr_token, checkout_url, retirado_em, created_at, produtos:produto_id(nome), produto_variacoes:variacao_id(nome), eventos:evento_id(titulo, data_evento)")
+          .eq("user_id", user.id)
+          .order("created_at", { ascending: false }),
+      ]);
 
-      if (data) setIngressos(data as unknown as IngressoComEvento[]);
+      if (ing) setIngressos(ing as unknown as IngressoComEvento[]);
+      if (ped) setPedidos(ped as unknown as PedidoProduto[]);
       setLoading(false);
     };
-    fetchIngressos();
+    fetchAll();
   }, [user]);
 
   const handleLogout = async () => {
@@ -77,7 +104,7 @@ const MeusIngressos = () => {
 
   return (
     <div className="min-h-screen bg-background flex flex-col">
-      <EventosHeader subtitle="Meus Ingressos" actions={headerActions} />
+      <EventosHeader subtitle="Minhas compras" actions={headerActions} />
 
       <div className="flex-1 py-8 px-4">
         <div className="container mx-auto max-w-2xl">
@@ -88,90 +115,176 @@ const MeusIngressos = () => {
 
           <h1 className="font-serif text-2xl md:text-3xl font-bold text-zampieri-green-dark mb-6 flex items-center gap-2">
             <Ticket className="w-6 h-6 text-zampieri-gold" />
-            Meus Ingressos
+            Minhas compras
           </h1>
 
-          {ingressos.length === 0 ? (
-            <div className="text-center py-16">
-              <Ticket className="w-16 h-16 text-muted-foreground/40 mx-auto mb-4" />
-              <p className="text-muted-foreground">Você ainda não comprou nenhum ingresso.</p>
-              <Link to="/eventos">
-                <Button className="mt-4 bg-zampieri-green-dark hover:bg-zampieri-green text-white">Ver Eventos</Button>
-              </Link>
-            </div>
-          ) : (
-            <div className="space-y-4">
-              {ingressos.map((ingresso) => (
-                <Card key={ingresso.id} className="border-border bg-card">
-                  <CardContent className="p-4">
-                    <div className="flex justify-between items-start gap-3">
-                      <div>
-                        <h3 className="font-serif font-semibold text-zampieri-green-dark">
-                          {ingresso.eventos?.titulo || "Evento"}
-                        </h3>
-                        <p className="text-sm text-muted-foreground">
-                          {ingresso.eventos?.data_evento &&
-                            new Date(ingresso.eventos.data_evento + "T00:00:00").toLocaleDateString("pt-BR")}
-                          {ingresso.eventos?.horario && ` às ${ingresso.eventos.horario}`}
-                        </p>
-                        <p className="text-sm text-muted-foreground mt-1">
-                          {ingresso.nome_participante || ingresso.nome_comprador}
-                          {ingresso.tipo_participante === "convidado" && (
-                            <span className="ml-1 text-xs text-zampieri-wine">(convidado)</span>
-                          )}
-                        </p>
-                      </div>
-                      <Badge className={`border ${statusStyles[ingresso.status] || ""} capitalize`}>
-                        {ingresso.cortesia ? "Cortesia" : ingresso.status}
-                      </Badge>
-                    </div>
-                    {ingresso.status === "pago" && (
-                      <div className="mt-3">
-                        <Link to={`/eventos/ingresso/${ingresso.id}`}>
-                          <Button size="sm" className="bg-zampieri-green-dark hover:bg-zampieri-green text-white w-full">
-                            <Eye className="w-4 h-4 mr-2" />
-                            Ver Ingresso
-                          </Button>
-                        </Link>
-                      </div>
-                    )}
-                    {ingresso.status === "estornado" && (
-                      <div className="mt-3">
-                        {ingresso.comprovante_estorno_url ? (
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            className="border-zampieri-wine/40 text-zampieri-wine hover:bg-zampieri-wine/10 w-full"
-                            onClick={() => window.open(ingresso.comprovante_estorno_url!, "_blank")}
-                          >
-                            <ExternalLink className="w-4 h-4 mr-2" />
-                            Ver Comprovante de Estorno
-                          </Button>
-                        ) : (
-                          <p className="text-xs text-muted-foreground">Estorno realizado. Comprovante ainda não disponível.</p>
+          <Tabs defaultValue="ingressos" className="w-full">
+            <TabsList className="grid grid-cols-2 w-full">
+              <TabsTrigger value="ingressos" className="flex items-center gap-1.5">
+                <Ticket className="w-4 h-4" /> Ingressos
+                {ingressos.length > 0 && <Badge variant="secondary" className="ml-1">{ingressos.length}</Badge>}
+              </TabsTrigger>
+              <TabsTrigger value="produtos" className="flex items-center gap-1.5">
+                <Package className="w-4 h-4" /> Produtos
+                {pedidos.length > 0 && <Badge variant="secondary" className="ml-1">{pedidos.length}</Badge>}
+              </TabsTrigger>
+            </TabsList>
+
+            <TabsContent value="ingressos" className="mt-4">
+              {ingressos.length === 0 ? (
+                <div className="text-center py-12">
+                  <Ticket className="w-14 h-14 text-muted-foreground/40 mx-auto mb-3" />
+                  <p className="text-muted-foreground">Você ainda não comprou nenhum ingresso.</p>
+                  <Link to="/eventos">
+                    <Button className="mt-4 bg-zampieri-green-dark hover:bg-zampieri-green text-white">Ver eventos</Button>
+                  </Link>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  {ingressos.map((ingresso) => (
+                    <Card key={ingresso.id} className="border-border bg-card">
+                      <CardContent className="p-4">
+                        <div className="flex justify-between items-start gap-3">
+                          <div>
+                            <h3 className="font-serif font-semibold text-zampieri-green-dark">
+                              {ingresso.eventos?.titulo || "Evento"}
+                            </h3>
+                            <p className="text-sm text-muted-foreground">
+                              {ingresso.eventos?.data_evento &&
+                                new Date(ingresso.eventos.data_evento + "T00:00:00").toLocaleDateString("pt-BR")}
+                              {ingresso.eventos?.horario && ` às ${ingresso.eventos.horario}`}
+                            </p>
+                            <p className="text-sm text-muted-foreground mt-1">
+                              {ingresso.nome_participante || ingresso.nome_comprador}
+                              {ingresso.tipo_participante === "convidado" && (
+                                <span className="ml-1 text-xs text-zampieri-wine">(convidado)</span>
+                              )}
+                            </p>
+                          </div>
+                          <Badge className={`border ${statusStyles[ingresso.status] || ""} capitalize`}>
+                            {ingresso.cortesia ? "Cortesia" : ingresso.status}
+                          </Badge>
+                        </div>
+                        {ingresso.status === "pago" && (
+                          <div className="mt-3">
+                            <Link to={`/eventos/ingresso/${ingresso.id}`}>
+                              <Button size="sm" className="bg-zampieri-green-dark hover:bg-zampieri-green text-white w-full">
+                                <Eye className="w-4 h-4 mr-2" />
+                                Ver Ingresso
+                              </Button>
+                            </Link>
+                          </div>
                         )}
-                      </div>
-                    )}
-                    {ingresso.status === "pendente" && ingresso.checkout_url && (
-                      <div className="mt-3">
-                        <Button
-                          size="sm"
-                          className="bg-zampieri-gold hover:bg-zampieri-gold-light text-zampieri-green-dark w-full"
-                          onClick={() => window.open(ingresso.checkout_url!, "_blank")}
-                        >
-                          <ExternalLink className="w-4 h-4 mr-2" />
-                          Pagar
-                        </Button>
-                        <p className="text-xs text-muted-foreground mt-2">
-                          Ao clicar em Pagar, você será redirecionado para o ambiente seguro do sistema Asaas. Insira os dados do responsável pela compra, não os do(a) aluno(a).
-                        </p>
-                      </div>
-                    )}
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
-          )}
+                        {ingresso.status === "estornado" && (
+                          <div className="mt-3">
+                            {ingresso.comprovante_estorno_url ? (
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                className="border-zampieri-wine/40 text-zampieri-wine hover:bg-zampieri-wine/10 w-full"
+                                onClick={() => window.open(ingresso.comprovante_estorno_url!, "_blank")}
+                              >
+                                <ExternalLink className="w-4 h-4 mr-2" />
+                                Ver Comprovante de Estorno
+                              </Button>
+                            ) : (
+                              <p className="text-xs text-muted-foreground">Estorno realizado. Comprovante ainda não disponível.</p>
+                            )}
+                          </div>
+                        )}
+                        {ingresso.status === "pendente" && ingresso.checkout_url && (
+                          <div className="mt-3">
+                            <Button
+                              size="sm"
+                              className="bg-zampieri-gold hover:bg-zampieri-gold-light text-zampieri-green-dark w-full"
+                              onClick={() => window.open(ingresso.checkout_url!, "_blank")}
+                            >
+                              <ExternalLink className="w-4 h-4 mr-2" />
+                              Pagar
+                            </Button>
+                            <p className="text-xs text-muted-foreground mt-2">
+                              Ao clicar em Pagar, você será redirecionado para o ambiente seguro do sistema Asaas. Insira os dados do responsável pela compra, não os do(a) aluno(a).
+                            </p>
+                          </div>
+                        )}
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
+              )}
+            </TabsContent>
+
+            <TabsContent value="produtos" className="mt-4">
+              {pedidos.length === 0 ? (
+                <div className="text-center py-12">
+                  <Package className="w-14 h-14 text-muted-foreground/40 mx-auto mb-3" />
+                  <p className="text-muted-foreground">Você ainda não comprou nenhum produto.</p>
+                  <Link to="/produtos">
+                    <Button className="mt-4 bg-zampieri-green-dark hover:bg-zampieri-green text-white">Ver produtos</Button>
+                  </Link>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  {pedidos.map((p) => (
+                    <Card key={p.id} className="border-border bg-card">
+                      <CardContent className="p-4">
+                        <div className="flex justify-between items-start gap-3">
+                          <div className="min-w-0">
+                            <h3 className="font-serif font-semibold text-zampieri-green-dark truncate">
+                              {p.produtos?.nome || "Produto"}
+                            </h3>
+                            <p className="text-sm text-muted-foreground">{p.produto_variacoes?.nome}</p>
+                            <p className="text-xs text-muted-foreground mt-1">
+                              {p.quantidade}× · R$ {Number(p.valor_total).toFixed(2).replace(".", ",")}
+                            </p>
+                            {p.eventos?.titulo && (
+                              <p className="text-xs text-zampieri-green-dark mt-1">
+                                Evento: {p.eventos.titulo}
+                              </p>
+                            )}
+                          </div>
+                          <Badge className={`border ${statusStyles[p.status] || ""} capitalize`}>
+                            {p.status === "retirado" ? (
+                              <span className="flex items-center gap-1"><CheckCircle2 className="w-3 h-3" />Retirado</span>
+                            ) : p.status}
+                          </Badge>
+                        </div>
+
+                        {p.retirado_em && (
+                          <p className="text-xs text-zampieri-green-dark mt-2">
+                            Retirado em {new Date(p.retirado_em).toLocaleString("pt-BR")}
+                          </p>
+                        )}
+
+                        {(p.status === "pago" || p.status === "retirado") && (
+                          <div className="mt-3">
+                            <Link to={`/comprovante/${p.qr_token}`}>
+                              <Button size="sm" className="bg-zampieri-green-dark hover:bg-zampieri-green text-white w-full">
+                                <QrCode className="w-4 h-4 mr-2" />
+                                Ver comprovante
+                              </Button>
+                            </Link>
+                          </div>
+                        )}
+                        {p.status === "pendente" && p.checkout_url && (
+                          <div className="mt-3">
+                            <Button
+                              size="sm"
+                              className="bg-zampieri-gold hover:bg-zampieri-gold-light text-zampieri-green-dark w-full"
+                              onClick={() => window.open(p.checkout_url!, "_blank")}
+                            >
+                              <ExternalLink className="w-4 h-4 mr-2" />
+                              Pagar
+                            </Button>
+                          </div>
+                        )}
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
+              )}
+            </TabsContent>
+          </Tabs>
         </div>
       </div>
 
