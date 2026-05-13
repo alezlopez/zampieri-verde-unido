@@ -186,18 +186,21 @@ Deno.serve(async (req) => {
     const checkoutUrl = checkout.link || checkout.url || checkout.checkoutUrl;
     const checkoutId = checkout.id;
 
-    await admin
-      .from("ingressos")
-      .update({
-        asaas_customer_id: customer.id,
-        checkout_url: checkoutUrl,
-        checkout_id: checkoutId,
-        forma_pagamento: body.forma_pagamento,
-        parcelas: isParcelado ? maxParcelas : 1,
-        valor_total: valorTotal,
-        tipo_comprador: comprador.origem === "externo" ? "externo" : "aluno",
-      })
-      .in("id", ingressos.map((i: any) => i.id));
+    // Atualiza por ingresso para gravar o valor unitário correto em valor_total
+    for (const it of items) {
+      await admin
+        .from("ingressos")
+        .update({
+          asaas_customer_id: customer.id,
+          checkout_url: checkoutUrl,
+          checkout_id: checkoutId,
+          forma_pagamento: body.forma_pagamento,
+          parcelas: isParcelado ? maxParcelas : 1,
+          valor_total: it.value,
+          tipo_comprador: comprador.origem === "externo" ? "externo" : "aluno",
+        })
+        .eq("id", it.ingresso_id);
+    }
 
     return new Response(
       JSON.stringify({ checkout_url: checkoutUrl, checkout_id: checkoutId, reused: false, valor_total: valorTotal }),
