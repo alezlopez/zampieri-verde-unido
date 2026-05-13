@@ -44,6 +44,7 @@ Deno.serve(async (req) => {
   const eventId: string = payload?.id || `${payload?.event}-${payload?.payment?.id || payload?.checkout?.id}-${Date.now()}`;
   const eventType: string = payload?.event || "UNKNOWN";
   const paymentId: string | null = payload?.payment?.id || null;
+  const installmentId: string | null = payload?.payment?.installment || null;
   const checkoutObj: any = payload?.checkout || null;
   const checkoutId: string | null = checkoutObj?.id || null;
 
