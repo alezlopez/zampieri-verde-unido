@@ -2,9 +2,10 @@ import { useEffect, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
-import { Calendar, MapPin, Users, Ticket, ArrowLeft, LogOut } from "lucide-react";
+import { Calendar, MapPin, Users, Ticket, ArrowLeft, LogOut, Package, Sparkles } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
 import { Footer } from "@/components/Footer";
 import { EventosHeader } from "@/components/EventosHeader";
 
@@ -50,6 +51,7 @@ const EventoDetalhe = () => {
   const [evento, setEvento] = useState<Evento | null>(null);
   const [loading, setLoading] = useState(true);
   const [tipoComprador, setTipoComprador] = useState<"aluno" | "externo" | null>(null);
+  const [produtosExtras, setProdutosExtras] = useState<Array<{ id: string; nome: string; descricao: string | null; imagem_url: string | null; preco_min: number | null }>>([]);
 
   useEffect(() => {
     if (!id) return;
