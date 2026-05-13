@@ -137,7 +137,7 @@ const ResetPassword = () => {
                   type={showPassword ? "text" : "password"}
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  placeholder="Mínimo 6 caracteres"
+                  placeholder="Crie uma senha forte"
                   required
                   minLength={6}
                 />
@@ -149,6 +149,7 @@ const ResetPassword = () => {
                   {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                 </button>
               </div>
+              <p className="mt-1 text-xs text-muted-foreground">{PASSWORD_REQUIREMENTS_TEXT}</p>
             </div>
 
             <div>
