@@ -525,7 +525,13 @@ const EventosAdmin = () => {
             <Link to="/eventos/admin/relatorio">
               <Button variant="outline" className="border-zampieri-green-dark text-zampieri-green-dark hover:bg-zampieri-cream">
                 <BarChart3 className="w-4 h-4 mr-2" />
-                Relatório
+                Relatório Eventos
+              </Button>
+            </Link>
+            <Link to="/eventos/admin/produtos/relatorio">
+              <Button variant="outline" className="border-zampieri-green-dark text-zampieri-green-dark hover:bg-zampieri-cream">
+                <BarChart3 className="w-4 h-4 mr-2" />
+                Relatório Produtos
               </Button>
             </Link>
             <Link to="/eventos/admin/produtos">
