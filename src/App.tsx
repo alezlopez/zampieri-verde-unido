@@ -14,6 +14,7 @@ import EventosLogin from "./pages/EventosLogin";
 import EventoCompra from "./pages/EventoCompra";
 import EventoDetalhe from "./pages/EventoDetalhe";
 import EventosAdmin from "./pages/EventosAdmin";
+import EventosRelatorio from "./pages/EventosRelatorio";
 import MeusIngressos from "./pages/MeusIngressos";
 import IngressoDetalhe from "./pages/IngressoDetalhe";
 import ScannerIngressos from "./pages/ScannerIngressos";
