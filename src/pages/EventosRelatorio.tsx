@@ -32,8 +32,8 @@ type Linha = {
   data_pagamento: string | null;
   data_credito: string | null;
   valor_bruto: number;
-  valor_liquido: number;
-  taxa_total: number;
+  valor_liquido: number | null;
+  taxa_total: number | null;
   liquido_pendente_calculo: boolean;
 };
 
@@ -42,10 +42,12 @@ type Resposta = {
   totais: {
     bruto: number; liquido: number; taxa: number;
     qtd: number; qtd_cortesias: number;
+    qtd_liquido_pendente?: number;
+    bruto_liquido_pendente?: number;
     ticket_medio: number; percentual_taxa: number;
   };
-  por_evento: { evento_id: string; evento_titulo: string; bruto: number; liquido: number; taxa: number; qtd: number }[];
-  por_forma: { forma: string; bruto: number; liquido: number; taxa: number; qtd: number }[];
+  por_evento: { evento_id: string; evento_titulo: string; bruto: number; liquido: number; taxa: number; qtd: number; pendentes?: number }[];
+  por_forma: { forma: string; bruto: number; liquido: number; taxa: number; qtd: number; pendentes?: number }[];
 };
 
 const formatBRL = (n: number) =>
@@ -147,7 +149,9 @@ const EventosRelatorio = () => {
       r.tipo_ingresso || "", formaLabel(r.forma_pagamento || ""),
       r.parcelas ?? 1, r.status,
       r.data_pagamento || "", r.data_credito || "",
-      r.valor_bruto.toFixed(2), r.valor_liquido.toFixed(2), r.taxa_total.toFixed(2),
+      r.valor_bruto.toFixed(2),
+      r.valor_liquido !== null ? r.valor_liquido.toFixed(2) : "",
+      r.taxa_total !== null ? r.taxa_total.toFixed(2) : "",
       r.cortesia ? "Sim" : "Não", r.codigo_aluno || "",
     ]);
     rows.push([]);
@@ -409,11 +413,13 @@ const EventosRelatorio = () => {
                       <TableCell className="text-xs">{formatDate(r.data_pagamento)}</TableCell>
                       <TableCell className="text-right text-xs">{formatBRL(r.valor_bruto)}</TableCell>
                       <TableCell className="text-right text-xs font-semibold">
-                        {r.liquido_pendente_calculo
-                          ? <span className="text-muted-foreground">—</span>
+                        {r.valor_liquido === null
+                          ? <span className="text-muted-foreground">pendente</span>
                           : formatBRL(r.valor_liquido)}
                       </TableCell>
-                      <TableCell className="text-right text-xs text-zampieri-wine">{formatBRL(r.taxa_total)}</TableCell>
+                      <TableCell className="text-right text-xs text-zampieri-wine">
+                        {r.taxa_total === null ? "—" : formatBRL(r.taxa_total)}
+                      </TableCell>
                     </TableRow>
                   ))}
                   {data && data.lista.length === 0 && (
