@@ -46,7 +46,8 @@ Deno.serve(async (req) => {
   const paymentId: string | null = payload?.payment?.id || null;
   const installmentId: string | null = payload?.payment?.installment || null;
   const checkoutObj: any = payload?.checkout || null;
-  const checkoutId: string | null = checkoutObj?.id || null;
+  // checkoutSession vem nos eventos PAYMENT_*; checkout.id vem nos eventos CHECKOUT_*
+  const checkoutId: string | null = checkoutObj?.id || payload?.payment?.checkoutSession || null;
 
   // Idempotência
   const { error: insErr } = await admin.from("asaas_webhook_events").insert({
@@ -89,23 +90,23 @@ Deno.serve(async (req) => {
 
       let matched: any[] | null = null;
 
-      // 1) Casa pelo asaas_payment_id já gravado (installmentId ou paymentId)
-      if (stableId) {
+      // 1) Casa pelo checkout_id (mais confiável: vem do checkoutSession ou checkout.id)
+      if (checkoutId) {
         const r = await admin
           .from("ingressos")
           .update(update)
-          .eq("asaas_payment_id", stableId)
+          .eq("checkout_id", checkoutId)
           .select("id");
         if (r.error) throw r.error;
         matched = r.data;
       }
 
-      // 2) Casa pelo checkout_id
-      if ((!matched || matched.length === 0) && checkoutId) {
+      // 2) Casa pelo asaas_payment_id já gravado (installmentId ou paymentId)
+      if ((!matched || matched.length === 0) && stableId) {
         const r = await admin
           .from("ingressos")
           .update(update)
-          .eq("checkout_id", checkoutId)
+          .eq("asaas_payment_id", stableId)
           .select("id");
         if (r.error) throw r.error;
         matched = r.data;
