@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
-import { Calendar, MapPin, Users, Ticket, LogOut } from "lucide-react";
+import { Calendar, MapPin, Users, Ticket, LogOut, Package, ArrowRight } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
@@ -31,6 +31,7 @@ const Eventos = () => {
   const [eventos, setEventos] = useState<Evento[]>([]);
   const [loading, setLoading] = useState(true);
   const [tipoComprador, setTipoComprador] = useState<"aluno" | "externo" | null>(null);
+  const [hasProdutos, setHasProdutos] = useState(false);
   const { user, isAdmin, signOut } = useAuth();
 
   useEffect(() => {
@@ -47,6 +48,14 @@ const Eventos = () => {
       setLoading(false);
     };
     fetchEventos();
+
+    // verifica se há produtos avulsos para mostrar o banner
+    supabase
+      .from("produtos")
+      .select("id", { count: "exact", head: true })
+      .eq("ativo", true)
+      .eq("is_global", true)
+      .then(({ count }) => setHasProdutos((count || 0) > 0));
   }, []);
 
   // Resolve tipo de comprador para filtrar/avisar
