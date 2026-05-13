@@ -495,7 +495,9 @@ export type Database = {
           cortesia: boolean
           cpf_participante: string | null
           created_at: string
+          data_credito: string | null
           data_nascimento_participante: string | null
+          data_pagamento: string | null
           declaracao_meia_aceita: boolean
           declaracao_meia_aceita_em: string | null
           email_confirmacao_enviado_em: string | null
@@ -511,6 +513,7 @@ export type Database = {
           parcelas: number
           quantidade: number
           status: string
+          taxa_total: number | null
           tipo_comprador: string
           tipo_ingresso: string
           tipo_participante: string
@@ -518,6 +521,8 @@ export type Database = {
           utilizado: boolean
           utilizado_em: string | null
           utilizado_por: string | null
+          valor_bruto: number | null
+          valor_liquido: number | null
           valor_total: number | null
           webhook_payment_id: string | null
         }
@@ -533,7 +538,9 @@ export type Database = {
           cortesia?: boolean
           cpf_participante?: string | null
           created_at?: string
+          data_credito?: string | null
           data_nascimento_participante?: string | null
+          data_pagamento?: string | null
           declaracao_meia_aceita?: boolean
           declaracao_meia_aceita_em?: string | null
           email_confirmacao_enviado_em?: string | null
@@ -549,6 +556,7 @@ export type Database = {
           parcelas?: number
           quantidade?: number
           status?: string
+          taxa_total?: number | null
           tipo_comprador?: string
           tipo_ingresso?: string
           tipo_participante?: string
@@ -556,6 +564,8 @@ export type Database = {
           utilizado?: boolean
           utilizado_em?: string | null
           utilizado_por?: string | null
+          valor_bruto?: number | null
+          valor_liquido?: number | null
           valor_total?: number | null
           webhook_payment_id?: string | null
         }
@@ -571,7 +581,9 @@ export type Database = {
           cortesia?: boolean
           cpf_participante?: string | null
           created_at?: string
+          data_credito?: string | null
           data_nascimento_participante?: string | null
+          data_pagamento?: string | null
           declaracao_meia_aceita?: boolean
           declaracao_meia_aceita_em?: string | null
           email_confirmacao_enviado_em?: string | null
@@ -587,6 +599,7 @@ export type Database = {
           parcelas?: number
           quantidade?: number
           status?: string
+          taxa_total?: number | null
           tipo_comprador?: string
           tipo_ingresso?: string
           tipo_participante?: string
@@ -594,6 +607,8 @@ export type Database = {
           utilizado?: boolean
           utilizado_em?: string | null
           utilizado_por?: string | null
+          valor_bruto?: number | null
+          valor_liquido?: number | null
           valor_total?: number | null
           webhook_payment_id?: string | null
         }
