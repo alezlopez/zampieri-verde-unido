@@ -21,6 +21,8 @@ interface IngressoCompleto {
   tipo_ingresso: string;
   categoria_meia: string | null;
   comprovante_estorno_url: string | null;
+  utilizado: boolean | null;
+  utilizado_em: string | null;
   created_at: string;
   eventos: {
     titulo: string;
@@ -64,7 +66,7 @@ const IngressoDetalhe = () => {
       if (!user || !id) return;
       const { data } = await supabase
         .from("ingressos")
-        .select("id, quantidade, status, nome_comprador, nome_participante, tipo_participante, tipo_ingresso, categoria_meia, comprovante_estorno_url, created_at, eventos(titulo, data_evento, horario, local, is_excursao)")
+        .select("id, quantidade, status, nome_comprador, nome_participante, tipo_participante, tipo_ingresso, categoria_meia, comprovante_estorno_url, utilizado, utilizado_em, created_at, eventos(titulo, data_evento, horario, local, is_excursao)")
         .eq("id", id)
         .eq("user_id", user.id)
         .single();
@@ -188,8 +190,8 @@ const IngressoDetalhe = () => {
                 <Ticket className="w-5 h-5 text-zampieri-gold" />
                 <span className="text-sm font-semibold tracking-wider opacity-90">INGRESSO</span>
               </div>
-              <Badge className="bg-zampieri-gold text-zampieri-green-dark hover:bg-zampieri-gold font-bold text-xs">
-                ✓ PAGO
+              <Badge className={`font-bold text-xs ${ingresso.utilizado ? "bg-zampieri-wine text-white hover:bg-zampieri-wine" : "bg-zampieri-gold text-zampieri-green-dark hover:bg-zampieri-gold"}`}>
+                {ingresso.utilizado ? "✓ UTILIZADO" : "✓ PAGO"}
               </Badge>
             </div>
             <div className="flex items-center gap-2 mt-2 flex-wrap">
@@ -244,10 +246,27 @@ const IngressoDetalhe = () => {
 
           {/* QR Code */}
           <div className="flex flex-col items-center pb-6 px-6">
-            <div className="bg-white rounded-xl p-4 border-2 border-zampieri-gold/40">
-              <QRCodeSVG value={ingresso.id} size={180} level="H" />
-            </div>
-            <p className="text-xs text-muted-foreground mt-2 font-mono">{ingresso.id.slice(0, 8).toUpperCase()}</p>
+            {ingresso.utilizado ? (
+              <div className="w-full bg-zampieri-wine/10 border-2 border-zampieri-wine/40 rounded-xl p-5 text-center">
+                <div className="inline-flex items-center justify-center w-14 h-14 rounded-full bg-zampieri-wine/20 mb-3">
+                  <Ticket className="w-7 h-7 text-zampieri-wine" />
+                </div>
+                <p className="font-serif text-lg font-bold text-zampieri-wine mb-1">Ingresso já utilizado</p>
+                {ingresso.utilizado_em && (
+                  <p className="text-sm text-zampieri-wine/80">
+                    Validado em {new Date(ingresso.utilizado_em).toLocaleString("pt-BR")}
+                  </p>
+                )}
+                <p className="text-xs text-muted-foreground mt-3">QR Code não está mais válido para entrada.</p>
+              </div>
+            ) : (
+              <>
+                <div className="bg-white rounded-xl p-4 border-2 border-zampieri-gold/40">
+                  <QRCodeSVG value={ingresso.id} size={180} level="H" />
+                </div>
+                <p className="text-xs text-muted-foreground mt-2 font-mono">{ingresso.id.slice(0, 8).toUpperCase()}</p>
+              </>
+            )}
 
             {/* Observação condicional */}
             {evento?.is_excursao ? (
