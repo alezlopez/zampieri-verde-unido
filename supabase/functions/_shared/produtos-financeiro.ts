@@ -45,9 +45,50 @@ export async function recomputePedidosProdutos(admin: any, opts: {
       const d = await listInstallmentPayments(p.installment);
       payments = d?.data || [];
     } else if (p) payments = [p];
+  } else if (opts.checkoutId) {
+    // Eventos PAYMENT_* do Asaas nem sempre trazem externalReference, mas trazem checkoutSession.
+    // Usa o histórico de webhooks como fonte local e autoritativa para não depender de filtros
+    // frágeis da listagem de pagamentos.
+    const { data: evs, error: evErr } = await admin
+      .from("asaas_webhook_events")
+      .select("payload, payment_id")
+      .in("event_type", ["PAYMENT_CONFIRMED", "PAYMENT_RECEIVED", "PAYMENT_RECEIVED_IN_CASH", "PAYMENT_CREATED"])
+      .order("created_at", { ascending: false })
+      .limit(1000);
+    if (evErr) console.warn("[produtos-financeiro] erro lendo webhooks", evErr);
+
+    const seen = new Set<string>();
+    payments = (evs || [])
+      .map((ev: any) => ev.payload?.payment)
+      .filter((p: any) => p?.checkoutSession === opts.checkoutId)
+      .filter((p: any) => {
+        const key = p.id || p.installment || JSON.stringify(p);
+        if (seen.has(key)) return false;
+        seen.add(key);
+        return true;
+      });
+
+    const instSet = new Set(payments.map((p) => p.installment).filter(Boolean));
+    if (instSet.size > 0) {
+      const expanded: any[] = [];
+      for (const iid of instSet) {
+        const dd = await listInstallmentPayments(iid as string);
+        expanded.push(...((dd?.data) || []));
+      }
+      payments = [...payments.filter((p) => !p.installment), ...expanded];
+    }
+
+    // Fallback legado: alguns pagamentos podem ter sido criados com externalReference preenchido.
+    if (payments.length === 0) {
+      const ids = (opts.pedidoIds && opts.pedidoIds.length > 0)
+        ? opts.pedidoIds
+        : pedidos.map((p: any) => p.id);
+      const ref = `prod:${ids.join(",")}`;
+      const d = await listPayments({ externalReference: ref, limit: 100 });
+      payments = d?.data || [];
+    }
   } else {
-    // Sem paymentId/installmentId (ex.: evento CHECKOUT_PAID): busca pelos pedidoIds informados
-    // ou, se vazio, deriva dos pedidos já carregados via checkoutId.
+    // Sem paymentId/installmentId/checkoutId: busca pelos pedidoIds informados.
     const ids = (opts.pedidoIds && opts.pedidoIds.length > 0)
       ? opts.pedidoIds
       : pedidos.map((p: any) => p.id);
