@@ -32,6 +32,7 @@ type Linha = {
   valor_unitario: number;
   retirado: boolean;
   retirado_em: string | null;
+  retirado_por_nome: string | null;
   data_pagamento: string | null;
   data_credito: string | null;
   valor_bruto: number;
