@@ -103,7 +103,7 @@ Deno.serve(async (req) => {
         id, produto_id, variacao_id, evento_id, status, forma_pagamento, parcelas,
         nome_comprador, cpf_comprador, email_comprador, quantidade, valor_unitario,
         valor_total, valor_bruto, valor_liquido, taxa_total,
-        data_pagamento, data_credito, retirado_em, created_at,
+        data_pagamento, data_credito, retirado_em, retirado_por, created_at,
         produtos:produto_id (id, nome),
         produto_variacoes:variacao_id (id, nome),
         eventos:evento_id (id, titulo, data_evento)
