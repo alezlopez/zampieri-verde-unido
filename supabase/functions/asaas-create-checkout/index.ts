@@ -72,9 +72,13 @@ Deno.serve(async (req) => {
       });
     }
 
-    // Idempotência: se já tem checkout gerado, reutiliza
+    // Idempotência: reutiliza checkout existente apenas se ainda não expirou (<24h)
+    // e o cliente não pediu regeneração explícita.
     const existing = ingressos.find((i: any) => i.checkout_url);
-    if (existing) {
+    const existingCriadoEm = existing?.checkout_criado_em ? new Date(existing.checkout_criado_em).getTime() : 0;
+    const isExpired = !existingCriadoEm || (Date.now() - existingCriadoEm) > CHECKOUT_TTL_MS;
+    const shouldRegenerate = body.force_regenerate === true || isExpired;
+    if (existing && !shouldRegenerate) {
       return new Response(JSON.stringify({
         checkout_url: existing.checkout_url,
         reused: true,
