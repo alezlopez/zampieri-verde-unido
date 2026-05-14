@@ -185,6 +185,13 @@ const EventosRelatorio = () => {
     [data],
   );
 
+  const listaFiltrada = useMemo(() => {
+    const base = data?.lista || [];
+    if (filtroUso === "utilizados") return base.filter((r) => r.utilizado);
+    if (filtroUso === "nao_utilizados") return base.filter((r) => !r.utilizado);
+    return base;
+  }, [data, filtroUso]);
+
   if (authLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
