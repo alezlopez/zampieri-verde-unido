@@ -201,6 +201,7 @@ Deno.serve(async (req) => {
           asaas_customer_id: customer.id,
           checkout_url: checkoutUrl,
           checkout_id: checkoutId,
+          checkout_criado_em: new Date().toISOString(),
           forma_pagamento: body.forma_pagamento,
           parcelas: isParcelado ? maxParcelas : 1,
           valor_total: it.value,
