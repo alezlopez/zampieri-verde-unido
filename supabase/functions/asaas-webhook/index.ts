@@ -80,10 +80,13 @@ Deno.serve(async (req) => {
       checkoutObj?.externalReference ||
       null;
 
-    // ============ ROTEAMENTO: pedidos de PRODUTO (prefixo "prod:") ============
+    // ============ ROTEAMENTO: pedidos de PRODUTO ============
+    // CHECKOUT_* traz externalReference="prod:..."; PAYMENT_* muitas vezes traz só checkoutSession.
     const isProdRef = !!(externalRef && externalRef.startsWith("prod:"));
-    if (newStatus && isProdRef) {
-      const prodIds = externalRef!.slice(5).split(",").map((s) => s.trim()).filter(Boolean);
+    if (newStatus && (isProdRef || checkoutId)) {
+      const prodIds = isProdRef
+        ? externalRef!.slice(5).split(",").map((s) => s.trim()).filter(Boolean)
+        : [];
       const stableId = installmentId || paymentId;
       const updateP: any = { status: newStatus };
       if (stableId) updateP.asaas_payment_id = stableId;
@@ -97,23 +100,27 @@ Deno.serve(async (req) => {
         const r = await admin.from("pedidos_produtos").update(updateP).in("id", prodIds).select("id");
         if (!r.error) matchedP = r.data;
       }
-      if (newStatus === "pago" && matchedP && matchedP.length > 0) {
+      if (!matchedP || matchedP.length === 0) {
+        // Não era produto; deixa o fluxo de ingressos processar abaixo.
+      } else if (newStatus === "pago") {
         try {
           const { recomputePedidosProdutos } = await import("../_shared/produtos-financeiro.ts");
-          await recomputePedidosProdutos(admin, { checkoutId, paymentId, installmentId, pedidoIds: prodIds });
+          await recomputePedidosProdutos(admin, { checkoutId, paymentId, installmentId, pedidoIds: prodIds.length > 0 ? prodIds : matchedP.map((m) => m.id) });
         } catch (e) {
           console.error("[asaas-webhook] recompute produtos falhou", e);
         }
-      } else if (newStatus === "estornado" && matchedP && matchedP.length > 0) {
+      } else if (newStatus === "estornado") {
         // Zera valores em estorno
         await admin.from("pedidos_produtos").update({
           valor_bruto: 0, valor_liquido: 0, taxa_total: 0, data_credito: null,
         }).in("id", matchedP.map((m) => m.id));
       }
-      await admin.from("asaas_webhook_events").update({ processed: true }).eq("event_id", eventId);
-      return new Response(JSON.stringify({ ok: true, kind: "produto" }), {
-        status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
+      if (matchedP && matchedP.length > 0) {
+        await admin.from("asaas_webhook_events").update({ processed: true }).eq("event_id", eventId);
+        return new Response(JSON.stringify({ ok: true, kind: "produto" }), {
+          status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
     }
 
     if (newStatus) {
