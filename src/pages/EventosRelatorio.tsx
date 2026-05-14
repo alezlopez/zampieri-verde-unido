@@ -440,10 +440,11 @@ const EventosRelatorio = () => {
                     <TableHead className="text-right">Bruto</TableHead>
                     <TableHead className="text-right">Líquido</TableHead>
                     <TableHead className="text-right">Taxa</TableHead>
+                    <TableHead>Utilização</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {(data?.lista || []).map((r) => (
+                  {listaFiltrada.map((r) => (
                     <TableRow key={r.id}>
                       <TableCell className="text-xs">{r.evento_titulo}</TableCell>
                       <TableCell className="text-xs">{r.nome_comprador}</TableCell>
@@ -469,10 +470,21 @@ const EventosRelatorio = () => {
                       <TableCell className="text-right text-xs text-zampieri-wine">
                         {r.taxa_total === null ? "—" : formatBRL(r.taxa_total)}
                       </TableCell>
+                      <TableCell className="text-xs">
+                        {r.utilizado ? (
+                          <div className="space-y-0.5">
+                            <Badge className="bg-zampieri-green/15 text-zampieri-green-dark border border-zampieri-green/40 text-[10px]">✓ Utilizado</Badge>
+                            <div className="text-[10px] text-muted-foreground">{formatDate(r.utilizado_em)}</div>
+                            {r.utilizado_por_nome && <div className="text-[10px] text-muted-foreground">por {r.utilizado_por_nome}</div>}
+                          </div>
+                        ) : (
+                          <Badge variant="outline" className="text-[10px]">Não</Badge>
+                        )}
+                      </TableCell>
                     </TableRow>
                   ))}
-                  {data && data.lista.length === 0 && (
-                    <TableRow><TableCell colSpan={8} className="text-center text-sm text-muted-foreground py-6">Nenhum registro encontrado</TableCell></TableRow>
+                  {data && listaFiltrada.length === 0 && (
+                    <TableRow><TableCell colSpan={9} className="text-center text-sm text-muted-foreground py-6">Nenhum registro encontrado</TableCell></TableRow>
                   )}
                 </TableBody>
               </Table>
