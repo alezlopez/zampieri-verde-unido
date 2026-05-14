@@ -438,18 +438,39 @@ const EventoCompra = () => {
       const precoMeiaCalc = Number(isParcelado ? (evento.preco_meia_parcelado ?? 0) : (evento.preco_meia ?? 0)) || 0;
       const valorPara = (isMeia: boolean) => Number((isMeia ? precoMeiaCalc : precoInteira).toFixed(2));
 
+      // Shape base — TODAS as linhas do INSERT precisam ter as MESMAS chaves
+      // (supabase-js normaliza o conjunto de colunas pela união, e omitir
+      // colunas em parte dos registros gera NULL nas demais — quebra NOT NULL).
+      const baseRecord = {
+        evento_id: evento.id,
+        user_id: user.id,
+        nome_comprador: nomeComprador.trim(),
+        codigo_aluno: null as string | null,
+        quantidade: 1,
+        status: "pendente" as string,
+        cortesia: false as boolean,
+        tipo_participante: "convidado" as string,
+        nome_participante: null as string | null,
+        cpf_participante: null as string | null,
+        data_nascimento_participante: null as string | null,
+        email_participante: null as string | null,
+        celular_participante: null as string | null,
+        tipo_ingresso: "inteira" as string,
+        categoria_meia: null as string | null,
+        declaracao_meia_aceita: false as boolean,
+        declaracao_meia_aceita_em: null as string | null,
+        valor_total: 0 as number,
+        forma_pagamento: null as string | null,
+        parcelas: 1 as number,
+      };
+
       // Comprador participando como ingresso
       if (comprarParaSi) {
         const m = getMeia("comprador-self");
         const isMeia = m.tipo_ingresso === "meia";
         const cpfSelf = compradorExternoLocal?.cpf || (user.user_metadata?.cpf as string | undefined) || null;
         records.push({
-          evento_id: evento.id,
-          user_id: user.id,
-          nome_comprador: nomeComprador.trim(),
-          codigo_aluno: null,
-          quantidade: 1,
-          status: "pendente",
+          ...baseRecord,
           tipo_participante: "convidado",
           nome_participante: nomeComprador.trim(),
           cpf_participante: cpfSelf,
@@ -473,11 +494,8 @@ const EventoCompra = () => {
         const m = getMeia(`aluno-${codigo}`);
         const isMeia = !alunoCortesia && m.tipo_ingresso === "meia";
         records.push({
-          evento_id: evento.id,
-          user_id: user.id,
-          nome_comprador: nomeComprador.trim(),
+          ...baseRecord,
           codigo_aluno: codigo,
-          quantidade: 1,
           status: alunoCortesia ? "pago" : "pendente",
           cortesia: alunoCortesia,
           tipo_participante: "aluno",
@@ -487,8 +505,6 @@ const EventoCompra = () => {
           declaracao_meia_aceita: isMeia ? m.declaracao : false,
           declaracao_meia_aceita_em: isMeia && m.declaracao ? nowIso : null,
           valor_total: alunoCortesia ? 0 : valorPara(isMeia),
-          forma_pagamento: alunoCortesia ? null : undefined,
-          parcelas: 1,
         });
       }
 
@@ -498,12 +514,7 @@ const EventoCompra = () => {
         const m = getMeia(`convidado-${i}`);
         const isMeia = m.tipo_ingresso === "meia";
         records.push({
-          evento_id: evento.id,
-          user_id: user.id,
-          nome_comprador: nomeComprador.trim(),
-          codigo_aluno: null,
-          quantidade: 1,
-          status: "pendente",
+          ...baseRecord,
           tipo_participante: "convidado",
           nome_participante: c.nome.trim(),
           cpf_participante: c.cpf || null,
