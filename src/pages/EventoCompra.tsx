@@ -556,10 +556,10 @@ const EventoCompra = () => {
       );
 
       if (checkoutErr || (checkoutData as any)?.error) {
-        const msg = (checkoutData as any)?.error || checkoutErr?.message || "Falha ao gerar cobrança";
+        const fe = friendlyCheckoutError((checkoutData as any)?.error || checkoutErr);
         toast({
           title: "Ingressos reservados, mas o checkout falhou",
-          description: `${msg}. Acesse "Meus Ingressos" para tentar novamente.`,
+          description: `${fe.description} Acesse "Meus Ingressos" para tentar novamente.`,
           variant: "destructive",
         });
         setTotalIngressosReservados(records.length);
