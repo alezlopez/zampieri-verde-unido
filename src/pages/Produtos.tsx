@@ -12,6 +12,7 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { ArrowLeft, Minus, Plus, ShoppingCart, Package } from "lucide-react";
 import { EventosHeader } from "@/components/EventosHeader";
 import { Footer } from "@/components/Footer";
+import { friendlyCheckoutError } from "@/lib/checkoutErrors";
 
 interface Produto {
   id: string; nome: string; descricao: string | null; imagem_url: string | null;
