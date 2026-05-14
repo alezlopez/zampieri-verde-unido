@@ -75,6 +75,19 @@ Deno.serve(async (req) => {
     const { data: rows, error } = await q;
     if (error) throw error;
 
+    // Resolve validator usernames
+    const validatorIds = Array.from(new Set(
+      (rows || []).flatMap((r: any) => [r.utilizado_por, r.meia_validada_por]).filter(Boolean)
+    )) as string[];
+    const nomesValidadores: Record<string, string> = {};
+    if (validatorIds.length > 0) {
+      const { data: profs } = await admin
+        .from("user_profiles")
+        .select("user_id, username")
+        .in("user_id", validatorIds);
+      for (const p of (profs || []) as any[]) nomesValidadores[p.user_id] = p.username;
+    }
+
     const lista = (rows || []).map((r: any) => {
       const liquidoCalculado = r.valor_liquido !== null && r.valor_liquido !== undefined;
       const brutoCalculado = r.valor_bruto !== null && r.valor_bruto !== undefined;
@@ -103,6 +116,14 @@ Deno.serve(async (req) => {
         valor_liquido: liquido,
         taxa_total: taxa,
         liquido_pendente_calculo: !r.cortesia && r.status === "pago" && !liquidoCalculado,
+        utilizado: !!r.utilizado,
+        utilizado_em: r.utilizado_em,
+        utilizado_por: r.utilizado_por,
+        utilizado_por_nome: r.utilizado_por ? (nomesValidadores[r.utilizado_por] || null) : null,
+        meia_validada_portaria: !!r.meia_validada_portaria,
+        meia_validada_em: r.meia_validada_em,
+        meia_validada_por: r.meia_validada_por,
+        meia_validada_por_nome: r.meia_validada_por ? (nomesValidadores[r.meia_validada_por] || null) : null,
       };
     });
 
