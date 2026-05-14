@@ -391,7 +391,21 @@ const EventosAdmin = () => {
       .select("*")
       .eq("evento_id", eventoId)
       .order("created_at", { ascending: false });
-    if (data) setIngressos(data);
+    if (data) {
+      setIngressos(data as any);
+      const ids = Array.from(new Set(
+        (data as any[]).flatMap((i) => [i.utilizado_por, i.meia_validada_por]).filter(Boolean)
+      )) as string[];
+      if (ids.length) {
+        const { data: profs } = await supabase
+          .from("user_profiles")
+          .select("user_id, username")
+          .in("user_id", ids);
+        const map: Record<string, string> = {};
+        for (const p of (profs || []) as any[]) map[p.user_id] = p.username;
+        setValidadores((prev) => ({ ...prev, ...map }));
+      }
+    }
     setSelectedEventoIngressos(eventoId);
   };
 
