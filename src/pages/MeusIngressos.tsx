@@ -20,6 +20,8 @@ interface IngressoComEvento {
   checkout_url: string | null;
   comprovante_estorno_url: string | null;
   cortesia: boolean | null;
+  utilizado: boolean | null;
+  utilizado_em: string | null;
   created_at: string;
   eventos: { titulo: string; data_evento: string; horario: string | null; local: string | null } | null;
 }
