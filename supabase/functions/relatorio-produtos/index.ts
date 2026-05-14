@@ -1,6 +1,7 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
 import { z } from "https://esm.sh/zod@3.23.8";
 import { corsHeaders } from "../_shared/cors.ts";
+import { recomputePedidosProdutos } from "../_shared/produtos-financeiro.ts";
 
 const FilterSchema = z.object({
   data_inicio: z.string().optional(),
@@ -11,6 +12,47 @@ const FilterSchema = z.object({
   forma_pagamento: z.enum(["pix", "credit_card", "todos"]).optional(),
   status: z.string().optional(),
 });
+
+async function sincronizarPendentes(admin: any) {
+  const { data: pendentes, error } = await admin
+    .from("pedidos_produtos")
+    .select("id, checkout_id, asaas_payment_id")
+    .eq("status", "pago")
+    .is("valor_liquido", null)
+    .limit(2000);
+  if (error || !pendentes?.length) return;
+
+  const porCheckout = new Map<string, { ids: string[]; stableId: string | null }>();
+  const porPayment = new Map<string, string[]>();
+  for (const p of pendentes) {
+    if (p.checkout_id) {
+      if (!porCheckout.has(p.checkout_id)) porCheckout.set(p.checkout_id, { ids: [], stableId: p.asaas_payment_id });
+      const g = porCheckout.get(p.checkout_id)!;
+      g.ids.push(p.id);
+      if (!g.stableId && p.asaas_payment_id) g.stableId = p.asaas_payment_id;
+    } else if (p.asaas_payment_id) {
+      if (!porPayment.has(p.asaas_payment_id)) porPayment.set(p.asaas_payment_id, []);
+      porPayment.get(p.asaas_payment_id)!.push(p.id);
+    }
+  }
+
+  for (const [checkoutId, g] of porCheckout) {
+    const stableId = g.stableId || "";
+    await recomputePedidosProdutos(admin, {
+      checkoutId,
+      paymentId: stableId.startsWith("pay_") ? stableId : null,
+      installmentId: stableId && !stableId.startsWith("pay_") ? stableId : null,
+      pedidoIds: g.ids,
+    }).catch((e) => console.warn("[relatorio-produtos] sync checkout falhou", checkoutId, e?.message || e));
+  }
+  for (const [stableId, ids] of porPayment) {
+    await recomputePedidosProdutos(admin, {
+      paymentId: stableId.startsWith("pay_") ? stableId : null,
+      installmentId: !stableId.startsWith("pay_") ? stableId : null,
+      pedidoIds: ids,
+    }).catch((e) => console.warn("[relatorio-produtos] sync payment falhou", stableId, e?.message || e));
+  }
+}
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
@@ -50,6 +92,10 @@ Deno.serve(async (req) => {
     }
     const f = parsed.data;
     const status = f.status && f.status !== "todos" ? f.status : "pago";
+
+    if (status === "pago" || f.status === "todos") {
+      await sincronizarPendentes(admin);
+    }
 
     let q = admin
       .from("pedidos_produtos")
