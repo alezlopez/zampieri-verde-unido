@@ -7,7 +7,10 @@ const BodySchema = z.object({
   ingresso_ids: z.array(z.string().uuid()).min(1).max(20),
   forma_pagamento: z.enum(["pix", "credit_card"]),
   parcelas: z.number().int().min(1).max(12).optional(),
+  force_regenerate: z.boolean().optional(),
 });
+
+const CHECKOUT_TTL_MS = 24 * 60 * 60 * 1000; // 24h
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
