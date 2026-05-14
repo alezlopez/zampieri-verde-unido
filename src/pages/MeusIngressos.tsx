@@ -253,18 +253,30 @@ const MeusIngressos = () => {
                             )}
                           </div>
                         )}
-                        {ingresso.status === "pendente" && ingresso.checkout_url && (
-                          <div className="mt-3">
+                        {ingresso.status === "pendente" && (
+                          <div className="mt-3 space-y-2">
+                            {ingresso.checkout_url && (
+                              <Button
+                                size="sm"
+                                className="bg-zampieri-gold hover:bg-zampieri-gold-light text-zampieri-green-dark w-full"
+                                onClick={() => window.open(ingresso.checkout_url!, "_blank")}
+                              >
+                                <ExternalLink className="w-4 h-4 mr-2" />
+                                Pagar
+                              </Button>
+                            )}
                             <Button
                               size="sm"
-                              className="bg-zampieri-gold hover:bg-zampieri-gold-light text-zampieri-green-dark w-full"
-                              onClick={() => window.open(ingresso.checkout_url!, "_blank")}
+                              variant="outline"
+                              className="w-full border-zampieri-green/40 text-zampieri-green-dark hover:bg-zampieri-cream"
+                              disabled={regenIngId === ingresso.id}
+                              onClick={() => regenerarIngresso(ingresso)}
                             >
-                              <ExternalLink className="w-4 h-4 mr-2" />
-                              Pagar
+                              <RefreshCw className={`w-4 h-4 mr-2 ${regenIngId === ingresso.id ? "animate-spin" : ""}`} />
+                              {ingresso.checkout_url ? "Gerar novo link" : "Gerar link de pagamento"}
                             </Button>
-                            <p className="text-xs text-muted-foreground mt-2">
-                              Ao clicar em Pagar, você será redirecionado para o ambiente seguro do sistema Asaas. Insira os dados do responsável pela compra, não os do(a) aluno(a).
+                            <p className="text-xs text-muted-foreground">
+                              Se o link de pagamento não abrir, gere um novo. Você será redirecionado para o ambiente seguro do Asaas.
                             </p>
                           </div>
                         )}
