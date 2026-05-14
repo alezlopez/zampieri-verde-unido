@@ -45,8 +45,13 @@ export async function recomputePedidosProdutos(admin: any, opts: {
       const d = await listInstallmentPayments(p.installment);
       payments = d?.data || [];
     } else if (p) payments = [p];
-  } else if (opts.pedidoIds && opts.pedidoIds.length > 0) {
-    const ref = `prod:${opts.pedidoIds.join(",")}`;
+  } else {
+    // Sem paymentId/installmentId (ex.: evento CHECKOUT_PAID): busca pelos pedidoIds informados
+    // ou, se vazio, deriva dos pedidos já carregados via checkoutId.
+    const ids = (opts.pedidoIds && opts.pedidoIds.length > 0)
+      ? opts.pedidoIds
+      : pedidos.map((p: any) => p.id);
+    const ref = `prod:${ids.join(",")}`;
     const d = await listPayments({ externalReference: ref, limit: 100 });
     payments = d?.data || [];
     const instSet = new Set(payments.map((p) => p.installment).filter(Boolean));
