@@ -81,7 +81,8 @@ const EventosAdmin = () => {
   const [selectedEventoIngressos, setSelectedEventoIngressos] = useState<string | null>(null);
   const [ingressos, setIngressos] = useState<Ingresso[]>([]);
   const [filtroMeiaNaoValidada, setFiltroMeiaNaoValidada] = useState(false);
-
+  const [filtroUso, setFiltroUso] = useState<"todos" | "utilizados" | "nao_utilizados">("todos");
+  const [validadores, setValidadores] = useState<Record<string, string>>({});
   // Manual ticket form
   type Participante = {
     tipo: "aluno" | "convidado";
