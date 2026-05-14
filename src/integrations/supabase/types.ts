@@ -530,6 +530,7 @@ export type Database = {
           asaas_payment_id: string | null
           categoria_meia: string | null
           celular_participante: string | null
+          checkout_criado_em: string | null
           checkout_id: string | null
           checkout_url: string | null
           codigo_aluno: string | null
@@ -573,6 +574,7 @@ export type Database = {
           asaas_payment_id?: string | null
           categoria_meia?: string | null
           celular_participante?: string | null
+          checkout_criado_em?: string | null
           checkout_id?: string | null
           checkout_url?: string | null
           codigo_aluno?: string | null
@@ -616,6 +618,7 @@ export type Database = {
           asaas_payment_id?: string | null
           categoria_meia?: string | null
           celular_participante?: string | null
+          checkout_criado_em?: string | null
           checkout_id?: string | null
           checkout_url?: string | null
           codigo_aluno?: string | null
@@ -735,6 +738,7 @@ export type Database = {
           asaas_customer_id: string | null
           asaas_payment_id: string | null
           celular_comprador: string | null
+          checkout_criado_em: string | null
           checkout_id: string | null
           checkout_url: string | null
           cpf_comprador: string | null
@@ -766,6 +770,7 @@ export type Database = {
           asaas_customer_id?: string | null
           asaas_payment_id?: string | null
           celular_comprador?: string | null
+          checkout_criado_em?: string | null
           checkout_id?: string | null
           checkout_url?: string | null
           cpf_comprador?: string | null
@@ -797,6 +802,7 @@ export type Database = {
           asaas_customer_id?: string | null
           asaas_payment_id?: string | null
           celular_comprador?: string | null
+          checkout_criado_em?: string | null
           checkout_id?: string | null
           checkout_url?: string | null
           cpf_comprador?: string | null

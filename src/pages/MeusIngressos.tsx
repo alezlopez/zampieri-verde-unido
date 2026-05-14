@@ -6,7 +6,8 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import { ArrowLeft, Ticket, LogOut, ExternalLink, Eye, Package, QrCode, CheckCircle2 } from "lucide-react";
+import { ArrowLeft, Ticket, LogOut, ExternalLink, Eye, Package, QrCode, CheckCircle2, RefreshCw } from "lucide-react";
+import { toast } from "sonner";
 import { EventosHeader } from "@/components/EventosHeader";
 import { Footer } from "@/components/Footer";
 
@@ -87,6 +88,56 @@ const MeusIngressos = () => {
   const handleLogout = async () => {
     await signOut();
     navigate("/eventos");
+  };
+
+  const [regenIngId, setRegenIngId] = useState<string | null>(null);
+  const [regenPedId, setRegenPedId] = useState<string | null>(null);
+
+  const regenerarIngresso = async (ingresso: IngressoComEvento) => {
+    setRegenIngId(ingresso.id);
+    try {
+      const { data, error } = await supabase.functions.invoke("asaas-create-checkout", {
+        body: {
+          ingresso_ids: [ingresso.id],
+          forma_pagamento: "pix",
+          force_regenerate: true,
+        },
+      });
+      if (error) throw error;
+      const url = (data as any)?.checkout_url;
+      if (!url) throw new Error("Sem URL retornada");
+      // Atualiza estado local
+      setIngressos((prev) => prev.map((i) => i.id === ingresso.id ? { ...i, checkout_url: url } : i));
+      window.open(url, "_blank");
+      toast.success("Novo link de pagamento gerado");
+    } catch (e: any) {
+      toast.error("Falha ao gerar novo link", { description: e.message || String(e) });
+    } finally {
+      setRegenIngId(null);
+    }
+  };
+
+  const regenerarPedido = async (pedido: PedidoProduto) => {
+    setRegenPedId(pedido.id);
+    try {
+      const { data, error } = await supabase.functions.invoke("produtos-create-checkout", {
+        body: {
+          pedido_ids: [pedido.id],
+          forma_pagamento: "pix",
+          force_regenerate: true,
+        },
+      });
+      if (error) throw error;
+      const url = (data as any)?.checkout_url;
+      if (!url) throw new Error("Sem URL retornada");
+      setPedidos((prev) => prev.map((p) => p.id === pedido.id ? { ...p, checkout_url: url } : p));
+      window.open(url, "_blank");
+      toast.success("Novo link de pagamento gerado");
+    } catch (e: any) {
+      toast.error("Falha ao gerar novo link", { description: e.message || String(e) });
+    } finally {
+      setRegenPedId(null);
+    }
   };
 
   if (loading || authLoading) {
@@ -202,18 +253,30 @@ const MeusIngressos = () => {
                             )}
                           </div>
                         )}
-                        {ingresso.status === "pendente" && ingresso.checkout_url && (
-                          <div className="mt-3">
+                        {ingresso.status === "pendente" && (
+                          <div className="mt-3 space-y-2">
+                            {ingresso.checkout_url && (
+                              <Button
+                                size="sm"
+                                className="bg-zampieri-gold hover:bg-zampieri-gold-light text-zampieri-green-dark w-full"
+                                onClick={() => window.open(ingresso.checkout_url!, "_blank")}
+                              >
+                                <ExternalLink className="w-4 h-4 mr-2" />
+                                Pagar
+                              </Button>
+                            )}
                             <Button
                               size="sm"
-                              className="bg-zampieri-gold hover:bg-zampieri-gold-light text-zampieri-green-dark w-full"
-                              onClick={() => window.open(ingresso.checkout_url!, "_blank")}
+                              variant="outline"
+                              className="w-full border-zampieri-green/40 text-zampieri-green-dark hover:bg-zampieri-cream"
+                              disabled={regenIngId === ingresso.id}
+                              onClick={() => regenerarIngresso(ingresso)}
                             >
-                              <ExternalLink className="w-4 h-4 mr-2" />
-                              Pagar
+                              <RefreshCw className={`w-4 h-4 mr-2 ${regenIngId === ingresso.id ? "animate-spin" : ""}`} />
+                              {ingresso.checkout_url ? "Gerar novo link" : "Gerar link de pagamento"}
                             </Button>
-                            <p className="text-xs text-muted-foreground mt-2">
-                              Ao clicar em Pagar, você será redirecionado para o ambiente seguro do sistema Asaas. Insira os dados do responsável pela compra, não os do(a) aluno(a).
+                            <p className="text-xs text-muted-foreground">
+                              Se o link de pagamento não abrir, gere um novo. Você será redirecionado para o ambiente seguro do Asaas.
                             </p>
                           </div>
                         )}
@@ -276,15 +339,27 @@ const MeusIngressos = () => {
                             </Link>
                           </div>
                         )}
-                        {p.status === "pendente" && p.checkout_url && (
-                          <div className="mt-3">
+                        {p.status === "pendente" && (
+                          <div className="mt-3 space-y-2">
+                            {p.checkout_url && (
+                              <Button
+                                size="sm"
+                                className="bg-zampieri-gold hover:bg-zampieri-gold-light text-zampieri-green-dark w-full"
+                                onClick={() => window.open(p.checkout_url!, "_blank")}
+                              >
+                                <ExternalLink className="w-4 h-4 mr-2" />
+                                Pagar
+                              </Button>
+                            )}
                             <Button
                               size="sm"
-                              className="bg-zampieri-gold hover:bg-zampieri-gold-light text-zampieri-green-dark w-full"
-                              onClick={() => window.open(p.checkout_url!, "_blank")}
+                              variant="outline"
+                              className="w-full border-zampieri-green/40 text-zampieri-green-dark hover:bg-zampieri-cream"
+                              disabled={regenPedId === p.id}
+                              onClick={() => regenerarPedido(p)}
                             >
-                              <ExternalLink className="w-4 h-4 mr-2" />
-                              Pagar
+                              <RefreshCw className={`w-4 h-4 mr-2 ${regenPedId === p.id ? "animate-spin" : ""}`} />
+                              {p.checkout_url ? "Gerar novo link" : "Gerar link de pagamento"}
                             </Button>
                           </div>
                         )}

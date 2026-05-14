@@ -7,7 +7,10 @@ const BodySchema = z.object({
   ingresso_ids: z.array(z.string().uuid()).min(1).max(20),
   forma_pagamento: z.enum(["pix", "credit_card"]),
   parcelas: z.number().int().min(1).max(12).optional(),
+  force_regenerate: z.boolean().optional(),
 });
+
+const CHECKOUT_TTL_MS = 24 * 60 * 60 * 1000; // 24h
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
@@ -51,7 +54,7 @@ Deno.serve(async (req) => {
     // Carrega ingressos + evento (inclui preços de meia)
     const { data: ingressosRaw, error: ingErr } = await admin
       .from("ingressos")
-      .select("id, user_id, evento_id, asaas_payment_id, checkout_url, status, tipo_ingresso, nome_participante, cortesia, eventos:evento_id(id,titulo,preco,preco_parcelado,max_parcelas,preco_meia,preco_meia_parcelado)")
+      .select("id, user_id, evento_id, asaas_payment_id, checkout_url, checkout_criado_em, status, tipo_ingresso, nome_participante, cortesia, eventos:evento_id(id,titulo,preco,preco_parcelado,max_parcelas,preco_meia,preco_meia_parcelado)")
       .in("id", body.ingresso_ids);
 
     // Defesa: ignora ingressos cortesia ou já pagos
@@ -69,9 +72,13 @@ Deno.serve(async (req) => {
       });
     }
 
-    // Idempotência: se já tem checkout gerado, reutiliza
+    // Idempotência: reutiliza checkout existente apenas se ainda não expirou (<24h)
+    // e o cliente não pediu regeneração explícita.
     const existing = ingressos.find((i: any) => i.checkout_url);
-    if (existing) {
+    const existingCriadoEm = existing?.checkout_criado_em ? new Date(existing.checkout_criado_em).getTime() : 0;
+    const isExpired = !existingCriadoEm || (Date.now() - existingCriadoEm) > CHECKOUT_TTL_MS;
+    const shouldRegenerate = body.force_regenerate === true || isExpired;
+    if (existing && !shouldRegenerate) {
       return new Response(JSON.stringify({
         checkout_url: existing.checkout_url,
         reused: true,
@@ -194,6 +201,7 @@ Deno.serve(async (req) => {
           asaas_customer_id: customer.id,
           checkout_url: checkoutUrl,
           checkout_id: checkoutId,
+          checkout_criado_em: new Date().toISOString(),
           forma_pagamento: body.forma_pagamento,
           parcelas: isParcelado ? maxParcelas : 1,
           valor_total: it.value,
