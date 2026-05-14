@@ -21,6 +21,8 @@ interface IngressoCompleto {
   tipo_ingresso: string;
   categoria_meia: string | null;
   comprovante_estorno_url: string | null;
+  utilizado: boolean | null;
+  utilizado_em: string | null;
   created_at: string;
   eventos: {
     titulo: string;
