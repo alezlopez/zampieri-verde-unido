@@ -67,7 +67,7 @@ const MeusIngressos = () => {
       const [{ data: ing }, { data: ped }] = await Promise.all([
         supabase
           .from("ingressos")
-          .select("id, quantidade, status, nome_comprador, nome_participante, tipo_participante, checkout_url, comprovante_estorno_url, cortesia, created_at, eventos(titulo, data_evento, horario, local)")
+          .select("id, quantidade, status, nome_comprador, nome_participante, tipo_participante, checkout_url, comprovante_estorno_url, cortesia, utilizado, utilizado_em, created_at, eventos(titulo, data_evento, horario, local)")
           .eq("user_id", user.id)
           .order("created_at", { ascending: false }),
         supabase
