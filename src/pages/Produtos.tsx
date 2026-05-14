@@ -12,6 +12,7 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { ArrowLeft, Minus, Plus, ShoppingCart, Package } from "lucide-react";
 import { EventosHeader } from "@/components/EventosHeader";
 import { Footer } from "@/components/Footer";
+import { friendlyCheckoutError } from "@/lib/checkoutErrors";
 
 interface Produto {
   id: string; nome: string; descricao: string | null; imagem_url: string | null;
@@ -116,7 +117,8 @@ const Produtos = () => {
     });
     setSubmitting(false);
     if (error || !data?.checkout_url) {
-      toast({ title: "Erro ao gerar checkout", description: (data as any)?.error || error?.message, variant: "destructive" });
+      const fe = friendlyCheckoutError((data as any)?.error || error, "Erro ao gerar checkout");
+      toast({ title: fe.title, description: fe.description, variant: "destructive" });
       return;
     }
     window.location.href = data.checkout_url;

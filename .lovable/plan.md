@@ -1,59 +1,83 @@
-## O que está errado
 
-Evento: **Excursão - Aquário de São Paulo** (id `87f20c66...`).
-Preços corretos: inteira R$ 240 à vista / R$ 260 parcelado · meia R$ 120 / R$ 130.
+## Diagnóstico — causa raiz do erro reportado
 
-Encontrei **16 ingressos pagos** com `valor_bruto = 35` e `valor_liquido = 31,79`.
-Todos os 16:
-- pertencem a **16 usuários diferentes**;
-- vieram de **16 checkouts diferentes**;
-- mas compartilham o **mesmo `asaas_payment_id`** (`bbfddd93-72d9-4430-99ae-f903a71da20a`);
-- somados, dão exatamente **R$ 560 → 560 / 16 = 35**.
-
-Ou seja: o sistema pegou **uma única cobrança Asaas de R$ 560** (provavelmente um parcelamento de 16× ou um único pagamento) e **distribuiu proporcionalmente entre 16 ingressos que não deveriam estar associados a ela**. Como `valor_total` desses ingressos está `NULL`, o rateio caiu no fallback "1/N" e gerou R$ 35 para cada.
-
-## Causa raiz no código
-
-Em `supabase/functions/_shared/financeiro.ts → recomputeIngressosFinancials`:
-
-1. `loadIngressos` aceita carregar por `asaas_payment_id` (quando só vem `paymentId`/`installmentId`). Se vários ingressos de checkouts diferentes já carregam o mesmo id, ele puxa todos juntos.
-2. Em seguida, ao final, faz `update ... eq("id", ing.id)` gravando `asaas_payment_id = stableId` em todos eles — propagando o vínculo errado.
-
-E em `supabase/functions/asaas-webhook/index.ts` (passo 2, linha ~136-144), quando o match por `checkout_id` falha (ex.: webhook de evento sem checkoutId, ou backfill), ele faz `update ... eq("asaas_payment_id", stableId)` **sem restringir ao checkout** — tagueando ingressos de outros compradores com o mesmo id. A partir desse ponto, qualquer reprocesso "contagia" mais ingressos.
-
-Provável gatilho histórico: rodada do `backfill-financeiro` ou um webhook de um comprador parcelado (16× × 35 = 560) que escapou do match por checkoutId e caiu no `eq(asaas_payment_id)` — ou o `externalRef` colou ids de ingressos que não eram desse pagamento.
-
-## Plano de correção
-
-### 1. Blindar o webhook (`asaas-webhook/index.ts`)
-- No passo 2 (match por `asaas_payment_id`), exigir também `checkout_id` quando disponível, ou ignorar o passo se não houver `checkoutId` confiável.
-- Nunca fazer update em massa por `asaas_payment_id` sem confirmar que todos os ingressos pertencem ao mesmo `checkout_id`/`user_id`.
-
-### 2. Blindar o recompute (`_shared/financeiro.ts`)
-- `loadIngressos`: quando carregar por `asaas_payment_id`, validar que todos os retornados compartilham o mesmo `checkout_id`. Se não, abortar com log e exigir `checkoutId` ou `ingressoIds` explícitos.
-- Só sobrescrever `asaas_payment_id` quando o ingresso ainda não tiver um, ou quando o novo for igual ao antigo.
-
-### 3. Limpeza dos 16 ingressos afetados
-Para cada um dos 16 ids:
-- Zerar `asaas_payment_id`, `valor_bruto`, `valor_liquido`, `taxa_total`, `data_pagamento`, `data_credito`.
-- Recompor `valor_total` a partir do `tipo_ingresso` + preço do evento (240 / 120 / 260 / 130 conforme parcelas).
-- Reexecutar o recompute **escopado por `checkout_id`** (um por vez) para reatribuir o pagamento Asaas correto de cada compra.
-- Validar manualmente os 1–2 compradores cujo pagamento real era o `bbfddd93...` (provavelmente um parcelamento 16×R$35 — confirmar no painel Asaas que ingresso é o legítimo dono).
-
-### 4. Auditoria preventiva
-Rodar uma query de sanidade depois do fix:
-```sql
-select asaas_payment_id, count(distinct checkout_id) as checkouts, count(*) as ingressos
-from ingressos
-where asaas_payment_id is not null
-group by 1
-having count(distinct checkout_id) > 1;
 ```
-Qualquer linha retornada indica outro caso do mesmo bug e precisa do mesmo tratamento.
+null value in column "parcelas" of relation "ingressos" violates not-null constraint
+```
 
-### 5. (Opcional) Mesma blindagem em produtos
-`supabase/functions/_shared/produtos-financeiro.ts` segue padrão idêntico — aplicar a mesma proteção para evitar que o problema apareça em `pedidos_produtos`.
+Em `src/pages/EventoCompra.tsx`, na função de reserva (linhas 433–520), os ingressos são inseridos em **lote único** (`supabase.from("ingressos").insert(records)`), porém os objetos no array têm **shapes diferentes**:
 
-## Observação importante
+- Registro do **comprador (comprar para si)** — linha 445: **não inclui `parcelas`**
+- Registro de **aluno** — linha 474: inclui `parcelas: 1`
+- Registro de **convidado** — linha 499: **não inclui `parcelas`**
 
-Antes de corrigir os dados, precisamos identificar **qual comprador realmente pagou** o `bbfddd93...` no Asaas (consulta direta no painel ou via API `getInstallment/getPayment`), para não apagar o vínculo legítimo. Posso rodar essa consulta no Asaas e listar exatamente qual checkout é o dono antes de você aprovar a limpeza.
+O cliente supabase-js, em INSERT em lote, normaliza o conjunto de colunas pela união dos objetos. Para os registros que omitem `parcelas`, ele envia `NULL` no payload — e a coluna é `NOT NULL` (default 1 só vale se o campo for omitido em todas as linhas). Resultado: o INSERT falha quando há comprador-self ou convidados misturados com alunos.
+
+O mesmo padrão também causa risco em `forma_pagamento` (linha 489 usa `undefined`/`null` apenas no aluno cortesia) e quaisquer outras colunas presentes em só parte dos registros.
+
+## Plano
+
+### 1. Corrigir o bug de `parcelas` NULL (P0)
+
+Em `EventoCompra.tsx`, padronizar a forma dos registros antes do `insert`. Estratégia: construir cada registro a partir de um objeto base com **todas as colunas** que qualquer linha possa precisar (com defaults seguros), e depois sobrescrever o que difere:
+
+- Base: `{ parcelas: 1, forma_pagamento: null, codigo_aluno: null, cpf_participante: null, data_nascimento_participante: null, email_participante: null, celular_participante: null, categoria_meia: null, declaracao_meia_aceita: false, declaracao_meia_aceita_em: null, cortesia: false, ... }`
+- Garantir que **todos** os 3 ramos (comprador-self, aluno, convidado) compartilhem exatamente as mesmas chaves.
+
+### 2. Blindagem de banco (P1)
+
+Como rede de segurança contra futuros bugs equivalentes, manter os defaults atuais e adicionar `COALESCE` defensivo em código (não migrar `parcelas` para nullable — manter integridade). Sem alterações de schema.
+
+### 3. Toasts amigáveis nos fluxos de checkout (P1)
+
+Centralizar a tradução de erros conhecidos em uma helper `friendlyCheckoutError(err)` e usar nos pontos de falha:
+
+- `EventoCompra.tsx` (reserva + invoke `asaas-create-checkout`)
+- `Produtos.tsx` (invoke `produtos-create-checkout`)
+- `MeusIngressos.tsx` (re-tentativa de checkout)
+
+Mapeamentos:
+
+| Erro técnico | Mensagem amigável |
+|---|---|
+| `parcelas`/`not-null constraint` | "Não foi possível concluir a reserva. Tente novamente — se persistir, contate o suporte." |
+| `cota_meia_esgotada` | "Cota de meia-entrada esgotada para este evento." |
+| `Vagas insuficientes` | (já existe, manter) |
+| `Comprador sem CPF/nome` | "Complete seu cadastro (CPF e nome) antes de comprar." |
+| `Ingressos de eventos diferentes` | "Os ingressos selecionados são de eventos diferentes." |
+| Falha de rede / 5xx | "Falha temporária ao gerar a cobrança. Tente novamente em instantes." |
+| Genérico | "Não foi possível processar sua compra. Tente novamente." |
+
+Sempre acompanhar o toast de erro com orientação prática (ex.: "Acesse 'Meus Ingressos' para retomar o pagamento.") quando aplicável.
+
+### 4. Remoção de código legado / não usado (P2 — conservador)
+
+Varrer e remover apenas o que tiver **zero referências**:
+
+- `webhook_payment_id` na tabela `ingressos` é gravado? Verificar uso. Se obsoleto frente a `asaas_payment_id`, marcar para depreciação (sem dropar coluna agora — apenas parar de gravar).
+- Conferir edge functions órfãs (sem callers no frontend nem cron):
+  - `backfill-produtos-financeiro` — se tem botão na admin, manter; senão depreciar.
+  - `relatorio-vendas` vs `relatorio-produtos` — checar callers.
+- Imports não usados nos arquivos tocados.
+
+Nada será removido sem confirmar com `rg` que não há referência viva.
+
+### 5. Validação
+
+- Testar 3 cenários no preview: (a) só comprador-self, (b) só alunos, (c) comprador + alunos + convidados misturados — todos devem inserir sem erro.
+- Verificar logs de `asaas-create-checkout` após reserva.
+- Confirmar que toast amigável aparece quando o checkout retorna erro forçado.
+
+## Arquivos afetados
+
+- `src/pages/EventoCompra.tsx` — uniformizar shape dos records + toasts amigáveis
+- `src/pages/Produtos.tsx` — toasts amigáveis
+- `src/pages/MeusIngressos.tsx` — toasts amigáveis no retry
+- `src/lib/checkoutErrors.ts` (novo) — helper `friendlyCheckoutError`
+- (Opcional, depois de auditoria viva) limpeza de imports/funcs não usadas
+
+## O que NÃO será feito
+
+- Nenhuma migração de schema (defaults já corretos; o problema é cliente).
+- Nenhuma mudança em RLS, webhook, ou lógica financeira.
+- Nada será deletado sem confirmação textual de "zero referências".
