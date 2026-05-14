@@ -86,7 +86,7 @@ const EventosRelatorio = () => {
   const [formaPagamento, setFormaPagamento] = useState<string>("todos");
   const [statusFiltro, setStatusFiltro] = useState<string>("todos");
   const [incluirCortesias, setIncluirCortesias] = useState(true);
-
+  const [filtroUso, setFiltroUso] = useState<"todos" | "utilizados" | "nao_utilizados">("todos");
   const [data, setData] = useState<Resposta | null>(null);
   const [loading, setLoading] = useState(false);
   const [backfillLoading, setBackfillLoading] = useState(false);
