@@ -163,11 +163,19 @@ const MeusIngressos = () => {
                               )}
                             </p>
                           </div>
-                          <Badge className={`border ${statusStyles[ingresso.status] || ""} capitalize`}>
-                            {ingresso.cortesia ? "Cortesia" : ingresso.status}
+                          <Badge className={`border ${ingresso.utilizado ? "bg-zampieri-green/25 text-zampieri-green-dark border-zampieri-green/60" : statusStyles[ingresso.status] || ""} capitalize`}>
+                            {ingresso.utilizado ? "Utilizado" : ingresso.cortesia ? "Cortesia" : ingresso.status}
                           </Badge>
                         </div>
-                        {ingresso.status === "pago" && (
+                        {ingresso.utilizado && ingresso.utilizado_em && (
+                          <div className="mt-3 flex items-center gap-2 rounded-md border border-zampieri-green/40 bg-zampieri-green/10 p-2">
+                            <CheckCircle2 className="w-4 h-4 text-zampieri-green-dark" />
+                            <p className="text-xs text-zampieri-green-dark font-medium">
+                              Utilizado em {new Date(ingresso.utilizado_em).toLocaleString("pt-BR")}
+                            </p>
+                          </div>
+                        )}
+                        {ingresso.status === "pago" && !ingresso.utilizado && (
                           <div className="mt-3">
                             <Link to={`/eventos/ingresso/${ingresso.id}`}>
                               <Button size="sm" className="bg-zampieri-green-dark hover:bg-zampieri-green text-white w-full">
