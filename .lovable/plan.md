@@ -1,72 +1,28 @@
-## Objetivo
+## Diagnóstico
 
-Dar ao admin visibilidade completa dos ingressos validados (utilizados) e produtos retirados — com data, hora e quem validou — e mostrar para o usuário final o status "utilizado" (ingressos) e "retirado" (produtos) com data/hora.
+**1. Scan de produto retorna "Comprovante de produto não encontrado"**
+- O QR gerado em `/comprovante/:token` tem o payload correto (`prod:<uuid>`).
+- A RPC `marcar_produto_retirado(p_qr_token uuid)` existe e funciona.
+- Causa provável: o `decodedText` chega com espaço/quebra de linha invisível (comum no html5-qrcode), o `slice(5)` mantém esse lixo, o cast pra UUID falha e cai no `rpcErr` → mostra "não encontrado" genérico.
+- Hipótese secundária: usuário não está logado como **admin** no momento do scan (a RPC retorna `sem_permissao`, mas ainda assim o front mostraria "Erro: sem_permissao", não a mensagem atual — então provavelmente é o trim mesmo).
 
----
+**2. Ingresso utilizado sem badge para o cliente**
+- Confirmei no banco: dois ingressos do seu usuário estão com `utilizado=true` e `utilizado_em` preenchido.
+- O código em `MeusIngressos.tsx` e `IngressoDetalhe.tsx` já lê e exibe o badge corretamente.
+- Causa: cache do navegador / build antigo carregado. Provavelmente um hard refresh resolve, mas vou também garantir que o select e a UI estejam blindados (sem regressão).
 
-## 1. Painel admin de eventos (`EventosAdmin.tsx`)
+## Mudanças
 
-Na lista de ingressos por evento (já existente), adicionar:
+### A) `src/pages/ScannerIngressos.tsx`
+1. `decodedText = decodedText.trim()` no início do `handleScan`.
+2. Tornar o erro de RPC informativo: em vez de "Comprovante de produto não encontrado.", mostrar o `rpcErr.message` (ex.: "invalid input syntax for type uuid", "permission denied", etc.) — facilita diagnóstico futuro.
+3. Mesmo tratamento para o caminho de ingressos (trim).
 
-- Novos campos buscados: `utilizado`, `utilizado_em`, `utilizado_por`, `meia_validada_em`, `meia_validada_por`.
-- Resolver `utilizado_por` / `meia_validada_por` via `user_profiles` para mostrar o nome.
-- Em cada linha:
-  - Badge verde **"✅ Utilizado"** com data/hora e nome do validador quando `utilizado=true`.
-  - Para meia: data/hora e nome de quem validou o documento.
-- Cards de resumo (acima da lista):
-  - Total vendidos · Pagos · Utilizados · Pendentes de validação meia.
-- Filtros rápidos:
-  - "Apenas utilizados" / "Apenas não utilizados" (além do já existente "Meias não validadas").
-- CSV: incluir colunas `utilizado`, `utilizado_em`, `validado_por`, `meia_validada_em`, `meia_validada_por`.
+### B) Confirmar build no cliente
+- Pedir hard-refresh (Ctrl+F5) na tela de Meus Ingressos. O código já está correto e os dados estão no banco — basta recarregar.
+- Sem alteração de código adicional aqui.
 
-## 2. Relatório de eventos (`EventosRelatorio.tsx`)
-
-- Adicionar colunas `utilizado` (Sim/Não) e `utilizado_em` na tabela de Detalhamento.
-- Adicionar filtro por status de uso (Todos / Utilizados / Não utilizados).
-- Card de totais: contagem de utilizados e taxa de comparecimento (%).
-- Atualizar edge function `relatorio-vendas` para retornar esses campos e o totalizador.
-
-## 3. Painel admin de produtos (`ProdutosAdmin.tsx`)
-
-Hoje a listagem de pedidos não está visível neste painel. Adicionar (mesmo padrão dos eventos):
-
-- Botão "Pedidos" por produto, abrindo lista com: comprador, variação, qtd, status, **retirado em** (data/hora) e **retirado por** (nome).
-- Cards de resumo: Pagos · Retirados · Pendentes de retirada.
-- Filtro: "Apenas retirados" / "Apenas pendentes de retirada".
-
-## 4. Relatório de produtos (`ProdutosRelatorio.tsx`)
-
-- Coluna "Retirado" passa a mostrar **data/hora** quando sim.
-- Nova coluna "Retirado por" (nome do admin).
-- Filtro por status de retirada (Todos / Retirados / Não retirados).
-- Card de totais: já mostra `qtd_retirados` — adicionar % retirado.
-- Atualizar edge function `relatorio-produtos` para retornar `retirado_por` (resolvido por `user_profiles`).
-
-## 5. Visão do usuário final
-
-**Ingressos** (`MeusIngressos.tsx` + `IngressoDetalhe.tsx`):
-- Quando `utilizado=true`, mostrar badge verde "Utilizado em DD/MM/AAAA HH:MM" e ocultar/desabilitar o QR (já não serve mais).
-- Adicionar `utilizado` e `utilizado_em` ao select e à interface.
-
-**Produtos** (`MeusIngressos.tsx` aba Produtos + `ComprovanteProduto.tsx`):
-- `ComprovanteProduto.tsx` já mostra "Retirado em …" quando `retirado_em` não é nulo. Apenas garantir que o card do `MeusIngressos` exiba o mesmo selo "Retirado em DD/MM HH:MM" quando aplicável (hoje só mostra status).
-
-## 6. Detalhes técnicos
-
-- Nenhuma alteração de schema. Todos os campos já existem:
-  - `ingressos.utilizado`, `utilizado_em`, `utilizado_por`, `meia_validada_em`, `meia_validada_por`
-  - `pedidos_produtos.retirado_em`, `retirado_por`
-- Para resolver nomes dos validadores no admin: `supabase.from('user_profiles').select('user_id, username').in('user_id', ids)` — mesmo padrão usado em `ScannerIngressos.tsx`.
-- Edge functions afetadas: `relatorio-vendas` e `relatorio-produtos` (apenas adicionar campos no `select` e join opcional via batch lookup em `user_profiles`).
-- Sem mudanças de RLS necessárias.
-
-## Arquivos a editar
-
-- `src/pages/EventosAdmin.tsx`
-- `src/pages/EventosRelatorio.tsx`
-- `src/pages/ProdutosAdmin.tsx`
-- `src/pages/ProdutosRelatorio.tsx`
-- `src/pages/MeusIngressos.tsx`
-- `src/pages/IngressoDetalhe.tsx`
-- `supabase/functions/relatorio-vendas/index.ts`
-- `supabase/functions/relatorio-produtos/index.ts`
+## Validação
+- Escanear um QR de produto pago real → deve marcar como retirado.
+- Escanear o mesmo QR de novo → "Produto JÁ RETIRADO em ...".
+- Logar como cliente e abrir Meus Ingressos / detalhe do ingresso utilizado → badge "Utilizado em DD/MM/AAAA HH:MM" visível e QR substituído pelo aviso.
