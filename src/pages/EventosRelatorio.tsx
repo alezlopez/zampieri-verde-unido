@@ -313,7 +313,7 @@ const EventosRelatorio = () => {
 
           {/* KPIs */}
           {data && (
-            <div className="grid grid-cols-2 md:grid-cols-5 gap-3 mb-4">
+            <div className="grid grid-cols-2 md:grid-cols-6 gap-3 mb-4">
               <Card className="border-border">
                 <CardContent className="p-4">
                   <p className="text-xs text-muted-foreground">Bruto</p>
@@ -338,6 +338,17 @@ const EventosRelatorio = () => {
                   <p className="text-xs text-muted-foreground">Ingressos</p>
                   <p className="text-xl font-bold">{data.totais.qtd}</p>
                   <p className="text-[10px] text-muted-foreground">{data.totais.qtd_cortesias} cortesia(s)</p>
+                </CardContent>
+              </Card>
+              <Card className="border-border">
+                <CardContent className="p-4">
+                  <p className="text-xs text-muted-foreground">Utilizados</p>
+                  <p className="text-xl font-bold text-zampieri-green-dark">{data.totais.qtd_utilizados ?? 0}</p>
+                  <p className="text-[10px] text-muted-foreground">
+                    {data.totais.qtd_pagos > 0
+                      ? `${Math.round(((data.totais.qtd_utilizados ?? 0) / data.totais.qtd_pagos) * 100)}% dos pagos`
+                      : "—"}
+                  </p>
                 </CardContent>
               </Card>
               <Card className="border-border">
