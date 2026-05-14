@@ -35,6 +35,12 @@ type Linha = {
   valor_liquido: number | null;
   taxa_total: number | null;
   liquido_pendente_calculo: boolean;
+  utilizado: boolean;
+  utilizado_em: string | null;
+  utilizado_por_nome: string | null;
+  meia_validada_portaria: boolean;
+  meia_validada_em: string | null;
+  meia_validada_por_nome: string | null;
 };
 
 type Resposta = {
@@ -44,6 +50,7 @@ type Resposta = {
     qtd: number; qtd_cortesias: number;
     qtd_liquido_pendente?: number;
     bruto_liquido_pendente?: number;
+    qtd_utilizados: number; qtd_pagos: number;
     ticket_medio: number; percentual_taxa: number;
   };
   por_evento: { evento_id: string; evento_titulo: string; bruto: number; liquido: number; taxa: number; qtd: number; pendentes?: number }[];
