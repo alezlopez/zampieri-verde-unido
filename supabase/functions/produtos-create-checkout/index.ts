@@ -315,7 +315,7 @@ Deno.serve(async (req) => {
 
     await admin
       .from("pedidos_produtos")
-      .update({ checkout_url: checkoutUrl, checkout_id: checkoutId })
+      .update({ checkout_url: checkoutUrl, checkout_id: checkoutId, checkout_criado_em: new Date().toISOString() })
       .in("id", pedidoIds);
 
     return new Response(JSON.stringify({ checkout_url: checkoutUrl, checkout_id: checkoutId, pedido_ids: pedidoIds, valor_total: valorTotal }), {
