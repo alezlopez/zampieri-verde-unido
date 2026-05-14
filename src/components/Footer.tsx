@@ -59,7 +59,7 @@ export const Footer = () => {
                   <button onClick={() => scrollTo(l.id)} className="hover:text-zampieri-gold-light transition-colors">{l.label}</button>
                 </li>
               ))}
-              <li><a href="https://espera.colegiozampieri.com.br" target="_blank" rel="noopener noreferrer" className="hover:text-zampieri-gold-light transition-colors">Portal do Aluno</a></li>
+              <li><a href="https://portal.colegiozampieri.com.br" target="_blank" rel="noopener noreferrer" className="hover:text-zampieri-gold-light transition-colors">Portal do Aluno</a></li>
             </ul>
           </div>
         </div>
