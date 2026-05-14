@@ -56,6 +56,119 @@ Deno.serve(async (req) => {
     const parcelasReq = Math.max(1, Math.min(Number(body.parcelas) || 1, 12));
     const isParcelado = body.forma_pagamento === "credit_card" && parcelasReq > 1;
 
+    // ===== Branch: reaproveitar pedidos existentes (retry de checkout) =====
+    if (body.pedido_ids && body.pedido_ids.length > 0) {
+      const { data: pedidosExist, error: pErr } = await admin
+        .from("pedidos_produtos")
+        .select("id, user_id, status, checkout_url, checkout_id, checkout_criado_em, variacao_id, quantidade, valor_unitario, evento_id, asaas_customer_id, produto_id, produto_variacoes:variacao_id(nome, preco, preco_parcelado, max_parcelas), produtos:produto_id(nome)")
+        .in("id", body.pedido_ids);
+
+      if (pErr || !pedidosExist || pedidosExist.length === 0) {
+        return new Response(JSON.stringify({ error: "Pedidos não encontrados" }), {
+          status: 404, headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+      if (pedidosExist.some((p: any) => p.user_id !== user.id)) {
+        return new Response(JSON.stringify({ error: "Pedidos não pertencem ao usuário" }), {
+          status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+      if (pedidosExist.some((p: any) => p.status !== "pendente")) {
+        return new Response(JSON.stringify({ error: "Pedidos já processados" }), {
+          status: 409, headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+
+      // Reutiliza link em cache se ainda válido
+      const oldestCriado = Math.min(
+        ...pedidosExist.map((p: any) => p.checkout_criado_em ? new Date(p.checkout_criado_em).getTime() : 0)
+      );
+      const allHaveUrl = pedidosExist.every((p: any) => !!p.checkout_url);
+      const isExpired = !oldestCriado || (Date.now() - oldestCriado) > CHECKOUT_TTL_MS;
+      if (allHaveUrl && !isExpired && !body.force_regenerate) {
+        return new Response(JSON.stringify({
+          checkout_url: pedidosExist[0].checkout_url,
+          checkout_id: pedidosExist[0].checkout_id,
+          pedido_ids: pedidosExist.map((p: any) => p.id),
+          reused: true,
+        }), { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+      }
+
+      // Regenerar Asaas checkout
+      const { data: compradorRowsR } = await admin.rpc("get_comprador_dados", { p_user_id: user.id });
+      const compradorR: any = compradorRowsR?.[0];
+      if (!compradorR?.cpf || !compradorR?.nome) {
+        return new Response(JSON.stringify({ error: "Comprador sem CPF/nome cadastrado" }), {
+          status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+      const customerR = await getOrCreateCustomer({
+        name: compradorR.nome, cpfCnpj: compradorR.cpf,
+        email: compradorR.email || user.email || undefined,
+        mobilePhone: compradorR.celular || undefined,
+      });
+
+      let maxParcelasReusoCalc = 12;
+      let valorTotalR = 0;
+      const itemsR = pedidosExist.map((p: any) => {
+        const v = p.produto_variacoes;
+        const preco = isParcelado ? Number(v?.preco_parcelado || p.valor_unitario) : Number(p.valor_unitario);
+        maxParcelasReusoCalc = Math.min(maxParcelasReusoCalc, v?.max_parcelas || 1);
+        valorTotalR += preco * p.quantidade;
+        const titulo = `${p.produtos?.nome || "Produto"} - ${v?.nome || ""}`;
+        return { name: titulo, description: titulo, quantity: p.quantidade, value: preco };
+      });
+      const maxParcelasReuso = isParcelado ? Math.max(1, Math.min(parcelasReq, maxParcelasReusoCalc)) : 1;
+
+      const SITE_BASE_R = "https://colegiozampieri.com.br";
+      const eventoQR = pedidosExist[0]?.evento_id ? `&evento=${pedidosExist[0].evento_id}` : "";
+      const billingTypesR = isParcelado ? (["CREDIT_CARD"] as const) : (["PIX", "CREDIT_CARD"] as const);
+      const chargeTypesR = isParcelado ? (["DETACHED", "INSTALLMENT"] as const) : (["DETACHED"] as const);
+
+      const checkoutR = await createCheckout({
+        customer: customerR.id,
+        billingTypes: billingTypesR as any,
+        chargeTypes: chargeTypesR as any,
+        items: itemsR,
+        successUrl: `${SITE_BASE_R}/eventos/sucesso?tipo=produto${eventoQR}`,
+        cancelUrl: `${SITE_BASE_R}/eventos/meus-ingressos?status=cancel`,
+        expiredUrl: `${SITE_BASE_R}/eventos/meus-ingressos?status=expired`,
+        externalReference: `prod:${pedidosExist.map((p: any) => p.id).join(",")}`,
+        minutesToExpire: 1440,
+        maxInstallmentCount: isParcelado ? maxParcelasReuso : undefined,
+      });
+      const checkoutUrlR = checkoutR.link || checkoutR.url || checkoutR.checkoutUrl;
+      const checkoutIdR = checkoutR.id;
+
+      await admin
+        .from("pedidos_produtos")
+        .update({
+          checkout_url: checkoutUrlR,
+          checkout_id: checkoutIdR,
+          checkout_criado_em: new Date().toISOString(),
+          forma_pagamento: body.forma_pagamento,
+          parcelas: maxParcelasReuso,
+          asaas_customer_id: customerR.id,
+        })
+        .in("id", pedidosExist.map((p: any) => p.id));
+
+      return new Response(JSON.stringify({
+        checkout_url: checkoutUrlR,
+        checkout_id: checkoutIdR,
+        pedido_ids: pedidosExist.map((p: any) => p.id),
+        valor_total: Number(valorTotalR.toFixed(2)),
+        reused: false,
+        regenerated: true,
+      }), { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    }
+    // ===== Fim branch reaproveitar =====
+
+    if (!body.itens || body.itens.length === 0) {
+      return new Response(JSON.stringify({ error: "Itens obrigatórios" }), {
+        status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
     // Carrega variações + produto
     const variacaoIds = body.itens.map((i) => i.variacao_id);
     const { data: variacoes, error: vErr } = await admin
