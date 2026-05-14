@@ -54,6 +54,11 @@ interface Ingresso {
   tipo_ingresso: string | null;
   categoria_meia: string | null;
   meia_validada_portaria: boolean | null;
+  meia_validada_em: string | null;
+  meia_validada_por: string | null;
+  utilizado: boolean | null;
+  utilizado_em: string | null;
+  utilizado_por: string | null;
 }
 
 const CATEGORIAS_MEIA = [
@@ -76,7 +81,8 @@ const EventosAdmin = () => {
   const [selectedEventoIngressos, setSelectedEventoIngressos] = useState<string | null>(null);
   const [ingressos, setIngressos] = useState<Ingresso[]>([]);
   const [filtroMeiaNaoValidada, setFiltroMeiaNaoValidada] = useState(false);
-
+  const [filtroUso, setFiltroUso] = useState<"todos" | "utilizados" | "nao_utilizados">("todos");
+  const [validadores, setValidadores] = useState<Record<string, string>>({});
   // Manual ticket form
   type Participante = {
     tipo: "aluno" | "convidado";
@@ -385,7 +391,21 @@ const EventosAdmin = () => {
       .select("*")
       .eq("evento_id", eventoId)
       .order("created_at", { ascending: false });
-    if (data) setIngressos(data);
+    if (data) {
+      setIngressos(data as any);
+      const ids = Array.from(new Set(
+        (data as any[]).flatMap((i) => [i.utilizado_por, i.meia_validada_por]).filter(Boolean)
+      )) as string[];
+      if (ids.length) {
+        const { data: profs } = await supabase
+          .from("user_profiles")
+          .select("user_id, username")
+          .in("user_id", ids);
+        const map: Record<string, string> = {};
+        for (const p of (profs || []) as any[]) map[p.user_id] = p.username;
+        setValidadores((prev) => ({ ...prev, ...map }));
+      }
+    }
     setSelectedEventoIngressos(eventoId);
   };
 

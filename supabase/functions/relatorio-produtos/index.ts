@@ -103,7 +103,7 @@ Deno.serve(async (req) => {
         id, produto_id, variacao_id, evento_id, status, forma_pagamento, parcelas,
         nome_comprador, cpf_comprador, email_comprador, quantidade, valor_unitario,
         valor_total, valor_bruto, valor_liquido, taxa_total,
-        data_pagamento, data_credito, retirado_em, created_at,
+        data_pagamento, data_credito, retirado_em, retirado_por, created_at,
         produtos:produto_id (id, nome),
         produto_variacoes:variacao_id (id, nome),
         eventos:evento_id (id, titulo, data_evento)
@@ -121,6 +121,18 @@ Deno.serve(async (req) => {
 
     const { data: rows, error } = await q;
     if (error) throw error;
+
+    const validatorIds = Array.from(new Set(
+      (rows || []).map((r: any) => r.retirado_por).filter(Boolean)
+    )) as string[];
+    const nomesValidadores: Record<string, string> = {};
+    if (validatorIds.length > 0) {
+      const { data: profs } = await admin
+        .from("user_profiles")
+        .select("user_id, username")
+        .in("user_id", validatorIds);
+      for (const p of (profs || []) as any[]) nomesValidadores[p.user_id] = p.username;
+    }
 
     const lista = (rows || []).map((r: any) => {
       const liquidoCalculado = r.valor_liquido !== null && r.valor_liquido !== undefined;
@@ -148,6 +160,8 @@ Deno.serve(async (req) => {
         valor_unitario: Number(r.valor_unitario || 0),
         retirado: !!r.retirado_em,
         retirado_em: r.retirado_em,
+        retirado_por: r.retirado_por,
+        retirado_por_nome: r.retirado_por ? (nomesValidadores[r.retirado_por] || null) : null,
         data_pagamento: r.data_pagamento,
         data_credito: r.data_credito,
         valor_bruto: bruto,

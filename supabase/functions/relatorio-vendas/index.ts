@@ -58,6 +58,8 @@ Deno.serve(async (req) => {
         nome_comprador, nome_participante, tipo_participante, tipo_ingresso,
         codigo_aluno, cortesia, created_at, data_pagamento, data_credito,
         valor_bruto, valor_liquido, taxa_total, valor_total,
+        utilizado, utilizado_em, utilizado_por,
+        meia_validada_portaria, meia_validada_em, meia_validada_por,
         eventos:evento_id (id, titulo, data_evento)
       `)
       .order("data_pagamento", { ascending: false, nullsFirst: false })
@@ -72,6 +74,19 @@ Deno.serve(async (req) => {
 
     const { data: rows, error } = await q;
     if (error) throw error;
+
+    // Resolve validator usernames
+    const validatorIds = Array.from(new Set(
+      (rows || []).flatMap((r: any) => [r.utilizado_por, r.meia_validada_por]).filter(Boolean)
+    )) as string[];
+    const nomesValidadores: Record<string, string> = {};
+    if (validatorIds.length > 0) {
+      const { data: profs } = await admin
+        .from("user_profiles")
+        .select("user_id, username")
+        .in("user_id", validatorIds);
+      for (const p of (profs || []) as any[]) nomesValidadores[p.user_id] = p.username;
+    }
 
     const lista = (rows || []).map((r: any) => {
       const liquidoCalculado = r.valor_liquido !== null && r.valor_liquido !== undefined;
@@ -101,6 +116,14 @@ Deno.serve(async (req) => {
         valor_liquido: liquido,
         taxa_total: taxa,
         liquido_pendente_calculo: !r.cortesia && r.status === "pago" && !liquidoCalculado,
+        utilizado: !!r.utilizado,
+        utilizado_em: r.utilizado_em,
+        utilizado_por: r.utilizado_por,
+        utilizado_por_nome: r.utilizado_por ? (nomesValidadores[r.utilizado_por] || null) : null,
+        meia_validada_portaria: !!r.meia_validada_portaria,
+        meia_validada_em: r.meia_validada_em,
+        meia_validada_por: r.meia_validada_por,
+        meia_validada_por_nome: r.meia_validada_por ? (nomesValidadores[r.meia_validada_por] || null) : null,
       };
     });
 
@@ -110,6 +133,7 @@ Deno.serve(async (req) => {
       qtd: 0, qtd_cortesias: 0,
       qtd_liquido_pendente: 0,
       bruto_liquido_pendente: 0,
+      qtd_utilizados: 0, qtd_pagos: 0,
     };
     const porEvento: Record<string, { evento_id: string; evento_titulo: string; bruto: number; liquido: number; taxa: number; qtd: number; pendentes: number }> = {};
     const porForma: Record<string, { forma: string; bruto: number; liquido: number; taxa: number; qtd: number; pendentes: number }> = {};
@@ -117,6 +141,8 @@ Deno.serve(async (req) => {
     for (const r of lista) {
       tot.qtd++;
       if (r.cortesia) tot.qtd_cortesias++;
+      if (r.status === "pago") tot.qtd_pagos++;
+      if (r.utilizado) tot.qtd_utilizados++;
       tot.bruto += r.valor_bruto;
       if (r.valor_liquido !== null) {
         tot.liquido += r.valor_liquido;

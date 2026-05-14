@@ -32,6 +32,7 @@ type Linha = {
   valor_unitario: number;
   retirado: boolean;
   retirado_em: string | null;
+  retirado_por_nome: string | null;
   data_pagamento: string | null;
   data_credito: string | null;
   valor_bruto: number;
@@ -467,9 +468,15 @@ const ProdutosRelatorio = () => {
                         {r.taxa_total === null ? "—" : formatBRL(r.taxa_total)}
                       </TableCell>
                       <TableCell className="text-xs">
-                        {r.retirado
-                          ? <Badge className="bg-zampieri-green-dark text-white text-[10px]">Sim</Badge>
-                          : <Badge variant="outline" className="text-[10px]">Não</Badge>}
+                        {r.retirado ? (
+                          <div className="space-y-0.5">
+                            <Badge className="bg-zampieri-green-dark text-white text-[10px]">✓ Retirado</Badge>
+                            <div className="text-[10px] text-muted-foreground">{formatDate(r.retirado_em)}</div>
+                            {r.retirado_por_nome && <div className="text-[10px] text-muted-foreground">por {r.retirado_por_nome}</div>}
+                          </div>
+                        ) : (
+                          <Badge variant="outline" className="text-[10px]">Não</Badge>
+                        )}
                       </TableCell>
                     </TableRow>
                   ))}

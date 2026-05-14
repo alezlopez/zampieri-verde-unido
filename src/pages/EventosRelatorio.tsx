@@ -35,6 +35,12 @@ type Linha = {
   valor_liquido: number | null;
   taxa_total: number | null;
   liquido_pendente_calculo: boolean;
+  utilizado: boolean;
+  utilizado_em: string | null;
+  utilizado_por_nome: string | null;
+  meia_validada_portaria: boolean;
+  meia_validada_em: string | null;
+  meia_validada_por_nome: string | null;
 };
 
 type Resposta = {
@@ -44,6 +50,7 @@ type Resposta = {
     qtd: number; qtd_cortesias: number;
     qtd_liquido_pendente?: number;
     bruto_liquido_pendente?: number;
+    qtd_utilizados: number; qtd_pagos: number;
     ticket_medio: number; percentual_taxa: number;
   };
   por_evento: { evento_id: string; evento_titulo: string; bruto: number; liquido: number; taxa: number; qtd: number; pendentes?: number }[];
@@ -79,7 +86,7 @@ const EventosRelatorio = () => {
   const [formaPagamento, setFormaPagamento] = useState<string>("todos");
   const [statusFiltro, setStatusFiltro] = useState<string>("todos");
   const [incluirCortesias, setIncluirCortesias] = useState(true);
-
+  const [filtroUso, setFiltroUso] = useState<"todos" | "utilizados" | "nao_utilizados">("todos");
   const [data, setData] = useState<Resposta | null>(null);
   const [loading, setLoading] = useState(false);
   const [backfillLoading, setBackfillLoading] = useState(false);
@@ -143,6 +150,7 @@ const EventosRelatorio = () => {
     const header = [
       "Evento","Data Evento","Comprador","Participante","Tipo","Forma","Parcelas",
       "Status","Data Pagamento","Data Crédito","Valor Bruto","Valor Líquido","Taxa","Cortesia","Código Aluno",
+      "Utilizado","Utilizado em","Validado por","Meia validada","Meia validada em","Meia validada por",
     ];
     const rows = data.lista.map((r) => [
       r.evento_titulo, r.evento_data || "",
@@ -154,10 +162,12 @@ const EventosRelatorio = () => {
       r.valor_liquido !== null ? r.valor_liquido.toFixed(2) : "",
       r.taxa_total !== null ? r.taxa_total.toFixed(2) : "",
       r.cortesia ? "Sim" : "Não", r.codigo_aluno || "",
+      r.utilizado ? "Sim" : "Não", r.utilizado_em || "", r.utilizado_por_nome || "",
+      r.meia_validada_portaria ? "Sim" : "Não", r.meia_validada_em || "", r.meia_validada_por_nome || "",
     ]);
     rows.push([]);
     rows.push(["TOTAIS","","","","","","","","","",
-      data.totais.bruto.toFixed(2), data.totais.liquido.toFixed(2), data.totais.taxa.toFixed(2), "", ""]);
+      data.totais.bruto.toFixed(2), data.totais.liquido.toFixed(2), data.totais.taxa.toFixed(2), "", "", "", "", "", "", "", ""]);
     const csv = [header, ...rows].map((r) =>
       r.map((c) => {
         const s = String(c ?? "");
@@ -177,6 +187,13 @@ const EventosRelatorio = () => {
     () => (data?.lista || []).filter((r) => r.liquido_pendente_calculo).length,
     [data],
   );
+
+  const listaFiltrada = useMemo(() => {
+    const base = data?.lista || [];
+    if (filtroUso === "utilizados") return base.filter((r) => r.utilizado);
+    if (filtroUso === "nao_utilizados") return base.filter((r) => !r.utilizado);
+    return base;
+  }, [data, filtroUso]);
 
   if (authLoading) {
     return (
@@ -270,6 +287,17 @@ const EventosRelatorio = () => {
                   </SelectContent>
                 </Select>
               </div>
+              <div>
+                <Label className="text-xs">Uso</Label>
+                <Select value={filtroUso} onValueChange={(v) => setFiltroUso(v as any)}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="todos">Todos</SelectItem>
+                    <SelectItem value="utilizados">Utilizados</SelectItem>
+                    <SelectItem value="nao_utilizados">Não utilizados</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
               <div className="flex items-end gap-2">
                 <div className="flex items-center gap-2 mr-2">
                   <Checkbox id="cortesias" checked={incluirCortesias} onCheckedChange={(v) => setIncluirCortesias(!!v)} />
@@ -285,7 +313,7 @@ const EventosRelatorio = () => {
 
           {/* KPIs */}
           {data && (
-            <div className="grid grid-cols-2 md:grid-cols-5 gap-3 mb-4">
+            <div className="grid grid-cols-2 md:grid-cols-6 gap-3 mb-4">
               <Card className="border-border">
                 <CardContent className="p-4">
                   <p className="text-xs text-muted-foreground">Bruto</p>
@@ -310,6 +338,17 @@ const EventosRelatorio = () => {
                   <p className="text-xs text-muted-foreground">Ingressos</p>
                   <p className="text-xl font-bold">{data.totais.qtd}</p>
                   <p className="text-[10px] text-muted-foreground">{data.totais.qtd_cortesias} cortesia(s)</p>
+                </CardContent>
+              </Card>
+              <Card className="border-border">
+                <CardContent className="p-4">
+                  <p className="text-xs text-muted-foreground">Utilizados</p>
+                  <p className="text-xl font-bold text-zampieri-green-dark">{data.totais.qtd_utilizados ?? 0}</p>
+                  <p className="text-[10px] text-muted-foreground">
+                    {data.totais.qtd_pagos > 0
+                      ? `${Math.round(((data.totais.qtd_utilizados ?? 0) / data.totais.qtd_pagos) * 100)}% dos pagos`
+                      : "—"}
+                  </p>
                 </CardContent>
               </Card>
               <Card className="border-border">
@@ -401,10 +440,11 @@ const EventosRelatorio = () => {
                     <TableHead className="text-right">Bruto</TableHead>
                     <TableHead className="text-right">Líquido</TableHead>
                     <TableHead className="text-right">Taxa</TableHead>
+                    <TableHead>Utilização</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {(data?.lista || []).map((r) => (
+                  {listaFiltrada.map((r) => (
                     <TableRow key={r.id}>
                       <TableCell className="text-xs">{r.evento_titulo}</TableCell>
                       <TableCell className="text-xs">{r.nome_comprador}</TableCell>
@@ -430,10 +470,21 @@ const EventosRelatorio = () => {
                       <TableCell className="text-right text-xs text-zampieri-wine">
                         {r.taxa_total === null ? "—" : formatBRL(r.taxa_total)}
                       </TableCell>
+                      <TableCell className="text-xs">
+                        {r.utilizado ? (
+                          <div className="space-y-0.5">
+                            <Badge className="bg-zampieri-green/15 text-zampieri-green-dark border border-zampieri-green/40 text-[10px]">✓ Utilizado</Badge>
+                            <div className="text-[10px] text-muted-foreground">{formatDate(r.utilizado_em)}</div>
+                            {r.utilizado_por_nome && <div className="text-[10px] text-muted-foreground">por {r.utilizado_por_nome}</div>}
+                          </div>
+                        ) : (
+                          <Badge variant="outline" className="text-[10px]">Não</Badge>
+                        )}
+                      </TableCell>
                     </TableRow>
                   ))}
-                  {data && data.lista.length === 0 && (
-                    <TableRow><TableCell colSpan={8} className="text-center text-sm text-muted-foreground py-6">Nenhum registro encontrado</TableCell></TableRow>
+                  {data && listaFiltrada.length === 0 && (
+                    <TableRow><TableCell colSpan={9} className="text-center text-sm text-muted-foreground py-6">Nenhum registro encontrado</TableCell></TableRow>
                   )}
                 </TableBody>
               </Table>
