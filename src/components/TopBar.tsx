@@ -18,7 +18,7 @@ export const TopBar = () => {
           <a href="mailto:secretaria@colegiozampieri.com.br" className="flex items-center gap-1.5 hover:text-zampieri-gold transition-colors">
             <Mail className="h-3.5 w-3.5" /> secretaria@colegiozampieri.com.br
           </a>
-          <a href="https://espera.colegiozampieri.com.br" target="_blank" rel="noopener noreferrer" className="flex items-center gap-1.5 text-zampieri-gold hover:text-zampieri-gold-light transition-colors font-semibold">
+          <a href="https://portal.colegiozampieri.com.br" target="_blank" rel="noopener noreferrer" className="flex items-center gap-1.5 text-zampieri-gold hover:text-zampieri-gold-light transition-colors font-semibold">
             Portal do Aluno <ExternalLink className="h-3 w-3" />
           </a>
         </div>
