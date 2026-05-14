@@ -151,47 +151,62 @@ const ScannerIngressos = () => {
 
   const markAsUsed = async () => {
     if (!ingresso || !user) return;
-    if (ingresso.tipo_ingresso === "meia" && !ingresso.meia_validada_portaria) {
-      toast({ title: "Valide o documento de meia primeiro", variant: "destructive" });
+    setMarking(true);
+    const { data, error: err } = await supabase.rpc("marcar_ingresso_utilizado", { p_id: ingresso.id });
+    if (err) {
+      toast({ title: "Erro ao marcar ingresso", description: err.message, variant: "destructive" });
+      setMarking(false);
       return;
     }
-    setMarking(true);
-    const agora = new Date().toISOString();
-    const { error: err } = await supabase
-      .from("ingressos")
-      .update({ utilizado: true, utilizado_em: agora, utilizado_por: user.id })
-      .eq("id", ingresso.id);
-
-    if (err) {
-      toast({ title: "Erro ao marcar ingresso", variant: "destructive" });
-    } else {
-      setIngresso({ ...ingresso, utilizado: true, utilizado_em: agora, utilizado_por: user.id });
-      fetchValidadores([user.id]);
-      toast({ title: "Ingresso marcado como utilizado!" });
+    const row = Array.isArray(data) ? data[0] : data;
+    if (!row?.success) {
+      const msg = row?.message;
+      if (msg === "ja_utilizado") {
+        toast({ title: "Ingresso JÁ utilizado", description: row?.utilizado_em ? new Date(row.utilizado_em).toLocaleString("pt-BR") : "—", variant: "destructive" });
+        setIngresso({ ...ingresso, utilizado: true, utilizado_em: row?.utilizado_em ?? ingresso.utilizado_em, utilizado_por: row?.utilizado_por ?? ingresso.utilizado_por });
+        if (row?.utilizado_por) fetchValidadores([row.utilizado_por]);
+      } else if (msg === "meia_nao_validada") {
+        toast({ title: "Valide o documento de meia primeiro", variant: "destructive" });
+      } else if (msg === "nao_pago") {
+        toast({ title: "Ingresso não está pago", variant: "destructive" });
+      } else if (msg === "forbidden") {
+        toast({ title: "Sem permissão", variant: "destructive" });
+      } else {
+        toast({ title: "Não foi possível validar", description: msg ?? "", variant: "destructive" });
+      }
+      setMarking(false);
+      return;
     }
+    setIngresso({ ...ingresso, utilizado: true, utilizado_em: row.utilizado_em, utilizado_por: row.utilizado_por });
+    fetchValidadores([row.utilizado_por]);
+    toast({ title: "Ingresso marcado como utilizado!" });
     setMarking(false);
   };
 
   const validarDocMeia = async () => {
     if (!ingresso || !user) return;
     setMarking(true);
-    const agora = new Date().toISOString();
-    const { error: err } = await supabase
-      .from("ingressos")
-      .update({
-        meia_validada_portaria: true,
-        meia_validada_em: agora,
-        meia_validada_por: user.id,
-      })
-      .eq("id", ingresso.id);
-
+    const { data, error: err } = await supabase.rpc("validar_meia_ingresso", { p_id: ingresso.id });
     if (err) {
-      toast({ title: "Erro ao validar documento", variant: "destructive" });
-    } else {
-      setIngresso({ ...ingresso, meia_validada_portaria: true, meia_validada_em: agora, meia_validada_por: user.id });
-      fetchValidadores([user.id]);
-      toast({ title: "Documento de meia validado!" });
+      toast({ title: "Erro ao validar documento", description: err.message, variant: "destructive" });
+      setMarking(false);
+      return;
     }
+    const row = Array.isArray(data) ? data[0] : data;
+    if (!row?.success) {
+      if (row?.message === "ja_validada") {
+        toast({ title: "Documento já validado", description: row?.meia_validada_em ? new Date(row.meia_validada_em).toLocaleString("pt-BR") : "—" });
+        setIngresso({ ...ingresso, meia_validada_portaria: true, meia_validada_em: row?.meia_validada_em ?? ingresso.meia_validada_em, meia_validada_por: row?.meia_validada_por ?? ingresso.meia_validada_por });
+        if (row?.meia_validada_por) fetchValidadores([row.meia_validada_por]);
+      } else {
+        toast({ title: "Não foi possível validar", description: row?.message ?? "", variant: "destructive" });
+      }
+      setMarking(false);
+      return;
+    }
+    setIngresso({ ...ingresso, meia_validada_portaria: true, meia_validada_em: row.meia_validada_em, meia_validada_por: row.meia_validada_por });
+    fetchValidadores([row.meia_validada_por]);
+    toast({ title: "Documento de meia validado!" });
     setMarking(false);
   };
 

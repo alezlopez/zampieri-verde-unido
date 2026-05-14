@@ -1417,6 +1417,19 @@ export type Database = {
         Returns: boolean
       }
       increment_message_count: { Args: { count: number }; Returns: undefined }
+      marcar_ingresso_utilizado: {
+        Args: { p_id: string }
+        Returns: {
+          evento_titulo: string
+          ingresso_id: string
+          message: string
+          nome_participante: string
+          success: boolean
+          tipo_ingresso: string
+          utilizado_em: string
+          utilizado_por: string
+        }[]
+      }
       marcar_produto_retirado: {
         Args: { p_qr_token: string }
         Returns: {
@@ -1564,6 +1577,16 @@ export type Database = {
           isOneToOne: false
           isSetofReturn: true
         }
+      }
+      validar_meia_ingresso: {
+        Args: { p_id: string }
+        Returns: {
+          ingresso_id: string
+          meia_validada_em: string
+          meia_validada_por: string
+          message: string
+          success: boolean
+        }[]
       }
     }
     Enums: {
