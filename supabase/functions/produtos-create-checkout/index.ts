@@ -7,11 +7,15 @@ const BodySchema = z.object({
   itens: z.array(z.object({
     variacao_id: z.string().uuid(),
     quantidade: z.number().int().min(1).max(100),
-  })).min(1).max(20),
+  })).min(1).max(20).optional(),
   evento_id: z.string().uuid().nullable().optional(),
   forma_pagamento: z.enum(["pix", "credit_card"]),
   parcelas: z.number().int().min(1).max(12).optional(),
+  pedido_ids: z.array(z.string().uuid()).min(1).max(50).optional(),
+  force_regenerate: z.boolean().optional(),
 });
+
+const CHECKOUT_TTL_MS = 24 * 60 * 60 * 1000; // 24h
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
