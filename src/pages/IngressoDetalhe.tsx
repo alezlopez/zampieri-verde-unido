@@ -246,10 +246,27 @@ const IngressoDetalhe = () => {
 
           {/* QR Code */}
           <div className="flex flex-col items-center pb-6 px-6">
-            <div className="bg-white rounded-xl p-4 border-2 border-zampieri-gold/40">
-              <QRCodeSVG value={ingresso.id} size={180} level="H" />
-            </div>
-            <p className="text-xs text-muted-foreground mt-2 font-mono">{ingresso.id.slice(0, 8).toUpperCase()}</p>
+            {ingresso.utilizado ? (
+              <div className="w-full bg-zampieri-wine/10 border-2 border-zampieri-wine/40 rounded-xl p-5 text-center">
+                <div className="inline-flex items-center justify-center w-14 h-14 rounded-full bg-zampieri-wine/20 mb-3">
+                  <Ticket className="w-7 h-7 text-zampieri-wine" />
+                </div>
+                <p className="font-serif text-lg font-bold text-zampieri-wine mb-1">Ingresso já utilizado</p>
+                {ingresso.utilizado_em && (
+                  <p className="text-sm text-zampieri-wine/80">
+                    Validado em {new Date(ingresso.utilizado_em).toLocaleString("pt-BR")}
+                  </p>
+                )}
+                <p className="text-xs text-muted-foreground mt-3">QR Code não está mais válido para entrada.</p>
+              </div>
+            ) : (
+              <>
+                <div className="bg-white rounded-xl p-4 border-2 border-zampieri-gold/40">
+                  <QRCodeSVG value={ingresso.id} size={180} level="H" />
+                </div>
+                <p className="text-xs text-muted-foreground mt-2 font-mono">{ingresso.id.slice(0, 8).toUpperCase()}</p>
+              </>
+            )}
 
             {/* Observação condicional */}
             {evento?.is_excursao ? (
