@@ -287,6 +287,17 @@ const EventosRelatorio = () => {
                   </SelectContent>
                 </Select>
               </div>
+              <div>
+                <Label className="text-xs">Uso</Label>
+                <Select value={filtroUso} onValueChange={(v) => setFiltroUso(v as any)}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="todos">Todos</SelectItem>
+                    <SelectItem value="utilizados">Utilizados</SelectItem>
+                    <SelectItem value="nao_utilizados">Não utilizados</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
               <div className="flex items-end gap-2">
                 <div className="flex items-center gap-2 mr-2">
                   <Checkbox id="cortesias" checked={incluirCortesias} onCheckedChange={(v) => setIncluirCortesias(!!v)} />
