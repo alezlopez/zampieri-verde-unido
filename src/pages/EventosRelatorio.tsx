@@ -150,6 +150,7 @@ const EventosRelatorio = () => {
     const header = [
       "Evento","Data Evento","Comprador","Participante","Tipo","Forma","Parcelas",
       "Status","Data Pagamento","Data Crédito","Valor Bruto","Valor Líquido","Taxa","Cortesia","Código Aluno",
+      "Utilizado","Utilizado em","Validado por","Meia validada","Meia validada em","Meia validada por",
     ];
     const rows = data.lista.map((r) => [
       r.evento_titulo, r.evento_data || "",
@@ -161,10 +162,12 @@ const EventosRelatorio = () => {
       r.valor_liquido !== null ? r.valor_liquido.toFixed(2) : "",
       r.taxa_total !== null ? r.taxa_total.toFixed(2) : "",
       r.cortesia ? "Sim" : "Não", r.codigo_aluno || "",
+      r.utilizado ? "Sim" : "Não", r.utilizado_em || "", r.utilizado_por_nome || "",
+      r.meia_validada_portaria ? "Sim" : "Não", r.meia_validada_em || "", r.meia_validada_por_nome || "",
     ]);
     rows.push([]);
     rows.push(["TOTAIS","","","","","","","","","",
-      data.totais.bruto.toFixed(2), data.totais.liquido.toFixed(2), data.totais.taxa.toFixed(2), "", ""]);
+      data.totais.bruto.toFixed(2), data.totais.liquido.toFixed(2), data.totais.taxa.toFixed(2), "", "", "", "", "", "", "", ""]);
     const csv = [header, ...rows].map((r) =>
       r.map((c) => {
         const s = String(c ?? "");
