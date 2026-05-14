@@ -6,7 +6,8 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import { ArrowLeft, Ticket, LogOut, ExternalLink, Eye, Package, QrCode, CheckCircle2 } from "lucide-react";
+import { ArrowLeft, Ticket, LogOut, ExternalLink, Eye, Package, QrCode, CheckCircle2, RefreshCw } from "lucide-react";
+import { toast } from "sonner";
 import { EventosHeader } from "@/components/EventosHeader";
 import { Footer } from "@/components/Footer";
 
