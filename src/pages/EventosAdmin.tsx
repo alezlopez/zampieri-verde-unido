@@ -54,6 +54,11 @@ interface Ingresso {
   tipo_ingresso: string | null;
   categoria_meia: string | null;
   meia_validada_portaria: boolean | null;
+  meia_validada_em: string | null;
+  meia_validada_por: string | null;
+  utilizado: boolean | null;
+  utilizado_em: string | null;
+  utilizado_por: string | null;
 }
 
 const CATEGORIAS_MEIA = [
