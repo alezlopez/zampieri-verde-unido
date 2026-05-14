@@ -83,12 +83,18 @@ const ScannerIngressos = () => {
     setError(null);
     setIngresso(null);
 
+    decodedText = (decodedText || "").trim();
+
     // QR de PRODUTO: payload "prod:<qr_token>"
-    if (decodedText.startsWith("prod:")) {
-      const token = decodedText.slice(5);
+    if (decodedText.toLowerCase().startsWith("prod:")) {
+      const token = decodedText.slice(5).trim();
       const { data: rpcData, error: rpcErr } = await supabase.rpc("marcar_produto_retirado", { p_qr_token: token });
       const row = Array.isArray(rpcData) ? rpcData[0] : rpcData;
-      if (rpcErr || !row) {
+      if (rpcErr) {
+        setError(`Erro ao validar produto: ${rpcErr.message}`);
+        return;
+      }
+      if (!row) {
         setError("Comprovante de produto não encontrado.");
         return;
       }
