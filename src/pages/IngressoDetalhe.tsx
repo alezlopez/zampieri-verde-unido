@@ -190,8 +190,8 @@ const IngressoDetalhe = () => {
                 <Ticket className="w-5 h-5 text-zampieri-gold" />
                 <span className="text-sm font-semibold tracking-wider opacity-90">INGRESSO</span>
               </div>
-              <Badge className="bg-zampieri-gold text-zampieri-green-dark hover:bg-zampieri-gold font-bold text-xs">
-                ✓ PAGO
+              <Badge className={`font-bold text-xs ${ingresso.utilizado ? "bg-zampieri-wine text-white hover:bg-zampieri-wine" : "bg-zampieri-gold text-zampieri-green-dark hover:bg-zampieri-gold"}`}>
+                {ingresso.utilizado ? "✓ UTILIZADO" : "✓ PAGO"}
               </Badge>
             </div>
             <div className="flex items-center gap-2 mt-2 flex-wrap">
