@@ -49,7 +49,7 @@ Deno.serve(async (req) => {
       });
     }
     const f = parsed.data;
-    const status = f.status && f.status !== "todos" ? f.status : "pago";
+    const status = f.status && f.status !== "todos" ? f.status : "todos";
 
     let q = admin
       .from("ingressos")
