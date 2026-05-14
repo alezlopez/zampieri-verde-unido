@@ -54,7 +54,7 @@ Deno.serve(async (req) => {
     // Carrega ingressos + evento (inclui preços de meia)
     const { data: ingressosRaw, error: ingErr } = await admin
       .from("ingressos")
-      .select("id, user_id, evento_id, asaas_payment_id, checkout_url, status, tipo_ingresso, nome_participante, cortesia, eventos:evento_id(id,titulo,preco,preco_parcelado,max_parcelas,preco_meia,preco_meia_parcelado)")
+      .select("id, user_id, evento_id, asaas_payment_id, checkout_url, checkout_criado_em, status, tipo_ingresso, nome_participante, cortesia, eventos:evento_id(id,titulo,preco,preco_parcelado,max_parcelas,preco_meia,preco_meia_parcelado)")
       .in("id", body.ingresso_ids);
 
     // Defesa: ignora ingressos cortesia ou já pagos
