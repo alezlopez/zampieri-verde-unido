@@ -580,7 +580,9 @@ const EventoCompra = () => {
       setTotalIngressosReservados(records.length);
       setRedirectCountdown(10);
     } catch (err: any) {
-      toast({ title: "Erro ao reservar ingressos", description: err.message, variant: "destructive" });
+      console.error("[EventoCompra] reservar:", err);
+      const fe = friendlyCheckoutError(err, "Erro ao reservar ingressos");
+      toast({ title: fe.title, description: fe.description, variant: "destructive" });
     } finally {
       setSubmitting(false);
     }
