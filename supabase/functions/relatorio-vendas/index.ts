@@ -133,6 +133,7 @@ Deno.serve(async (req) => {
       qtd: 0, qtd_cortesias: 0,
       qtd_liquido_pendente: 0,
       bruto_liquido_pendente: 0,
+      qtd_utilizados: 0, qtd_pagos: 0,
     };
     const porEvento: Record<string, { evento_id: string; evento_titulo: string; bruto: number; liquido: number; taxa: number; qtd: number; pendentes: number }> = {};
     const porForma: Record<string, { forma: string; bruto: number; liquido: number; taxa: number; qtd: number; pendentes: number }> = {};
@@ -140,6 +141,8 @@ Deno.serve(async (req) => {
     for (const r of lista) {
       tot.qtd++;
       if (r.cortesia) tot.qtd_cortesias++;
+      if (r.status === "pago") tot.qtd_pagos++;
+      if (r.utilizado) tot.qtd_utilizados++;
       tot.bruto += r.valor_bruto;
       if (r.valor_liquido !== null) {
         tot.liquido += r.valor_liquido;
