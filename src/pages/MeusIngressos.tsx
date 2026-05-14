@@ -339,15 +339,27 @@ const MeusIngressos = () => {
                             </Link>
                           </div>
                         )}
-                        {p.status === "pendente" && p.checkout_url && (
-                          <div className="mt-3">
+                        {p.status === "pendente" && (
+                          <div className="mt-3 space-y-2">
+                            {p.checkout_url && (
+                              <Button
+                                size="sm"
+                                className="bg-zampieri-gold hover:bg-zampieri-gold-light text-zampieri-green-dark w-full"
+                                onClick={() => window.open(p.checkout_url!, "_blank")}
+                              >
+                                <ExternalLink className="w-4 h-4 mr-2" />
+                                Pagar
+                              </Button>
+                            )}
                             <Button
                               size="sm"
-                              className="bg-zampieri-gold hover:bg-zampieri-gold-light text-zampieri-green-dark w-full"
-                              onClick={() => window.open(p.checkout_url!, "_blank")}
+                              variant="outline"
+                              className="w-full border-zampieri-green/40 text-zampieri-green-dark hover:bg-zampieri-cream"
+                              disabled={regenPedId === p.id}
+                              onClick={() => regenerarPedido(p)}
                             >
-                              <ExternalLink className="w-4 h-4 mr-2" />
-                              Pagar
+                              <RefreshCw className={`w-4 h-4 mr-2 ${regenPedId === p.id ? "animate-spin" : ""}`} />
+                              {p.checkout_url ? "Gerar novo link" : "Gerar link de pagamento"}
                             </Button>
                           </div>
                         )}
