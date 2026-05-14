@@ -90,6 +90,56 @@ const MeusIngressos = () => {
     navigate("/eventos");
   };
 
+  const [regenIngId, setRegenIngId] = useState<string | null>(null);
+  const [regenPedId, setRegenPedId] = useState<string | null>(null);
+
+  const regenerarIngresso = async (ingresso: IngressoComEvento) => {
+    setRegenIngId(ingresso.id);
+    try {
+      const { data, error } = await supabase.functions.invoke("asaas-create-checkout", {
+        body: {
+          ingresso_ids: [ingresso.id],
+          forma_pagamento: "pix",
+          force_regenerate: true,
+        },
+      });
+      if (error) throw error;
+      const url = (data as any)?.checkout_url;
+      if (!url) throw new Error("Sem URL retornada");
+      // Atualiza estado local
+      setIngressos((prev) => prev.map((i) => i.id === ingresso.id ? { ...i, checkout_url: url } : i));
+      window.open(url, "_blank");
+      toast.success("Novo link de pagamento gerado");
+    } catch (e: any) {
+      toast.error("Falha ao gerar novo link", { description: e.message || String(e) });
+    } finally {
+      setRegenIngId(null);
+    }
+  };
+
+  const regenerarPedido = async (pedido: PedidoProduto) => {
+    setRegenPedId(pedido.id);
+    try {
+      const { data, error } = await supabase.functions.invoke("produtos-create-checkout", {
+        body: {
+          pedido_ids: [pedido.id],
+          forma_pagamento: "pix",
+          force_regenerate: true,
+        },
+      });
+      if (error) throw error;
+      const url = (data as any)?.checkout_url;
+      if (!url) throw new Error("Sem URL retornada");
+      setPedidos((prev) => prev.map((p) => p.id === pedido.id ? { ...p, checkout_url: url } : p));
+      window.open(url, "_blank");
+      toast.success("Novo link de pagamento gerado");
+    } catch (e: any) {
+      toast.error("Falha ao gerar novo link", { description: e.message || String(e) });
+    } finally {
+      setRegenPedId(null);
+    }
+  };
+
   if (loading || authLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
