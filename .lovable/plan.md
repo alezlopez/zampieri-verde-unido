@@ -1,28 +1,56 @@
-## Diagnóstico
+## Execução aprovada
 
-**1. Scan de produto retorna "Comprovante de produto não encontrado"**
-- O QR gerado em `/comprovante/:token` tem o payload correto (`prod:<uuid>`).
-- A RPC `marcar_produto_retirado(p_qr_token uuid)` existe e funciona.
-- Causa provável: o `decodedText` chega com espaço/quebra de linha invisível (comum no html5-qrcode), o `slice(5)` mantém esse lixo, o cast pra UUID falha e cai no `rpcErr` → mostra "não encontrado" genérico.
-- Hipótese secundária: usuário não está logado como **admin** no momento do scan (a RPC retorna `sem_permissao`, mas ainda assim o front mostraria "Erro: sem_permissao", não a mensagem atual — então provavelmente é o trim mesmo).
+### 1. Backfill do ingresso `e3117492…`
+Migration com UPDATE:
+```sql
+UPDATE ingressos SET
+  forma_pagamento = 'credit_card',
+  parcelas = 1,
+  valor_total  = 240.00,
+  valor_bruto  = 240.00,
+  taxa_total   = 4.53,
+  valor_liquido = 235.47,
+  data_pagamento = '2026-05-12T12:00:00-03:00',
+  data_credito   = '2026-05-12'
+WHERE id = 'e3117492-0dbe-40b8-ad0b-63ed39b34ef2';
+```
 
-**2. Ingresso utilizado sem badge para o cliente**
-- Confirmei no banco: dois ingressos do seu usuário estão com `utilizado=true` e `utilizado_em` preenchido.
-- O código em `MeusIngressos.tsx` e `IngressoDetalhe.tsx` já lê e exibe o badge corretamente.
-- Causa: cache do navegador / build antigo carregado. Provavelmente um hard refresh resolve, mas vou também garantir que o select e a UI estejam blindados (sem regressão).
+### 2. Inserção manual com dados financeiros (`src/pages/EventosAdmin.tsx`)
+Adicionar ao formulário "Novo ingresso manual":
+- **Forma de pagamento**: select `pix | credit_card | dinheiro | outro` (default `dinheiro`)
+- **Parcelas** (visível só para `credit_card`): 1–12, default 1
+- **Valor por participante (R$)**: número, default = `evento.preco`
+- **Taxa total do lote (R$)**: opcional, default 0 (rateada proporcional ao valor de cada participante)
+- **Data do pagamento**: date, default = hoje
 
-## Mudanças
+No `handleSaveManual`, montar cada record com:
+```ts
+{
+  ...campos atuais,
+  status: "pago",
+  forma_pagamento,
+  parcelas: forma_pagamento === "credit_card" ? parcelas : 1,
+  valor_total: valorParticipante,
+  valor_bruto: valorParticipante,
+  taxa_total: taxaParticipante,
+  valor_liquido: +(valorParticipante - taxaParticipante).toFixed(2),
+  data_pagamento: new Date(`${dataPagto}T12:00:00`).toISOString(),
+  data_credito: dataPagto,
+}
+```
+Resetar os novos campos no `resetManualForm`.
 
-### A) `src/pages/ScannerIngressos.tsx`
-1. `decodedText = decodedText.trim()` no início do `handleScan`.
-2. Tornar o erro de RPC informativo: em vez de "Comprovante de produto não encontrado.", mostrar o `rpcErr.message` (ex.: "invalid input syntax for type uuid", "permission denied", etc.) — facilita diagnóstico futuro.
-3. Mesmo tratamento para o caminho de ingressos (trim).
+### 3. Limpeza de obsoletos
+Deletar:
+- `src/components/FloatingChat.tsx`
+- `src/components/ChatWindow.tsx`
+- `src/components/ContactForm.tsx`
+- `src/components/FloatingCTA.tsx`
+- `src/components/WhatsAppCTA.tsx`
+- `src/utils/messageFormatter.ts`
 
-### B) Confirmar build no cliente
-- Pedir hard-refresh (Ctrl+F5) na tela de Meus Ingressos. O código já está correto e os dados estão no banco — basta recarregar.
-- Sem alteração de código adicional aqui.
+### 4. Atualizar memória
+Atualizar `mem://features/chat-system` e o índice para refletir que o chat foi removido (não apenas desativado).
 
-## Validação
-- Escanear um QR de produto pago real → deve marcar como retirado.
-- Escanear o mesmo QR de novo → "Produto JÁ RETIRADO em ...".
-- Logar como cliente e abrir Meus Ingressos / detalhe do ingresso utilizado → badge "Utilizado em DD/MM/AAAA HH:MM" visível e QR substituído pelo aviso.
+---
+Posso prosseguir.

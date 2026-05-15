@@ -101,6 +101,12 @@ const EventosAdmin = () => {
   const [compradorCpf, setCompradorCpf] = useState("");
   const [participantes, setParticipantes] = useState<Participante[]>([emptyParticipante()]);
   const [savingManual, setSavingManual] = useState(false);
+  // Manual financial fields
+  const [manualFormaPagamento, setManualFormaPagamento] = useState<"dinheiro" | "pix" | "credit_card" | "outro">("dinheiro");
+  const [manualParcelas, setManualParcelas] = useState<number>(1);
+  const [manualValor, setManualValor] = useState<string>("");
+  const [manualTaxa, setManualTaxa] = useState<string>("0");
+  const [manualDataPagamento, setManualDataPagamento] = useState<string>(new Date().toISOString().slice(0, 10));
 
   // Form state
   const [titulo, setTitulo] = useState("");
@@ -414,6 +420,16 @@ const EventosAdmin = () => {
     setCompradorCpf("");
     setParticipantes([emptyParticipante()]);
     setShowManualForm(false);
+    setManualFormaPagamento("dinheiro");
+    setManualParcelas(1);
+    setManualValor("");
+    setManualTaxa("0");
+    setManualDataPagamento(new Date().toISOString().slice(0, 10));
+  };
+
+  const openManualForm = (evento: Evento) => {
+    setShowManualForm(true);
+    setManualValor(String(evento.preco ?? ""));
   };
 
   const updateParticipante = (idx: number, patch: Partial<Participante>) => {
@@ -429,6 +445,20 @@ const EventosAdmin = () => {
     const validos = participantes.filter((p) => p.nome.trim());
     if (validos.length === 0) {
       toast({ title: "Adicione ao menos um participante", variant: "destructive" });
+      return;
+    }
+    const valorParticipante = Number(String(manualValor).replace(",", "."));
+    if (!Number.isFinite(valorParticipante) || valorParticipante < 0) {
+      toast({ title: "Valor por participante inválido", variant: "destructive" });
+      return;
+    }
+    const taxaTotalLote = Number(String(manualTaxa || "0").replace(",", "."));
+    if (!Number.isFinite(taxaTotalLote) || taxaTotalLote < 0) {
+      toast({ title: "Taxa inválida", variant: "destructive" });
+      return;
+    }
+    if (!manualDataPagamento) {
+      toast({ title: "Informe a data do pagamento", variant: "destructive" });
       return;
     }
 
@@ -450,6 +480,13 @@ const EventosAdmin = () => {
         if (foundId) targetUserId = foundId as string;
       }
 
+      // Rateio da taxa proporcional ao número de participantes (valor igual por participante)
+      const taxaPorParticipante = validos.length > 0
+        ? +(taxaTotalLote / validos.length).toFixed(2)
+        : 0;
+      const liquidoPorParticipante = +(valorParticipante - taxaPorParticipante).toFixed(2);
+      const dataPagamentoIso = new Date(`${manualDataPagamento}T12:00:00`).toISOString();
+
       const records = validos.map((p) => ({
         evento_id: eventoId,
         user_id: targetUserId,
@@ -463,6 +500,14 @@ const EventosAdmin = () => {
         data_nascimento_participante: p.data_nascimento || null,
         email_participante: p.email.trim() || null,
         celular_participante: p.celular.replace(/\D/g, "") || null,
+        forma_pagamento: manualFormaPagamento,
+        parcelas: manualFormaPagamento === "credit_card" ? Math.max(1, Math.min(12, manualParcelas)) : 1,
+        valor_total: valorParticipante,
+        valor_bruto: valorParticipante,
+        taxa_total: taxaPorParticipante,
+        valor_liquido: liquidoPorParticipante,
+        data_pagamento: dataPagamentoIso,
+        data_credito: manualDataPagamento,
       }));
 
       const { error } = await supabase.from("ingressos").insert(records);
@@ -937,7 +982,7 @@ const EventosAdmin = () => {
                           size="sm"
                           variant="outline"
                           className="border-zampieri-green-dark text-zampieri-green-dark hover:bg-zampieri-cream"
-                          onClick={() => { resetManualForm(); setShowManualForm(true); }}
+                          onClick={() => { resetManualForm(); openManualForm(evento); }}
                         >
                           <UserPlus className="w-4 h-4 mr-1" />
                           Adicionar ingresso manual
@@ -963,6 +1008,70 @@ const EventosAdmin = () => {
                             <div>
                               <label className="text-xs font-medium">CPF do comprador (vincula usuário)</label>
                               <Input value={compradorCpf} onChange={(e) => setCompradorCpf(e.target.value)} placeholder="000.000.000-00" />
+                            </div>
+                          </div>
+
+                          <div className="rounded-md border border-zampieri-green/30 bg-white p-3 space-y-3">
+                            <div className="text-xs font-semibold text-zampieri-green-dark">Pagamento (caixa interno)</div>
+                            <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                              <div>
+                                <label className="text-xs font-medium">Forma de pagamento *</label>
+                                <Select
+                                  value={manualFormaPagamento}
+                                  onValueChange={(v) => setManualFormaPagamento(v as any)}
+                                >
+                                  <SelectTrigger><SelectValue /></SelectTrigger>
+                                  <SelectContent>
+                                    <SelectItem value="dinheiro">Dinheiro</SelectItem>
+                                    <SelectItem value="pix">Pix</SelectItem>
+                                    <SelectItem value="credit_card">Cartão de crédito</SelectItem>
+                                    <SelectItem value="outro">Outro</SelectItem>
+                                  </SelectContent>
+                                </Select>
+                              </div>
+                              {manualFormaPagamento === "credit_card" && (
+                                <div>
+                                  <label className="text-xs font-medium">Parcelas</label>
+                                  <Input
+                                    type="number"
+                                    min={1}
+                                    max={12}
+                                    value={manualParcelas}
+                                    onChange={(e) => setManualParcelas(Math.max(1, Math.min(12, Number(e.target.value) || 1)))}
+                                  />
+                                </div>
+                              )}
+                              <div>
+                                <label className="text-xs font-medium">Data do pagamento *</label>
+                                <Input
+                                  type="date"
+                                  value={manualDataPagamento}
+                                  onChange={(e) => setManualDataPagamento(e.target.value)}
+                                />
+                              </div>
+                            </div>
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                              <div>
+                                <label className="text-xs font-medium">Valor pago por participante (R$) *</label>
+                                <Input
+                                  inputMode="decimal"
+                                  value={manualValor}
+                                  onChange={(e) => setManualValor(e.target.value)}
+                                  placeholder="0,00"
+                                />
+                              </div>
+                              <div>
+                                <label className="text-xs font-medium">Taxa total do lote (R$)</label>
+                                <Input
+                                  inputMode="decimal"
+                                  value={manualTaxa}
+                                  onChange={(e) => setManualTaxa(e.target.value)}
+                                  placeholder="0,00"
+                                />
+                                <p className="text-[10px] text-muted-foreground mt-1">
+                                  Rateada igualmente entre os participantes deste lançamento.
+                                </p>
+                              </div>
                             </div>
                           </div>
 
