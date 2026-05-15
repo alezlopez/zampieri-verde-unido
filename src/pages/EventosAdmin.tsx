@@ -101,6 +101,12 @@ const EventosAdmin = () => {
   const [compradorCpf, setCompradorCpf] = useState("");
   const [participantes, setParticipantes] = useState<Participante[]>([emptyParticipante()]);
   const [savingManual, setSavingManual] = useState(false);
+  // Manual financial fields
+  const [manualFormaPagamento, setManualFormaPagamento] = useState<"dinheiro" | "pix" | "credit_card" | "outro">("dinheiro");
+  const [manualParcelas, setManualParcelas] = useState<number>(1);
+  const [manualValor, setManualValor] = useState<string>("");
+  const [manualTaxa, setManualTaxa] = useState<string>("0");
+  const [manualDataPagamento, setManualDataPagamento] = useState<string>(new Date().toISOString().slice(0, 10));
 
   // Form state
   const [titulo, setTitulo] = useState("");
