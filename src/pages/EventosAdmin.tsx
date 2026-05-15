@@ -1011,6 +1011,70 @@ const EventosAdmin = () => {
                             </div>
                           </div>
 
+                          <div className="rounded-md border border-zampieri-green/30 bg-white p-3 space-y-3">
+                            <div className="text-xs font-semibold text-zampieri-green-dark">Pagamento (caixa interno)</div>
+                            <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                              <div>
+                                <label className="text-xs font-medium">Forma de pagamento *</label>
+                                <Select
+                                  value={manualFormaPagamento}
+                                  onValueChange={(v) => setManualFormaPagamento(v as any)}
+                                >
+                                  <SelectTrigger><SelectValue /></SelectTrigger>
+                                  <SelectContent>
+                                    <SelectItem value="dinheiro">Dinheiro</SelectItem>
+                                    <SelectItem value="pix">Pix</SelectItem>
+                                    <SelectItem value="credit_card">Cartão de crédito</SelectItem>
+                                    <SelectItem value="outro">Outro</SelectItem>
+                                  </SelectContent>
+                                </Select>
+                              </div>
+                              {manualFormaPagamento === "credit_card" && (
+                                <div>
+                                  <label className="text-xs font-medium">Parcelas</label>
+                                  <Input
+                                    type="number"
+                                    min={1}
+                                    max={12}
+                                    value={manualParcelas}
+                                    onChange={(e) => setManualParcelas(Math.max(1, Math.min(12, Number(e.target.value) || 1)))}
+                                  />
+                                </div>
+                              )}
+                              <div>
+                                <label className="text-xs font-medium">Data do pagamento *</label>
+                                <Input
+                                  type="date"
+                                  value={manualDataPagamento}
+                                  onChange={(e) => setManualDataPagamento(e.target.value)}
+                                />
+                              </div>
+                            </div>
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                              <div>
+                                <label className="text-xs font-medium">Valor pago por participante (R$) *</label>
+                                <Input
+                                  inputMode="decimal"
+                                  value={manualValor}
+                                  onChange={(e) => setManualValor(e.target.value)}
+                                  placeholder="0,00"
+                                />
+                              </div>
+                              <div>
+                                <label className="text-xs font-medium">Taxa total do lote (R$)</label>
+                                <Input
+                                  inputMode="decimal"
+                                  value={manualTaxa}
+                                  onChange={(e) => setManualTaxa(e.target.value)}
+                                  placeholder="0,00"
+                                />
+                                <p className="text-[10px] text-muted-foreground mt-1">
+                                  Rateada igualmente entre os participantes deste lançamento.
+                                </p>
+                              </div>
+                            </div>
+                          </div>
+
                           <div className="space-y-3">
                             <div className="flex items-center justify-between">
                               <span className="text-xs font-medium">Participantes ({participantes.length})</span>
