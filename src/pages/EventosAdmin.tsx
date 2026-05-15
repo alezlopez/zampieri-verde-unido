@@ -982,7 +982,7 @@ const EventosAdmin = () => {
                           size="sm"
                           variant="outline"
                           className="border-zampieri-green-dark text-zampieri-green-dark hover:bg-zampieri-cream"
-                          onClick={() => { resetManualForm(); setShowManualForm(true); }}
+                          onClick={() => { resetManualForm(); openManualForm(evento); }}
                         >
                           <UserPlus className="w-4 h-4 mr-1" />
                           Adicionar ingresso manual
