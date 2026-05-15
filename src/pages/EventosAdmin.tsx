@@ -420,6 +420,16 @@ const EventosAdmin = () => {
     setCompradorCpf("");
     setParticipantes([emptyParticipante()]);
     setShowManualForm(false);
+    setManualFormaPagamento("dinheiro");
+    setManualParcelas(1);
+    setManualValor("");
+    setManualTaxa("0");
+    setManualDataPagamento(new Date().toISOString().slice(0, 10));
+  };
+
+  const openManualForm = (evento: Evento) => {
+    setShowManualForm(true);
+    setManualValor(String(evento.preco ?? ""));
   };
 
   const updateParticipante = (idx: number, patch: Partial<Participante>) => {
@@ -435,6 +445,20 @@ const EventosAdmin = () => {
     const validos = participantes.filter((p) => p.nome.trim());
     if (validos.length === 0) {
       toast({ title: "Adicione ao menos um participante", variant: "destructive" });
+      return;
+    }
+    const valorParticipante = Number(String(manualValor).replace(",", "."));
+    if (!Number.isFinite(valorParticipante) || valorParticipante < 0) {
+      toast({ title: "Valor por participante inválido", variant: "destructive" });
+      return;
+    }
+    const taxaTotalLote = Number(String(manualTaxa || "0").replace(",", "."));
+    if (!Number.isFinite(taxaTotalLote) || taxaTotalLote < 0) {
+      toast({ title: "Taxa inválida", variant: "destructive" });
+      return;
+    }
+    if (!manualDataPagamento) {
+      toast({ title: "Informe a data do pagamento", variant: "destructive" });
       return;
     }
 
@@ -456,6 +480,13 @@ const EventosAdmin = () => {
         if (foundId) targetUserId = foundId as string;
       }
 
+      // Rateio da taxa proporcional ao número de participantes (valor igual por participante)
+      const taxaPorParticipante = validos.length > 0
+        ? +(taxaTotalLote / validos.length).toFixed(2)
+        : 0;
+      const liquidoPorParticipante = +(valorParticipante - taxaPorParticipante).toFixed(2);
+      const dataPagamentoIso = new Date(`${manualDataPagamento}T12:00:00`).toISOString();
+
       const records = validos.map((p) => ({
         evento_id: eventoId,
         user_id: targetUserId,
@@ -469,6 +500,14 @@ const EventosAdmin = () => {
         data_nascimento_participante: p.data_nascimento || null,
         email_participante: p.email.trim() || null,
         celular_participante: p.celular.replace(/\D/g, "") || null,
+        forma_pagamento: manualFormaPagamento,
+        parcelas: manualFormaPagamento === "credit_card" ? Math.max(1, Math.min(12, manualParcelas)) : 1,
+        valor_total: valorParticipante,
+        valor_bruto: valorParticipante,
+        taxa_total: taxaPorParticipante,
+        valor_liquido: liquidoPorParticipante,
+        data_pagamento: dataPagamentoIso,
+        data_credito: manualDataPagamento,
       }));
 
       const { error } = await supabase.from("ingressos").insert(records);
