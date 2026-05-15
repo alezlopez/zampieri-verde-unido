@@ -341,7 +341,16 @@ const EventosAdmin = () => {
         setUploading(false);
         return;
       }
-      toast({ title: "Evento atualizado!" });
+      // Recalcular vagas_disponiveis com base nos ingressos não-cancelados (caso vagas_total tenha mudado)
+      const { data: ocupRow } = await supabase
+        .from("ingressos")
+        .select("quantidade", { count: "exact" })
+        .eq("evento_id", editingId)
+        .not("status", "in", "(cancelado,estornado)");
+      const ocupados = (ocupRow || []).reduce((s, r: any) => s + (r.quantidade || 0), 0);
+      const novasDisp = Math.max(0, vagasNum - ocupados);
+      await supabase.from("eventos").update({ vagas_disponiveis: novasDisp }).eq("id", editingId);
+      toast({ title: "Evento atualizado!", description: `Vagas disponíveis recalculadas: ${novasDisp}/${vagasNum}` });
     } else {
       const { data: novo, error } = await supabase.from("eventos").insert(payload).select("id").single();
       if (error) {

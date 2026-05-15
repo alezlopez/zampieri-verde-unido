@@ -652,6 +652,9 @@ const EventoCompra = () => {
               {totalIngressosReservados} ingresso(s) reservado(s) com sucesso.<br />
               Aguarde o link de pagamento.
             </p>
+            <p className="text-xs bg-zampieri-cream border border-zampieri-gold/40 rounded-md p-2 text-zampieri-green-dark">
+              ⏱ Você tem <strong>60 minutos</strong> para concluir o pagamento. Após esse prazo a reserva será cancelada automaticamente.
+            </p>
             <div className="space-y-2">
               <div className="text-4xl font-bold text-zampieri-green-dark">{redirectCountdown}</div>
               <Progress value={((10 - redirectCountdown) / 10) * 100} className="h-2" />
