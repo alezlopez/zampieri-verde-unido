@@ -320,7 +320,7 @@ const EventosAdmin = () => {
       preco_parcelado: precoParceladoNum,
       max_parcelas: maxParcelasNum,
       vagas_total: vagasNum,
-      vagas_disponiveis: editingId ? undefined : vagasNum, // não sobrescrever em edição
+      vagas_disponiveis: editingId ? undefined : vagasNum, // recalculado abaixo se for edição
       requer_autorizacao: requerAutorizacao,
       tipo_evento: publicoAlvo === "apenas_alunos" ? "somente_alunos" : "alunos_convidados",
       is_excursao: isExcursao,

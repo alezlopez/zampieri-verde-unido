@@ -992,7 +992,7 @@ const EventoCompra = () => {
               <div className="bg-blue-50 border border-blue-200 rounded-md p-4 flex items-start gap-3">
                 <AlertTriangle className="w-5 h-5 text-blue-600 shrink-0 mt-0.5" />
                 <p className="text-sm text-blue-800">
-                  A reserva do ingresso será cancelada automaticamente após <strong>2 horas</strong> caso o pagamento não seja realizado, sendo necessário uma nova reserva para participação mediante a disponibilidade de vagas.
+                  A reserva do ingresso será cancelada automaticamente após <strong>60 minutos</strong> caso o pagamento não seja realizado, sendo necessário uma nova reserva para participação mediante a disponibilidade de vagas.
                 </p>
               </div>
             </div>
@@ -1075,7 +1075,7 @@ const EventoCompra = () => {
                   <p>Ao selecionar os participantes e confirmar a participação, será criada uma reserva temporária da vaga no evento.</p>
                   <p>Essa reserva:</p>
                   <ul className="list-disc pl-4 space-y-1">
-                    <li>Terá validade de 2 (duas) horas</li>
+                    <li>Terá validade de 60 (sessenta) minutos</li>
                     <li>Será cancelada automaticamente caso o pagamento não seja realizado dentro desse prazo</li>
                     <li>Liberará automaticamente a vaga para outros participantes</li>
                   </ul>

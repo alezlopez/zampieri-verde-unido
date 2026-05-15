@@ -10,7 +10,7 @@ const BodySchema = z.object({
   force_regenerate: z.boolean().optional(),
 });
 
-const CHECKOUT_TTL_MS = 24 * 60 * 60 * 1000; // 24h
+const CHECKOUT_TTL_MS = 60 * 60 * 1000; // 60 min (alinhado com cancelar-pendentes)
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
@@ -186,7 +186,7 @@ Deno.serve(async (req) => {
       cancelUrl,
       expiredUrl,
       externalReference: ingressos.map((i: any) => i.id).join(","),
-      minutesToExpire: 1440,
+      minutesToExpire: 60,
       maxInstallmentCount: isParcelado ? maxParcelas : undefined,
     });
 
