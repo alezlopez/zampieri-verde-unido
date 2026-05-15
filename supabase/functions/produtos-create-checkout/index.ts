@@ -15,7 +15,7 @@ const BodySchema = z.object({
   force_regenerate: z.boolean().optional(),
 });
 
-const CHECKOUT_TTL_MS = 24 * 60 * 60 * 1000; // 24h
+const CHECKOUT_TTL_MS = 60 * 60 * 1000; // 60 min
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
@@ -134,7 +134,7 @@ Deno.serve(async (req) => {
         cancelUrl: `${SITE_BASE_R}/eventos/meus-ingressos?status=cancel`,
         expiredUrl: `${SITE_BASE_R}/eventos/meus-ingressos?status=expired`,
         externalReference: `prod:${pedidosExist.map((p: any) => p.id).join(",")}`,
-        minutesToExpire: 1440,
+        minutesToExpire: 60,
         maxInstallmentCount: isParcelado ? maxParcelasReuso : undefined,
       });
       const checkoutUrlR = checkoutR.link || checkoutR.url || checkoutR.checkoutUrl;
@@ -306,7 +306,7 @@ Deno.serve(async (req) => {
       expiredUrl,
       // Prefixo para o webhook saber que se trata de pedidos_produtos
       externalReference: `prod:${pedidoIds.join(",")}`,
-      minutesToExpire: 1440,
+      minutesToExpire: 60,
       maxInstallmentCount: isParcelado ? maxParcelas : undefined,
     });
 

@@ -2,10 +2,10 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
 import { corsHeaders } from "../_shared/cors.ts";
 
 /**
- * Cancela ingressos pendentes há mais de 2 horas, conforme Termo de Compra (cláusula 3).
+ * Cancela ingressos/pedidos pendentes há mais de 60 minutos, conforme Termo de Compra (cláusula 3).
  * O trigger `atualizar_vagas_disponiveis` libera automaticamente as vagas no UPDATE.
  *
- * Agendado via pg_cron a cada 15 minutos.
+ * Agendado via pg_cron a cada 5 minutos.
  */
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
@@ -15,7 +15,7 @@ Deno.serve(async (req) => {
   const admin = createClient(SUPABASE_URL, SERVICE);
 
   try {
-    const cutoff = new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString();
+    const cutoff = new Date(Date.now() - 60 * 60 * 1000).toISOString();
 
     const { data: ings, error: errIng } = await admin
       .from("ingressos")

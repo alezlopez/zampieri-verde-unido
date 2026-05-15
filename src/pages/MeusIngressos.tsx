@@ -276,7 +276,11 @@ const MeusIngressos = () => {
                               {ingresso.checkout_url ? "Gerar novo link" : "Gerar link de pagamento"}
                             </Button>
                             <p className="text-xs text-muted-foreground">
-                              Se o link de pagamento não abrir, gere um novo. Você será redirecionado para o ambiente seguro do Asaas.
+                              ⏱ Reserva válida até{" "}
+                              <strong>
+                                {new Date(new Date(ingresso.created_at).getTime() + 60 * 60 * 1000).toLocaleString("pt-BR", { hour: "2-digit", minute: "2-digit", day: "2-digit", month: "2-digit" })}
+                              </strong>
+                              . Se o link não abrir, gere um novo.
                             </p>
                           </div>
                         )}

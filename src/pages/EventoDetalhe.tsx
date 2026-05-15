@@ -282,20 +282,25 @@ const EventoDetalhe = () => {
                 </section>
               )}
 
-              <div className="sticky bottom-4 z-10">
+              <div className="sticky bottom-4 z-10 space-y-2">
                 {evento.vagas_disponiveis <= 0 ? (
                   <Button disabled size="lg" className="w-full">Esgotado</Button>
                 ) : !podeComprar(evento) ? (
                   <Button disabled size="lg" className="w-full">Exclusivo para alunos</Button>
                 ) : (
-                  <Button
-                    size="lg"
-                    onClick={handleComprar}
-                    className="w-full bg-zampieri-green-dark hover:bg-zampieri-green text-white shadow-lg"
-                  >
-                    <Ticket className="w-5 h-5 mr-2" />
-                    {user ? "Comprar Ingresso" : "Entrar para comprar"}
-                  </Button>
+                  <>
+                    <Button
+                      size="lg"
+                      onClick={handleComprar}
+                      className="w-full bg-zampieri-green-dark hover:bg-zampieri-green text-white shadow-lg"
+                    >
+                      <Ticket className="w-5 h-5 mr-2" />
+                      {user ? "Comprar Ingresso" : "Entrar para comprar"}
+                    </Button>
+                    <p className="text-xs text-center text-muted-foreground">
+                      ⏱ A reserva fica válida por <strong>60 minutos</strong> para conclusão do pagamento.
+                    </p>
+                  </>
                 )}
               </div>
 
