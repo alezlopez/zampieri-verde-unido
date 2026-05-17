@@ -560,6 +560,7 @@ export type Database = {
           tipo_comprador: string
           tipo_ingresso: string
           tipo_participante: string
+          upsell_bingo: boolean | null
           user_id: string
           utilizado: boolean
           utilizado_em: string | null
@@ -604,6 +605,7 @@ export type Database = {
           tipo_comprador?: string
           tipo_ingresso?: string
           tipo_participante?: string
+          upsell_bingo?: boolean | null
           user_id: string
           utilizado?: boolean
           utilizado_em?: string | null
@@ -648,6 +650,7 @@ export type Database = {
           tipo_comprador?: string
           tipo_ingresso?: string
           tipo_participante?: string
+          upsell_bingo?: boolean | null
           user_id?: string
           utilizado?: boolean
           utilizado_em?: string | null
