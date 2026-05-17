@@ -169,7 +169,9 @@ export async function recomputePedidosProdutos(admin: any, opts: {
       valor_bruto: vb, valor_liquido: vl,
       taxa_total: Number((vb - vl).toFixed(2)),
       data_pagamento: dataPagISO, data_credito: dataCred,
+      parcelas: parcelasReais,
     };
+    if (formaPagamento) upd.forma_pagamento = formaPagamento;
     // Só grava asaas_payment_id se ainda não houver (evita contaminação cruzada)
     if (stableId && !p.asaas_payment_id) upd.asaas_payment_id = stableId;
     await admin.from("pedidos_produtos").update(upd).eq("id", p.id);
