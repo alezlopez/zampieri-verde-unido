@@ -203,7 +203,9 @@ export async function recomputeIngressosFinancials(admin: any, opts: RecomputeOp
       taxa_total: Number((vb - vl).toFixed(2)),
       data_pagamento: dataPagISO,
       data_credito: dataCred,
+      parcelas: parcelasReais,
     };
+    if (formaPagamento) update.forma_pagamento = formaPagamento;
     // Só grava asaas_payment_id se o ingresso ainda não tiver um (evita contaminação cruzada)
     if (stableId && !ing.asaas_payment_id) update.asaas_payment_id = stableId;
 
