@@ -142,15 +142,20 @@ export async function recomputeIngressosFinancials(admin: any, opts: RecomputeOp
   let liquido = 0;
   let dataPag: string | null = null;
   let dataCred: string | null = null;
+  const billingCounts: Record<string, number> = {};
+  let parcelasReais = 1;
   for (const p of pagos) {
     const value = Number(p.value || 0);
     const netRaw = Number(p.netValue ?? p.value ?? 0);
     const billing = String(p.billingType || "").toUpperCase();
+    if (billing) billingCounts[billing] = (billingCounts[billing] || 0) + 1;
     let antecip = 0;
     if (billing === "CREDIT_CARD" || billing === "CREDITCARD") {
       if (p.installment) {
         const n = Number(p.installmentNumber || 1);
         antecip = netRaw * ANTECIP_PARCELADO * n;
+        const totalParc = Number(p.installmentCount || 0);
+        if (totalParc > parcelasReais) parcelasReais = totalParc;
       } else {
         antecip = netRaw * ANTECIP_AVISTA;
       }
@@ -161,6 +166,17 @@ export async function recomputeIngressosFinancials(admin: any, opts: RecomputeOp
     if (d && (!dataPag || d > dataPag)) dataPag = d;
     if (p.creditDate && (!dataCred || p.creditDate > dataCred)) dataCred = p.creditDate;
   }
+  // Se for installment, conta de parcelas = total de pagamentos pagos (fallback)
+  if (parcelasReais === 1 && stableInstallmentId) parcelasReais = pagos.length;
+  // Determina billingType dominante
+  const dominantBilling = Object.entries(billingCounts).sort((a, b) => b[1] - a[1])[0]?.[0] || "";
+  const formaPagamento = dominantBilling === "CREDIT_CARD" || dominantBilling === "CREDITCARD"
+    ? "credit_card"
+    : dominantBilling === "PIX"
+    ? "pix"
+    : dominantBilling === "BOLETO"
+    ? "boleto"
+    : null;
   bruto = Number(bruto.toFixed(2));
   liquido = Number(liquido.toFixed(2));
 
