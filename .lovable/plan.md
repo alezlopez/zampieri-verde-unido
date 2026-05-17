@@ -1,86 +1,63 @@
-## Plano: corrigir vagas, reduzir reserva para 1h e exibir prazo no frontend
+## Diagnóstico
 
-### 1. Corrigir vagas do evento `87f20c66…`
+A taxa calculada (R$ 12,25) **está matematicamente correta** para o pagamento da Janaina, **mas a forma de pagamento exibida está errada**.
 
-Estado atual no banco:
-- `vagas_total = 100`, `vagas_disponiveis = 212` (incoerente — sobra do total antigo de 300)
-- Ingressos não-cancelados: **88** (87 pagos + 1 pendente)
-- Valor correto: `vagas_disponiveis = 100 − 88 = 12`
+O que o Asaas realmente registrou para `pay_8t6q2j1qpb361ef2`:
 
-**Migration** (UPDATE pontual):
-```sql
-UPDATE eventos
-   SET vagas_disponiveis = vagas_total - (
-       SELECT COALESCE(SUM(quantidade), 0)
-         FROM ingressos
-        WHERE evento_id = eventos.id
-          AND status NOT IN ('cancelado','estornado')
-   )
- WHERE id = '87f20c66-bbe0-48b2-84f3-d47008f12136';
-```
+- `billingType`: **CREDIT_CARD** (não PIX)
+- `value`: R$ 240,00
+- `netValue`: R$ 232,75 → taxa Asaas real = R$ 7,25
+- Antecipação automática à vista (2,15%): R$ 5,00
+- **Taxa total = 7,25 + 5,00 = R$ 12,25** ✅
 
-Para evitar repetir esse problema no futuro, o admin (`EventosAdmin.tsx > handleSave`) passa a recalcular automaticamente `vagas_disponiveis` quando `vagas_total` é alterado em uma edição — usando a mesma fórmula `total − ocupados_não_cancelados`, garantindo que nunca fique negativo.
+Ou seja: a compradora pagou no **cartão à vista**, não via PIX. O sistema está exibindo "pix" porque a coluna `forma_pagamento` é gravada no momento da criação do checkout (escolha inicial do usuário) e **nunca é atualizada** quando o Asaas confirma o pagamento real (o cliente trocou de método na tela do Asaas).
 
-### 2. Esgotamento bloqueia novas compras?
+Confirmei o padrão em mais de 13 ingressos: todos com `forma_pagamento='pix'` no banco, mas `billingType='CREDIT_CARD'` no webhook do Asaas — taxas batem com cartão.
 
-**Sim**, já está implementado:
-- `Eventos.tsx` e `EventoDetalhe.tsx`: quando `vagas_disponiveis <= 0` mostram badge **ESGOTADO** e ocultam o botão de compra.
-- `EventoCompra.tsx` revalida vagas antes de gravar (rejeita se `qtd > vagas_disponiveis`).
-- O trigger `atualizar_vagas_disponiveis` decrementa no INSERT (status pendente já reserva) e devolve no cancelamento/estorno.
+## Plano de correção
 
-Nada a alterar aqui — apenas confirmação.
+### 1. Sincronizar `forma_pagamento` e `parcelas` a partir do Asaas
 
-### 3. Reduzir reserva de 24h → 1h sem quebrar o checkout Asaas
+Em `supabase/functions/_shared/financeiro.ts` (`recomputeIngressosFinancials`) e `produtos-financeiro.ts` (`recomputePedidosProdutos`):
 
-**Como funciona hoje:**
-- Ingresso fica `pendente` indefinidamente até o cron `cancelar-pendentes-15min` rodar (a cada 15 min) e cancelar tudo com `created_at < now()-2h`.
-- O checkout Asaas é criado com `minutesToExpire: 1440` (24h).
-- O `asaas-create-checkout` reusa o link enquanto `Date.now()-checkout_criado_em < 24h`; depois disso, regenera automaticamente.
+- Detectar `billingType` dominante nos pagamentos confirmados:
+  - `CREDIT_CARD` → `forma_pagamento = 'credit_card'`
+  - `PIX` → `'pix'`
+  - `BOLETO` → `'boleto'`
+- Detectar `parcelas` reais: se `installment` existe → `installmentCount`; senão 1.
+- Gravar esses campos junto com `valor_bruto/liquido/taxa_total`.
 
-**Risco se baixarmos só o cron para 1h:** o cliente pode pagar no link Asaas (ainda válido por 24h) **depois** que o ingresso foi cancelado pelo cron — o webhook `PAYMENT_CONFIRMED` chega mas o ingresso está `cancelado`, e a vaga já pode ter sido vendida a outro.
+Isso roda automaticamente em todo webhook `PAYMENT_CONFIRMED` / `PAYMENT_RECEIVED`, então corrige novos pagamentos e qualquer reprocessamento.
 
-**Plano (alinhar todos os prazos em 60 min):**
+### 2. Backfill dos registros já pagos
 
-| Componente | Hoje | Novo |
-|---|---|---|
-| Cron `cancelar-pendentes` cutoff | 2h | **60 min** |
-| Asaas `minutesToExpire` (ingressos) | 1440 | **60** |
-| Asaas `minutesToExpire` (produtos) | (verificar — provavelmente 1440) | **60** |
-| `CHECKOUT_TTL_MS` (reuso/regeneração) | 24h | **60 min** |
-| Frequência do cron | a cada 15 min | **a cada 5 min** (para fechar a janela) |
+Migration que, para todo `ingresso`/`pedido_produtos` com status `pago` e `asaas_payment_id` preenchido, dispara `recomputeIngressosFinancials`/`recomputePedidosProdutos` (job de backfill — endpoint admin já existe: `backfill-financeiro` e `backfill-produtos-financeiro`).
 
-Com isso:
-- Quando o ingresso é cancelado, o link Asaas já expirou (ou expira em segundos) → não há pagamento órfão chegando depois.
-- Como já temos regeneração automática (`shouldRegenerate = isExpired`), se o usuário voltar mais tarde via "Meus Ingressos" e o ingresso ainda existir como `pendente` (janela curta), o sistema gera um novo checkout. Se já estiver `cancelado`, ele aparece com aviso e o usuário refaz a compra (fluxo já existente).
-- **Defesa extra no webhook:** em `asaas-webhook` (handlers de `PAYMENT_CONFIRMED` / `CHECKOUT_PAID`), se o ingresso estiver `cancelado` quando o pagamento chegar, **reverter** para `pago` somente se `vagas_disponiveis > 0`; caso contrário, marcar `pago` mesmo assim mas registrar log de overbooking (1 vaga acima do limite é melhor que perder o pagamento — admin trata manualmente). Hoje não há essa proteção.
+Vou adicionar uma flag `force_method=true` nos dois endpoints para recalcular forma_pagamento mesmo quando `valor_liquido` já está preenchido, e instruo você a clicar "Backfill" no admin depois do deploy.
 
-### 4. Comunicar o prazo no frontend
+### 3. Confirmar comportamento da antecipação
 
-- **`EventoCompra.tsx`**: trocar o texto "será cancelada automaticamente após **2 horas**" por **"60 minutos"**.
-- **Tela de confirmação ("Ingressos reservados!")** e **`MeusIngressos.tsx`** (cards de pendentes): adicionar contador/aviso visível:
-  > ⏱ Reserva válida até **HH:MM** — pague em até 60 min para garantir suas vagas.
-  
-  Calculado como `created_at + 60min`. Se já expirou, exibir "Reserva expirada — gerar novo checkout" (botão já existente).
-- **`EventoDetalhe.tsx`**: nota informativa logo acima do botão de compra: "A reserva fica válida por 60 minutos para conclusão do pagamento."
-- **Termo de Compra (cláusula 3)**: atualizar o texto de "2 horas" para "60 minutos" para manter consistência legal.
+Manter o cálculo atual (já está correto conforme você confirmou):
 
-### Arquivos afetados
+- PIX/Boleto: sem antecipação.
+- Cartão à vista: `netValue × 2,15%`.
+- Cartão parcelado: `netValue × 2,60% × nº meses adiantados` (parcela 1 = 1 mês, parcela 2 = 2 meses, …).
 
-```
-supabase/migrations/<novo>.sql            -- corrige vagas + (se quiser) reagendar cron
-supabase/functions/cancelar-pendentes/index.ts          -- cutoff 2h → 60min
-supabase/functions/asaas-create-checkout/index.ts       -- minutesToExpire/TTL → 60
-supabase/functions/produtos-create-checkout/index.ts    -- minutesToExpire/TTL → 60
-supabase/functions/asaas-webhook/index.ts               -- recover se status=cancelado
-src/pages/EventosAdmin.tsx                              -- recalcular vagas no UPDATE
-src/pages/EventoCompra.tsx                              -- texto + aviso 60min
-src/pages/EventoDetalhe.tsx                             -- aviso 60min
-src/pages/MeusIngressos.tsx                             -- contador "válido até HH:MM"
-src/components/TermoCompra.tsx (ou onde estiver)        -- cláusula 3
-```
+### 4. UI / Relatório
 
-### Confirmações antes de implementar
+Sem alterações de UI — os filtros já existem (`pix`, `credit_card`, `todos`). Após o backfill, o relatório passa a mostrar `forma_pagamento` real e a taxa fará sentido (PIX = R$ 1,99, cartão = % real + antecipação).
 
-1. Confirma **60 min** em todos os pontos (cron + Asaas + UI + termo)?
-2. Aplico a defesa "recuperar pagamento órfão mesmo se cancelado" no webhook (item 3, último parágrafo)?
-3. Aumento a frequência do cron de 15min → 5min para fechar a janela de risco?
+## Resultado esperado
+
+- Janaina aparecerá como **cartão à vista — R$ 240,00 — taxa R$ 12,25** (em vez de "pix").
+- Pagamentos realmente em PIX aparecerão com taxa fixa de R$ 1,99.
+- Pagamentos no cartão (à vista/parcelado) terão taxa = taxa Asaas + antecipação.
+
+## Arquivos afetados
+
+- `supabase/functions/_shared/financeiro.ts`
+- `supabase/functions/_shared/produtos-financeiro.ts`
+- `supabase/functions/backfill-financeiro/index.ts` (flag `force_method`)
+- `supabase/functions/backfill-produtos-financeiro/index.ts` (flag `force_method`)
+
+Nenhuma mudança de schema necessária.
