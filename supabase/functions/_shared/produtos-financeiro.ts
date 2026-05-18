@@ -1,10 +1,9 @@
 // Recalcula valor_bruto/valor_liquido/taxa_total para pedidos_produtos pagos.
 // Aplica a mesma lógica de antecipação automática do Asaas usada em ingressos.
 import { listPayments, getPayment, listInstallmentPayments } from "./asaas.ts";
+import { calcularTaxaPagamento } from "./taxas.ts";
 
 const PAID = new Set(["CONFIRMED", "RECEIVED", "RECEIVED_IN_CASH"]);
-const ANTECIP_AVISTA = 0.0215;
-const ANTECIP_PARCELADO = 0.026;
 
 export async function recomputePedidosProdutos(admin: any, opts: {
   checkoutId?: string | null;
