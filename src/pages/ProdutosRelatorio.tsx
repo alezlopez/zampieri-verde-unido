@@ -92,6 +92,7 @@ const ProdutosRelatorio = () => {
   const [statusFiltro, setStatusFiltro] = useState<string>("pago");
 
   const [data, setData] = useState<Resposta | null>(null);
+  const [editTaxa, setEditTaxa] = useState<Linha | null>(null);
   const [loading, setLoading] = useState(false);
   const [backfillLoading, setBackfillLoading] = useState(false);
 
