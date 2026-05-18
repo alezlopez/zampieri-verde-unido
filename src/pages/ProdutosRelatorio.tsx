@@ -10,9 +10,10 @@ import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { useToast } from "@/hooks/use-toast";
-import { ArrowLeft, Download, RefreshCw, Wand2 } from "lucide-react";
+import { ArrowLeft, Download, RefreshCw, Wand2, Pencil } from "lucide-react";
 import { EventosHeader } from "@/components/EventosHeader";
 import { Footer } from "@/components/Footer";
+import { TaxaManualDialog } from "@/components/TaxaManualDialog";
 
 type Linha = {
   id: string;
