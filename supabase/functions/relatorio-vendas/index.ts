@@ -57,7 +57,7 @@ Deno.serve(async (req) => {
         id, evento_id, status, forma_pagamento, parcelas,
         nome_comprador, nome_participante, tipo_participante, tipo_ingresso,
         codigo_aluno, cortesia, created_at, data_pagamento, data_credito,
-        valor_bruto, valor_liquido, taxa_total, valor_total,
+        valor_bruto, valor_liquido, taxa_total, valor_total, taxa_manual,
         utilizado, utilizado_em, utilizado_por,
         meia_validada_portaria, meia_validada_em, meia_validada_por,
         eventos:evento_id (id, titulo, data_evento)
