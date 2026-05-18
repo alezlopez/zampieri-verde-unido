@@ -440,6 +440,7 @@ const ProdutosRelatorio = () => {
                     <TableHead className="text-right">Líquido</TableHead>
                     <TableHead className="text-right">Taxa</TableHead>
                     <TableHead>Retirado</TableHead>
+                    <TableHead className="w-10"></TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
