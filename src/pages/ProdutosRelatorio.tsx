@@ -504,6 +504,18 @@ const ProdutosRelatorio = () => {
         </div>
       </div>
       <Footer />
+      {editTaxa && (
+        <TaxaManualDialog
+          open={!!editTaxa}
+          onOpenChange={(v) => { if (!v) setEditTaxa(null); }}
+          tipo="pedido"
+          id={editTaxa.id}
+          valorBruto={editTaxa.valor_bruto}
+          taxaAtual={editTaxa.taxa_total}
+          taxaManual={editTaxa.taxa_manual}
+          onSaved={fetchRelatorio}
+        />
+      )}
     </div>
   );
 };
