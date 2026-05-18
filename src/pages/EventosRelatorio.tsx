@@ -90,6 +90,7 @@ const EventosRelatorio = () => {
   const [incluirCortesias, setIncluirCortesias] = useState(true);
   const [filtroUso, setFiltroUso] = useState<"todos" | "utilizados" | "nao_utilizados">("todos");
   const [data, setData] = useState<Resposta | null>(null);
+  const [editTaxa, setEditTaxa] = useState<Linha | null>(null);
   const [loading, setLoading] = useState(false);
   const [backfillLoading, setBackfillLoading] = useState(false);
 
