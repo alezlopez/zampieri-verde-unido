@@ -183,16 +183,20 @@ export async function recomputeIngressosFinancials(admin: any, opts: RecomputeOp
     restanteB = Number((restanteB - vb).toFixed(2));
     restanteL = Number((restanteL - vl).toFixed(2));
 
+    // Se admin definiu taxa_manual, respeita: líquido = bruto - taxa_manual.
+    const taxaManual = ing.taxa_manual !== null && ing.taxa_manual !== undefined ? Number(ing.taxa_manual) : null;
+    const vlFinal = taxaManual !== null ? Number((vb - taxaManual).toFixed(2)) : vl;
+    const taxaFinal = taxaManual !== null ? Number(taxaManual.toFixed(2)) : Number((vb - vl).toFixed(2));
+
     const update: any = {
       valor_bruto: vb,
-      valor_liquido: vl,
-      taxa_total: Number((vb - vl).toFixed(2)),
+      valor_liquido: vlFinal,
+      taxa_total: taxaFinal,
       data_pagamento: dataPagISO,
       data_credito: dataCred,
       parcelas: parcelasReais,
     };
     if (formaPagamento) update.forma_pagamento = formaPagamento;
-    // Só grava asaas_payment_id se o ingresso ainda não tiver um (evita contaminação cruzada)
     if (stableId && !ing.asaas_payment_id) update.asaas_payment_id = stableId;
 
     await admin.from("ingressos").update(update).eq("id", ing.id);
