@@ -535,6 +535,26 @@ const ProdutosRelatorio = () => {
           onSaved={fetchRelatorio}
         />
       )}
+      {cancelar && (
+        <CancelarIngressoDialog
+          open={!!cancelar}
+          onOpenChange={(v) => { if (!v) setCancelar(null); }}
+          tipo="pedido"
+          id={cancelar.id}
+          resumo={{
+            titulo: `${cancelar.produto_nome}${cancelar.variacao_nome ? " · " + cancelar.variacao_nome : ""}`,
+            comprador: cancelar.nome_comprador || undefined,
+            valor: cancelar.valor_bruto,
+            forma: formaLabel(
+              cancelar.forma_pagamento === "credit_card" && (cancelar.parcelas || 1) > 1
+                ? "credit_card_parcelado" : (cancelar.forma_pagamento || ""),
+            ),
+            parcelas: cancelar.parcelas || 1,
+            temPagamento: !!cancelar.forma_pagamento,
+          }}
+          onDone={fetchRelatorio}
+        />
+      )}
     </div>
   );
 };
