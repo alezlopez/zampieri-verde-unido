@@ -1,10 +1,9 @@
 // Recalcula valor_bruto/valor_liquido/taxa_total para pedidos_produtos pagos.
 // Aplica a mesma lógica de antecipação automática do Asaas usada em ingressos.
 import { listPayments, getPayment, listInstallmentPayments } from "./asaas.ts";
+import { calcularTaxaPagamento } from "./taxas.ts";
 
 const PAID = new Set(["CONFIRMED", "RECEIVED", "RECEIVED_IN_CASH"]);
-const ANTECIP_AVISTA = 0.0215;
-const ANTECIP_PARCELADO = 0.026;
 
 export async function recomputePedidosProdutos(admin: any, opts: {
   checkoutId?: string | null;
@@ -13,7 +12,7 @@ export async function recomputePedidosProdutos(admin: any, opts: {
   pedidoIds?: string[] | null;
 }) {
   // Carrega pedidos
-  let q = admin.from("pedidos_produtos").select("id, valor_total, checkout_id, asaas_payment_id");
+  let q = admin.from("pedidos_produtos").select("id, valor_total, checkout_id, asaas_payment_id, taxa_manual");
   if (opts.checkoutId) q = q.eq("checkout_id", opts.checkoutId);
   else if (opts.pedidoIds && opts.pedidoIds.length > 0) q = q.in("id", opts.pedidoIds);
   else if (opts.installmentId || opts.paymentId) q = q.eq("asaas_payment_id", opts.installmentId || opts.paymentId);
@@ -114,29 +113,22 @@ export async function recomputePedidosProdutos(admin: any, opts: {
   const singleId = !stableInstallmentId && pagos.length === 1 ? pagos[0].id : null;
   const stableId = stableInstallmentId || singleId || opts.installmentId || opts.paymentId || null;
 
-  let bruto = 0, liquido = 0;
+  let bruto = 0, taxa = 0;
   let dataPag: string | null = null;
   let dataCred: string | null = null;
   const billingCounts: Record<string, number> = {};
   let parcelasReais = 1;
   for (const p of pagos) {
     const value = Number(p.value || 0);
-    const netRaw = Number(p.netValue ?? p.value ?? 0);
     const billing = String(p.billingType || "").toUpperCase();
     if (billing) billingCounts[billing] = (billingCounts[billing] || 0) + 1;
-    let antecip = 0;
-    if (billing === "CREDIT_CARD" || billing === "CREDITCARD") {
-      if (p.installment) {
-        const n = Number(p.installmentNumber || 1);
-        antecip = netRaw * ANTECIP_PARCELADO * n;
-        const totalParc = Number(p.installmentCount || 0);
-        if (totalParc > parcelasReais) parcelasReais = totalParc;
-      } else {
-        antecip = netRaw * ANTECIP_AVISTA;
-      }
-    }
+    const { taxaTotal } = calcularTaxaPagamento(p);
     bruto += value;
-    liquido += netRaw - antecip;
+    taxa += taxaTotal;
+    if (p.installment) {
+      const totalParc = Number(p.installmentCount || 0);
+      if (totalParc > parcelasReais) parcelasReais = totalParc;
+    }
     const d = p.paymentDate || p.confirmedDate || p.clientPaymentDate;
     if (d && (!dataPag || d > dataPag)) dataPag = d;
     if (p.creditDate && (!dataCred || p.creditDate > dataCred)) dataCred = p.creditDate;
@@ -151,7 +143,7 @@ export async function recomputePedidosProdutos(admin: any, opts: {
     ? "boleto"
     : null;
   bruto = Number(bruto.toFixed(2));
-  liquido = Number(liquido.toFixed(2));
+  const liquido = Number((bruto - taxa).toFixed(2));
 
   const baseSum = pedidos.reduce((s: number, p: any) => s + Number(p.valor_total || 0), 0);
   const usar = baseSum > 0;
@@ -165,14 +157,18 @@ export async function recomputePedidosProdutos(admin: any, opts: {
     const vl = last ? Number(restL.toFixed(2)) : Number((liquido * peso).toFixed(2));
     restB = Number((restB - vb).toFixed(2));
     restL = Number((restL - vl).toFixed(2));
+
+    const taxaManual = p.taxa_manual !== null && p.taxa_manual !== undefined ? Number(p.taxa_manual) : null;
+    const vlFinal = taxaManual !== null ? Number((vb - taxaManual).toFixed(2)) : vl;
+    const taxaFinal = taxaManual !== null ? Number(taxaManual.toFixed(2)) : Number((vb - vl).toFixed(2));
+
     const upd: any = {
-      valor_bruto: vb, valor_liquido: vl,
-      taxa_total: Number((vb - vl).toFixed(2)),
+      valor_bruto: vb, valor_liquido: vlFinal,
+      taxa_total: taxaFinal,
       data_pagamento: dataPagISO, data_credito: dataCred,
       parcelas: parcelasReais,
     };
     if (formaPagamento) upd.forma_pagamento = formaPagamento;
-    // Só grava asaas_payment_id se ainda não houver (evita contaminação cruzada)
     if (stableId && !p.asaas_payment_id) upd.asaas_payment_id = stableId;
     await admin.from("pedidos_produtos").update(upd).eq("id", p.id);
   }

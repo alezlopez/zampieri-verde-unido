@@ -11,9 +11,10 @@ import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { useToast } from "@/hooks/use-toast";
-import { ArrowLeft, Download, RefreshCw, Wand2 } from "lucide-react";
+import { ArrowLeft, Download, RefreshCw, Wand2, Pencil } from "lucide-react";
 import { EventosHeader } from "@/components/EventosHeader";
 import { Footer } from "@/components/Footer";
+import { TaxaManualDialog } from "@/components/TaxaManualDialog";
 
 type Linha = {
   id: string;
@@ -34,6 +35,7 @@ type Linha = {
   valor_bruto: number;
   valor_liquido: number | null;
   taxa_total: number | null;
+  taxa_manual: number | null;
   liquido_pendente_calculo: boolean;
   utilizado: boolean;
   utilizado_em: string | null;
@@ -88,6 +90,7 @@ const EventosRelatorio = () => {
   const [incluirCortesias, setIncluirCortesias] = useState(true);
   const [filtroUso, setFiltroUso] = useState<"todos" | "utilizados" | "nao_utilizados">("todos");
   const [data, setData] = useState<Resposta | null>(null);
+  const [editTaxa, setEditTaxa] = useState<Linha | null>(null);
   const [loading, setLoading] = useState(false);
   const [backfillLoading, setBackfillLoading] = useState(false);
 
@@ -468,7 +471,18 @@ const EventosRelatorio = () => {
                           : formatBRL(r.valor_liquido)}
                       </TableCell>
                       <TableCell className="text-right text-xs text-zampieri-wine">
-                        {r.taxa_total === null ? "—" : formatBRL(r.taxa_total)}
+                        <div className="flex items-center justify-end gap-1">
+                          <span>{r.taxa_total === null ? "—" : formatBRL(r.taxa_total)}</span>
+                          {r.taxa_manual !== null && <Badge variant="outline" className="text-[9px] px-1 py-0">manual</Badge>}
+                          <button
+                            type="button"
+                            onClick={() => setEditTaxa(r)}
+                            className="text-muted-foreground hover:text-foreground p-0.5"
+                            title="Editar taxa manualmente"
+                          >
+                            <Pencil className="h-3 w-3" />
+                          </button>
+                        </div>
                       </TableCell>
                       <TableCell className="text-xs">
                         {r.utilizado ? (
@@ -493,6 +507,18 @@ const EventosRelatorio = () => {
         </div>
       </div>
       <Footer />
+      {editTaxa && (
+        <TaxaManualDialog
+          open={!!editTaxa}
+          onOpenChange={(v) => { if (!v) setEditTaxa(null); }}
+          tipo="ingresso"
+          id={editTaxa.id}
+          valorBruto={editTaxa.valor_bruto}
+          taxaAtual={editTaxa.taxa_total}
+          taxaManual={editTaxa.taxa_manual}
+          onSaved={fetchRelatorio}
+        />
+      )}
     </div>
   );
 };

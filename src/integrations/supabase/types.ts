@@ -556,6 +556,9 @@ export type Database = {
           parcelas: number
           quantidade: number
           status: string
+          taxa_manual: number | null
+          taxa_manual_em: string | null
+          taxa_manual_por: string | null
           taxa_total: number | null
           tipo_comprador: string
           tipo_ingresso: string
@@ -601,6 +604,9 @@ export type Database = {
           parcelas?: number
           quantidade?: number
           status?: string
+          taxa_manual?: number | null
+          taxa_manual_em?: string | null
+          taxa_manual_por?: string | null
           taxa_total?: number | null
           tipo_comprador?: string
           tipo_ingresso?: string
@@ -646,6 +652,9 @@ export type Database = {
           parcelas?: number
           quantidade?: number
           status?: string
+          taxa_manual?: number | null
+          taxa_manual_em?: string | null
+          taxa_manual_por?: string | null
           taxa_total?: number | null
           tipo_comprador?: string
           tipo_ingresso?: string
@@ -760,6 +769,9 @@ export type Database = {
           retirado_em: string | null
           retirado_por: string | null
           status: string
+          taxa_manual: number | null
+          taxa_manual_em: string | null
+          taxa_manual_por: string | null
           taxa_total: number | null
           updated_at: string
           user_id: string
@@ -792,6 +804,9 @@ export type Database = {
           retirado_em?: string | null
           retirado_por?: string | null
           status?: string
+          taxa_manual?: number | null
+          taxa_manual_em?: string | null
+          taxa_manual_por?: string | null
           taxa_total?: number | null
           updated_at?: string
           user_id: string
@@ -824,6 +839,9 @@ export type Database = {
           retirado_em?: string | null
           retirado_por?: string | null
           status?: string
+          taxa_manual?: number | null
+          taxa_manual_em?: string | null
+          taxa_manual_por?: string | null
           taxa_total?: number | null
           updated_at?: string
           user_id?: string

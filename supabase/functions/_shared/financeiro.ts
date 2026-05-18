@@ -4,6 +4,7 @@
 //  - Cartão parcelado (N pagamentos do mesmo installment)
 // Vínculo seguro (em ordem): ingressoIds explícitos, checkoutId, externalReference, paymentId.
 import { listPayments, getPayment, listInstallmentPayments, getInstallment } from "./asaas.ts";
+import { calcularTaxaPagamento } from "./taxas.ts";
 
 const PAID_STATUSES = new Set(["CONFIRMED", "RECEIVED", "RECEIVED_IN_CASH"]);
 
@@ -18,7 +19,7 @@ export interface RecomputeOpts {
 async function loadIngressos(admin: any, opts: RecomputeOpts) {
   let query = admin
     .from("ingressos")
-    .select("id, cortesia, valor_total, asaas_payment_id, checkout_id, status");
+    .select("id, cortesia, valor_total, asaas_payment_id, checkout_id, status, taxa_manual");
 
   if (opts.ingressoIds && opts.ingressoIds.length > 0) {
     query = query.in("id", opts.ingressoIds);
@@ -131,44 +132,29 @@ export async function recomputeIngressosFinancials(admin: any, opts: RecomputeOp
   const singlePaymentId = !stableInstallmentId && pagos.length === 1 ? pagos[0].id : null;
   const stableId = stableInstallmentId || singlePaymentId || opts.installmentId || opts.paymentId || null;
 
-  // Agrega bruto/líquido/datas
-  // Antecipação automática Asaas (cartão): à vista 2,15%/mês, parcelado 2,60%/mês × nº meses adiantados.
-  // Para parcelado: cada parcela N é antecipada em N meses (parcela 1 = 1 mês, parcela 2 = 2 meses...).
-  // Para crédito à vista: 1 mês.
-  // PIX/boleto: sem antecipação.
-  const ANTECIP_AVISTA = 0.0215;
-  const ANTECIP_PARCELADO = 0.026;
+  // Agrega bruto/líquido/datas usando taxas reais (transação + antecipação proporcional)
   let bruto = 0;
-  let liquido = 0;
+  let taxa = 0;
   let dataPag: string | null = null;
   let dataCred: string | null = null;
   const billingCounts: Record<string, number> = {};
   let parcelasReais = 1;
   for (const p of pagos) {
     const value = Number(p.value || 0);
-    const netRaw = Number(p.netValue ?? p.value ?? 0);
     const billing = String(p.billingType || "").toUpperCase();
     if (billing) billingCounts[billing] = (billingCounts[billing] || 0) + 1;
-    let antecip = 0;
-    if (billing === "CREDIT_CARD" || billing === "CREDITCARD") {
-      if (p.installment) {
-        const n = Number(p.installmentNumber || 1);
-        antecip = netRaw * ANTECIP_PARCELADO * n;
-        const totalParc = Number(p.installmentCount || 0);
-        if (totalParc > parcelasReais) parcelasReais = totalParc;
-      } else {
-        antecip = netRaw * ANTECIP_AVISTA;
-      }
-    }
+    const { taxaTotal } = calcularTaxaPagamento(p);
     bruto += value;
-    liquido += netRaw - antecip;
+    taxa += taxaTotal;
+    if (p.installment) {
+      const totalParc = Number(p.installmentCount || 0);
+      if (totalParc > parcelasReais) parcelasReais = totalParc;
+    }
     const d = p.paymentDate || p.confirmedDate || p.clientPaymentDate;
     if (d && (!dataPag || d > dataPag)) dataPag = d;
     if (p.creditDate && (!dataCred || p.creditDate > dataCred)) dataCred = p.creditDate;
   }
-  // Se for installment, conta de parcelas = total de pagamentos pagos (fallback)
   if (parcelasReais === 1 && stableInstallmentId) parcelasReais = pagos.length;
-  // Determina billingType dominante
   const dominantBilling = Object.entries(billingCounts).sort((a, b) => b[1] - a[1])[0]?.[0] || "";
   const formaPagamento = dominantBilling === "CREDIT_CARD" || dominantBilling === "CREDITCARD"
     ? "credit_card"
@@ -178,7 +164,7 @@ export async function recomputeIngressosFinancials(admin: any, opts: RecomputeOp
     ? "boleto"
     : null;
   bruto = Number(bruto.toFixed(2));
-  liquido = Number(liquido.toFixed(2));
+  let liquido = Number((bruto - taxa).toFixed(2));
 
   // Distribui proporcionalmente entre ingressos não-cortesia
   const baseSum = naoCortesia.reduce((s: number, i: any) => s + Number(i.valor_total || 0), 0);
@@ -197,16 +183,20 @@ export async function recomputeIngressosFinancials(admin: any, opts: RecomputeOp
     restanteB = Number((restanteB - vb).toFixed(2));
     restanteL = Number((restanteL - vl).toFixed(2));
 
+    // Se admin definiu taxa_manual, respeita: líquido = bruto - taxa_manual.
+    const taxaManual = ing.taxa_manual !== null && ing.taxa_manual !== undefined ? Number(ing.taxa_manual) : null;
+    const vlFinal = taxaManual !== null ? Number((vb - taxaManual).toFixed(2)) : vl;
+    const taxaFinal = taxaManual !== null ? Number(taxaManual.toFixed(2)) : Number((vb - vl).toFixed(2));
+
     const update: any = {
       valor_bruto: vb,
-      valor_liquido: vl,
-      taxa_total: Number((vb - vl).toFixed(2)),
+      valor_liquido: vlFinal,
+      taxa_total: taxaFinal,
       data_pagamento: dataPagISO,
       data_credito: dataCred,
       parcelas: parcelasReais,
     };
     if (formaPagamento) update.forma_pagamento = formaPagamento;
-    // Só grava asaas_payment_id se o ingresso ainda não tiver um (evita contaminação cruzada)
     if (stableId && !ing.asaas_payment_id) update.asaas_payment_id = stableId;
 
     await admin.from("ingressos").update(update).eq("id", ing.id);

@@ -102,7 +102,7 @@ Deno.serve(async (req) => {
       .select(`
         id, produto_id, variacao_id, evento_id, status, forma_pagamento, parcelas,
         nome_comprador, cpf_comprador, email_comprador, quantidade, valor_unitario,
-        valor_total, valor_bruto, valor_liquido, taxa_total,
+        valor_total, valor_bruto, valor_liquido, taxa_total, taxa_manual,
         data_pagamento, data_credito, retirado_em, retirado_por, created_at,
         produtos:produto_id (id, nome),
         produto_variacoes:variacao_id (id, nome),
@@ -167,6 +167,7 @@ Deno.serve(async (req) => {
         valor_bruto: bruto,
         valor_liquido: liquido,
         taxa_total: taxa,
+        taxa_manual: r.taxa_manual !== null && r.taxa_manual !== undefined ? Number(r.taxa_manual) : null,
         liquido_pendente_calculo: r.status === "pago" && !liquidoCalculado,
       };
     });
