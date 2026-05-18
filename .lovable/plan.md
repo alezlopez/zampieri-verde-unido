@@ -1,63 +1,61 @@
-## Diagnóstico
+## Objetivo
 
-A taxa calculada (R$ 12,25) **está matematicamente correta** para o pagamento da Janaina, **mas a forma de pagamento exibida está errada**.
+Corrigir o cálculo do líquido usando as taxas reais da sua conta Asaas e permitir override manual da taxa pelo admin diretamente nos relatórios.
 
-O que o Asaas realmente registrou para `pay_8t6q2j1qpb361ef2`:
+## Parte 1 — Atualizar fórmula automática (taxas reais)
 
-- `billingType`: **CREDIT_CARD** (não PIX)
-- `value`: R$ 240,00
-- `netValue`: R$ 232,75 → taxa Asaas real = R$ 7,25
-- Antecipação automática à vista (2,15%): R$ 5,00
-- **Taxa total = 7,25 + 5,00 = R$ 12,25** ✅
+Hoje o sistema usa 2,15% / 2,60% como antecipação cheia. Vou ajustar `_shared/financeiro.ts` e `_shared/produtos-financeiro.ts` para usar as taxas que você confirmou:
 
-Ou seja: a compradora pagou no **cartão à vista**, não via PIX. O sistema está exibindo "pix" porque a coluna `forma_pagamento` é gravada no momento da criação do checkout (escolha inicial do usuário) e **nunca é atualizada** quando o Asaas confirma o pagamento real (o cliente trocou de método na tela do Asaas).
+**Taxa da cobrança (transação):**
+- PIX: R$ 0,99 fixo
+- Cartão à vista: 2,9% + R$ 0,29
+- Cartão 2–6x: 3,49% + R$ 0,29
+- Cartão 7–12x: 3,99% + R$ 0,29
+- Boleto: mantém `value − netValue` do Asaas
 
-Confirmei o padrão em mais de 13 ingressos: todos com `forma_pagamento='pix'` no banco, mas `billingType='CREDIT_CARD'` no webhook do Asaas — taxas batem com cartão.
+**Taxa de antecipação (proporcional aos dias entre solicitação e vencimento da parcela):**
+- À vista: 2,15% × (dias/30) sobre o valor da parcela
+- Parcelado: 2,60% × (dias/30) sobre o valor da parcela (somando todas as parcelas)
+- Base de dias: `paymentDate` (ou `confirmedDate`) até `dueDate` de cada parcela. Se faltar data, usa 30 dias para à vista e N×30 para parcela N.
 
-## Plano de correção
+Líquido = bruto − taxa_transacao − taxa_antecipacao.
 
-### 1. Sincronizar `forma_pagamento` e `parcelas` a partir do Asaas
+Isso bate com o seu exemplo: R$ 240 → 7,25 + 5,34 = 12,59 → líquido R$ 227,41.
 
-Em `supabase/functions/_shared/financeiro.ts` (`recomputeIngressosFinancials`) e `produtos-financeiro.ts` (`recomputePedidosProdutos`):
+## Parte 2 — Override manual no admin
 
-- Detectar `billingType` dominante nos pagamentos confirmados:
-  - `CREDIT_CARD` → `forma_pagamento = 'credit_card'`
-  - `PIX` → `'pix'`
-  - `BOLETO` → `'boleto'`
-- Detectar `parcelas` reais: se `installment` existe → `installmentCount`; senão 1.
-- Gravar esses campos junto com `valor_bruto/liquido/taxa_total`.
+### Schema
+Adicionar em `ingressos` e `pedidos_produtos`:
+- `taxa_manual` (numeric, nullable) — taxa total inserida pelo admin
+- `taxa_manual_em` (timestamptz, nullable)
+- `taxa_manual_por` (uuid, nullable)
 
-Isso roda automaticamente em todo webhook `PAYMENT_CONFIRMED` / `PAYMENT_RECEIVED`, então corrige novos pagamentos e qualquer reprocessamento.
+Regra: se `taxa_manual` não for nula, o sistema usa ela como `taxa_total` e recalcula `valor_liquido = valor_bruto − taxa_manual`. O recompute automático passa a respeitar esse override (não sobrescreve).
 
-### 2. Backfill dos registros já pagos
+### UI
+Em **EventosRelatorio.tsx** e **ProdutosRelatorio.tsx**, na coluna "Taxa":
+- Substituir o valor por um botão "editar" (ícone lápis) ao lado do valor atual.
+- Abrir um dialog com:
+  - Valor bruto (readonly)
+  - Taxa calculada automaticamente (readonly, referência)
+  - Input "Taxa manual (R$)" — vazio = usa cálculo automático
+  - Botão "Salvar" e "Limpar override (usar automático)"
+- Indicar visualmente quando a taxa é manual (badge "manual" pequeno ao lado do valor).
 
-Migration que, para todo `ingresso`/`pedido_produtos` com status `pago` e `asaas_payment_id` preenchido, dispara `recomputeIngressosFinancials`/`recomputePedidosProdutos` (job de backfill — endpoint admin já existe: `backfill-financeiro` e `backfill-produtos-financeiro`).
+## Parte 3 — Backfill
 
-Vou adicionar uma flag `force_method=true` nos dois endpoints para recalcular forma_pagamento mesmo quando `valor_liquido` já está preenchido, e instruo você a clicar "Backfill" no admin depois do deploy.
-
-### 3. Confirmar comportamento da antecipação
-
-Manter o cálculo atual (já está correto conforme você confirmou):
-
-- PIX/Boleto: sem antecipação.
-- Cartão à vista: `netValue × 2,15%`.
-- Cartão parcelado: `netValue × 2,60% × nº meses adiantados` (parcela 1 = 1 mês, parcela 2 = 2 meses, …).
-
-### 4. UI / Relatório
-
-Sem alterações de UI — os filtros já existem (`pix`, `credit_card`, `todos`). Após o backfill, o relatório passa a mostrar `forma_pagamento` real e a taxa fará sentido (PIX = R$ 1,99, cartão = % real + antecipação).
-
-## Resultado esperado
-
-- Janaina aparecerá como **cartão à vista — R$ 240,00 — taxa R$ 12,25** (em vez de "pix").
-- Pagamentos realmente em PIX aparecerão com taxa fixa de R$ 1,99.
-- Pagamentos no cartão (à vista/parcelado) terão taxa = taxa Asaas + antecipação.
+Após aplicar a nova fórmula, rodar `backfill-financeiro` e `backfill-produtos-financeiro` com `force: true` para recalcular todos os registros pagos usando as taxas corretas. Registros com `taxa_manual` preenchida são preservados.
 
 ## Arquivos afetados
 
-- `supabase/functions/_shared/financeiro.ts`
-- `supabase/functions/_shared/produtos-financeiro.ts`
-- `supabase/functions/backfill-financeiro/index.ts` (flag `force_method`)
-- `supabase/functions/backfill-produtos-financeiro/index.ts` (flag `force_method`)
+- Migration: adicionar `taxa_manual`, `taxa_manual_em`, `taxa_manual_por` em `ingressos` e `pedidos_produtos`
+- `supabase/functions/_shared/financeiro.ts` — nova fórmula + respeitar override
+- `supabase/functions/_shared/produtos-financeiro.ts` — idem
+- `src/pages/EventosRelatorio.tsx` — UI de edição manual
+- `src/pages/ProdutosRelatorio.tsx` — UI de edição manual
 
-Nenhuma mudança de schema necessária.
+## Resultado esperado
+
+- Janaina (R$ 240, cartão à vista, 32 dias antecipado) → taxa R$ 12,59, líquido R$ 227,41 ✅
+- PIX R$ 240 → taxa R$ 0,99, líquido R$ 239,01 ✅
+- Admin pode corrigir manualmente qualquer caso atípico direto no relatório.
