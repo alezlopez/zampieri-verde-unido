@@ -12,7 +12,7 @@ export async function recomputePedidosProdutos(admin: any, opts: {
   pedidoIds?: string[] | null;
 }) {
   // Carrega pedidos
-  let q = admin.from("pedidos_produtos").select("id, valor_total, checkout_id, asaas_payment_id");
+  let q = admin.from("pedidos_produtos").select("id, valor_total, checkout_id, asaas_payment_id, taxa_manual");
   if (opts.checkoutId) q = q.eq("checkout_id", opts.checkoutId);
   else if (opts.pedidoIds && opts.pedidoIds.length > 0) q = q.in("id", opts.pedidoIds);
   else if (opts.installmentId || opts.paymentId) q = q.eq("asaas_payment_id", opts.installmentId || opts.paymentId);
