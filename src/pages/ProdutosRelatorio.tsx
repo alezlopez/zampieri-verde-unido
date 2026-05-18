@@ -485,7 +485,11 @@ const ProdutosRelatorio = () => {
                         </div>
                       </TableCell>
                       <TableCell className="text-xs">
-                        {r.retirado ? (
+                        {r.status === "estornado" ? (
+                          <Badge variant="outline" className="text-[10px] border-zampieri-wine text-zampieri-wine">Estornado</Badge>
+                        ) : r.status === "cancelado" ? (
+                          <Badge variant="outline" className="text-[10px]">Cancelado</Badge>
+                        ) : r.retirado ? (
                           <div className="space-y-0.5">
                             <Badge className="bg-zampieri-green-dark text-white text-[10px]">✓ Retirado</Badge>
                             <div className="text-[10px] text-muted-foreground">{formatDate(r.retirado_em)}</div>
@@ -495,10 +499,22 @@ const ProdutosRelatorio = () => {
                           <Badge variant="outline" className="text-[10px]">Não</Badge>
                         )}
                       </TableCell>
+                      <TableCell className="text-right">
+                        {r.status !== "estornado" && r.status !== "cancelado" && (
+                          <button
+                            type="button"
+                            onClick={() => setCancelar(r)}
+                            className="text-muted-foreground hover:text-zampieri-wine p-1"
+                            title="Cancelar e estornar"
+                          >
+                            <Ban className="h-3.5 w-3.5" />
+                          </button>
+                        )}
+                      </TableCell>
                     </TableRow>
                   ))}
                   {data && data.lista.length === 0 && (
-                    <TableRow><TableCell colSpan={9} className="text-center text-sm text-muted-foreground py-6">Nenhum registro encontrado</TableCell></TableRow>
+                    <TableRow><TableCell colSpan={10} className="text-center text-sm text-muted-foreground py-6">Nenhum registro encontrado</TableCell></TableRow>
                   )}
                 </TableBody>
               </Table>
