@@ -538,6 +538,27 @@ const EventosRelatorio = () => {
           onSaved={fetchRelatorio}
         />
       )}
+      {cancelar && (
+        <CancelarIngressoDialog
+          open={!!cancelar}
+          onOpenChange={(v) => { if (!v) setCancelar(null); }}
+          tipo="ingresso"
+          id={cancelar.id}
+          resumo={{
+            titulo: cancelar.evento_titulo,
+            comprador: cancelar.nome_comprador || undefined,
+            valor: cancelar.valor_bruto,
+            forma: formaLabel(
+              cancelar.forma_pagamento === "credit_card" && (cancelar.parcelas || 1) > 1
+                ? "credit_card_parcelado" : (cancelar.forma_pagamento || ""),
+            ),
+            parcelas: cancelar.parcelas || 1,
+            temPagamento: !!cancelar.forma_pagamento && !cancelar.cortesia,
+            cortesia: cancelar.cortesia,
+          }}
+          onDone={fetchRelatorio}
+        />
+      )}
     </div>
   );
 };
