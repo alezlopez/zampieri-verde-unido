@@ -1,61 +1,60 @@
-## Objetivo
+# Cancelamento + Estorno pelo Admin
 
-Corrigir o cálculo do líquido usando as taxas reais da sua conta Asaas e permitir override manual da taxa pelo admin diretamente nos relatórios.
+Permitir que o admin, direto no Relatório de Eventos (e no Relatório de Produtos), cancele um ingresso/pedido pago e dispare o estorno automático no Asaas.
 
-## Parte 1 — Atualizar fórmula automática (taxas reais)
+## Fluxo do usuário
 
-Hoje o sistema usa 2,15% / 2,60% como antecipação cheia. Vou ajustar `_shared/financeiro.ts` e `_shared/produtos-financeiro.ts` para usar as taxas que você confirmou:
+1. Na tabela de Detalhamento (EventosRelatorio / ProdutosRelatorio), cada linha ganha um botão "Cancelar e estornar" (ícone lixeira/ban) ao lado do botão de editar taxa.
+2. Botão abre um diálogo de confirmação mostrando:
+   - Comprador, evento/produto, valor bruto, forma de pagamento e parcelas.
+   - Campo obrigatório "Motivo do cancelamento".
+   - Aviso: "Esta ação solicita estorno integral no Asaas e libera as vagas. Não é reversível."
+3. Ao confirmar, chama nova edge function `cancelar-ingresso` (ou `cancelar-pedido-produto`).
+4. Após sucesso: status vira `estornado`, badge na tabela, vagas liberadas pelo trigger existente, e o link do comprovante (quando o Asaas devolve) é salvo em `comprovante_estorno_url` — já exibido em `IngressoDetalhe`.
 
-**Taxa da cobrança (transação):**
-- PIX: R$ 0,99 fixo
-- Cartão à vista: 2,9% + R$ 0,29
-- Cartão 2–6x: 3,49% + R$ 0,29
-- Cartão 7–12x: 3,99% + R$ 0,29
-- Boleto: mantém `value − netValue` do Asaas
+## Regras de negócio
 
-**Taxa de antecipação (proporcional aos dias entre solicitação e vencimento da parcela):**
-- À vista: 2,15% × (dias/30) sobre o valor da parcela
-- Parcelado: 2,60% × (dias/30) sobre o valor da parcela (somando todas as parcelas)
-- Base de dias: `paymentDate` (ou `confirmedDate`) até `dueDate` de cada parcela. Se faltar data, usa 30 dias para à vista e N×30 para parcela N.
+- **Cortesia / sem pagamento Asaas**: apenas marca `status = 'cancelado'` (sem chamar Asaas). Vagas são liberadas pelo trigger.
+- **PIX / Cartão à vista** (1 pagamento): chama `POST /payments/{id}/refund` no Asaas com `value` total e `description = motivo`.
+- **Cartão parcelado** (installment): chama refund em cada `payment` da parcela que esteja em status pago (`CONFIRMED`/`RECEIVED`). Os pendentes futuros são cancelados via `DELETE /payments/{id}` (não há valor a estornar).
+- **Boleto pago**: mesmo refund.
+- Se algum refund falhar, aborta e retorna erro (não marca como estornado parcialmente).
+- Grava no ingresso: `status = 'estornado'`, `motivo_cancelamento`, `cancelado_em`, `cancelado_por` (uuid do admin), `comprovante_estorno_url` (do retorno do Asaas, quando houver).
+- Webhook `PAYMENT_REFUNDED` do Asaas já é tratado de forma idempotente — se chegar depois, não duplica.
 
-Líquido = bruto − taxa_transacao − taxa_antecipacao.
+## Mudanças técnicas
 
-Isso bate com o seu exemplo: R$ 240 → 7,25 + 5,34 = 12,59 → líquido R$ 227,41.
-
-## Parte 2 — Override manual no admin
-
-### Schema
+### 1. Migração
 Adicionar em `ingressos` e `pedidos_produtos`:
-- `taxa_manual` (numeric, nullable) — taxa total inserida pelo admin
-- `taxa_manual_em` (timestamptz, nullable)
-- `taxa_manual_por` (uuid, nullable)
+- `motivo_cancelamento text`
+- `cancelado_em timestamptz`
+- `cancelado_por uuid`
 
-Regra: se `taxa_manual` não for nula, o sistema usa ela como `taxa_total` e recalcula `valor_liquido = valor_bruto − taxa_manual`. O recompute automático passa a respeitar esse override (não sobrescreve).
+(Status `estornado` e `cancelado` já existem como valores texto, não precisa enum.)
 
-### UI
-Em **EventosRelatorio.tsx** e **ProdutosRelatorio.tsx**, na coluna "Taxa":
-- Substituir o valor por um botão "editar" (ícone lápis) ao lado do valor atual.
-- Abrir um dialog com:
-  - Valor bruto (readonly)
-  - Taxa calculada automaticamente (readonly, referência)
-  - Input "Taxa manual (R$)" — vazio = usa cálculo automático
-  - Botão "Salvar" e "Limpar override (usar automático)"
-- Indicar visualmente quando a taxa é manual (badge "manual" pequeno ao lado do valor).
+### 2. Helper Asaas (`supabase/functions/_shared/asaas.ts`)
+Adicionar:
+- `refundPayment(paymentId, { value?, description? })` → `POST /payments/{id}/refund`
+- `deletePayment(paymentId)` → `DELETE /payments/{id}` (para parcelas futuras não pagas)
 
-## Parte 3 — Backfill
+### 3. Edge functions novas
+- `supabase/functions/cancelar-ingresso/index.ts`
+- `supabase/functions/cancelar-pedido-produto/index.ts`
 
-Após aplicar a nova fórmula, rodar `backfill-financeiro` e `backfill-produtos-financeiro` com `force: true` para recalcular todos os registros pagos usando as taxas corretas. Registros com `taxa_manual` preenchida são preservados.
+Cada uma:
+- Valida admin (via `has_role`).
+- Carrega o registro + lista de pagamentos do `asaas_payment_id`/installment.
+- Aplica refund/delete por pagamento conforme status.
+- Atualiza a tabela com status `estornado`, motivo, autor, timestamp e `comprovante_estorno_url`.
 
-## Arquivos afetados
+### 4. Frontend
+- Novo componente `CancelarIngressoDialog.tsx` (reusável para ingresso/pedido) com motivo + confirmação dupla.
+- Em `EventosRelatorio.tsx` e `ProdutosRelatorio.tsx`: botão ícone "Cancelar/Estornar" na coluna de ações; oculto se status já for `estornado`/`cancelado`.
+- Após sucesso, refaz o `fetchRelatorio()`.
 
-- Migration: adicionar `taxa_manual`, `taxa_manual_em`, `taxa_manual_por` em `ingressos` e `pedidos_produtos`
-- `supabase/functions/_shared/financeiro.ts` — nova fórmula + respeitar override
-- `supabase/functions/_shared/produtos-financeiro.ts` — idem
-- `src/pages/EventosRelatorio.tsx` — UI de edição manual
-- `src/pages/ProdutosRelatorio.tsx` — UI de edição manual
+### 5. Vagas
+O trigger `atualizar_vagas_disponiveis` já reage à mudança de status — nada a fazer.
 
-## Resultado esperado
-
-- Janaina (R$ 240, cartão à vista, 32 dias antecipado) → taxa R$ 12,59, líquido R$ 227,41 ✅
-- PIX R$ 240 → taxa R$ 0,99, líquido R$ 239,01 ✅
-- Admin pode corrigir manualmente qualquer caso atípico direto no relatório.
+## Fora do escopo
+- Estorno parcial (valor menor que o total).
+- Reembolso manual sem Asaas (caso de pagamento offline) — pode virar follow-up.
