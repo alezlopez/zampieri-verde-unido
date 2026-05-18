@@ -468,7 +468,18 @@ const ProdutosRelatorio = () => {
                           : formatBRL(r.valor_liquido)}
                       </TableCell>
                       <TableCell className="text-right text-xs text-zampieri-wine">
-                        {r.taxa_total === null ? "—" : formatBRL(r.taxa_total)}
+                        <div className="flex items-center justify-end gap-1">
+                          <span>{r.taxa_total === null ? "—" : formatBRL(r.taxa_total)}</span>
+                          {r.taxa_manual !== null && <Badge variant="outline" className="text-[9px] px-1 py-0">manual</Badge>}
+                          <button
+                            type="button"
+                            onClick={() => setEditTaxa(r)}
+                            className="text-muted-foreground hover:text-foreground p-0.5"
+                            title="Editar taxa manualmente"
+                          >
+                            <Pencil className="h-3 w-3" />
+                          </button>
+                        </div>
                       </TableCell>
                       <TableCell className="text-xs">
                         {r.retirado ? (
