@@ -18,7 +18,7 @@ export interface RecomputeOpts {
 async function loadIngressos(admin: any, opts: RecomputeOpts) {
   let query = admin
     .from("ingressos")
-    .select("id, cortesia, valor_total, asaas_payment_id, checkout_id, status");
+    .select("id, cortesia, valor_total, asaas_payment_id, checkout_id, status, taxa_manual");
 
   if (opts.ingressoIds && opts.ingressoIds.length > 0) {
     query = query.in("id", opts.ingressoIds);
