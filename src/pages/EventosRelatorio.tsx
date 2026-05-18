@@ -35,6 +35,7 @@ type Linha = {
   valor_bruto: number;
   valor_liquido: number | null;
   taxa_total: number | null;
+  taxa_manual: number | null;
   liquido_pendente_calculo: boolean;
   utilizado: boolean;
   utilizado_em: string | null;
