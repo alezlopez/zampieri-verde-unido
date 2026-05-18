@@ -528,6 +528,8 @@ export type Database = {
         Row: {
           asaas_customer_id: string | null
           asaas_payment_id: string | null
+          cancelado_em: string | null
+          cancelado_por: string | null
           categoria_meia: string | null
           celular_participante: string | null
           checkout_criado_em: string | null
@@ -551,6 +553,7 @@ export type Database = {
           meia_validada_em: string | null
           meia_validada_por: string | null
           meia_validada_portaria: boolean
+          motivo_cancelamento: string | null
           nome_comprador: string
           nome_participante: string | null
           parcelas: number
@@ -576,6 +579,8 @@ export type Database = {
         Insert: {
           asaas_customer_id?: string | null
           asaas_payment_id?: string | null
+          cancelado_em?: string | null
+          cancelado_por?: string | null
           categoria_meia?: string | null
           celular_participante?: string | null
           checkout_criado_em?: string | null
@@ -599,6 +604,7 @@ export type Database = {
           meia_validada_em?: string | null
           meia_validada_por?: string | null
           meia_validada_portaria?: boolean
+          motivo_cancelamento?: string | null
           nome_comprador: string
           nome_participante?: string | null
           parcelas?: number
@@ -624,6 +630,8 @@ export type Database = {
         Update: {
           asaas_customer_id?: string | null
           asaas_payment_id?: string | null
+          cancelado_em?: string | null
+          cancelado_por?: string | null
           categoria_meia?: string | null
           celular_participante?: string | null
           checkout_criado_em?: string | null
@@ -647,6 +655,7 @@ export type Database = {
           meia_validada_em?: string | null
           meia_validada_por?: string | null
           meia_validada_portaria?: boolean
+          motivo_cancelamento?: string | null
           nome_comprador?: string
           nome_participante?: string | null
           parcelas?: number
@@ -749,6 +758,8 @@ export type Database = {
         Row: {
           asaas_customer_id: string | null
           asaas_payment_id: string | null
+          cancelado_em: string | null
+          cancelado_por: string | null
           celular_comprador: string | null
           checkout_criado_em: string | null
           checkout_id: string | null
@@ -761,6 +772,7 @@ export type Database = {
           evento_id: string | null
           forma_pagamento: string | null
           id: string
+          motivo_cancelamento: string | null
           nome_comprador: string
           parcelas: number
           produto_id: string
@@ -784,6 +796,8 @@ export type Database = {
         Insert: {
           asaas_customer_id?: string | null
           asaas_payment_id?: string | null
+          cancelado_em?: string | null
+          cancelado_por?: string | null
           celular_comprador?: string | null
           checkout_criado_em?: string | null
           checkout_id?: string | null
@@ -796,6 +810,7 @@ export type Database = {
           evento_id?: string | null
           forma_pagamento?: string | null
           id?: string
+          motivo_cancelamento?: string | null
           nome_comprador: string
           parcelas?: number
           produto_id: string
@@ -819,6 +834,8 @@ export type Database = {
         Update: {
           asaas_customer_id?: string | null
           asaas_payment_id?: string | null
+          cancelado_em?: string | null
+          cancelado_por?: string | null
           celular_comprador?: string | null
           checkout_criado_em?: string | null
           checkout_id?: string | null
@@ -831,6 +848,7 @@ export type Database = {
           evento_id?: string | null
           forma_pagamento?: string | null
           id?: string
+          motivo_cancelamento?: string | null
           nome_comprador?: string
           parcelas?: number
           produto_id?: string

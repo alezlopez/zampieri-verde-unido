@@ -11,10 +11,11 @@ import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { useToast } from "@/hooks/use-toast";
-import { ArrowLeft, Download, RefreshCw, Wand2, Pencil } from "lucide-react";
+import { ArrowLeft, Download, RefreshCw, Wand2, Pencil, Ban } from "lucide-react";
 import { EventosHeader } from "@/components/EventosHeader";
 import { Footer } from "@/components/Footer";
 import { TaxaManualDialog } from "@/components/TaxaManualDialog";
+import { CancelarIngressoDialog } from "@/components/CancelarIngressoDialog";
 
 type Linha = {
   id: string;
@@ -91,6 +92,7 @@ const EventosRelatorio = () => {
   const [filtroUso, setFiltroUso] = useState<"todos" | "utilizados" | "nao_utilizados">("todos");
   const [data, setData] = useState<Resposta | null>(null);
   const [editTaxa, setEditTaxa] = useState<Linha | null>(null);
+  const [cancelar, setCancelar] = useState<Linha | null>(null);
   const [loading, setLoading] = useState(false);
   const [backfillLoading, setBackfillLoading] = useState(false);
 
@@ -444,6 +446,7 @@ const EventosRelatorio = () => {
                     <TableHead className="text-right">Líquido</TableHead>
                     <TableHead className="text-right">Taxa</TableHead>
                     <TableHead>Utilização</TableHead>
+                    <TableHead className="w-10"></TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -485,7 +488,11 @@ const EventosRelatorio = () => {
                         </div>
                       </TableCell>
                       <TableCell className="text-xs">
-                        {r.utilizado ? (
+                        {r.status === "estornado" ? (
+                          <Badge variant="outline" className="text-[10px] border-zampieri-wine text-zampieri-wine">Estornado</Badge>
+                        ) : r.status === "cancelado" ? (
+                          <Badge variant="outline" className="text-[10px]">Cancelado</Badge>
+                        ) : r.utilizado ? (
                           <div className="space-y-0.5">
                             <Badge className="bg-zampieri-green/15 text-zampieri-green-dark border border-zampieri-green/40 text-[10px]">✓ Utilizado</Badge>
                             <div className="text-[10px] text-muted-foreground">{formatDate(r.utilizado_em)}</div>
@@ -495,10 +502,22 @@ const EventosRelatorio = () => {
                           <Badge variant="outline" className="text-[10px]">Não</Badge>
                         )}
                       </TableCell>
+                      <TableCell className="text-right">
+                        {r.status !== "estornado" && r.status !== "cancelado" && (
+                          <button
+                            type="button"
+                            onClick={() => setCancelar(r)}
+                            className="text-muted-foreground hover:text-zampieri-wine p-1"
+                            title="Cancelar e estornar"
+                          >
+                            <Ban className="h-3.5 w-3.5" />
+                          </button>
+                        )}
+                      </TableCell>
                     </TableRow>
                   ))}
                   {data && listaFiltrada.length === 0 && (
-                    <TableRow><TableCell colSpan={9} className="text-center text-sm text-muted-foreground py-6">Nenhum registro encontrado</TableCell></TableRow>
+                    <TableRow><TableCell colSpan={10} className="text-center text-sm text-muted-foreground py-6">Nenhum registro encontrado</TableCell></TableRow>
                   )}
                 </TableBody>
               </Table>
@@ -517,6 +536,27 @@ const EventosRelatorio = () => {
           taxaAtual={editTaxa.taxa_total}
           taxaManual={editTaxa.taxa_manual}
           onSaved={fetchRelatorio}
+        />
+      )}
+      {cancelar && (
+        <CancelarIngressoDialog
+          open={!!cancelar}
+          onOpenChange={(v) => { if (!v) setCancelar(null); }}
+          tipo="ingresso"
+          id={cancelar.id}
+          resumo={{
+            titulo: cancelar.evento_titulo,
+            comprador: cancelar.nome_comprador || undefined,
+            valor: cancelar.valor_bruto,
+            forma: formaLabel(
+              cancelar.forma_pagamento === "credit_card" && (cancelar.parcelas || 1) > 1
+                ? "credit_card_parcelado" : (cancelar.forma_pagamento || ""),
+            ),
+            parcelas: cancelar.parcelas || 1,
+            temPagamento: !!cancelar.forma_pagamento && !cancelar.cortesia,
+            cortesia: cancelar.cortesia,
+          }}
+          onDone={fetchRelatorio}
         />
       )}
     </div>

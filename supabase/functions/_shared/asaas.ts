@@ -129,6 +129,20 @@ export async function getInstallment(installmentId: string) {
   return await call(`/installments/${installmentId}`, { method: "GET" });
 }
 
+export async function refundPayment(paymentId: string, opts: { value?: number; description?: string } = {}) {
+  const body: any = {};
+  if (opts.value !== undefined) body.value = opts.value;
+  if (opts.description) body.description = opts.description;
+  return await call(`/payments/${paymentId}/refund`, {
+    method: "POST",
+    body: JSON.stringify(body),
+  });
+}
+
+export async function deletePayment(paymentId: string) {
+  return await call(`/payments/${paymentId}`, { method: "DELETE" });
+}
+
 export async function getCheckout(checkoutId: string) {
   return await call(`/checkouts/${checkoutId}`, { method: "GET" });
 }

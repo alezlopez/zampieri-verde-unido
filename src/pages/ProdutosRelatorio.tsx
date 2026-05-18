@@ -10,10 +10,11 @@ import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { useToast } from "@/hooks/use-toast";
-import { ArrowLeft, Download, RefreshCw, Wand2, Pencil } from "lucide-react";
+import { ArrowLeft, Download, RefreshCw, Wand2, Pencil, Ban } from "lucide-react";
 import { EventosHeader } from "@/components/EventosHeader";
 import { Footer } from "@/components/Footer";
 import { TaxaManualDialog } from "@/components/TaxaManualDialog";
+import { CancelarIngressoDialog } from "@/components/CancelarIngressoDialog";
 
 type Linha = {
   id: string;
@@ -93,6 +94,7 @@ const ProdutosRelatorio = () => {
 
   const [data, setData] = useState<Resposta | null>(null);
   const [editTaxa, setEditTaxa] = useState<Linha | null>(null);
+  const [cancelar, setCancelar] = useState<Linha | null>(null);
   const [loading, setLoading] = useState(false);
   const [backfillLoading, setBackfillLoading] = useState(false);
 
@@ -438,6 +440,7 @@ const ProdutosRelatorio = () => {
                     <TableHead className="text-right">Líquido</TableHead>
                     <TableHead className="text-right">Taxa</TableHead>
                     <TableHead>Retirado</TableHead>
+                    <TableHead className="w-10"></TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -482,7 +485,11 @@ const ProdutosRelatorio = () => {
                         </div>
                       </TableCell>
                       <TableCell className="text-xs">
-                        {r.retirado ? (
+                        {r.status === "estornado" ? (
+                          <Badge variant="outline" className="text-[10px] border-zampieri-wine text-zampieri-wine">Estornado</Badge>
+                        ) : r.status === "cancelado" ? (
+                          <Badge variant="outline" className="text-[10px]">Cancelado</Badge>
+                        ) : r.retirado ? (
                           <div className="space-y-0.5">
                             <Badge className="bg-zampieri-green-dark text-white text-[10px]">✓ Retirado</Badge>
                             <div className="text-[10px] text-muted-foreground">{formatDate(r.retirado_em)}</div>
@@ -492,10 +499,22 @@ const ProdutosRelatorio = () => {
                           <Badge variant="outline" className="text-[10px]">Não</Badge>
                         )}
                       </TableCell>
+                      <TableCell className="text-right">
+                        {r.status !== "estornado" && r.status !== "cancelado" && (
+                          <button
+                            type="button"
+                            onClick={() => setCancelar(r)}
+                            className="text-muted-foreground hover:text-zampieri-wine p-1"
+                            title="Cancelar e estornar"
+                          >
+                            <Ban className="h-3.5 w-3.5" />
+                          </button>
+                        )}
+                      </TableCell>
                     </TableRow>
                   ))}
                   {data && data.lista.length === 0 && (
-                    <TableRow><TableCell colSpan={9} className="text-center text-sm text-muted-foreground py-6">Nenhum registro encontrado</TableCell></TableRow>
+                    <TableRow><TableCell colSpan={10} className="text-center text-sm text-muted-foreground py-6">Nenhum registro encontrado</TableCell></TableRow>
                   )}
                 </TableBody>
               </Table>
@@ -514,6 +533,26 @@ const ProdutosRelatorio = () => {
           taxaAtual={editTaxa.taxa_total}
           taxaManual={editTaxa.taxa_manual}
           onSaved={fetchRelatorio}
+        />
+      )}
+      {cancelar && (
+        <CancelarIngressoDialog
+          open={!!cancelar}
+          onOpenChange={(v) => { if (!v) setCancelar(null); }}
+          tipo="pedido"
+          id={cancelar.id}
+          resumo={{
+            titulo: `${cancelar.produto_nome}${cancelar.variacao_nome ? " · " + cancelar.variacao_nome : ""}`,
+            comprador: cancelar.nome_comprador || undefined,
+            valor: cancelar.valor_bruto,
+            forma: formaLabel(
+              cancelar.forma_pagamento === "credit_card" && (cancelar.parcelas || 1) > 1
+                ? "credit_card_parcelado" : (cancelar.forma_pagamento || ""),
+            ),
+            parcelas: cancelar.parcelas || 1,
+            temPagamento: !!cancelar.forma_pagamento,
+          }}
+          onDone={fetchRelatorio}
         />
       )}
     </div>
