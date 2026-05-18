@@ -4,6 +4,7 @@
 //  - Cartão parcelado (N pagamentos do mesmo installment)
 // Vínculo seguro (em ordem): ingressoIds explícitos, checkoutId, externalReference, paymentId.
 import { listPayments, getPayment, listInstallmentPayments, getInstallment } from "./asaas.ts";
+import { calcularTaxaPagamento } from "./taxas.ts";
 
 const PAID_STATUSES = new Set(["CONFIRMED", "RECEIVED", "RECEIVED_IN_CASH"]);
 
