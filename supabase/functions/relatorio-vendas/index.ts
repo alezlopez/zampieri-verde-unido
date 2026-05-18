@@ -115,6 +115,7 @@ Deno.serve(async (req) => {
         valor_bruto: bruto,
         valor_liquido: liquido,
         taxa_total: taxa,
+        taxa_manual: r.taxa_manual !== null && r.taxa_manual !== undefined ? Number(r.taxa_manual) : null,
         liquido_pendente_calculo: !r.cortesia && r.status === "pago" && !liquidoCalculado,
         utilizado: !!r.utilizado,
         utilizado_em: r.utilizado_em,
