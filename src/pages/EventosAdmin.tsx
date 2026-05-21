@@ -892,24 +892,87 @@ const EventosAdmin = () => {
                     </Link>
                   </p>
                 ) : (
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-2 max-h-56 overflow-y-auto border rounded-md p-2">
-                    {produtosDisponiveis.map((p) => (
-                      <label key={p.id} className="flex items-center gap-2 text-sm cursor-pointer hover:bg-muted/50 p-1 rounded">
-                        <Checkbox
-                          checked={produtosVinculados.includes(p.id)}
-                          onCheckedChange={(checked) =>
-                            setProdutosVinculados((prev) =>
-                              checked === true
-                                ? Array.from(new Set([...prev, p.id]))
-                                : prev.filter((x) => x !== p.id)
-                            )
-                          }
-                        />
-                        <span className="flex-1">{p.nome}</span>
-                        {p.is_global && <Badge variant="secondary" className="text-[10px]">Global</Badge>}
-                        {!p.ativo && <Badge variant="outline" className="text-[10px]">Inativo</Badge>}
-                      </label>
-                    ))}
+                  <div className="space-y-2 max-h-80 overflow-y-auto border rounded-md p-2">
+                    {produtosDisponiveis.map((p) => {
+                      const idx = produtosVinculados.findIndex((v) => v.produto_id === p.id);
+                      const vinc = idx >= 0 ? produtosVinculados[idx] : null;
+                      const vars = variacoesPorProduto[p.id] || [];
+                      const updateVinc = (patch: Partial<VincConfig>) => {
+                        setProdutosVinculados((prev) => prev.map((v, i) => (i === idx ? { ...v, ...patch } : v)));
+                      };
+                      return (
+                        <div key={p.id} className="border rounded p-2 bg-muted/20">
+                          <label className="flex items-center gap-2 text-sm cursor-pointer">
+                            <Checkbox
+                              checked={!!vinc}
+                              onCheckedChange={(checked) => {
+                                if (checked === true) {
+                                  setProdutosVinculados((prev) => [...prev, {
+                                    produto_id: p.id,
+                                    pre_selecionado: false,
+                                    variacao_padrao_id: vars[0]?.id || null,
+                                    qtd_padrao: 1,
+                                    destaque_label: null,
+                                  }]);
+                                } else {
+                                  setProdutosVinculados((prev) => prev.filter((v) => v.produto_id !== p.id));
+                                }
+                              }}
+                            />
+                            <span className="flex-1 font-medium">{p.nome}</span>
+                            {p.is_global && <Badge variant="secondary" className="text-[10px]">Global</Badge>}
+                            {!p.ativo && <Badge variant="outline" className="text-[10px]">Inativo</Badge>}
+                          </label>
+                          {vinc && (
+                            <div className="mt-2 ml-6 space-y-2">
+                              <label className="flex items-center gap-2 text-xs">
+                                <Checkbox
+                                  checked={vinc.pre_selecionado}
+                                  onCheckedChange={(c) => updateVinc({ pre_selecionado: c === true })}
+                                />
+                                <span>Pré-marcar no checkout do evento (order bump)</span>
+                              </label>
+                              {vinc.pre_selecionado && (
+                                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                                  <div>
+                                    <label className="text-[10px] text-muted-foreground">Variação padrão</label>
+                                    <select
+                                      className="w-full border rounded p-1 text-xs bg-background"
+                                      value={vinc.variacao_padrao_id || ""}
+                                      onChange={(e) => updateVinc({ variacao_padrao_id: e.target.value || null })}
+                                    >
+                                      {vars.length === 0 && <option value="">— sem variação ativa —</option>}
+                                      {vars.map((vr) => (
+                                        <option key={vr.id} value={vr.id}>{vr.nome}</option>
+                                      ))}
+                                    </select>
+                                  </div>
+                                  <div>
+                                    <label className="text-[10px] text-muted-foreground">Qtd padrão</label>
+                                    <Input
+                                      type="number"
+                                      min={1}
+                                      value={vinc.qtd_padrao}
+                                      onChange={(e) => updateVinc({ qtd_padrao: Math.max(1, Number(e.target.value) || 1) })}
+                                      className="h-8 text-xs"
+                                    />
+                                  </div>
+                                  <div>
+                                    <label className="text-[10px] text-muted-foreground">Destaque (opcional)</label>
+                                    <Input
+                                      placeholder='Ex: "Combo do evento"'
+                                      value={vinc.destaque_label || ""}
+                                      onChange={(e) => updateVinc({ destaque_label: e.target.value || null })}
+                                      className="h-8 text-xs"
+                                    />
+                                  </div>
+                                </div>
+                              )}
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })}
                   </div>
                 )}
               </div>
