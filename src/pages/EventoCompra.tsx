@@ -211,6 +211,54 @@ const EventoCompra = () => {
     fetchEvento();
   }, [id]);
 
+  // Carrega produtos relacionados ao evento (order bump) + pré-marca os configurados
+  useEffect(() => {
+    const load = async () => {
+      if (!id) return;
+      const { data: ep } = await supabase
+        .from("evento_produtos")
+        .select("produto_id, pre_selecionado, variacao_padrao_id, qtd_padrao, destaque_label, ordem, produtos:produto_id(id,nome,imagem_url,ativo), produto_variacao_padrao:variacao_padrao_id(id,nome,preco,ativo)")
+        .eq("evento_id", id)
+        .eq("ativo", true)
+        .order("ordem");
+      if (!ep) return;
+      const prodIds = ep.map((r: any) => r.produtos?.id).filter(Boolean);
+      if (prodIds.length === 0) { setExtrasDisponiveis([]); return; }
+      const { data: vars } = await supabase
+        .from("produto_variacoes")
+        .select("id, produto_id, nome, preco, ativo")
+        .in("produto_id", prodIds)
+        .eq("ativo", true)
+        .order("ordem");
+      const varsByProd: Record<string, { id: string; nome: string; preco: number }[]> = {};
+      for (const v of (vars || []) as any[]) {
+        (varsByProd[v.produto_id] ||= []).push({ id: v.id, nome: v.nome, preco: Number(v.preco) });
+      }
+      const list: ProdExtra[] = [];
+      const sel: Record<string, { variacao_id: string; qtd: number }> = {};
+      for (const r of ep as any[]) {
+        const p = r.produtos;
+        if (!p?.ativo) continue;
+        const vs = varsByProd[p.id] || [];
+        if (vs.length === 0) continue;
+        list.push({
+          produto_id: p.id,
+          nome: p.nome,
+          imagem_url: p.imagem_url,
+          destaque_label: r.destaque_label || null,
+          variacoes: vs,
+        });
+        if (r.pre_selecionado) {
+          const varId = r.variacao_padrao_id && vs.find((x) => x.id === r.variacao_padrao_id) ? r.variacao_padrao_id : vs[0].id;
+          sel[p.id] = { variacao_id: varId, qtd: Math.max(1, Number(r.qtd_padrao) || 1) };
+        }
+      }
+      setExtrasDisponiveis(list);
+      setExtrasSelecao(sel);
+    };
+    load();
+  }, [id]);
+
   useEffect(() => {
     if (user?.user_metadata?.nome) {
       setNomeComprador(user.user_metadata.nome);
