@@ -610,9 +610,13 @@ const EventoCompra = () => {
       // Asaas: cria/recupera cobrança apenas para os ingressos pagos
       const formaAsaas = formaPagamento === "parcelado" ? "credit_card" : "pix";
       const parcelas = formaPagamento === "parcelado" ? evento.max_parcelas : 1;
+      const extras = Object.entries(extrasSelecao).map(([, v]) => ({ variacao_id: v.variacao_id, quantidade: v.qtd }));
+      const usaCombo = extras.length > 0;
       const { data: checkoutData, error: checkoutErr } = await supabase.functions.invoke(
-        "asaas-create-checkout",
-        { body: { ingresso_ids: payableIds, forma_pagamento: formaAsaas, parcelas } }
+        usaCombo ? "checkout-evento-combo" : "asaas-create-checkout",
+        { body: usaCombo
+          ? { ingresso_ids: payableIds, extras, forma_pagamento: formaAsaas, parcelas }
+          : { ingresso_ids: payableIds, forma_pagamento: formaAsaas, parcelas } }
       );
 
       if (checkoutErr || (checkoutData as any)?.error) {
