@@ -1022,6 +1022,76 @@ const EventoCompra = () => {
               </div>
             )}
 
+            {/* Order bump: produtos relacionados */}
+            {extrasDisponiveis.length > 0 && totalParticipantes > 0 && (
+              <div className="border-t pt-4 space-y-3">
+                <div>
+                  <label className="text-sm font-medium block text-zampieri-green-dark">✨ Leve junto com seu ingresso</label>
+                  <p className="text-xs text-muted-foreground">Adicione produtos opcionais e retire no dia do evento.</p>
+                </div>
+                {extrasDisponiveis.map((p) => {
+                  const sel = extrasSelecao[p.produto_id];
+                  const variacaoAtual = sel ? p.variacoes.find((v) => v.id === sel.variacao_id) : null;
+                  return (
+                    <div key={p.produto_id} className={`border rounded-md p-3 ${sel ? "border-zampieri-green bg-zampieri-cream/40" : "border-border"}`}>
+                      <div className="flex items-start gap-3">
+                        <Checkbox
+                          checked={!!sel}
+                          onCheckedChange={(c) => {
+                            setExtrasSelecao((prev) => {
+                              const next = { ...prev };
+                              if (c === true) next[p.produto_id] = { variacao_id: p.variacoes[0].id, qtd: 1 };
+                              else delete next[p.produto_id];
+                              return next;
+                            });
+                          }}
+                        />
+                        {p.imagem_url && <img src={p.imagem_url} alt={p.nome} className="w-14 h-14 object-cover rounded" />}
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <p className="text-sm font-semibold text-zampieri-green-dark">{p.nome}</p>
+                            {p.destaque_label && (
+                              <span className="text-[10px] px-2 py-0.5 rounded-full bg-zampieri-gold/30 text-zampieri-green-dark border border-zampieri-gold/50 font-bold">
+                                {p.destaque_label}
+                              </span>
+                            )}
+                          </div>
+                          {sel && (
+                            <div className="mt-2 grid grid-cols-2 gap-2">
+                              <select
+                                className="border rounded p-1 text-xs bg-background"
+                                value={sel.variacao_id}
+                                onChange={(e) => setExtrasSelecao((prev) => ({ ...prev, [p.produto_id]: { ...prev[p.produto_id], variacao_id: e.target.value } }))}
+                              >
+                                {p.variacoes.map((v) => (
+                                  <option key={v.id} value={v.id}>{v.nome} — R$ {v.preco.toFixed(2)}</option>
+                                ))}
+                              </select>
+                              <div className="flex items-center gap-2">
+                                <Button type="button" size="sm" variant="outline" className="h-7 w-7 p-0"
+                                  onClick={() => setExtrasSelecao((prev) => ({ ...prev, [p.produto_id]: { ...prev[p.produto_id], qtd: Math.max(1, prev[p.produto_id].qtd - 1) } }))}>−</Button>
+                                <span className="text-xs font-semibold w-6 text-center">{sel.qtd}</span>
+                                <Button type="button" size="sm" variant="outline" className="h-7 w-7 p-0"
+                                  onClick={() => setExtrasSelecao((prev) => ({ ...prev, [p.produto_id]: { ...prev[p.produto_id], qtd: prev[p.produto_id].qtd + 1 } }))}>+</Button>
+                                {variacaoAtual && (
+                                  <span className="ml-auto text-xs font-bold text-zampieri-green-dark">
+                                    R$ {(variacaoAtual.preco * sel.qtd).toFixed(2)}
+                                  </span>
+                                )}
+                              </div>
+                            </div>
+                          )}
+                          {!sel && (
+                            <p className="text-xs text-muted-foreground">a partir de R$ {Math.min(...p.variacoes.map((v) => v.preco)).toFixed(2)}</p>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+
             {/* Forma de pagamento */}
             {temParcelamento && totalParticipantes > 0 && (
               <div className="border-t pt-4">
