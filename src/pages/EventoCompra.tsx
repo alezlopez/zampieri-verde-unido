@@ -1107,6 +1107,26 @@ const EventoCompra = () => {
               </div>
             )}
 
+            {/* Resumo do total */}
+            {totalParticipantes > 0 && (
+              <div className="border-t pt-4 space-y-1 text-sm">
+                <div className="flex justify-between text-muted-foreground">
+                  <span>Ingressos ({qtdParticipantesPagantes})</span>
+                  <span>R$ {(qtdInteiras * (formaPagamento === "parcelado" && temParcelamento && evento ? evento.preco_parcelado : evento.preco) + qtdMeias * Number(formaPagamento === "parcelado" && temParcelamento && evento ? (evento.preco_meia_parcelado ?? 0) : (evento.preco_meia ?? 0))).toFixed(2).replace(".", ",")}</span>
+                </div>
+                {extrasSelecionados.length > 0 && (
+                  <div className="flex justify-between text-muted-foreground">
+                    <span>Extras ({extrasSelecionados.reduce((s, e) => s + e.qtd, 0)})</span>
+                    <span>R$ {extrasSelecionados.reduce((s, e) => s + (formaPagamento === "parcelado" && temParcelamento ? e.v.preco_parcelado : e.v.preco) * e.qtd, 0).toFixed(2).replace(".", ",")}</span>
+                  </div>
+                )}
+                <div className="flex justify-between font-bold text-zampieri-green-dark pt-1 border-t">
+                  <span>Total</span>
+                  <span>R$ {total.toFixed(2).replace(".", ",")}</span>
+                </div>
+              </div>
+            )}
+
             {/* Forma de pagamento */}
             {temParcelamento && totalParticipantes > 0 && (
               <div className="border-t pt-4">
@@ -1120,7 +1140,7 @@ const EventoCompra = () => {
                     <RadioGroupItem value="avista" id="avista" className="mt-1" />
                     <Label htmlFor="avista" className="cursor-pointer">
                       <span className="font-medium">
-                        À vista — R$ {(qtdInteiras * evento.preco + qtdMeias * Number(evento.preco_meia ?? 0)).toFixed(2).replace(".", ",")}
+                        À vista — R$ {(qtdInteiras * evento.preco + qtdMeias * Number(evento.preco_meia ?? 0) + extrasSelecionados.reduce((s, e) => s + e.v.preco * e.qtd, 0)).toFixed(2).replace(".", ",")}
                       </span>
                       <span className="block text-xs text-muted-foreground">PIX ou cartão de crédito (1x)</span>
                     </Label>
@@ -1129,10 +1149,10 @@ const EventoCompra = () => {
                     <RadioGroupItem value="parcelado" id="parcelado" className="mt-1" />
                     <Label htmlFor="parcelado" className="cursor-pointer">
                       <span className="font-medium">
-                        {evento.max_parcelas}x de R$ {valorParcela.toFixed(2).replace(".", ",")} (Total: R${" "}
-                        {(qtdInteiras * evento.preco_parcelado + qtdMeias * Number(evento.preco_meia_parcelado ?? 0)).toFixed(2).replace(".", ",")})
+                        {maxParcelasGlobal}x de R$ {valorParcela.toFixed(2).replace(".", ",")} (Total: R${" "}
+                        {(qtdInteiras * evento.preco_parcelado + qtdMeias * Number(evento.preco_meia_parcelado ?? 0) + extrasSelecionados.reduce((s, e) => s + e.v.preco_parcelado * e.qtd, 0)).toFixed(2).replace(".", ",")})
                       </span>
-                      <span className="block text-xs text-muted-foreground">Cartão de crédito parcelado</span>
+                      <span className="block text-xs text-muted-foreground">Cartão de crédito parcelado{maxParcelasExtras > maxParcelasEvento ? " — parcelamento estendido pelos produtos" : ""}</span>
                     </Label>
                   </div>
                 </RadioGroup>
