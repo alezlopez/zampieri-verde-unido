@@ -217,19 +217,21 @@ const EventoCompra = () => {
       if (!id) return;
       const { data: ep } = await supabase
         .from("evento_produtos")
-        .select("produto_id, pre_selecionado, variacao_padrao_id, qtd_padrao, destaque_label, ordem, produtos:produto_id(id,nome,imagem_url,ativo), produto_variacao_padrao:variacao_padrao_id(id,nome,preco,ativo)")
+        .select("produto_id, pre_selecionado, variacao_padrao_id, qtd_padrao, destaque_label, ordem")
         .eq("evento_id", id)
         .eq("ativo", true)
         .order("ordem");
-      if (!ep) return;
-      const prodIds = ep.map((r: any) => r.produtos?.id).filter(Boolean);
+      if (!ep || ep.length === 0) { setExtrasDisponiveis([]); return; }
+      const prodIds = ep.map((r: any) => r.produto_id).filter(Boolean);
       if (prodIds.length === 0) { setExtrasDisponiveis([]); return; }
-      const { data: vars } = await supabase
-        .from("produto_variacoes")
-        .select("id, produto_id, nome, preco, preco_parcelado, max_parcelas, ativo")
-        .in("produto_id", prodIds)
-        .eq("ativo", true)
-        .order("ordem");
+
+      const [{ data: prods }, { data: vars }] = await Promise.all([
+        supabase.from("produtos").select("id, nome, imagem_url, ativo").in("id", prodIds),
+        supabase.from("produto_variacoes")
+          .select("id, produto_id, nome, preco, preco_parcelado, max_parcelas, ativo")
+          .in("produto_id", prodIds).eq("ativo", true).order("ordem"),
+      ]);
+      const prodMap = new Map<string, any>((prods || []).map((p: any) => [p.id, p]));
       const varsByProd: Record<string, { id: string; nome: string; preco: number; preco_parcelado: number; max_parcelas: number }[]> = {};
       for (const v of (vars || []) as any[]) {
         (varsByProd[v.produto_id] ||= []).push({ id: v.id, nome: v.nome, preco: Number(v.preco), preco_parcelado: Number(v.preco_parcelado || v.preco), max_parcelas: Number(v.max_parcelas || 1) });
@@ -237,9 +239,9 @@ const EventoCompra = () => {
       const list: ProdExtra[] = [];
       const sel: Record<string, { variacao_id: string; qtd: number }> = {};
       for (const r of ep as any[]) {
-        const p = r.produtos;
-        if (!p?.ativo) continue;
-        const vs = varsByProd[p.id] || [];
+        const p = prodMap.get(r.produto_id);
+        if (!p || !p.ativo) continue;
+        const vs = varsByProd[r.produto_id] || [];
         if (vs.length === 0) continue;
         list.push({
           produto_id: p.id,
