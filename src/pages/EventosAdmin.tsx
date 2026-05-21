@@ -392,11 +392,15 @@ const EventosAdmin = () => {
     if (eventoIdSalvo) {
       await supabase.from("evento_produtos").delete().eq("evento_id", eventoIdSalvo);
       if (produtosVinculados.length > 0) {
-        const rows = produtosVinculados.map((produto_id, idx) => ({
+        const rows = produtosVinculados.map((v, idx) => ({
           evento_id: eventoIdSalvo!,
-          produto_id,
+          produto_id: v.produto_id,
           ordem: idx,
           ativo: true,
+          pre_selecionado: v.pre_selecionado,
+          variacao_padrao_id: v.variacao_padrao_id || null,
+          qtd_padrao: v.qtd_padrao || 1,
+          destaque_label: v.destaque_label || null,
         }));
         const { error: vErr } = await supabase.from("evento_produtos").insert(rows);
         if (vErr) {
