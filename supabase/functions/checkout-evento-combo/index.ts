@@ -135,7 +135,8 @@ Deno.serve(async (req) => {
       });
     }
 
-    const maxParcelas = isParcelado ? Math.max(1, maxParcelasGlobal) : 1;
+    // Cap parcelas requested by the global maximum allowed (event or any product variation)
+    const maxParcelas = isParcelado ? Math.max(1, Math.min(parcelasReq, maxParcelasAllowed)) : 1;
 
     // ============= Comprador =============
     const { data: compradorRows, error: compErr } = await admin.rpc("get_comprador_dados", { p_user_id: user.id });
