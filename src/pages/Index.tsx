@@ -11,6 +11,7 @@ import { TestimonialsSection } from "@/components/TestimonialsSection";
 import { StructureSection } from "@/components/StructureSection";
 import { LocationSection } from "@/components/LocationSection";
 import { MatriculasCTASection } from "@/components/MatriculasCTASection";
+import { InstagramSection } from "@/components/InstagramSection";
 import { Footer } from "@/components/Footer";
 
 const Index = () => {
@@ -47,6 +48,7 @@ const Index = () => {
         <StructureSection />
         <LocationSection />
         <MatriculasCTASection />
+        <InstagramSection />
       </main>
       <Footer />
     </div>
