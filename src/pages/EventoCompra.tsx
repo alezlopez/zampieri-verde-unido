@@ -138,6 +138,7 @@ const EventoCompra = () => {
     nome: string;
     imagem_url: string | null;
     destaque_label: string | null;
+    variacao_recomendada_id: string | null;
     variacoes: { id: string; nome: string; preco: number; preco_parcelado: number; max_parcelas: number }[];
   };
   const [extrasDisponiveis, setExtrasDisponiveis] = useState<ProdExtra[]>([]);
