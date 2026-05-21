@@ -226,13 +226,13 @@ const EventoCompra = () => {
       if (prodIds.length === 0) { setExtrasDisponiveis([]); return; }
       const { data: vars } = await supabase
         .from("produto_variacoes")
-        .select("id, produto_id, nome, preco, ativo")
+        .select("id, produto_id, nome, preco, preco_parcelado, max_parcelas, ativo")
         .in("produto_id", prodIds)
         .eq("ativo", true)
         .order("ordem");
-      const varsByProd: Record<string, { id: string; nome: string; preco: number }[]> = {};
+      const varsByProd: Record<string, { id: string; nome: string; preco: number; preco_parcelado: number; max_parcelas: number }[]> = {};
       for (const v of (vars || []) as any[]) {
-        (varsByProd[v.produto_id] ||= []).push({ id: v.id, nome: v.nome, preco: Number(v.preco) });
+        (varsByProd[v.produto_id] ||= []).push({ id: v.id, nome: v.nome, preco: Number(v.preco), preco_parcelado: Number(v.preco_parcelado || v.preco), max_parcelas: Number(v.max_parcelas || 1) });
       }
       const list: ProdExtra[] = [];
       const sel: Record<string, { variacao_id: string; qtd: number }> = {};
