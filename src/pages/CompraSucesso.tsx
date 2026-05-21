@@ -96,7 +96,9 @@ const CompraSucesso = () => {
                 Recebemos seu pedido!
               </h1>
               <p className="text-muted-foreground max-w-xl mx-auto">
-                {tipo === "produto"
+                {tipo === "combo"
+                  ? "Em até 5 minutos seu ingresso e o comprovante do(s) produto(s) estarão disponíveis em Minhas compras — cada um com seu próprio QR Code."
+                  : tipo === "produto"
                   ? "Em até 5 minutos seu comprovante estará liberado em Minhas compras com o QR Code para retirada no dia."
                   : "Em até 5 minutos seu ingresso estará disponível em Minhas compras. Apresente o QR Code na portaria."}
               </p>
