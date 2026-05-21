@@ -352,7 +352,21 @@ const EventoCompra = () => {
   const alunoCortesia = !!evento?.aluno_cortesia;
   const qtdAlunosCortesia = alunoCortesia ? alunosSelecionados.length : 0;
 
-  const temParcelamento = evento ? evento.preco_parcelado > 0 && evento.max_parcelas > 1 : false;
+  // Helpers para extras selecionados
+  const extrasSelecionados = Object.entries(extrasSelecao).map(([produto_id, sel]) => {
+    const prod = extrasDisponiveis.find((p) => p.produto_id === produto_id);
+    const v = prod?.variacoes.find((x) => x.id === sel.variacao_id);
+    return prod && v ? { prod, v, qtd: sel.qtd } : null;
+  }).filter(Boolean) as { prod: ProdExtra; v: { id: string; nome: string; preco: number; preco_parcelado: number; max_parcelas: number }; qtd: number }[];
+
+  // Máximo de parcelas considera evento + variações selecionadas (usa o MAIOR)
+  const maxParcelasEvento = evento?.max_parcelas ?? 1;
+  const maxParcelasExtras = extrasSelecionados.reduce((m, e) => Math.max(m, e.v.max_parcelas || 1), 1);
+  const maxParcelasGlobal = Math.max(maxParcelasEvento, maxParcelasExtras);
+
+  const eventoTemParcelado = evento ? evento.preco_parcelado > 0 && maxParcelasEvento > 1 : false;
+  const extrasTemParcelado = extrasSelecionados.some((e) => e.v.max_parcelas > 1);
+  const temParcelamento = (eventoTemParcelado || extrasTemParcelado) && maxParcelasGlobal > 1;
   const meiaHabilitada = !!evento?.meia_entrada_habilitada && Number(evento?.preco_meia ?? 0) > 0;
 
   // Identificadores de cada participante (para meia config) — alunos cortesia não entram em meia
@@ -366,17 +380,18 @@ const EventoCompra = () => {
   const qtdParticipantesPagantes = totalParticipantes - qtdAlunosCortesia;
   const qtdInteiras = qtdParticipantesPagantes - qtdMeias;
 
-  const precoInteiraUnit = formaPagamento === "parcelado" && temParcelamento && evento
-    ? evento.preco_parcelado
-    : evento?.preco ?? 0;
-  const precoMeiaUnit = formaPagamento === "parcelado" && temParcelamento && evento
+  const isParceladoView = formaPagamento === "parcelado" && temParcelamento;
+  const precoInteiraUnit = isParceladoView && evento ? evento.preco_parcelado : evento?.preco ?? 0;
+  const precoMeiaUnit = isParceladoView && evento
     ? Number(evento.preco_meia_parcelado ?? 0)
     : Number(evento?.preco_meia ?? 0);
 
-  const total = qtdInteiras * precoInteiraUnit + qtdMeias * precoMeiaUnit;
-  const valorParcela = temParcelamento && evento && evento.max_parcelas > 0
-    ? total / evento.max_parcelas
-    : 0;
+  const totalIngressos = qtdInteiras * precoInteiraUnit + qtdMeias * precoMeiaUnit;
+  const totalExtras = extrasSelecionados.reduce(
+    (s, e) => s + (isParceladoView ? e.v.preco_parcelado : e.v.preco) * e.qtd, 0
+  );
+  const total = totalIngressos + totalExtras;
+  const valorParcela = isParceladoView && maxParcelasGlobal > 0 ? total / maxParcelasGlobal : 0;
 
   // Carrega info de cota de meia
   useEffect(() => {
