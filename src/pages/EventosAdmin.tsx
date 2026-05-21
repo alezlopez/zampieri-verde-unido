@@ -199,6 +199,17 @@ const EventosAdmin = () => {
       .select("id, nome, is_global, ativo")
       .order("nome");
     if (data) setProdutosDisponiveis(data as ProdutoOpt[]);
+    const { data: vars } = await supabase
+      .from("produto_variacoes")
+      .select("id, produto_id, nome, ativo")
+      .eq("ativo", true)
+      .order("ordem");
+    const map: Record<string, VariacaoOpt[]> = {};
+    for (const v of (vars || []) as VariacaoOpt[]) {
+      if (!map[v.produto_id]) map[v.produto_id] = [];
+      map[v.produto_id].push(v);
+    }
+    setVariacoesPorProduto(map);
   };
 
   useEffect(() => {
