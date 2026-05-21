@@ -260,12 +260,18 @@ const EventosAdmin = () => {
     setImagemFile(null);
     setImagemPreview(evento.imagem_url || null);
     setEditingId(evento.id);
-    // Carregar produtos vinculados
+    // Carregar produtos vinculados (com config de upsell)
     const { data: vinc } = await supabase
       .from("evento_produtos")
-      .select("produto_id")
+      .select("produto_id, pre_selecionado, variacao_padrao_id, qtd_padrao, destaque_label")
       .eq("evento_id", evento.id);
-    setProdutosVinculados((vinc || []).map((v: any) => v.produto_id));
+    setProdutosVinculados((vinc || []).map((v: any) => ({
+      produto_id: v.produto_id,
+      pre_selecionado: !!v.pre_selecionado,
+      variacao_padrao_id: v.variacao_padrao_id || null,
+      qtd_padrao: Number(v.qtd_padrao) || 1,
+      destaque_label: v.destaque_label || null,
+    })));
     setShowForm(true);
   };
 
