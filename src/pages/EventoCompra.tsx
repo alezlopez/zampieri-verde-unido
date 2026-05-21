@@ -138,6 +138,7 @@ const EventoCompra = () => {
     nome: string;
     imagem_url: string | null;
     destaque_label: string | null;
+    variacao_recomendada_id: string | null;
     variacoes: { id: string; nome: string; preco: number; preco_parcelado: number; max_parcelas: number }[];
   };
   const [extrasDisponiveis, setExtrasDisponiveis] = useState<ProdExtra[]>([]);
@@ -248,6 +249,7 @@ const EventoCompra = () => {
           nome: p.nome,
           imagem_url: p.imagem_url,
           destaque_label: r.destaque_label || null,
+          variacao_recomendada_id: r.variacao_padrao_id && vs.find((x: any) => x.id === r.variacao_padrao_id) ? r.variacao_padrao_id : null,
           variacoes: vs,
         });
         if (r.pre_selecionado) {
@@ -1044,25 +1046,13 @@ const EventoCompra = () => {
               <div className="border-t pt-4 space-y-3">
                 <div>
                   <label className="text-sm font-medium block text-zampieri-green-dark">✨ Leve junto com seu ingresso</label>
-                  <p className="text-xs text-muted-foreground">Adicione produtos opcionais e retire no dia do evento.</p>
+                  <p className="text-xs text-muted-foreground">Selecione uma opção abaixo para adicionar. Você pode trocar a quantidade depois.</p>
                 </div>
                 {extrasDisponiveis.map((p) => {
                   const sel = extrasSelecao[p.produto_id];
-                  const variacaoAtual = sel ? p.variacoes.find((v) => v.id === sel.variacao_id) : null;
                   return (
-                    <div key={p.produto_id} className={`border rounded-md p-3 ${sel ? "border-zampieri-green bg-zampieri-cream/40" : "border-border"}`}>
+                    <div key={p.produto_id} className="border border-border rounded-md p-3 space-y-2">
                       <div className="flex items-start gap-3">
-                        <Checkbox
-                          checked={!!sel}
-                          onCheckedChange={(c) => {
-                            setExtrasSelecao((prev) => {
-                              const next = { ...prev };
-                              if (c === true) next[p.produto_id] = { variacao_id: p.variacoes[0].id, qtd: 1 };
-                              else delete next[p.produto_id];
-                              return next;
-                            });
-                          }}
-                        />
                         {p.imagem_url && <img src={p.imagem_url} alt={p.nome} className="w-14 h-14 object-cover rounded" />}
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-2 flex-wrap">
@@ -1073,36 +1063,69 @@ const EventoCompra = () => {
                               </span>
                             )}
                           </div>
-                          {sel && (
-                            <div className="mt-2 grid grid-cols-2 gap-2">
-                              <select
-                                className="border rounded p-1 text-xs bg-background"
-                                value={sel.variacao_id}
-                                onChange={(e) => setExtrasSelecao((prev) => ({ ...prev, [p.produto_id]: { ...prev[p.produto_id], variacao_id: e.target.value } }))}
-                              >
-                                {p.variacoes.map((v) => (
-                                  <option key={v.id} value={v.id}>{v.nome} — R$ {v.preco.toFixed(2)}</option>
-                                ))}
-                              </select>
-                              <div className="flex items-center gap-2">
-                                <Button type="button" size="sm" variant="outline" className="h-7 w-7 p-0"
-                                  onClick={() => setExtrasSelecao((prev) => ({ ...prev, [p.produto_id]: { ...prev[p.produto_id], qtd: Math.max(1, prev[p.produto_id].qtd - 1) } }))}>−</Button>
-                                <span className="text-xs font-semibold w-6 text-center">{sel.qtd}</span>
-                                <Button type="button" size="sm" variant="outline" className="h-7 w-7 p-0"
-                                  onClick={() => setExtrasSelecao((prev) => ({ ...prev, [p.produto_id]: { ...prev[p.produto_id], qtd: prev[p.produto_id].qtd + 1 } }))}>+</Button>
-                                {variacaoAtual && (
-                                  <span className="ml-auto text-xs font-bold text-zampieri-green-dark">
-                                    R$ {(variacaoAtual.preco * sel.qtd).toFixed(2)}
+                          <p className="text-xs text-muted-foreground">Escolha uma opção:</p>
+                        </div>
+                        {sel && (
+                          <button
+                            type="button"
+                            className="text-[11px] text-muted-foreground hover:text-destructive underline"
+                            onClick={() => setExtrasSelecao((prev) => {
+                              const next = { ...prev }; delete next[p.produto_id]; return next;
+                            })}
+                          >
+                            remover
+                          </button>
+                        )}
+                      </div>
+
+                      <div className="space-y-1.5">
+                        {p.variacoes.map((v) => {
+                          const isSelected = sel?.variacao_id === v.id;
+                          const isRec = p.variacao_recomendada_id === v.id;
+                          return (
+                            <label
+                              key={v.id}
+                              className={`flex items-center gap-2 p-2 rounded border cursor-pointer transition ${isSelected ? "border-zampieri-green bg-zampieri-cream/40" : "border-border hover:bg-muted/40"}`}
+                            >
+                              <input
+                                type="radio"
+                                name={`extra-${p.produto_id}`}
+                                className="accent-zampieri-green-dark"
+                                checked={isSelected}
+                                onChange={() => setExtrasSelecao((prev) => ({
+                                  ...prev,
+                                  [p.produto_id]: { variacao_id: v.id, qtd: prev[p.produto_id]?.qtd ?? 1 },
+                                }))}
+                              />
+                              <span className="text-xs flex-1 flex items-center gap-2 flex-wrap">
+                                <span>{v.nome}</span>
+                                {isRec && (
+                                  <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-zampieri-green/15 text-zampieri-green-dark border border-zampieri-green/40 font-bold uppercase tracking-wide">
+                                    Recomendado
                                   </span>
                                 )}
-                              </div>
-                            </div>
-                          )}
-                          {!sel && (
-                            <p className="text-xs text-muted-foreground">a partir de R$ {Math.min(...p.variacoes.map((v) => v.preco)).toFixed(2)}</p>
-                          )}
-                        </div>
+                              </span>
+                              <span className="text-xs font-bold text-zampieri-green-dark whitespace-nowrap">
+                                R$ {v.preco.toFixed(2).replace(".", ",")}
+                              </span>
+                            </label>
+                          );
+                        })}
                       </div>
+
+                      {sel && (
+                        <div className="flex items-center gap-2 pt-1">
+                          <span className="text-xs text-muted-foreground">Quantidade:</span>
+                          <Button type="button" size="sm" variant="outline" className="h-7 w-7 p-0"
+                            onClick={() => setExtrasSelecao((prev) => ({ ...prev, [p.produto_id]: { ...prev[p.produto_id], qtd: Math.max(1, prev[p.produto_id].qtd - 1) } }))}>−</Button>
+                          <span className="text-xs font-semibold w-6 text-center">{sel.qtd}</span>
+                          <Button type="button" size="sm" variant="outline" className="h-7 w-7 p-0"
+                            onClick={() => setExtrasSelecao((prev) => ({ ...prev, [p.produto_id]: { ...prev[p.produto_id], qtd: prev[p.produto_id].qtd + 1 } }))}>+</Button>
+                          <span className="ml-auto text-xs font-bold text-zampieri-green-dark">
+                            Subtotal: R$ {((p.variacoes.find((v) => v.id === sel.variacao_id)?.preco ?? 0) * sel.qtd).toFixed(2).replace(".", ",")}
+                          </span>
+                        </div>
+                      )}
                     </div>
                   );
                 })}
