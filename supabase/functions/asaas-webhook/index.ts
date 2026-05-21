@@ -172,9 +172,18 @@ Deno.serve(async (req) => {
         matched = r.data;
       }
 
-      // 3) Fallback: ids vindos no externalReference
+      // 3) Fallback: ids vindos no externalReference (suporta também "mix:ing=...;prod=...")
       if ((!matched || matched.length === 0) && externalRef) {
-        const ids = externalRef.split(",").map((s) => s.trim()).filter(Boolean);
+        let ids: string[] = [];
+        if (isMixRef) {
+          const bodyRef = externalRef.slice(4);
+          for (const part of bodyRef.split(";")) {
+            const [k, v] = part.split("=");
+            if (k === "ing" && v) ids = v.split(",").map((s) => s.trim()).filter(Boolean);
+          }
+        } else if (!isProdRef) {
+          ids = externalRef.split(",").map((s) => s.trim()).filter(Boolean);
+        }
         if (ids.length > 0) {
           const r = await admin
             .from("ingressos")
