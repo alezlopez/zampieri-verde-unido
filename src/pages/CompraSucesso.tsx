@@ -125,7 +125,7 @@ const CompraSucesso = () => {
               <div className="flex items-center gap-2 mb-4">
                 <Sparkles className="w-5 h-5 text-zampieri-gold" />
                 <h2 className="font-serif text-xl font-bold text-zampieri-green-dark">
-                  {eventoId ? "Adicione ao seu evento" : "Você também pode gostar"}
+                  {tipo === "combo" ? "Continue complementando seu evento" : eventoId ? "Adicione ao seu evento" : "Você também pode gostar"}
                 </h2>
               </div>
 
