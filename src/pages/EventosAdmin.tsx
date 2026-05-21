@@ -130,10 +130,19 @@ const EventosAdmin = () => {
   const [imagemPreview, setImagemPreview] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
 
-  // Produtos vinculados ao evento
+  // Produtos vinculados ao evento (com config de upsell)
   type ProdutoOpt = { id: string; nome: string; is_global: boolean; ativo: boolean };
+  type VariacaoOpt = { id: string; produto_id: string; nome: string; ativo: boolean };
+  type VincConfig = {
+    produto_id: string;
+    pre_selecionado: boolean;
+    variacao_padrao_id: string | null;
+    qtd_padrao: number;
+    destaque_label: string | null;
+  };
   const [produtosDisponiveis, setProdutosDisponiveis] = useState<ProdutoOpt[]>([]);
-  const [produtosVinculados, setProdutosVinculados] = useState<string[]>([]);
+  const [variacoesPorProduto, setVariacoesPorProduto] = useState<Record<string, VariacaoOpt[]>>({});
+  const [produtosVinculados, setProdutosVinculados] = useState<VincConfig[]>([]);
 
   // Resumo financeiro (calculado com base em valor_total + status dos ingressos)
   type ResumoFinanceiro = { recebido: number; pendente: number; estornado: number; cancelado: number };
@@ -190,6 +199,17 @@ const EventosAdmin = () => {
       .select("id, nome, is_global, ativo")
       .order("nome");
     if (data) setProdutosDisponiveis(data as ProdutoOpt[]);
+    const { data: vars } = await supabase
+      .from("produto_variacoes")
+      .select("id, produto_id, nome, ativo")
+      .eq("ativo", true)
+      .order("ordem");
+    const map: Record<string, VariacaoOpt[]> = {};
+    for (const v of (vars || []) as VariacaoOpt[]) {
+      if (!map[v.produto_id]) map[v.produto_id] = [];
+      map[v.produto_id].push(v);
+    }
+    setVariacoesPorProduto(map);
   };
 
   useEffect(() => {
@@ -251,12 +271,18 @@ const EventosAdmin = () => {
     setImagemFile(null);
     setImagemPreview(evento.imagem_url || null);
     setEditingId(evento.id);
-    // Carregar produtos vinculados
+    // Carregar produtos vinculados (com config de upsell)
     const { data: vinc } = await supabase
       .from("evento_produtos")
-      .select("produto_id")
+      .select("produto_id, pre_selecionado, variacao_padrao_id, qtd_padrao, destaque_label")
       .eq("evento_id", evento.id);
-    setProdutosVinculados((vinc || []).map((v: any) => v.produto_id));
+    setProdutosVinculados((vinc || []).map((v: any) => ({
+      produto_id: v.produto_id,
+      pre_selecionado: !!v.pre_selecionado,
+      variacao_padrao_id: v.variacao_padrao_id || null,
+      qtd_padrao: Number(v.qtd_padrao) || 1,
+      destaque_label: v.destaque_label || null,
+    })));
     setShowForm(true);
   };
 
@@ -366,11 +392,15 @@ const EventosAdmin = () => {
     if (eventoIdSalvo) {
       await supabase.from("evento_produtos").delete().eq("evento_id", eventoIdSalvo);
       if (produtosVinculados.length > 0) {
-        const rows = produtosVinculados.map((produto_id, idx) => ({
+        const rows = produtosVinculados.map((v, idx) => ({
           evento_id: eventoIdSalvo!,
-          produto_id,
+          produto_id: v.produto_id,
           ordem: idx,
           ativo: true,
+          pre_selecionado: v.pre_selecionado,
+          variacao_padrao_id: v.variacao_padrao_id || null,
+          qtd_padrao: v.qtd_padrao || 1,
+          destaque_label: v.destaque_label || null,
         }));
         const { error: vErr } = await supabase.from("evento_produtos").insert(rows);
         if (vErr) {
@@ -862,24 +892,87 @@ const EventosAdmin = () => {
                     </Link>
                   </p>
                 ) : (
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-2 max-h-56 overflow-y-auto border rounded-md p-2">
-                    {produtosDisponiveis.map((p) => (
-                      <label key={p.id} className="flex items-center gap-2 text-sm cursor-pointer hover:bg-muted/50 p-1 rounded">
-                        <Checkbox
-                          checked={produtosVinculados.includes(p.id)}
-                          onCheckedChange={(checked) =>
-                            setProdutosVinculados((prev) =>
-                              checked === true
-                                ? Array.from(new Set([...prev, p.id]))
-                                : prev.filter((x) => x !== p.id)
-                            )
-                          }
-                        />
-                        <span className="flex-1">{p.nome}</span>
-                        {p.is_global && <Badge variant="secondary" className="text-[10px]">Global</Badge>}
-                        {!p.ativo && <Badge variant="outline" className="text-[10px]">Inativo</Badge>}
-                      </label>
-                    ))}
+                  <div className="space-y-2 max-h-80 overflow-y-auto border rounded-md p-2">
+                    {produtosDisponiveis.map((p) => {
+                      const idx = produtosVinculados.findIndex((v) => v.produto_id === p.id);
+                      const vinc = idx >= 0 ? produtosVinculados[idx] : null;
+                      const vars = variacoesPorProduto[p.id] || [];
+                      const updateVinc = (patch: Partial<VincConfig>) => {
+                        setProdutosVinculados((prev) => prev.map((v, i) => (i === idx ? { ...v, ...patch } : v)));
+                      };
+                      return (
+                        <div key={p.id} className="border rounded p-2 bg-muted/20">
+                          <label className="flex items-center gap-2 text-sm cursor-pointer">
+                            <Checkbox
+                              checked={!!vinc}
+                              onCheckedChange={(checked) => {
+                                if (checked === true) {
+                                  setProdutosVinculados((prev) => [...prev, {
+                                    produto_id: p.id,
+                                    pre_selecionado: false,
+                                    variacao_padrao_id: vars[0]?.id || null,
+                                    qtd_padrao: 1,
+                                    destaque_label: null,
+                                  }]);
+                                } else {
+                                  setProdutosVinculados((prev) => prev.filter((v) => v.produto_id !== p.id));
+                                }
+                              }}
+                            />
+                            <span className="flex-1 font-medium">{p.nome}</span>
+                            {p.is_global && <Badge variant="secondary" className="text-[10px]">Global</Badge>}
+                            {!p.ativo && <Badge variant="outline" className="text-[10px]">Inativo</Badge>}
+                          </label>
+                          {vinc && (
+                            <div className="mt-2 ml-6 space-y-2">
+                              <label className="flex items-center gap-2 text-xs">
+                                <Checkbox
+                                  checked={vinc.pre_selecionado}
+                                  onCheckedChange={(c) => updateVinc({ pre_selecionado: c === true })}
+                                />
+                                <span>Pré-marcar no checkout do evento (order bump)</span>
+                              </label>
+                              {vinc.pre_selecionado && (
+                                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                                  <div>
+                                    <label className="text-[10px] text-muted-foreground">Variação padrão</label>
+                                    <select
+                                      className="w-full border rounded p-1 text-xs bg-background"
+                                      value={vinc.variacao_padrao_id || ""}
+                                      onChange={(e) => updateVinc({ variacao_padrao_id: e.target.value || null })}
+                                    >
+                                      {vars.length === 0 && <option value="">— sem variação ativa —</option>}
+                                      {vars.map((vr) => (
+                                        <option key={vr.id} value={vr.id}>{vr.nome}</option>
+                                      ))}
+                                    </select>
+                                  </div>
+                                  <div>
+                                    <label className="text-[10px] text-muted-foreground">Qtd padrão</label>
+                                    <Input
+                                      type="number"
+                                      min={1}
+                                      value={vinc.qtd_padrao}
+                                      onChange={(e) => updateVinc({ qtd_padrao: Math.max(1, Number(e.target.value) || 1) })}
+                                      className="h-8 text-xs"
+                                    />
+                                  </div>
+                                  <div>
+                                    <label className="text-[10px] text-muted-foreground">Destaque (opcional)</label>
+                                    <Input
+                                      placeholder='Ex: "Combo do evento"'
+                                      value={vinc.destaque_label || ""}
+                                      onChange={(e) => updateVinc({ destaque_label: e.target.value || null })}
+                                      className="h-8 text-xs"
+                                    />
+                                  </div>
+                                </div>
+                              )}
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })}
                   </div>
                 )}
               </div>

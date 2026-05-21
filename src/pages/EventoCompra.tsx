@@ -132,6 +132,18 @@ const EventoCompra = () => {
   const [meiaConfigs, setMeiaConfigs] = useState<Record<string, MeiaConfig>>({});
   const [meiaInfo, setMeiaInfo] = useState<{ vagas_meia_total: number; meias_vendidas: number; meias_disponiveis: number } | null>(null);
 
+  // ===== Order bump: produtos relacionados ao evento =====
+  type ProdExtra = {
+    produto_id: string;
+    nome: string;
+    imagem_url: string | null;
+    destaque_label: string | null;
+    variacoes: { id: string; nome: string; preco: number }[];
+  };
+  const [extrasDisponiveis, setExtrasDisponiveis] = useState<ProdExtra[]>([]);
+  // selecao[produto_id] => { variacao_id, qtd }; ausente = não selecionado
+  const [extrasSelecao, setExtrasSelecao] = useState<Record<string, { variacao_id: string; qtd: number }>>({});
+
   const setMeiaField = (key: string, patch: Partial<MeiaConfig>) => {
     setMeiaConfigs((prev) => ({
       ...prev,
@@ -197,6 +209,54 @@ const EventoCompra = () => {
       setLoading(false);
     };
     fetchEvento();
+  }, [id]);
+
+  // Carrega produtos relacionados ao evento (order bump) + pré-marca os configurados
+  useEffect(() => {
+    const load = async () => {
+      if (!id) return;
+      const { data: ep } = await supabase
+        .from("evento_produtos")
+        .select("produto_id, pre_selecionado, variacao_padrao_id, qtd_padrao, destaque_label, ordem, produtos:produto_id(id,nome,imagem_url,ativo), produto_variacao_padrao:variacao_padrao_id(id,nome,preco,ativo)")
+        .eq("evento_id", id)
+        .eq("ativo", true)
+        .order("ordem");
+      if (!ep) return;
+      const prodIds = ep.map((r: any) => r.produtos?.id).filter(Boolean);
+      if (prodIds.length === 0) { setExtrasDisponiveis([]); return; }
+      const { data: vars } = await supabase
+        .from("produto_variacoes")
+        .select("id, produto_id, nome, preco, ativo")
+        .in("produto_id", prodIds)
+        .eq("ativo", true)
+        .order("ordem");
+      const varsByProd: Record<string, { id: string; nome: string; preco: number }[]> = {};
+      for (const v of (vars || []) as any[]) {
+        (varsByProd[v.produto_id] ||= []).push({ id: v.id, nome: v.nome, preco: Number(v.preco) });
+      }
+      const list: ProdExtra[] = [];
+      const sel: Record<string, { variacao_id: string; qtd: number }> = {};
+      for (const r of ep as any[]) {
+        const p = r.produtos;
+        if (!p?.ativo) continue;
+        const vs = varsByProd[p.id] || [];
+        if (vs.length === 0) continue;
+        list.push({
+          produto_id: p.id,
+          nome: p.nome,
+          imagem_url: p.imagem_url,
+          destaque_label: r.destaque_label || null,
+          variacoes: vs,
+        });
+        if (r.pre_selecionado) {
+          const varId = r.variacao_padrao_id && vs.find((x) => x.id === r.variacao_padrao_id) ? r.variacao_padrao_id : vs[0].id;
+          sel[p.id] = { variacao_id: varId, qtd: Math.max(1, Number(r.qtd_padrao) || 1) };
+        }
+      }
+      setExtrasDisponiveis(list);
+      setExtrasSelecao(sel);
+    };
+    load();
   }, [id]);
 
   useEffect(() => {
@@ -550,9 +610,13 @@ const EventoCompra = () => {
       // Asaas: cria/recupera cobrança apenas para os ingressos pagos
       const formaAsaas = formaPagamento === "parcelado" ? "credit_card" : "pix";
       const parcelas = formaPagamento === "parcelado" ? evento.max_parcelas : 1;
+      const extras = Object.entries(extrasSelecao).map(([, v]) => ({ variacao_id: v.variacao_id, quantidade: v.qtd }));
+      const usaCombo = extras.length > 0;
       const { data: checkoutData, error: checkoutErr } = await supabase.functions.invoke(
-        "asaas-create-checkout",
-        { body: { ingresso_ids: payableIds, forma_pagamento: formaAsaas, parcelas } }
+        usaCombo ? "checkout-evento-combo" : "asaas-create-checkout",
+        { body: usaCombo
+          ? { ingresso_ids: payableIds, extras, forma_pagamento: formaAsaas, parcelas }
+          : { ingresso_ids: payableIds, forma_pagamento: formaAsaas, parcelas } }
       );
 
       if (checkoutErr || (checkoutData as any)?.error) {
@@ -955,6 +1019,76 @@ const EventoCompra = () => {
                     ⚠️ Cota de meia-entrada excedida. Restam {meiaInfo?.meias_disponiveis ?? 0} meia(s).
                   </p>
                 )}
+              </div>
+            )}
+
+            {/* Order bump: produtos relacionados */}
+            {extrasDisponiveis.length > 0 && totalParticipantes > 0 && (
+              <div className="border-t pt-4 space-y-3">
+                <div>
+                  <label className="text-sm font-medium block text-zampieri-green-dark">✨ Leve junto com seu ingresso</label>
+                  <p className="text-xs text-muted-foreground">Adicione produtos opcionais e retire no dia do evento.</p>
+                </div>
+                {extrasDisponiveis.map((p) => {
+                  const sel = extrasSelecao[p.produto_id];
+                  const variacaoAtual = sel ? p.variacoes.find((v) => v.id === sel.variacao_id) : null;
+                  return (
+                    <div key={p.produto_id} className={`border rounded-md p-3 ${sel ? "border-zampieri-green bg-zampieri-cream/40" : "border-border"}`}>
+                      <div className="flex items-start gap-3">
+                        <Checkbox
+                          checked={!!sel}
+                          onCheckedChange={(c) => {
+                            setExtrasSelecao((prev) => {
+                              const next = { ...prev };
+                              if (c === true) next[p.produto_id] = { variacao_id: p.variacoes[0].id, qtd: 1 };
+                              else delete next[p.produto_id];
+                              return next;
+                            });
+                          }}
+                        />
+                        {p.imagem_url && <img src={p.imagem_url} alt={p.nome} className="w-14 h-14 object-cover rounded" />}
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <p className="text-sm font-semibold text-zampieri-green-dark">{p.nome}</p>
+                            {p.destaque_label && (
+                              <span className="text-[10px] px-2 py-0.5 rounded-full bg-zampieri-gold/30 text-zampieri-green-dark border border-zampieri-gold/50 font-bold">
+                                {p.destaque_label}
+                              </span>
+                            )}
+                          </div>
+                          {sel && (
+                            <div className="mt-2 grid grid-cols-2 gap-2">
+                              <select
+                                className="border rounded p-1 text-xs bg-background"
+                                value={sel.variacao_id}
+                                onChange={(e) => setExtrasSelecao((prev) => ({ ...prev, [p.produto_id]: { ...prev[p.produto_id], variacao_id: e.target.value } }))}
+                              >
+                                {p.variacoes.map((v) => (
+                                  <option key={v.id} value={v.id}>{v.nome} — R$ {v.preco.toFixed(2)}</option>
+                                ))}
+                              </select>
+                              <div className="flex items-center gap-2">
+                                <Button type="button" size="sm" variant="outline" className="h-7 w-7 p-0"
+                                  onClick={() => setExtrasSelecao((prev) => ({ ...prev, [p.produto_id]: { ...prev[p.produto_id], qtd: Math.max(1, prev[p.produto_id].qtd - 1) } }))}>−</Button>
+                                <span className="text-xs font-semibold w-6 text-center">{sel.qtd}</span>
+                                <Button type="button" size="sm" variant="outline" className="h-7 w-7 p-0"
+                                  onClick={() => setExtrasSelecao((prev) => ({ ...prev, [p.produto_id]: { ...prev[p.produto_id], qtd: prev[p.produto_id].qtd + 1 } }))}>+</Button>
+                                {variacaoAtual && (
+                                  <span className="ml-auto text-xs font-bold text-zampieri-green-dark">
+                                    R$ {(variacaoAtual.preco * sel.qtd).toFixed(2)}
+                                  </span>
+                                )}
+                              </div>
+                            </div>
+                          )}
+                          {!sel && (
+                            <p className="text-xs text-muted-foreground">a partir de R$ {Math.min(...p.variacoes.map((v) => v.preco)).toFixed(2)}</p>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
               </div>
             )}
 
