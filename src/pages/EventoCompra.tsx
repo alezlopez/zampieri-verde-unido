@@ -249,6 +249,7 @@ const EventoCompra = () => {
           nome: p.nome,
           imagem_url: p.imagem_url,
           destaque_label: r.destaque_label || null,
+          variacao_recomendada_id: r.variacao_padrao_id && vs.find((x: any) => x.id === r.variacao_padrao_id) ? r.variacao_padrao_id : null,
           variacoes: vs,
         });
         if (r.pre_selecionado) {
