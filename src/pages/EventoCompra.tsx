@@ -132,6 +132,18 @@ const EventoCompra = () => {
   const [meiaConfigs, setMeiaConfigs] = useState<Record<string, MeiaConfig>>({});
   const [meiaInfo, setMeiaInfo] = useState<{ vagas_meia_total: number; meias_vendidas: number; meias_disponiveis: number } | null>(null);
 
+  // ===== Order bump: produtos relacionados ao evento =====
+  type ProdExtra = {
+    produto_id: string;
+    nome: string;
+    imagem_url: string | null;
+    destaque_label: string | null;
+    variacoes: { id: string; nome: string; preco: number }[];
+  };
+  const [extrasDisponiveis, setExtrasDisponiveis] = useState<ProdExtra[]>([]);
+  // selecao[produto_id] => { variacao_id, qtd }; ausente = não selecionado
+  const [extrasSelecao, setExtrasSelecao] = useState<Record<string, { variacao_id: string; qtd: number }>>({});
+
   const setMeiaField = (key: string, patch: Partial<MeiaConfig>) => {
     setMeiaConfigs((prev) => ({
       ...prev,
