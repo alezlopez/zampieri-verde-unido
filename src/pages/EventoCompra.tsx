@@ -138,7 +138,7 @@ const EventoCompra = () => {
     nome: string;
     imagem_url: string | null;
     destaque_label: string | null;
-    variacoes: { id: string; nome: string; preco: number }[];
+    variacoes: { id: string; nome: string; preco: number; preco_parcelado: number; max_parcelas: number }[];
   };
   const [extrasDisponiveis, setExtrasDisponiveis] = useState<ProdExtra[]>([]);
   // selecao[produto_id] => { variacao_id, qtd }; ausente = não selecionado
