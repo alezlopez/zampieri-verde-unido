@@ -124,7 +124,7 @@ Deno.serve(async (req) => {
         });
       }
       const preco = isParcelado ? Number(v.preco_parcelado || v.preco) : Number(v.preco);
-      maxParcelasGlobal = Math.min(maxParcelasGlobal, v.max_parcelas || 1);
+      maxParcelasAllowed = Math.max(maxParcelasAllowed, v.max_parcelas || 1);
       extraItems.push({
         description: `${v.produtos.nome} - ${v.nome}`,
         quantity: ex.quantidade,
