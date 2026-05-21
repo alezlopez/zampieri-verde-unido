@@ -96,7 +96,9 @@ const CompraSucesso = () => {
                 Recebemos seu pedido!
               </h1>
               <p className="text-muted-foreground max-w-xl mx-auto">
-                {tipo === "produto"
+                {tipo === "combo"
+                  ? "Em até 5 minutos seu ingresso e o comprovante do(s) produto(s) estarão disponíveis em Minhas compras — cada um com seu próprio QR Code."
+                  : tipo === "produto"
                   ? "Em até 5 minutos seu comprovante estará liberado em Minhas compras com o QR Code para retirada no dia."
                   : "Em até 5 minutos seu ingresso estará disponível em Minhas compras. Apresente o QR Code na portaria."}
               </p>
@@ -123,7 +125,7 @@ const CompraSucesso = () => {
               <div className="flex items-center gap-2 mb-4">
                 <Sparkles className="w-5 h-5 text-zampieri-gold" />
                 <h2 className="font-serif text-xl font-bold text-zampieri-green-dark">
-                  {eventoId ? "Adicione ao seu evento" : "Você também pode gostar"}
+                  {tipo === "combo" ? "Continue complementando seu evento" : eventoId ? "Adicione ao seu evento" : "Você também pode gostar"}
                 </h2>
               </div>
 

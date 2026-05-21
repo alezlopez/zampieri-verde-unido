@@ -138,7 +138,7 @@ const EventoCompra = () => {
     nome: string;
     imagem_url: string | null;
     destaque_label: string | null;
-    variacoes: { id: string; nome: string; preco: number }[];
+    variacoes: { id: string; nome: string; preco: number; preco_parcelado: number; max_parcelas: number }[];
   };
   const [extrasDisponiveis, setExtrasDisponiveis] = useState<ProdExtra[]>([]);
   // selecao[produto_id] => { variacao_id, qtd }; ausente = não selecionado
@@ -226,13 +226,13 @@ const EventoCompra = () => {
       if (prodIds.length === 0) { setExtrasDisponiveis([]); return; }
       const { data: vars } = await supabase
         .from("produto_variacoes")
-        .select("id, produto_id, nome, preco, ativo")
+        .select("id, produto_id, nome, preco, preco_parcelado, max_parcelas, ativo")
         .in("produto_id", prodIds)
         .eq("ativo", true)
         .order("ordem");
-      const varsByProd: Record<string, { id: string; nome: string; preco: number }[]> = {};
+      const varsByProd: Record<string, { id: string; nome: string; preco: number; preco_parcelado: number; max_parcelas: number }[]> = {};
       for (const v of (vars || []) as any[]) {
-        (varsByProd[v.produto_id] ||= []).push({ id: v.id, nome: v.nome, preco: Number(v.preco) });
+        (varsByProd[v.produto_id] ||= []).push({ id: v.id, nome: v.nome, preco: Number(v.preco), preco_parcelado: Number(v.preco_parcelado || v.preco), max_parcelas: Number(v.max_parcelas || 1) });
       }
       const list: ProdExtra[] = [];
       const sel: Record<string, { variacao_id: string; qtd: number }> = {};
@@ -352,7 +352,21 @@ const EventoCompra = () => {
   const alunoCortesia = !!evento?.aluno_cortesia;
   const qtdAlunosCortesia = alunoCortesia ? alunosSelecionados.length : 0;
 
-  const temParcelamento = evento ? evento.preco_parcelado > 0 && evento.max_parcelas > 1 : false;
+  // Helpers para extras selecionados
+  const extrasSelecionados = Object.entries(extrasSelecao).map(([produto_id, sel]) => {
+    const prod = extrasDisponiveis.find((p) => p.produto_id === produto_id);
+    const v = prod?.variacoes.find((x) => x.id === sel.variacao_id);
+    return prod && v ? { prod, v, qtd: sel.qtd } : null;
+  }).filter(Boolean) as { prod: ProdExtra; v: { id: string; nome: string; preco: number; preco_parcelado: number; max_parcelas: number }; qtd: number }[];
+
+  // Máximo de parcelas considera evento + variações selecionadas (usa o MAIOR)
+  const maxParcelasEvento = evento?.max_parcelas ?? 1;
+  const maxParcelasExtras = extrasSelecionados.reduce((m, e) => Math.max(m, e.v.max_parcelas || 1), 1);
+  const maxParcelasGlobal = Math.max(maxParcelasEvento, maxParcelasExtras);
+
+  const eventoTemParcelado = evento ? evento.preco_parcelado > 0 && maxParcelasEvento > 1 : false;
+  const extrasTemParcelado = extrasSelecionados.some((e) => e.v.max_parcelas > 1);
+  const temParcelamento = (eventoTemParcelado || extrasTemParcelado) && maxParcelasGlobal > 1;
   const meiaHabilitada = !!evento?.meia_entrada_habilitada && Number(evento?.preco_meia ?? 0) > 0;
 
   // Identificadores de cada participante (para meia config) — alunos cortesia não entram em meia
@@ -366,17 +380,18 @@ const EventoCompra = () => {
   const qtdParticipantesPagantes = totalParticipantes - qtdAlunosCortesia;
   const qtdInteiras = qtdParticipantesPagantes - qtdMeias;
 
-  const precoInteiraUnit = formaPagamento === "parcelado" && temParcelamento && evento
-    ? evento.preco_parcelado
-    : evento?.preco ?? 0;
-  const precoMeiaUnit = formaPagamento === "parcelado" && temParcelamento && evento
+  const isParceladoView = formaPagamento === "parcelado" && temParcelamento;
+  const precoInteiraUnit = isParceladoView && evento ? evento.preco_parcelado : evento?.preco ?? 0;
+  const precoMeiaUnit = isParceladoView && evento
     ? Number(evento.preco_meia_parcelado ?? 0)
     : Number(evento?.preco_meia ?? 0);
 
-  const total = qtdInteiras * precoInteiraUnit + qtdMeias * precoMeiaUnit;
-  const valorParcela = temParcelamento && evento && evento.max_parcelas > 0
-    ? total / evento.max_parcelas
-    : 0;
+  const totalIngressos = qtdInteiras * precoInteiraUnit + qtdMeias * precoMeiaUnit;
+  const totalExtras = extrasSelecionados.reduce(
+    (s, e) => s + (isParceladoView ? e.v.preco_parcelado : e.v.preco) * e.qtd, 0
+  );
+  const total = totalIngressos + totalExtras;
+  const valorParcela = isParceladoView && maxParcelasGlobal > 0 ? total / maxParcelasGlobal : 0;
 
   // Carrega info de cota de meia
   useEffect(() => {
@@ -609,7 +624,7 @@ const EventoCompra = () => {
 
       // Asaas: cria/recupera cobrança apenas para os ingressos pagos
       const formaAsaas = formaPagamento === "parcelado" ? "credit_card" : "pix";
-      const parcelas = formaPagamento === "parcelado" ? evento.max_parcelas : 1;
+      const parcelas = formaPagamento === "parcelado" ? maxParcelasGlobal : 1;
       const extras = Object.entries(extrasSelecao).map(([, v]) => ({ variacao_id: v.variacao_id, quantidade: v.qtd }));
       const usaCombo = extras.length > 0;
       const { data: checkoutData, error: checkoutErr } = await supabase.functions.invoke(
@@ -1092,6 +1107,26 @@ const EventoCompra = () => {
               </div>
             )}
 
+            {/* Resumo do total */}
+            {totalParticipantes > 0 && (
+              <div className="border-t pt-4 space-y-1 text-sm">
+                <div className="flex justify-between text-muted-foreground">
+                  <span>Ingressos ({qtdParticipantesPagantes})</span>
+                  <span>R$ {(qtdInteiras * (formaPagamento === "parcelado" && temParcelamento && evento ? evento.preco_parcelado : evento.preco) + qtdMeias * Number(formaPagamento === "parcelado" && temParcelamento && evento ? (evento.preco_meia_parcelado ?? 0) : (evento.preco_meia ?? 0))).toFixed(2).replace(".", ",")}</span>
+                </div>
+                {extrasSelecionados.length > 0 && (
+                  <div className="flex justify-between text-muted-foreground">
+                    <span>Extras ({extrasSelecionados.reduce((s, e) => s + e.qtd, 0)})</span>
+                    <span>R$ {extrasSelecionados.reduce((s, e) => s + (formaPagamento === "parcelado" && temParcelamento ? e.v.preco_parcelado : e.v.preco) * e.qtd, 0).toFixed(2).replace(".", ",")}</span>
+                  </div>
+                )}
+                <div className="flex justify-between font-bold text-zampieri-green-dark pt-1 border-t">
+                  <span>Total</span>
+                  <span>R$ {total.toFixed(2).replace(".", ",")}</span>
+                </div>
+              </div>
+            )}
+
             {/* Forma de pagamento */}
             {temParcelamento && totalParticipantes > 0 && (
               <div className="border-t pt-4">
@@ -1105,7 +1140,7 @@ const EventoCompra = () => {
                     <RadioGroupItem value="avista" id="avista" className="mt-1" />
                     <Label htmlFor="avista" className="cursor-pointer">
                       <span className="font-medium">
-                        À vista — R$ {(qtdInteiras * evento.preco + qtdMeias * Number(evento.preco_meia ?? 0)).toFixed(2).replace(".", ",")}
+                        À vista — R$ {(qtdInteiras * evento.preco + qtdMeias * Number(evento.preco_meia ?? 0) + extrasSelecionados.reduce((s, e) => s + e.v.preco * e.qtd, 0)).toFixed(2).replace(".", ",")}
                       </span>
                       <span className="block text-xs text-muted-foreground">PIX ou cartão de crédito (1x)</span>
                     </Label>
@@ -1114,10 +1149,10 @@ const EventoCompra = () => {
                     <RadioGroupItem value="parcelado" id="parcelado" className="mt-1" />
                     <Label htmlFor="parcelado" className="cursor-pointer">
                       <span className="font-medium">
-                        {evento.max_parcelas}x de R$ {valorParcela.toFixed(2).replace(".", ",")} (Total: R${" "}
-                        {(qtdInteiras * evento.preco_parcelado + qtdMeias * Number(evento.preco_meia_parcelado ?? 0)).toFixed(2).replace(".", ",")})
+                        {maxParcelasGlobal}x de R$ {valorParcela.toFixed(2).replace(".", ",")} (Total: R${" "}
+                        {(qtdInteiras * evento.preco_parcelado + qtdMeias * Number(evento.preco_meia_parcelado ?? 0) + extrasSelecionados.reduce((s, e) => s + e.v.preco_parcelado * e.qtd, 0)).toFixed(2).replace(".", ",")})
                       </span>
-                      <span className="block text-xs text-muted-foreground">Cartão de crédito parcelado</span>
+                      <span className="block text-xs text-muted-foreground">Cartão de crédito parcelado{maxParcelasExtras > maxParcelasEvento ? " — parcelamento estendido pelos produtos" : ""}</span>
                     </Label>
                   </div>
                 </RadioGroup>

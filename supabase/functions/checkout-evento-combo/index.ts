@@ -68,7 +68,7 @@ Deno.serve(async (req) => {
     });
     const evento: any = ingressos[0].eventos;
 
-    let maxParcelasGlobal = Math.max(1, Math.min(parcelasReq, evento.max_parcelas || 1));
+    let maxParcelasAllowed = Math.max(1, evento.max_parcelas || 1);
 
     const ingressoItems: { description: string; value: number; ingresso_id: string }[] = [];
     let qtdMeia = 0;
@@ -124,7 +124,7 @@ Deno.serve(async (req) => {
         });
       }
       const preco = isParcelado ? Number(v.preco_parcelado || v.preco) : Number(v.preco);
-      maxParcelasGlobal = Math.min(maxParcelasGlobal, v.max_parcelas || 1);
+      maxParcelasAllowed = Math.max(maxParcelasAllowed, v.max_parcelas || 1);
       extraItems.push({
         description: `${v.produtos.nome} - ${v.nome}`,
         quantity: ex.quantidade,
@@ -135,7 +135,8 @@ Deno.serve(async (req) => {
       });
     }
 
-    const maxParcelas = isParcelado ? Math.max(1, maxParcelasGlobal) : 1;
+    // Cap parcelas requested by the global maximum allowed (event or any product variation)
+    const maxParcelas = isParcelado ? Math.max(1, Math.min(parcelasReq, maxParcelasAllowed)) : 1;
 
     // ============= Comprador =============
     const { data: compradorRows, error: compErr } = await admin.rpc("get_comprador_dados", { p_user_id: user.id });
