@@ -68,7 +68,7 @@ Deno.serve(async (req) => {
     });
     const evento: any = ingressos[0].eventos;
 
-    let maxParcelasGlobal = Math.max(1, Math.min(parcelasReq, evento.max_parcelas || 1));
+    let maxParcelasAllowed = Math.max(1, evento.max_parcelas || 1);
 
     const ingressoItems: { description: string; value: number; ingresso_id: string }[] = [];
     let qtdMeia = 0;
