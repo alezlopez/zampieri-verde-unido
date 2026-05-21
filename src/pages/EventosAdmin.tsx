@@ -130,10 +130,19 @@ const EventosAdmin = () => {
   const [imagemPreview, setImagemPreview] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
 
-  // Produtos vinculados ao evento
+  // Produtos vinculados ao evento (com config de upsell)
   type ProdutoOpt = { id: string; nome: string; is_global: boolean; ativo: boolean };
+  type VariacaoOpt = { id: string; produto_id: string; nome: string; ativo: boolean };
+  type VincConfig = {
+    produto_id: string;
+    pre_selecionado: boolean;
+    variacao_padrao_id: string | null;
+    qtd_padrao: number;
+    destaque_label: string | null;
+  };
   const [produtosDisponiveis, setProdutosDisponiveis] = useState<ProdutoOpt[]>([]);
-  const [produtosVinculados, setProdutosVinculados] = useState<string[]>([]);
+  const [variacoesPorProduto, setVariacoesPorProduto] = useState<Record<string, VariacaoOpt[]>>({});
+  const [produtosVinculados, setProdutosVinculados] = useState<VincConfig[]>([]);
 
   // Resumo financeiro (calculado com base em valor_total + status dos ingressos)
   type ResumoFinanceiro = { recebido: number; pendente: number; estornado: number; cancelado: number };
