@@ -1376,12 +1376,6 @@ const EventoCompra = () => {
                 <span className="text-muted-foreground text-sm">Participantes:</span>
                 <span className="font-medium">{totalParticipantes}</span>
               </div>
-              <div className="flex justify-between items-center mb-1">
-                <span className="text-muted-foreground text-sm">Vagas disponíveis:</span>
-                <span className={`font-medium ${evento.vagas_disponiveis < 5 ? "text-destructive" : "text-zampieri-green-dark"}`}>
-                  {evento.vagas_disponiveis}
-                </span>
-              </div>
               {totalParticipantes > evento.vagas_disponiveis && (
                 <p className="text-sm text-destructive font-medium mb-2">
                   ⚠️ Não há vagas suficientes para {totalParticipantes} participante(s).

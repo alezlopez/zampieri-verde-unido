@@ -216,10 +216,6 @@ const Eventos = () => {
                       {evento.local}
                     </div>
                   )}
-                  <div className="flex items-center text-sm text-muted-foreground">
-                    <Users className="w-4 h-4 mr-2 text-zampieri-gold" />
-                    {evento.vagas_disponiveis} vagas disponíveis
-                  </div>
                   <div className="pt-2">
                     <p className="text-xl font-bold text-zampieri-green-dark">{formatPrice(evento.preco)}</p>
                     {evento.preco_parcelado > 0 && evento.max_parcelas > 1 && (
