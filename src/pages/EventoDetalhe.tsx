@@ -249,10 +249,6 @@ const EventoDetalhe = () => {
                     {evento.local}
                   </div>
                 )}
-                <div className="flex items-center">
-                  <Users className="w-4 h-4 mr-2 text-zampieri-gold" />
-                  {evento.vagas_disponiveis} vagas disponíveis
-                </div>
               </div>
 
               <div className="bg-zampieri-cream/50 rounded-lg p-5 mb-6 border border-zampieri-gold/30">
