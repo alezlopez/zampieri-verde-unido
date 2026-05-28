@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Menu, X } from "lucide-react";
+import { Link } from "react-router-dom";
 import logoZampieri from "@/assets/logo-zampieri.png";
-
 interface HeaderProps {
   activeSection: string;
 }
@@ -47,6 +47,12 @@ export const Header = ({ activeSection }: HeaderProps) => {
                 {item.label}
               </button>
             ))}
+            <Link
+              to="/eventos"
+              className="text-sm font-semibold text-zampieri-green-dark transition-colors hover:text-zampieri-gold"
+            >
+              Eventos
+            </Link>
           </nav>
 
           <a
@@ -80,6 +86,13 @@ export const Header = ({ activeSection }: HeaderProps) => {
                 {item.label}
               </button>
             ))}
+            <Link
+              to="/eventos"
+              onClick={() => setIsMenuOpen(false)}
+              className="block w-full text-left py-2 text-sm font-semibold text-zampieri-green-dark"
+            >
+              Eventos
+            </Link>
             <a
               href="https://forms.gle/4cKW6oXBQqDvhkCS8"
               target="_blank"
