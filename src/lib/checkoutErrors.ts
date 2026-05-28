@@ -41,6 +41,12 @@ export function friendlyCheckoutError(err: unknown, fallbackTitle = "Não foi po
       description: "Complete seu cadastro (CPF e nome) antes de comprar.",
     };
   }
+  if ((raw.includes("cpf") || raw.includes("cnpj")) && (raw.includes("inválido") || raw.includes("invalido") || raw.includes("invalid"))) {
+    return {
+      title: "CPF inválido no cadastro",
+      description: "O CPF cadastrado não foi reconhecido pela Receita Federal. Verifique se está correto ou entre em contato com a secretaria do colégio para corrigir o cadastro.",
+    };
+  }
   if (raw.includes("eventos diferentes")) {
     return {
       title: "Ingressos de eventos diferentes",
