@@ -373,7 +373,7 @@ const ProdutosRelatorio = () => {
 
               <Card className="border-border">
                 <CardHeader className="pb-2"><CardTitle className="text-sm text-zampieri-green-dark">Por variação</CardTitle></CardHeader>
-                <CardContent className="p-0">
+                <CardContent className="p-0 overflow-x-auto">
                   <Table>
                     <TableHeader><TableRow>
                       <TableHead>Produto</TableHead>
