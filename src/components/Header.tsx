@@ -37,6 +37,8 @@ export const Header = ({ activeSection }: HeaderProps) => {
 
           <nav className="hidden lg:flex items-center gap-7">
             {menuItems.map((item) => (
+          <nav className="hidden lg:flex items-center gap-7">
+            {menuItems.map((item) => (
               <button
                 key={item.id}
                 onClick={() => scrollToSection(item.id)}
@@ -47,9 +49,13 @@ export const Header = ({ activeSection }: HeaderProps) => {
                 {item.label}
               </button>
             ))}
+            <Link
+              to="/eventos"
+              className="text-sm font-semibold text-zampieri-green-dark transition-colors hover:text-zampieri-gold"
+            >
+              Eventos
+            </Link>
           </nav>
-
-          <a
             href="https://forms.gle/4cKW6oXBQqDvhkCS8"
             target="_blank"
             rel="noopener noreferrer"
