@@ -150,17 +150,17 @@ const ProdutosAdmin = () => {
             <ArrowLeft className="w-4 h-4 mr-2" />Painel Admin
           </Link>
 
-          <div className="flex items-center justify-between mb-6">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-6">
             <h1 className="font-serif text-2xl md:text-3xl font-bold text-zampieri-green-dark flex items-center gap-2">
               <Package className="w-6 h-6" /> Produtos
             </h1>
-            <div className="flex gap-2">
-              <Link to="/eventos/admin/produtos/relatorio">
-                <Button variant="outline" className="border-zampieri-green-dark text-zampieri-green-dark hover:bg-zampieri-cream">
+            <div className="flex flex-wrap gap-2">
+              <Link to="/eventos/admin/produtos/relatorio" className="flex-1 sm:flex-none">
+                <Button variant="outline" className="w-full sm:w-auto border-zampieri-green-dark text-zampieri-green-dark hover:bg-zampieri-cream">
                   Relatório
                 </Button>
               </Link>
-              <Button onClick={() => setEditing(emptyProduto())} className="bg-zampieri-green-dark hover:bg-zampieri-green text-white">
+              <Button onClick={() => setEditing(emptyProduto())} className="flex-1 sm:flex-none bg-zampieri-green-dark hover:bg-zampieri-green text-white">
                 <Plus className="w-4 h-4 mr-2" />Novo produto
               </Button>
             </div>
