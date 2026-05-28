@@ -5,17 +5,16 @@ const RESEND_URL = "https://api.resend.com";
 const DESTINATARIO = "alexandre.zampieri@colegiozampieri.com.br";
 const REMETENTE = "Colégio Zampieri <nao-responda@colegiozampieri.com.br>";
 
-function janelaHojeBRT(): { inicio: string; fim: string; label: string } {
-  const now = new Date();
-  const brtNow = new Date(now.getTime() - 3 * 60 * 60 * 1000);
-  const y = brtNow.getUTCFullYear();
-  const m = brtNow.getUTCMonth();
-  const d = brtNow.getUTCDate();
-  const inicio = new Date(Date.UTC(y, m, d, 3, 0, 0));
-  const fim = new Date(Date.UTC(y, m, d + 1, 2, 59, 59, 999));
-  const label = `${String(d).padStart(2, "0")}/${String(m + 1).padStart(2, "0")}/${y}`;
-  return { inicio: inicio.toISOString(), fim: fim.toISOString(), label };
+function hojeBRTymd(): { ymd: string; label: string } {
+  const brt = new Date(Date.now() - 3 * 60 * 60 * 1000);
+  const y = brt.getUTCFullYear();
+  const m = brt.getUTCMonth() + 1;
+  const d = brt.getUTCDate();
+  const ymd = `${y}-${String(m).padStart(2, "0")}-${String(d).padStart(2, "0")}`;
+  const label = `${String(d).padStart(2, "0")}/${String(m).padStart(2, "0")}/${y}`;
+  return { ymd, label };
 }
+
 
 function brl(n: number): string {
   return n.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
@@ -44,7 +43,7 @@ Deno.serve(async (req) => {
     if (!RESEND_API_KEY) throw new Error("RESEND_API_KEY nao configurada");
 
     const admin = createClient(SUPABASE_URL, SERVICE);
-    const { inicio, fim, label } = janelaHojeBRT();
+    const { ymd: hoje, label } = hojeBRTymd();
 
     const { data: eventos, error: evErr } = await admin
       .from("eventos")
@@ -91,7 +90,8 @@ Deno.serve(async (req) => {
       const slot = ingPorEvento[r.evento_id];
       if (!slot) continue;
       somar(slot.total, bruto, liquido);
-      if (r.data_pagamento && r.data_pagamento >= inicio && r.data_pagamento <= fim) {
+      const dpYmd = r.data_pagamento ? String(r.data_pagamento).slice(0, 10) : null;
+      if (dpYmd === hoje) {
         somar(slot.dia, bruto, liquido);
       }
     }
@@ -104,7 +104,8 @@ Deno.serve(async (req) => {
       const slot = prodPorProduto[r.produto_id];
       if (!slot) continue;
       somar(slot.total, bruto, liquido);
-      if (r.data_pagamento && r.data_pagamento >= inicio && r.data_pagamento <= fim) {
+      const dpYmd = r.data_pagamento ? String(r.data_pagamento).slice(0, 10) : null;
+      if (dpYmd === hoje) {
         somar(slot.dia, bruto, liquido);
       }
     }
