@@ -1,7 +1,8 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
 import { corsHeaders } from "../_shared/cors.ts";
 
-const GATEWAY_URL = "https://connector-gateway.lovable.dev/resend";
+const RESEND_URL = "https://api.resend.com";
+
 const DESTINATARIO = "alexandre.zampieri@colegiozampieri.com.br";
 const REMETENTE = "Colégio Zampieri <nao-responda@colegiozampieri.com.br>";
 
@@ -178,21 +179,22 @@ Deno.serve(async (req) => {
     }).join("");
 
     const cabecalhoTabela = `
-      <tr>
-        <th style="padding:8px 10px;text-align:left;border-bottom:2px solid ${corPrim};">Período</th>
-        <th style="padding:8px 10px;text-align:right;border-bottom:2px solid ${corPrim};">Qtd</th>
-        <th style="padding:8px 10px;text-align:right;border-bottom:2px solid ${corPrim};">Bruto</th>
-        <th style="padding:8px 10px;text-align:right;border-bottom:2px solid ${corPrim};">Líquido</th>
-      </tr>`;
+    // Envio via Resend (API direta)
+    const subject = `Resumo de vendas — ${label}`;
+    const resp = await fetch(`${RESEND_URL}/emails`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${RESEND_API_KEY}`,
+      },
+      body: JSON.stringify({
+        from: REMETENTE,
+        to: [DESTINATARIO],
+        subject,
+        html,
+      }),
+    });
 
-    const html = `
-    <div style="font-family:Arial,sans-serif;max-width:700px;margin:0 auto;color:#222;">
-      <h2 style="color:${corPrim};margin:0 0 4px;">Resumo de Vendas — ${label}</h2>
-      <p style="color:#666;margin:0 0 20px;">Ingressos e produtos ativos · gerado às 20h (BRT)</p>
-
-      <h3 style="color:${corPrim};border-bottom:2px solid ${corPrim};padding-bottom:4px;">Totais Gerais</h3>
-      <table style="width:100%;border-collapse:collapse;font-size:13px;margin-bottom:20px;">
-        ${cabecalhoTabela}
         <tr><td colspan="4" style="padding:8px 10px;background:${corSec};font-weight:bold;">Ingressos</td></tr>
         ${linhaAgg("Hoje", totalGeral.ingressos.dia)}
         ${linhaAgg("Total", totalGeral.ingressos.total)}
