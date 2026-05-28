@@ -150,8 +150,8 @@ const Produtos = () => {
               <Card key={p.id}>
                 <CardContent className="p-4">
                   <div className="flex gap-4">
-                    {p.imagem_url && <img src={p.imagem_url} alt={p.nome} className="w-24 h-24 object-cover rounded" />}
-                    <div className="flex-1">
+                    {p.imagem_url && <img src={p.imagem_url} alt={p.nome} className="w-24 h-24 object-cover rounded shrink-0" />}
+                    <div className="flex-1 min-w-0">
                       <h3 className="font-serif font-bold text-lg text-zampieri-green-dark">{p.nome}</h3>
                       {p.descricao && <p className="text-sm text-muted-foreground whitespace-pre-line">{p.descricao}</p>}
                     </div>
@@ -160,15 +160,15 @@ const Produtos = () => {
                     {(variacoes[p.id] || []).map((v) => {
                       const qtd = carrinho[v.id] || 0;
                       return (
-                        <div key={v.id} className="flex items-center justify-between border-t pt-2">
-                          <div>
-                            <p className="font-medium">{v.nome}</p>
+                        <div key={v.id} className="flex items-center justify-between gap-2 border-t pt-2">
+                          <div className="min-w-0 flex-1">
+                            <p className="font-medium truncate">{v.nome}</p>
                             <p className="text-sm text-muted-foreground">
                               R$ {Number(v.preco).toFixed(2)}
                               {v.preco_parcelado > 0 && v.max_parcelas > 1 && ` · parc. R$ ${Number(v.preco_parcelado).toFixed(2)} em até ${v.max_parcelas}x`}
                             </p>
                           </div>
-                          <div className="flex items-center gap-2">
+                          <div className="flex items-center gap-2 shrink-0">
                             <Button size="sm" variant="outline" onClick={() => setQtd(v.id, -1)} disabled={qtd === 0}><Minus className="w-3 h-3" /></Button>
                             <span className="w-8 text-center font-semibold">{qtd}</span>
                             <Button size="sm" variant="outline" onClick={() => setQtd(v.id, +1)}><Plus className="w-3 h-3" /></Button>
@@ -202,7 +202,7 @@ const Produtos = () => {
                     } else {
                       setParcelas(1);
                     }
-                  }} className="flex gap-4 mt-1">
+                  }} className="flex flex-wrap gap-3 mt-1">
                     <div className="flex items-center gap-2"><RadioGroupItem value="pix" id="f-pix" /><Label htmlFor="f-pix">PIX/Cartão à vista</Label></div>
                     <div className="flex items-center gap-2"><RadioGroupItem value="credit_card" id="f-cc" /><Label htmlFor="f-cc">Cartão parcelado</Label></div>
                   </RadioGroup>

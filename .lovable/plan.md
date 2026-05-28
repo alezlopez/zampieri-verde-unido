@@ -1,80 +1,69 @@
+# Ajustes de responsividade mobile
 
-# Order bumps: produto relacionado no checkout do evento
+Foco principal: painel admin e relatórios (problema relatado). Aproveitando, corrijo também os pontos de fricção mobile encontrados em outras rotas. **Nenhuma regra de negócio, fetch, validação ou fluxo será alterado** — só classes Tailwind de layout.
 
-## Objetivo
-Aumentar conversão oferecendo produtos vinculados ao evento já dentro da página de compra do ingresso, em um único checkout Asaas, mantendo comprovantes separados (1 por ingresso + 1 por pedido de produto).
+## Escopo (alta prioridade — admin/relatórios)
 
-## 1. Banco (migration)
+**`src/pages/EventosAdmin.tsx`**
+- Toolbar do header com 5 botões (Relatório Eventos / Relatório Produtos / Produtos / Scanner QR / Novo Evento) hoje estoura no mobile. Adicionar `flex-wrap gap-2` e empilhar (`flex-col sm:flex-row`) quando necessário, com botões `w-full sm:w-auto`.
+- KPI grid `grid-cols-2 md:grid-cols-4` → `grid-cols-1 sm:grid-cols-2 md:grid-cols-4` (cards ficam apertados em 360px).
 
-**`evento_produtos`** — novas colunas para controle por evento/produto:
-- `pre_selecionado boolean default false` — se já vem marcado no checkout
-- `variacao_padrao_id uuid` (nullable) — qual variação aparece pré-marcada
-- `qtd_padrao integer default 1` — quantidade pré-marcada
-- `destaque_label text` (nullable) — texto opcional tipo "🔥 Mais vendido", "Combo do evento"
+**`src/pages/EventosRelatorio.tsx`**
+- Header com 3 botões grandes (Sincronizar líquidos / Forçar recálculo / Exportar CSV) sem `flex-wrap` — adicionar wrap e quebrar layout em mobile (título em cima, ações embaixo).
+- Tabelas de breakdown ("Por evento" e "Por forma de pagamento") sem wrapper de scroll — envolver em `<div className="overflow-x-auto">`.
+- Tabela principal de Detalhamento (10 colunas) — trocar `overflow-auto` por `overflow-x-auto` e garantir `min-w-0` no card pai.
 
-Sem mudança de RLS.
+**`src/pages/ProdutosRelatorio.tsx`**
+- Mesmas correções de tabelas: envolver as 3 tabelas de breakdown em `overflow-x-auto`; tabela principal `overflow-auto` → `overflow-x-auto`.
 
-## 2. Admin de evento_produtos (EventosAdmin)
-No painel onde já existe a vinculação de produtos a eventos, adicionar:
-- Toggle "Pré-marcar no checkout"
-- Select de variação padrão (lista variações ativas do produto)
-- Input numérico "Qtd padrão"
-- Input texto "Destaque" (opcional)
+**`src/pages/ProdutosAdmin.tsx`**
+- Linha de variação com texto longo de preço + badges + 2 botões: adicionar `min-w-0` no texto e `shrink-0 flex-wrap` no grupo de ações.
+- Header de ações com `flex-wrap gap-2`.
 
-## 3. UI — EventoCompra.tsx
+## Escopo (média prioridade — outras rotas)
 
-Nova seção **"Leve junto"** entre os participantes e o resumo:
-- Aparece só se houver `evento_produtos` ativos para esse evento.
-- Cada produto mostra imagem, nome, variações (radio) e stepper de qtd.
-- Itens com `pre_selecionado=true` já vêm marcados com `variacao_padrao_id` e `qtd_padrao`.
-- Badge de destaque renderiza `destaque_label` se setado.
-- Sempre opcional: usuário pode desmarcar ou trocar variação/qtd.
+**`src/pages/EventoCompra.tsx`**
+- Form de convidado: `grid grid-cols-2` → `grid grid-cols-1 sm:grid-cols-2` para CPF/Data nascimento e Email/Celular (em telas ≤375px ficam pequenos demais para digitar).
 
-Resumo lateral passa a somar ingressos + extras, com linha "Produtos adicionados".
+**`src/pages/EventoDetalhe.tsx`**
+- CTA `sticky bottom-4` sobrepõe o último bloco em telas curtas — adicionar `pb-24` no `<article>` para garantir folga.
 
-## 4. Nova edge function `checkout-evento-combo`
+**`src/pages/Produtos.tsx`**
+- Linha do produto: `min-w-0` no container de texto (evita overflow de nome longo).
+- Linha de variação: `min-w-0` à esquerda, `shrink-0` no grupo de botões +/-.
+- RadioGroup de pagamento: `flex-wrap`.
 
-Substitui a chamada a `asaas-create-checkout` quando há extras (mantém a antiga intacta para fluxos sem produto). Recebe:
-```
-{ ingresso_ids: [...], extras: [{ variacao_id, quantidade }], forma_pagamento, parcelas }
-```
+**`src/pages/MapadaSuaProximaGrandeAventura.tsx`**
+- Normalizar `text-base` solto para `text-sm md:text-base` nos `FormLabel` para consistência (cosmético).
 
-Fluxo:
-1. Valida ingressos do usuário (mesma lógica de `asaas-create-checkout`).
-2. Valida variações + estoque (mesma lógica de `produtos-create-checkout`).
-3. Calcula `max_parcelas` como o mínimo entre evento e todas variações.
-4. Cria `pedidos_produtos` pendentes vinculados ao mesmo `evento_id`.
-5. Cria **um único** checkout Asaas com `items` combinando ingressos e produtos.
-6. `externalReference` no formato `mix:ing=id1,id2;prod=id3,id4`.
-7. Grava `checkout_url/checkout_id` em ambas as tabelas.
+## Páginas verificadas e OK (sem alteração)
 
-## 5. Webhook `asaas-webhook`
+`Eventos.tsx`, `MeusIngressos.tsx`, `IngressoDetalhe.tsx`, `ComprovanteProduto.tsx`, `CompraSucesso.tsx`, `EventosLogin.tsx`, `ResetPassword.tsx`, `ScannerIngressos.tsx` — já responsivas.
 
-Adicionar parser para `externalReference` começando com `mix:`:
-- Extrai lista de `ingresso_ids` e `pedido_ids` separadamente.
-- Reaproveita os handlers existentes (atualiza status `pago`/`estornado` em cada tabela independentemente).
-- Comprovantes/e-mails continuam disparando por entidade — nada muda do lado do usuário, ele recebe os comprovantes separados (ingresso + pedido) como hoje.
+## Garantias
 
-## 6. Página de sucesso e Meus Ingressos
-- `successUrl` passa a ser `/eventos/sucesso?tipo=combo&evento=...` quando há mix.
-- Página de sucesso lista ingressos E pedidos do checkout (consulta por `checkout_id`).
-- "Meus ingressos" já lista ambos separadamente — sem mudança.
-
-## 7. Estorno (decisão: independente)
-- `cancelar-ingresso` permanece como está; admin estorna ingresso e produto em ações separadas.
-- Como o Asaas permite refund parcial sobre uma cobrança, ao estornar um item o helper já calcula o valor proporcional desse item (`valor_total` da linha). Validar no helper de refund que ele aceita `value` parcial — já aceita (`refundPayment({ value })`).
+- Apenas classes Tailwind de layout/spacing/overflow alteradas.
+- Nenhum handler, query, RPC, validação ou rota alterado.
+- Layout desktop preservado (todos os ajustes usam breakpoints `sm:`/`md:` mantendo o comportamento atual em ≥768px).
+- Verificação visual pós-implementação em viewport mobile (375px) nas páginas alteradas.
 
 ## Detalhes técnicos
-- Idempotência: se o usuário voltar do checkout sem pagar, reaproveitar URL (mesma lógica TTL 60min já usada nas duas funções).
-- Estoque: revalidar via `contar_estoque_produto` no momento do POST (race protection).
-- Validação Zod completa no body da nova função.
-- Sem mudanças em `produtos-create-checkout` nem em `asaas-create-checkout`; a nova função só é invocada quando `extras.length > 0`.
 
-## Arquivos afetados
-- `supabase/migrations/<novo>.sql`
-- `supabase/functions/checkout-evento-combo/index.ts` (novo)
-- `supabase/functions/asaas-webhook/index.ts` (parser `mix:`)
-- `src/pages/EventoCompra.tsx` (seção "Leve junto" + nova chamada)
-- `src/pages/EventosAdmin.tsx` (campos de pré-seleção em evento_produtos)
-- `src/pages/CompraSucesso.tsx` (suporte a `tipo=combo`)
-- `src/integrations/supabase/types.ts` (auto após migration)
+```text
+Padrão aplicado a tabelas largas:
+<Card>
+  <CardContent className="p-0">
+    <div className="overflow-x-auto">
+      <Table className="min-w-[640px]">...</Table>
+    </div>
+  </CardContent>
+</Card>
+
+Padrão para toolbars de header:
+<div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+  <div>título</div>
+  <div className="flex flex-wrap gap-2">
+    <Button className="w-full sm:w-auto">...</Button>
+  </div>
+</div>
+```

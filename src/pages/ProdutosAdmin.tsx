@@ -150,17 +150,17 @@ const ProdutosAdmin = () => {
             <ArrowLeft className="w-4 h-4 mr-2" />Painel Admin
           </Link>
 
-          <div className="flex items-center justify-between mb-6">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-6">
             <h1 className="font-serif text-2xl md:text-3xl font-bold text-zampieri-green-dark flex items-center gap-2">
               <Package className="w-6 h-6" /> Produtos
             </h1>
-            <div className="flex gap-2">
-              <Link to="/eventos/admin/produtos/relatorio">
-                <Button variant="outline" className="border-zampieri-green-dark text-zampieri-green-dark hover:bg-zampieri-cream">
+            <div className="flex flex-wrap gap-2">
+              <Link to="/eventos/admin/produtos/relatorio" className="flex-1 sm:flex-none">
+                <Button variant="outline" className="w-full sm:w-auto border-zampieri-green-dark text-zampieri-green-dark hover:bg-zampieri-cream">
                   Relatório
                 </Button>
               </Link>
-              <Button onClick={() => setEditing(emptyProduto())} className="bg-zampieri-green-dark hover:bg-zampieri-green text-white">
+              <Button onClick={() => setEditing(emptyProduto())} className="flex-1 sm:flex-none bg-zampieri-green-dark hover:bg-zampieri-green text-white">
                 <Plus className="w-4 h-4 mr-2" />Novo produto
               </Button>
             </div>
@@ -192,7 +192,7 @@ const ProdutosAdmin = () => {
               <CardHeader><CardTitle>{editingVar.id ? "Editar variação" : "Nova variação"}</CardTitle></CardHeader>
               <CardContent className="space-y-3">
                 <div><Label>Nome (ex.: "Cartela simples")</Label><Input value={editingVar.nome || ""} onChange={(e) => setEditingVar({ ...editingVar, nome: e.target.value })} /></div>
-                <div className="grid grid-cols-2 gap-3">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div><Label>Preço à vista</Label><Input type="number" step="0.01" value={editingVar.preco ?? 0} onChange={(e) => setEditingVar({ ...editingVar, preco: Number(e.target.value) })} /></div>
                   <div><Label>Preço parcelado</Label><Input type="number" step="0.01" value={editingVar.preco_parcelado ?? 0} onChange={(e) => setEditingVar({ ...editingVar, preco_parcelado: Number(e.target.value) })} /></div>
                   <div><Label>Máx parcelas</Label><Input type="number" value={editingVar.max_parcelas ?? 1} onChange={(e) => setEditingVar({ ...editingVar, max_parcelas: Number(e.target.value) })} /></div>
@@ -234,14 +234,16 @@ const ProdutosAdmin = () => {
                     </div>
                     {(variacoes[p.id] || []).length === 0 && <p className="text-sm text-muted-foreground italic">Nenhuma variação cadastrada</p>}
                     {(variacoes[p.id] || []).map((v) => (
-                      <div key={v.id} className="flex items-center justify-between border-b last:border-b-0 py-2">
-                        <div>
+                      <div key={v.id} className="flex items-start justify-between gap-2 border-b last:border-b-0 py-2">
+                        <div className="min-w-0 flex-1">
                           <span className="font-medium">{v.nome}</span>
-                          <span className="text-sm text-muted-foreground ml-2">R$ {Number(v.preco).toFixed(2)} {v.preco_parcelado > 0 && `· parc. R$ ${Number(v.preco_parcelado).toFixed(2)} em até ${v.max_parcelas}x`}</span>
-                          {v.estoque_total !== null && <Badge variant="outline" className="ml-2">est: {v.estoque_total}</Badge>}
-                          {!v.ativo && <Badge variant="outline" className="ml-2">inativa</Badge>}
+                          <span className="text-sm text-muted-foreground ml-2 block sm:inline">R$ {Number(v.preco).toFixed(2)} {v.preco_parcelado > 0 && `· parc. R$ ${Number(v.preco_parcelado).toFixed(2)} em até ${v.max_parcelas}x`}</span>
+                          <div className="flex flex-wrap gap-1 mt-1">
+                            {v.estoque_total !== null && <Badge variant="outline">est: {v.estoque_total}</Badge>}
+                            {!v.ativo && <Badge variant="outline">inativa</Badge>}
+                          </div>
                         </div>
-                        <div className="flex gap-1">
+                        <div className="flex gap-1 shrink-0">
                           <Button size="sm" variant="ghost" onClick={() => setEditingVar(v)}><Pencil className="w-3 h-3" /></Button>
                           <Button size="sm" variant="ghost" onClick={() => removeVariacao(v.id)}><Trash2 className="w-3 h-3" /></Button>
                         </div>

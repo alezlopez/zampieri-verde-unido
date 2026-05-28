@@ -209,7 +209,7 @@ const EventoDetalhe = () => {
               </div>
             )}
 
-            <article className="container mx-auto px-4 py-8 max-w-4xl">
+            <article className="container mx-auto px-4 py-8 pb-24 max-w-4xl">
               <Link to="/eventos" className="inline-flex items-center text-sm text-zampieri-green-dark hover:underline mb-4">
                 <ArrowLeft className="w-4 h-4 mr-1" /> Voltar para eventos
               </Link>

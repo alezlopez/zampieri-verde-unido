@@ -209,23 +209,23 @@ const ProdutosRelatorio = () => {
       <EventosHeader subtitle="Relatório de Produtos" />
       <div className="flex-1 py-8 px-4">
         <div className="container mx-auto max-w-6xl">
-          <div className="flex items-center justify-between mb-6">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-6">
             <Link to="/eventos/admin" className="inline-flex items-center text-zampieri-green-dark hover:text-zampieri-gold">
               <ArrowLeft className="w-4 h-4 mr-2" />
               Painel
             </Link>
-            <div className="flex gap-2 flex-wrap">
+            <div className="flex flex-wrap gap-2">
               <Button variant="outline" onClick={() => sincronizarLiquidos(false)} disabled={backfillLoading}
-                className="border-zampieri-green-dark text-zampieri-green-dark hover:bg-zampieri-cream">
+                className="flex-1 sm:flex-none border-zampieri-green-dark text-zampieri-green-dark hover:bg-zampieri-cream">
                 <Wand2 className={`w-4 h-4 mr-2 ${backfillLoading ? "animate-spin" : ""}`} />
                 Sincronizar líquidos
               </Button>
               <Button variant="outline" onClick={() => sincronizarLiquidos(true)} disabled={backfillLoading}
-                className="border-zampieri-green-dark text-zampieri-green-dark hover:bg-zampieri-cream">
+                className="flex-1 sm:flex-none border-zampieri-green-dark text-zampieri-green-dark hover:bg-zampieri-cream">
                 <Wand2 className={`w-4 h-4 mr-2 ${backfillLoading ? "animate-spin" : ""}`} />
                 Forçar recálculo
               </Button>
-              <Button onClick={exportarCSV} disabled={!data} className="bg-zampieri-green-dark hover:bg-zampieri-green text-white">
+              <Button onClick={exportarCSV} disabled={!data} className="flex-1 sm:flex-none bg-zampieri-green-dark hover:bg-zampieri-green text-white">
                 <Download className="w-4 h-4 mr-2" />
                 Exportar CSV
               </Button>
@@ -307,7 +307,7 @@ const ProdutosRelatorio = () => {
           </Card>
 
           {data && (
-            <div className="grid grid-cols-2 md:grid-cols-6 gap-3 mb-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3 mb-4">
               <Card className="border-border"><CardContent className="p-4">
                 <p className="text-xs text-muted-foreground">Bruto</p>
                 <p className="text-xl font-bold text-zampieri-green-dark">{formatBRL(data.totais.bruto)}</p>
@@ -347,7 +347,7 @@ const ProdutosRelatorio = () => {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
               <Card className="border-border">
                 <CardHeader className="pb-2"><CardTitle className="text-sm text-zampieri-green-dark">Por produto</CardTitle></CardHeader>
-                <CardContent className="p-0">
+                <CardContent className="p-0 overflow-x-auto">
                   <Table>
                     <TableHeader><TableRow>
                       <TableHead>Produto</TableHead>
@@ -373,7 +373,7 @@ const ProdutosRelatorio = () => {
 
               <Card className="border-border">
                 <CardHeader className="pb-2"><CardTitle className="text-sm text-zampieri-green-dark">Por variação</CardTitle></CardHeader>
-                <CardContent className="p-0">
+                <CardContent className="p-0 overflow-x-auto">
                   <Table>
                     <TableHeader><TableRow>
                       <TableHead>Produto</TableHead>
@@ -397,7 +397,7 @@ const ProdutosRelatorio = () => {
 
               <Card className="border-border md:col-span-2">
                 <CardHeader className="pb-2"><CardTitle className="text-sm text-zampieri-green-dark">Por forma de pagamento</CardTitle></CardHeader>
-                <CardContent className="p-0">
+                <CardContent className="p-0 overflow-x-auto">
                   <Table>
                     <TableHeader><TableRow>
                       <TableHead>Forma</TableHead>
@@ -427,8 +427,8 @@ const ProdutosRelatorio = () => {
             <CardHeader className="pb-2">
               <CardTitle className="text-sm text-zampieri-green-dark">Detalhamento</CardTitle>
             </CardHeader>
-            <CardContent className="p-0 overflow-auto">
-              <Table>
+            <CardContent className="p-0 overflow-x-auto">
+              <Table className="min-w-[900px]">
                 <TableHeader>
                   <TableRow>
                     <TableHead>Produto / Variação</TableHead>
