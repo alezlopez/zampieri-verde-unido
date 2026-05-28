@@ -43,7 +43,7 @@ Deno.serve(async (req) => {
     if (!RESEND_API_KEY) throw new Error("RESEND_API_KEY nao configurada");
 
     const admin = createClient(SUPABASE_URL, SERVICE);
-    const { inicio, fim, label } = janelaHojeBRT();
+    const { ymd: hoje, label } = hojeBRTymd();
 
     const { data: eventos, error: evErr } = await admin
       .from("eventos")
