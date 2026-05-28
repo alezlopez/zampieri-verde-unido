@@ -620,37 +620,37 @@ const EventosAdmin = () => {
       <EventosHeader subtitle="Painel Administrativo" />
       <div className="flex-1 py-8 px-4">
       <div className="container mx-auto max-w-4xl">
-        <div className="flex items-center justify-between mb-6">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-6">
           <Link to="/eventos" className="inline-flex items-center text-zampieri-green-dark hover:text-zampieri-gold">
             <ArrowLeft className="w-4 h-4 mr-2" />
             Eventos
           </Link>
-          <div className="flex gap-2">
-            <Link to="/eventos/admin/relatorio">
-              <Button variant="outline" className="border-zampieri-green-dark text-zampieri-green-dark hover:bg-zampieri-cream">
+          <div className="flex flex-wrap gap-2">
+            <Link to="/eventos/admin/relatorio" className="flex-1 sm:flex-none min-w-[calc(50%-0.25rem)] sm:min-w-0">
+              <Button variant="outline" className="w-full sm:w-auto border-zampieri-green-dark text-zampieri-green-dark hover:bg-zampieri-cream">
                 <BarChart3 className="w-4 h-4 mr-2" />
                 Relatório Eventos
               </Button>
             </Link>
-            <Link to="/eventos/admin/produtos/relatorio">
-              <Button variant="outline" className="border-zampieri-green-dark text-zampieri-green-dark hover:bg-zampieri-cream">
+            <Link to="/eventos/admin/produtos/relatorio" className="flex-1 sm:flex-none min-w-[calc(50%-0.25rem)] sm:min-w-0">
+              <Button variant="outline" className="w-full sm:w-auto border-zampieri-green-dark text-zampieri-green-dark hover:bg-zampieri-cream">
                 <BarChart3 className="w-4 h-4 mr-2" />
                 Relatório Produtos
               </Button>
             </Link>
-            <Link to="/eventos/admin/produtos">
-              <Button variant="outline" className="border-zampieri-green-dark text-zampieri-green-dark hover:bg-zampieri-cream">
+            <Link to="/eventos/admin/produtos" className="flex-1 sm:flex-none min-w-[calc(50%-0.25rem)] sm:min-w-0">
+              <Button variant="outline" className="w-full sm:w-auto border-zampieri-green-dark text-zampieri-green-dark hover:bg-zampieri-cream">
                 <Plus className="w-4 h-4 mr-2" />
                 Produtos
               </Button>
             </Link>
-            <Link to="/eventos/admin/scanner">
-              <Button variant="outline" className="border-zampieri-green-dark text-zampieri-green-dark hover:bg-zampieri-cream">
+            <Link to="/eventos/admin/scanner" className="flex-1 sm:flex-none min-w-[calc(50%-0.25rem)] sm:min-w-0">
+              <Button variant="outline" className="w-full sm:w-auto border-zampieri-green-dark text-zampieri-green-dark hover:bg-zampieri-cream">
                 <ScanLine className="w-4 h-4 mr-2" />
                 Scanner QR
               </Button>
             </Link>
-            <Button onClick={() => { resetForm(); setShowForm(true); }} className="bg-zampieri-green-dark hover:bg-zampieri-green text-white">
+            <Button onClick={() => { resetForm(); setShowForm(true); }} className="w-full sm:w-auto bg-zampieri-green-dark hover:bg-zampieri-green text-white">
               <Plus className="w-4 h-4 mr-2" />
               Novo Evento
             </Button>
@@ -660,7 +660,7 @@ const EventosAdmin = () => {
         <h1 className="text-2xl font-bold text-zampieri-green-dark mb-6">Painel Administrativo — Eventos</h1>
 
         {/* Resumo financeiro geral */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-3">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3 mb-3">
           <Card className="border-border">
             <CardContent className="p-4">
               <p className="text-xs text-muted-foreground">Recebido</p>
