@@ -433,8 +433,8 @@ const EventosRelatorio = () => {
             <CardHeader className="pb-2">
               <CardTitle className="text-sm text-zampieri-green-dark">Detalhamento</CardTitle>
             </CardHeader>
-            <CardContent className="p-0 overflow-auto">
-              <Table>
+            <CardContent className="p-0 overflow-x-auto">
+              <Table className="min-w-[900px]">
                 <TableHeader>
                   <TableRow>
                     <TableHead>Evento</TableHead>
