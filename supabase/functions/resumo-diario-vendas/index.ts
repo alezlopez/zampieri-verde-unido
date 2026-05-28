@@ -90,7 +90,8 @@ Deno.serve(async (req) => {
       const slot = ingPorEvento[r.evento_id];
       if (!slot) continue;
       somar(slot.total, bruto, liquido);
-      if (r.data_pagamento && r.data_pagamento >= inicio && r.data_pagamento <= fim) {
+      const dpYmd = r.data_pagamento ? String(r.data_pagamento).slice(0, 10) : null;
+      if (dpYmd === hoje) {
         somar(slot.dia, bruto, liquido);
       }
     }
