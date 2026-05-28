@@ -925,7 +925,7 @@ const EventoCompra = () => {
                         value={c.nome}
                         onChange={(e) => updateConvidado(idx, "nome", e.target.value)}
                       />
-                      <div className="grid grid-cols-2 gap-2">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                         <Input
                           placeholder="CPF"
                           value={c.cpf}
