@@ -376,7 +376,7 @@ const EventosRelatorio = () => {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
               <Card className="border-border">
                 <CardHeader className="pb-2"><CardTitle className="text-sm text-zampieri-green-dark">Por evento</CardTitle></CardHeader>
-                <CardContent className="p-0">
+                <CardContent className="p-0 overflow-x-auto">
                   <Table>
                     <TableHeader>
                       <TableRow>
