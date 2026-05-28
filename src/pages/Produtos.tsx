@@ -150,8 +150,8 @@ const Produtos = () => {
               <Card key={p.id}>
                 <CardContent className="p-4">
                   <div className="flex gap-4">
-                    {p.imagem_url && <img src={p.imagem_url} alt={p.nome} className="w-24 h-24 object-cover rounded" />}
-                    <div className="flex-1">
+                    {p.imagem_url && <img src={p.imagem_url} alt={p.nome} className="w-24 h-24 object-cover rounded shrink-0" />}
+                    <div className="flex-1 min-w-0">
                       <h3 className="font-serif font-bold text-lg text-zampieri-green-dark">{p.nome}</h3>
                       {p.descricao && <p className="text-sm text-muted-foreground whitespace-pre-line">{p.descricao}</p>}
                     </div>
