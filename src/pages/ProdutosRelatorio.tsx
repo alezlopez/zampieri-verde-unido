@@ -307,7 +307,7 @@ const ProdutosRelatorio = () => {
           </Card>
 
           {data && (
-            <div className="grid grid-cols-2 md:grid-cols-6 gap-3 mb-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3 mb-4">
               <Card className="border-border"><CardContent className="p-4">
                 <p className="text-xs text-muted-foreground">Bruto</p>
                 <p className="text-xl font-bold text-zampieri-green-dark">{formatBRL(data.totais.bruto)}</p>
