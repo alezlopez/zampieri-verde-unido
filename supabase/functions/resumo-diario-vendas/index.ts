@@ -5,17 +5,16 @@ const RESEND_URL = "https://api.resend.com";
 const DESTINATARIO = "alexandre.zampieri@colegiozampieri.com.br";
 const REMETENTE = "Colégio Zampieri <nao-responda@colegiozampieri.com.br>";
 
-function janelaHojeBRT(): { inicio: string; fim: string; label: string } {
-  const now = new Date();
-  const brtNow = new Date(now.getTime() - 3 * 60 * 60 * 1000);
-  const y = brtNow.getUTCFullYear();
-  const m = brtNow.getUTCMonth();
-  const d = brtNow.getUTCDate();
-  const inicio = new Date(Date.UTC(y, m, d, 3, 0, 0));
-  const fim = new Date(Date.UTC(y, m, d + 1, 2, 59, 59, 999));
-  const label = `${String(d).padStart(2, "0")}/${String(m + 1).padStart(2, "0")}/${y}`;
-  return { inicio: inicio.toISOString(), fim: fim.toISOString(), label };
+function hojeBRTymd(): { ymd: string; label: string } {
+  const brt = new Date(Date.now() - 3 * 60 * 60 * 1000);
+  const y = brt.getUTCFullYear();
+  const m = brt.getUTCMonth() + 1;
+  const d = brt.getUTCDate();
+  const ymd = `${y}-${String(m).padStart(2, "0")}-${String(d).padStart(2, "0")}`;
+  const label = `${String(d).padStart(2, "0")}/${String(m).padStart(2, "0")}/${y}`;
+  return { ymd, label };
 }
+
 
 function brl(n: number): string {
   return n.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });

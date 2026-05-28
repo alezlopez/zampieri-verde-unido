@@ -1,41 +1,39 @@
-# Resumo diário de vendas por e-mail (20h)
+## Diagnóstico
 
-## Objetivo
-Todo dia às 20h (horário de Brasília), enviar para `alexandre.zampieri@colegiozampieri.com.br` um resumo das vendas de **ingressos** (eventos ativos) e **produtos** (ativos).
+**Causa raiz:** Na tabela `ingressos` (e idem em `pedidos_produtos`), `data_pagamento` está sendo gravada como **meia-noite UTC** do dia do pagamento (ex.: `2026-05-28 00:00:00+00`). Em BRT (UTC-3), isso equivale a `2026-05-27 21:00`. 
 
-## Conteúdo do e-mail
-Para cada **evento ativo** e cada **produto ativo**:
-- Quantidade total vendida (histórico, status `pago`)
-- Quantidade vendida **no dia** (status `pago`, `data_pagamento` dentro do dia)
-- **Valor bruto** total e do dia
-- **Valor líquido** total e do dia
+A função `resumo-diario-vendas` filtra "hoje" usando uma janela em UTC `[hoje 03:00 UTC, amanhã 02:59:59 UTC]` (que corresponde a 00:00–23:59 BRT). Como `data_pagamento` está em 00:00 UTC, ele cai **antes** da janela do dia atual em BRT — por isso aparece como dia anterior (ou não aparece) e o total do dia fica zerado.
 
-Mais um bloco de totais gerais (ingressos + produtos) no topo.
+**Múltiplos e-mails:** o cron está agendado corretamente 1×/dia (`0 23 * * *`). Os envios extras vieram dos testes manuais (curl). Não há bug de agendamento.
 
-## Implementação
+## Correção
 
-### 1. Edge Function `resumo-diario-vendas`
-- Roda com `service_role` (sem JWT).
-- Consulta:
-  - `eventos` onde `ativo = true` → agrega `ingressos` por `evento_id` (status `pago`, excluindo cortesias) — totais históricos e do dia.
-  - `produtos` onde `ativo = true` → agrega `pedidos_produtos` por `produto_id` (status `pago`) — totais históricos e do dia.
-- Monta HTML responsivo simples (tabelas por seção, tons verdes da identidade Zampieri).
-- Envia via **Resend** usando o padrão do gateway de connectors já documentado (`RESEND_API_KEY` + `LOVABLE_API_KEY`).
-- Destinatário fixo: `alexandre.zampieri@colegiozampieri.com.br`.
-- Remetente: domínio já verificado no Resend (a confirmar com você — ver pergunta abaixo).
+Trocar a comparação por janela de timestamp por comparação **por data**:
 
-### 2. Agendamento (pg_cron + pg_net)
-- Cron diário às **20h BRT = 23h UTC**: `0 23 * * *`.
-- Faz `net.http_post` para a edge function com header `apikey` (anon).
-- Inserido via SQL direto (não migration) por conter URL/anon key específicos do projeto.
+1. Calcular `hojeBRT` como string `YYYY-MM-DD` (data BRT atual).
+2. Para cada linha, extrair a data UTC de `data_pagamento` como `YYYY-MM-DD` (já que está em 00:00 UTC, equivale à data do pagamento).
+3. Considerar "do dia" quando `dataPagamentoYMD === hojeBRT`.
 
-### 3. "Dia" = janela considerada
-- Intervalo `[hoje 00:00 BRT, hoje 23:59:59 BRT]` calculado em UTC dentro da função.
+Isso é aplicado tanto em `ingressos` quanto em `pedidos_produtos`.
 
-## Detalhes técnicos
-- Bruto/líquido: usa `valor_bruto` e `valor_liquido` já calculados nas tabelas `ingressos` e `pedidos_produtos`. Quando `valor_liquido` estiver nulo (pendente de cálculo), soma como bruto e marca "líquido pendente".
-- Sem alterações no app/UI — somente backend.
+### Trecho técnico
 
-## Perguntas
-1. Confirmar o e-mail de **remetente** (ex.: `nao-responda@colegiozampieri.com.br`)? Precisa estar verificado no Resend.
-2. Incluir **cortesias** na contagem do dia (qtd) e separar dos pagos? Padrão proposto: contar cortesias apenas em "qtd cortesias", sem somar em bruto/líquido.
+```ts
+function hojeBRTymd(): string {
+  const brt = new Date(Date.now() - 3 * 3600 * 1000);
+  const y = brt.getUTCFullYear();
+  const m = String(brt.getUTCMonth() + 1).padStart(2, "0");
+  const d = String(brt.getUTCDate()).padStart(2, "0");
+  return `${y}-${m}-${d}`;
+}
+// ...
+const hoje = hojeBRTymd();
+const ymd = r.data_pagamento ? String(r.data_pagamento).slice(0, 10) : null;
+if (ymd === hoje) somar(slot.dia, bruto, liquido);
+```
+
+O `label` do e-mail também passa a usar `hojeBRTymd()` para garantir consistência.
+
+## Fora de escopo
+- Não mudar como `data_pagamento` é gravado (decisão de negócio — é tratada como data de pagamento, não timestamp exato).
+- Cron e template do e-mail permanecem iguais.
