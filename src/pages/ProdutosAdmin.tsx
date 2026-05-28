@@ -234,14 +234,16 @@ const ProdutosAdmin = () => {
                     </div>
                     {(variacoes[p.id] || []).length === 0 && <p className="text-sm text-muted-foreground italic">Nenhuma variação cadastrada</p>}
                     {(variacoes[p.id] || []).map((v) => (
-                      <div key={v.id} className="flex items-center justify-between border-b last:border-b-0 py-2">
-                        <div>
+                      <div key={v.id} className="flex items-start justify-between gap-2 border-b last:border-b-0 py-2">
+                        <div className="min-w-0 flex-1">
                           <span className="font-medium">{v.nome}</span>
-                          <span className="text-sm text-muted-foreground ml-2">R$ {Number(v.preco).toFixed(2)} {v.preco_parcelado > 0 && `· parc. R$ ${Number(v.preco_parcelado).toFixed(2)} em até ${v.max_parcelas}x`}</span>
-                          {v.estoque_total !== null && <Badge variant="outline" className="ml-2">est: {v.estoque_total}</Badge>}
-                          {!v.ativo && <Badge variant="outline" className="ml-2">inativa</Badge>}
+                          <span className="text-sm text-muted-foreground ml-2 block sm:inline">R$ {Number(v.preco).toFixed(2)} {v.preco_parcelado > 0 && `· parc. R$ ${Number(v.preco_parcelado).toFixed(2)} em até ${v.max_parcelas}x`}</span>
+                          <div className="flex flex-wrap gap-1 mt-1">
+                            {v.estoque_total !== null && <Badge variant="outline">est: {v.estoque_total}</Badge>}
+                            {!v.ativo && <Badge variant="outline">inativa</Badge>}
+                          </div>
                         </div>
-                        <div className="flex gap-1">
+                        <div className="flex gap-1 shrink-0">
                           <Button size="sm" variant="ghost" onClick={() => setEditingVar(v)}><Pencil className="w-3 h-3" /></Button>
                           <Button size="sm" variant="ghost" onClick={() => removeVariacao(v.id)}><Trash2 className="w-3 h-3" /></Button>
                         </div>
