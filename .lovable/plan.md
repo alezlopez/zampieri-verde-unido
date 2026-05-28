@@ -1,69 +1,41 @@
-# Ajustes de responsividade mobile
+# Resumo diário de vendas por e-mail (20h)
 
-Foco principal: painel admin e relatórios (problema relatado). Aproveitando, corrijo também os pontos de fricção mobile encontrados em outras rotas. **Nenhuma regra de negócio, fetch, validação ou fluxo será alterado** — só classes Tailwind de layout.
+## Objetivo
+Todo dia às 20h (horário de Brasília), enviar para `alexandre.zampieri@colegiozampieri.com.br` um resumo das vendas de **ingressos** (eventos ativos) e **produtos** (ativos).
 
-## Escopo (alta prioridade — admin/relatórios)
+## Conteúdo do e-mail
+Para cada **evento ativo** e cada **produto ativo**:
+- Quantidade total vendida (histórico, status `pago`)
+- Quantidade vendida **no dia** (status `pago`, `data_pagamento` dentro do dia)
+- **Valor bruto** total e do dia
+- **Valor líquido** total e do dia
 
-**`src/pages/EventosAdmin.tsx`**
-- Toolbar do header com 5 botões (Relatório Eventos / Relatório Produtos / Produtos / Scanner QR / Novo Evento) hoje estoura no mobile. Adicionar `flex-wrap gap-2` e empilhar (`flex-col sm:flex-row`) quando necessário, com botões `w-full sm:w-auto`.
-- KPI grid `grid-cols-2 md:grid-cols-4` → `grid-cols-1 sm:grid-cols-2 md:grid-cols-4` (cards ficam apertados em 360px).
+Mais um bloco de totais gerais (ingressos + produtos) no topo.
 
-**`src/pages/EventosRelatorio.tsx`**
-- Header com 3 botões grandes (Sincronizar líquidos / Forçar recálculo / Exportar CSV) sem `flex-wrap` — adicionar wrap e quebrar layout em mobile (título em cima, ações embaixo).
-- Tabelas de breakdown ("Por evento" e "Por forma de pagamento") sem wrapper de scroll — envolver em `<div className="overflow-x-auto">`.
-- Tabela principal de Detalhamento (10 colunas) — trocar `overflow-auto` por `overflow-x-auto` e garantir `min-w-0` no card pai.
+## Implementação
 
-**`src/pages/ProdutosRelatorio.tsx`**
-- Mesmas correções de tabelas: envolver as 3 tabelas de breakdown em `overflow-x-auto`; tabela principal `overflow-auto` → `overflow-x-auto`.
+### 1. Edge Function `resumo-diario-vendas`
+- Roda com `service_role` (sem JWT).
+- Consulta:
+  - `eventos` onde `ativo = true` → agrega `ingressos` por `evento_id` (status `pago`, excluindo cortesias) — totais históricos e do dia.
+  - `produtos` onde `ativo = true` → agrega `pedidos_produtos` por `produto_id` (status `pago`) — totais históricos e do dia.
+- Monta HTML responsivo simples (tabelas por seção, tons verdes da identidade Zampieri).
+- Envia via **Resend** usando o padrão do gateway de connectors já documentado (`RESEND_API_KEY` + `LOVABLE_API_KEY`).
+- Destinatário fixo: `alexandre.zampieri@colegiozampieri.com.br`.
+- Remetente: domínio já verificado no Resend (a confirmar com você — ver pergunta abaixo).
 
-**`src/pages/ProdutosAdmin.tsx`**
-- Linha de variação com texto longo de preço + badges + 2 botões: adicionar `min-w-0` no texto e `shrink-0 flex-wrap` no grupo de ações.
-- Header de ações com `flex-wrap gap-2`.
+### 2. Agendamento (pg_cron + pg_net)
+- Cron diário às **20h BRT = 23h UTC**: `0 23 * * *`.
+- Faz `net.http_post` para a edge function com header `apikey` (anon).
+- Inserido via SQL direto (não migration) por conter URL/anon key específicos do projeto.
 
-## Escopo (média prioridade — outras rotas)
-
-**`src/pages/EventoCompra.tsx`**
-- Form de convidado: `grid grid-cols-2` → `grid grid-cols-1 sm:grid-cols-2` para CPF/Data nascimento e Email/Celular (em telas ≤375px ficam pequenos demais para digitar).
-
-**`src/pages/EventoDetalhe.tsx`**
-- CTA `sticky bottom-4` sobrepõe o último bloco em telas curtas — adicionar `pb-24` no `<article>` para garantir folga.
-
-**`src/pages/Produtos.tsx`**
-- Linha do produto: `min-w-0` no container de texto (evita overflow de nome longo).
-- Linha de variação: `min-w-0` à esquerda, `shrink-0` no grupo de botões +/-.
-- RadioGroup de pagamento: `flex-wrap`.
-
-**`src/pages/MapadaSuaProximaGrandeAventura.tsx`**
-- Normalizar `text-base` solto para `text-sm md:text-base` nos `FormLabel` para consistência (cosmético).
-
-## Páginas verificadas e OK (sem alteração)
-
-`Eventos.tsx`, `MeusIngressos.tsx`, `IngressoDetalhe.tsx`, `ComprovanteProduto.tsx`, `CompraSucesso.tsx`, `EventosLogin.tsx`, `ResetPassword.tsx`, `ScannerIngressos.tsx` — já responsivas.
-
-## Garantias
-
-- Apenas classes Tailwind de layout/spacing/overflow alteradas.
-- Nenhum handler, query, RPC, validação ou rota alterado.
-- Layout desktop preservado (todos os ajustes usam breakpoints `sm:`/`md:` mantendo o comportamento atual em ≥768px).
-- Verificação visual pós-implementação em viewport mobile (375px) nas páginas alteradas.
+### 3. "Dia" = janela considerada
+- Intervalo `[hoje 00:00 BRT, hoje 23:59:59 BRT]` calculado em UTC dentro da função.
 
 ## Detalhes técnicos
+- Bruto/líquido: usa `valor_bruto` e `valor_liquido` já calculados nas tabelas `ingressos` e `pedidos_produtos`. Quando `valor_liquido` estiver nulo (pendente de cálculo), soma como bruto e marca "líquido pendente".
+- Sem alterações no app/UI — somente backend.
 
-```text
-Padrão aplicado a tabelas largas:
-<Card>
-  <CardContent className="p-0">
-    <div className="overflow-x-auto">
-      <Table className="min-w-[640px]">...</Table>
-    </div>
-  </CardContent>
-</Card>
-
-Padrão para toolbars de header:
-<div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-  <div>título</div>
-  <div className="flex flex-wrap gap-2">
-    <Button className="w-full sm:w-auto">...</Button>
-  </div>
-</div>
-```
+## Perguntas
+1. Confirmar o e-mail de **remetente** (ex.: `nao-responda@colegiozampieri.com.br`)? Precisa estar verificado no Resend.
+2. Incluir **cortesias** na contagem do dia (qtd) e separar dos pagos? Padrão proposto: contar cortesias apenas em "qtd cortesias", sem somar em bruto/líquido.
