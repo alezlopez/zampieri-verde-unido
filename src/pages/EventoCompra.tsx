@@ -938,7 +938,7 @@ const EventoCompra = () => {
                           onChange={(e) => updateConvidado(idx, "data_nascimento", e.target.value)}
                         />
                       </div>
-                      <div className="grid grid-cols-2 gap-2">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                         <Input
                           placeholder="Email"
                           value={c.email}
