@@ -202,7 +202,7 @@ const Produtos = () => {
                     } else {
                       setParcelas(1);
                     }
-                  }} className="flex gap-4 mt-1">
+                  }} className="flex flex-wrap gap-3 mt-1">
                     <div className="flex items-center gap-2"><RadioGroupItem value="pix" id="f-pix" /><Label htmlFor="f-pix">PIX/Cartão à vista</Label></div>
                     <div className="flex items-center gap-2"><RadioGroupItem value="credit_card" id="f-cc" /><Label htmlFor="f-cc">Cartão parcelado</Label></div>
                   </RadioGroup>
