@@ -160,15 +160,15 @@ const Produtos = () => {
                     {(variacoes[p.id] || []).map((v) => {
                       const qtd = carrinho[v.id] || 0;
                       return (
-                        <div key={v.id} className="flex items-center justify-between border-t pt-2">
-                          <div>
-                            <p className="font-medium">{v.nome}</p>
+                        <div key={v.id} className="flex items-center justify-between gap-2 border-t pt-2">
+                          <div className="min-w-0 flex-1">
+                            <p className="font-medium truncate">{v.nome}</p>
                             <p className="text-sm text-muted-foreground">
                               R$ {Number(v.preco).toFixed(2)}
                               {v.preco_parcelado > 0 && v.max_parcelas > 1 && ` · parc. R$ ${Number(v.preco_parcelado).toFixed(2)} em até ${v.max_parcelas}x`}
                             </p>
                           </div>
-                          <div className="flex items-center gap-2">
+                          <div className="flex items-center gap-2 shrink-0">
                             <Button size="sm" variant="outline" onClick={() => setQtd(v.id, -1)} disabled={qtd === 0}><Minus className="w-3 h-3" /></Button>
                             <span className="w-8 text-center font-semibold">{qtd}</span>
                             <Button size="sm" variant="outline" onClick={() => setQtd(v.id, +1)}><Plus className="w-3 h-3" /></Button>
