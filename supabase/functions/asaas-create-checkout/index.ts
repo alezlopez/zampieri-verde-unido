@@ -210,6 +210,18 @@ Deno.serve(async (req) => {
         .eq("id", it.ingresso_id);
     }
 
+    // Invalida checkout_id/checkout_url de ingressos pendentes do MESMO user+evento
+    // que NÃO estão neste novo checkout — evita "checkout órfão" caso o usuário regenere
+    // checkouts em subconjuntos diferentes e o webhook depois não encontre os ingressos.
+    await admin
+      .from("ingressos")
+      .update({ checkout_id: null, checkout_url: null, checkout_criado_em: null })
+      .eq("user_id", user.id)
+      .eq("evento_id", eventoId)
+      .eq("status", "pendente")
+      .not("id", "in", `(${items.map((i) => `"${i.ingresso_id}"`).join(",")})`);
+    }
+
     return new Response(
       JSON.stringify({ checkout_url: checkoutUrl, checkout_id: checkoutId, reused: false, valor_total: valorTotal }),
       { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } },
