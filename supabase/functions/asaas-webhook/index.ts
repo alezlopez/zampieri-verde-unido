@@ -187,8 +187,10 @@ Deno.serve(async (req) => {
         matched = r.data;
       }
 
-      // 3) Fallback: ids vindos no externalReference (suporta também "mix:ing=...;prod=...")
-      if ((!matched || matched.length === 0) && externalRef) {
+      // 3) Fallback / reforço: ids vindos no externalReference (suporta também "mix:ing=...;prod=...").
+      //    Roda SEMPRE que houver externalRef — assim cobrimos ingressos cujo checkout_id
+      //    ficou órfão (não bateu no passo 1) mas que pertencem ao mesmo pagamento.
+      if (externalRef) {
         let ids: string[] = [];
         if (isMixRef) {
           const bodyRef = externalRef.slice(4);
@@ -199,14 +201,17 @@ Deno.serve(async (req) => {
         } else if (!isProdRef) {
           ids = externalRef.split(",").map((s) => s.trim()).filter(Boolean);
         }
-        if (ids.length > 0) {
+        const alreadyMatchedIds = new Set((matched || []).map((m: any) => m.id));
+        const idsToFix = ids.filter((id) => !alreadyMatchedIds.has(id));
+        if (idsToFix.length > 0) {
+          const updateFix: any = { ...update, checkout_id: checkoutId || undefined };
           const r = await admin
             .from("ingressos")
-            .update(update)
-            .in("id", ids)
+            .update(updateFix)
+            .in("id", idsToFix)
             .select("id");
           if (r.error) throw r.error;
-          matched = r.data;
+          matched = [...(matched || []), ...(r.data || [])];
         }
       }
 
