@@ -171,11 +171,9 @@ Deno.serve(async (req) => {
 
       // 1) Casa pelo checkout_id (mais confiável: vem do checkoutSession ou checkout.id)
       if (checkoutId) {
-        const r = await admin
-          .from("ingressos")
-          .update(update)
-          .eq("checkout_id", checkoutId)
-          .select("id");
+        let q = admin.from("ingressos").update(update).eq("checkout_id", checkoutId);
+        if (isDowngrade) q = q.not("status", "in", "(pago,estornado)");
+        const r = await q.select("id");
         if (r.error) throw r.error;
         matched = r.data;
       }
@@ -184,12 +182,13 @@ Deno.serve(async (req) => {
       //    Restringe sempre por checkout_id quando disponível para evitar contaminar
       //    ingressos de outros compradores que possam compartilhar o mesmo id por bug histórico.
       if ((!matched || matched.length === 0) && stableId && checkoutId) {
-        const r = await admin
+        let q = admin
           .from("ingressos")
           .update(update)
           .eq("asaas_payment_id", stableId)
-          .eq("checkout_id", checkoutId)
-          .select("id");
+          .eq("checkout_id", checkoutId);
+        if (isDowngrade) q = q.not("status", "in", "(pago,estornado)");
+        const r = await q.select("id");
         if (r.error) throw r.error;
         matched = r.data;
       }
@@ -197,6 +196,9 @@ Deno.serve(async (req) => {
       // 3) Fallback / reforço: ids vindos no externalReference (suporta também "mix:ing=...;prod=...").
       //    Roda SEMPRE que houver externalRef — assim cobrimos ingressos cujo checkout_id
       //    ficou órfão (não bateu no passo 1) mas que pertencem ao mesmo pagamento.
+      //    Em eventos de "downgrade" (CHECKOUT_EXPIRED/CANCELED, PAYMENT_OVERDUE) NÃO regravamos
+      //    checkout_id e protegemos ingressos já pago/estornado — evita rebaixar tickets pagos
+      //    quando um checkout antigo (órfão) expira mais tarde.
       if (externalRef) {
         let ids: string[] = [];
         if (isMixRef) {
@@ -211,12 +213,12 @@ Deno.serve(async (req) => {
         const alreadyMatchedIds = new Set((matched || []).map((m: any) => m.id));
         const idsToFix = ids.filter((id) => !alreadyMatchedIds.has(id));
         if (idsToFix.length > 0) {
-          const updateFix: any = { ...update, checkout_id: checkoutId || undefined };
-          const r = await admin
-            .from("ingressos")
-            .update(updateFix)
-            .in("id", idsToFix)
-            .select("id");
+          const updateFix: any = { ...update };
+          // Só regrava checkout_id em eventos "positivos" (pagamento/checkout pago).
+          if (!isDowngrade && checkoutId) updateFix.checkout_id = checkoutId;
+          let q = admin.from("ingressos").update(updateFix).in("id", idsToFix);
+          if (isDowngrade) q = q.not("status", "in", "(pago,estornado)");
+          const r = await q.select("id");
           if (r.error) throw r.error;
           matched = [...(matched || []), ...(r.data || [])];
         }
