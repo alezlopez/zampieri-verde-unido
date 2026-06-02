@@ -227,6 +227,16 @@ Deno.serve(async (req) => {
       }).eq("id", it.ingresso_id);
     }
 
+    // Invalida checkout_id/checkout_url de ingressos pendentes do mesmo user+evento
+    // fora deste checkout, para evitar "checkout órfão" que confunde o webhook.
+    await admin
+      .from("ingressos")
+      .update({ checkout_id: null, checkout_url: null, checkout_criado_em: null })
+      .eq("user_id", user.id)
+      .eq("evento_id", eventoId)
+      .eq("status", "pendente")
+      .not("id", "in", `(${ingressoItems.map((i) => `"${i.ingresso_id}"`).join(",")})`);
+
     // Grava nos pedidos
     await admin.from("pedidos_produtos").update({
       checkout_url: checkoutUrl,

@@ -1,6 +1,7 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
 import { corsHeaders } from "../_shared/cors.ts";
 import { recomputeIngressosFinancials } from "../_shared/financeiro.ts";
+import { getCheckout } from "../_shared/asaas.ts";
 
 const STATUS_MAP: Record<string, string> = {
   PAYMENT_CONFIRMED: "pago",
@@ -75,10 +76,24 @@ Deno.serve(async (req) => {
     };
 
     const newStatus = STATUS_MAP[eventType] || CHECKOUT_STATUS_MAP[eventType];
-    const externalRef: string | null =
+    let externalRef: string | null =
       payload?.payment?.externalReference ||
       checkoutObj?.externalReference ||
       null;
+
+    // Asaas omite externalReference no payload do PAYMENT_* (PIX especialmente).
+    // Quando temos checkoutId mas não externalRef, consultamos /checkouts/{id}
+    // para resgatar a referência original e cobrir TODOS os ingressos/pedidos do checkout
+    // — corrige caso onde ingressos ficaram com checkout_id órfão (regerados em outro fluxo).
+    if (!externalRef && checkoutId) {
+      try {
+        const co = await getCheckout(checkoutId);
+        externalRef = co?.externalReference || null;
+        if (externalRef) console.log("[asaas-webhook] externalRef recuperado via API", { checkoutId, externalRef });
+      } catch (e) {
+        console.warn("[asaas-webhook] falha ao consultar checkout no Asaas", (e as Error).message);
+      }
+    }
 
     // ============ ROTEAMENTO ============
     // - "prod:..." → apenas pedidos_produtos
@@ -172,8 +187,10 @@ Deno.serve(async (req) => {
         matched = r.data;
       }
 
-      // 3) Fallback: ids vindos no externalReference (suporta também "mix:ing=...;prod=...")
-      if ((!matched || matched.length === 0) && externalRef) {
+      // 3) Fallback / reforço: ids vindos no externalReference (suporta também "mix:ing=...;prod=...").
+      //    Roda SEMPRE que houver externalRef — assim cobrimos ingressos cujo checkout_id
+      //    ficou órfão (não bateu no passo 1) mas que pertencem ao mesmo pagamento.
+      if (externalRef) {
         let ids: string[] = [];
         if (isMixRef) {
           const bodyRef = externalRef.slice(4);
@@ -184,14 +201,17 @@ Deno.serve(async (req) => {
         } else if (!isProdRef) {
           ids = externalRef.split(",").map((s) => s.trim()).filter(Boolean);
         }
-        if (ids.length > 0) {
+        const alreadyMatchedIds = new Set((matched || []).map((m: any) => m.id));
+        const idsToFix = ids.filter((id) => !alreadyMatchedIds.has(id));
+        if (idsToFix.length > 0) {
+          const updateFix: any = { ...update, checkout_id: checkoutId || undefined };
           const r = await admin
             .from("ingressos")
-            .update(update)
-            .in("id", ids)
+            .update(updateFix)
+            .in("id", idsToFix)
             .select("id");
           if (r.error) throw r.error;
-          matched = r.data;
+          matched = [...(matched || []), ...(r.data || [])];
         }
       }
 
