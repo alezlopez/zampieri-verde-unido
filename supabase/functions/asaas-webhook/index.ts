@@ -125,11 +125,15 @@ Deno.serve(async (req) => {
       if (stableId) updateP.asaas_payment_id = stableId;
       let matchedP: any[] | null = null;
       if (checkoutId) {
-        const r = await admin.from("pedidos_produtos").update(updateP).eq("checkout_id", checkoutId).select("id");
+        let q = admin.from("pedidos_produtos").update(updateP).eq("checkout_id", checkoutId);
+        if (isDowngrade) q = q.not("status", "in", "(pago,estornado)");
+        const r = await q.select("id");
         if (!r.error) matchedP = r.data;
       }
       if ((!matchedP || matchedP.length === 0) && !checkoutId && prodIds.length > 0) {
-        const r = await admin.from("pedidos_produtos").update(updateP).in("id", prodIds).select("id");
+        let q = admin.from("pedidos_produtos").update(updateP).in("id", prodIds);
+        if (isDowngrade) q = q.not("status", "in", "(pago,estornado)");
+        const r = await q.select("id");
         if (!r.error) matchedP = r.data;
       }
       if (matchedP && matchedP.length > 0) {
