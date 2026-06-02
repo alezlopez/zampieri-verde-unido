@@ -76,6 +76,9 @@ Deno.serve(async (req) => {
     };
 
     const newStatus = STATUS_MAP[eventType] || CHECKOUT_STATUS_MAP[eventType];
+    // "Downgrade" events: expiração/cancelamento de checkout ou cobrança vencida.
+    // Nesses casos NUNCA podemos rebaixar ingressos/pedidos já `pago` ou `estornado` para `pendente`.
+    const isDowngrade = newStatus === "pendente";
     let externalRef: string | null =
       payload?.payment?.externalReference ||
       checkoutObj?.externalReference ||
