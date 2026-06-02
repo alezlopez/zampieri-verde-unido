@@ -76,10 +76,24 @@ Deno.serve(async (req) => {
     };
 
     const newStatus = STATUS_MAP[eventType] || CHECKOUT_STATUS_MAP[eventType];
-    const externalRef: string | null =
+    let externalRef: string | null =
       payload?.payment?.externalReference ||
       checkoutObj?.externalReference ||
       null;
+
+    // Asaas omite externalReference no payload do PAYMENT_* (PIX especialmente).
+    // Quando temos checkoutId mas não externalRef, consultamos /checkouts/{id}
+    // para resgatar a referência original e cobrir TODOS os ingressos/pedidos do checkout
+    // — corrige caso onde ingressos ficaram com checkout_id órfão (regerados em outro fluxo).
+    if (!externalRef && checkoutId) {
+      try {
+        const co = await getCheckout(checkoutId);
+        externalRef = co?.externalReference || null;
+        if (externalRef) console.log("[asaas-webhook] externalRef recuperado via API", { checkoutId, externalRef });
+      } catch (e) {
+        console.warn("[asaas-webhook] falha ao consultar checkout no Asaas", (e as Error).message);
+      }
+    }
 
     // ============ ROTEAMENTO ============
     // - "prod:..." → apenas pedidos_produtos
