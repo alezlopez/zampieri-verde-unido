@@ -1,41 +1,55 @@
-## Diagnóstico
+## Diagnóstico do caso CPF 25519771855 (Gerson Fonseca Da Cruz)
 
-Encontrei os 4 ingressos da Tais Dos Santos Alves (user `e041311d…`):
+3 ingressos no banco (todos `user_id = 899cdbf6…`, evento `d1ed4d8c…`):
 
-| Participante | tipo | status | checkout_id | valor |
-|---|---|---|---|---|
-| Bernardo Alves Ximenes (aluno) | cortesia | **pago** | — | 0 |
-| Tais Dos Santos Alves | inteira | **pago** | `54eb036b…` | 40 |
-| Tarcísio Ximenes | inteira | **cancelado** | `6a6cc4ad…` | 40 |
-| Ivanice Eleoterio dos Santos | inteira | **cancelado** | `9233f06d…` | 40 |
+| Participante | tipo | status atual | checkout_id | asaas_payment_id | valor |
+|---|---|---|---|---|---|
+| Manuella (aluno) | inteira | **pago** | ee734ae5… (compra de 09/05) | — | 240 |
+| Edileia (convidado) | inteira | **cancelado** ❗ | 4bb600ee… | pay_52gwl0uwfps6c8as | 30 |
+| Gerson (convidado) | inteira | **cancelado** ❗ | fb8ca0d5… | pay_uiu6sj1s21dqb83h | 30 |
 
-E 1 pedido de produto: 2× "Todas as rodas" R$104, status pago, checkout `54eb036b…`.
+Os 2 ingressos cancelados foram **efetivamente pagos** (têm `data_pagamento`, `valor_liquido = 29.01`, `email_confirmacao_enviado_em`), mas estão como `cancelado` com `cancelado_em / cancelado_por / motivo_cancelamento = NULL`.
 
-O pagamento no Asaas (`pay_ul0c01pem4z29ftn`) veio com `value: 224` (= 3 ingressos × 40 + 2 produtos × 52) e `checkoutSession: 54eb036b…`. O `externalReference` veio **null** no payload do pagamento.
+### Causa raiz (novo bug, diferente do caso Tais)
 
-### Causa raiz
+Sequência reconstruída pelos eventos do webhook:
 
-O webhook `asaas-webhook` casa ingressos por `checkout_id` (igual ao `checkoutSession` do Asaas). Mas no banco só **1 ingresso** (Tais) está com o `checkout_id` `54eb036b…`. Os outros 2 ficaram com `checkout_id` antigos (de checkouts gerados anteriormente e nunca sobrescritos).
+1. **01:57** — usuário gerou checkout `b7a50a9a` com `externalReference = mix:ing=7dd30efb,e6740547;prod=551f09e8`. Ingressos criados como `pendente`.
+2. **02:03 e 02:09** — usuário regerou o checkout 2× (`4bb600ee` e `fb8ca0d5`). O `checkout-evento-combo` sobrescreveu `checkout_id` dos ingressos para o checkout mais novo. Checkout `b7a50a9a` ficou órfão.
+3. **02:12 e 02:17** — `PAYMENT_RECEIVED` chegou para os 2 checkouts mais novos. Webhook casou por `checkout_id` e marcou ambos os ingressos como **pago** (gravou `asaas_payment_id`, `valor_liquido`, mandou email).
+4. **02:57** — Asaas disparou `CHECKOUT_EXPIRED` para o checkout órfão `b7a50a9a`. No webhook:
+   - `newStatus = "pendente"` (mapa `CHECKOUT_STATUS_MAP`)
+   - `externalRef = mix:ing=7dd30efb,e6740547;prod=...` (veio no payload do checkout)
+   - Passo 1 (casa por `checkout_id = b7a50a9a`) não casou nada (já tinham sido sobrescritos).
+   - **Passo 3 (fallback por ids do `externalRef`)** rodou — e o passo 3 agora roda SEMPRE que `externalRef` existe (mudança do caso Tais). Atualizou os 2 ingressos para `status='pendente'`, regravando `checkout_id = b7a50a9a`.
+5. **~03:00** — `cancelar-pendentes` (cutoff 60 min, ingressos têm `created_at = 01:57`) pegou ambos e fez `UPDATE ingressos SET status='cancelado'`. Esse path não preenche `cancelado_em/por/motivo` — bate exatamente com o estado atual.
 
-Provável fluxo do usuário: gerou checkout(s) para Tarcísio e Ivanice em momentos separados, depois clicou de novo e o `checkout-evento-combo` criou o checkout final `54eb036b…` incluindo todos os 3 ingressos no Asaas, mas **só atualizou no banco** os ingressos que estavam no array `ingresso_ids` daquela chamada (aparentemente só Tais). Os outros 2 mantiveram `checkout_id` órfão → webhook não os encontrou → ficaram pendentes → `cancelar-pendentes` cancelou.
+### O bug
 
-O fallback por `externalReference` não salvou porque o Asaas não devolveu esse campo no payload de PIX.
+O webhook **rebaixa ingressos já pagos para `pendente`** quando chega um `CHECKOUT_EXPIRED/CANCELED` de um checkout antigo do mesmo usuário. Em seguida, o `cancelar-pendentes` os cancela. O passo 3 do fallback, que rodamos "sempre" para corrigir o caso Tais, agravou o problema porque agora qualquer `externalRef` do payload propaga a mudança.
 
 ## Plano
 
-### 1. Corrigir o caso da Tais (manual, via migração)
-Atualizar os 2 ingressos (Tarcísio e Ivanice) para `status='pago'`, gravar `asaas_payment_id='pay_ul0c01pem4z29ftn'`, `checkout_id='54eb036b…'`, `data_pagamento`, `valor_total=40`, e recalcular `valor_bruto/líquido/taxa` proporcional (via `recomputeIngressosFinancials` ou rateio simples). Em seguida, disparar `enviar-confirmacao-ingresso` para esses 2 ingressos.
+### 1. Corrigir o caso Gerson (migração)
+Reativar Edileia (`e6740547…`) e Gerson (`7dd30efb…`) como `pago`:
+- `status = 'pago'`, `utilizado = false`
+- Restaurar `checkout_id` correto de cada um (`4bb600ee…` e `fb8ca0d5…` respectivamente)
+- Manter `asaas_payment_id`, `valor_bruto/líquido/taxa`, `data_pagamento` já existentes
+- Limpar `cancelado_em/por/motivo_cancelamento` (já nulos)
+- Não reenviar e-mail (já foram enviados em 31/05)
 
-### 2. Prevenir reincidência no webhook
-Quando o webhook recebe um `PAYMENT_RECEIVED` com `checkoutSession` e o match por `checkout_id` retorna **menos itens do que o valor pago indica** (ou retorna zero ingressos quando o valor > soma do que casou), consultar a API do Asaas em `GET /v3/checkouts/{checkoutSession}` para ler o `externalReference` real do checkout e usar como fallback (já há código que parseia `mix:ing=…;prod=…`).
+### 2. Webhook: não rebaixar ingressos pagos
+Em `supabase/functions/asaas-webhook/index.ts`:
+- Em **qualquer update** disparado por eventos de "downgrade" (`CHECKOUT_EXPIRED`, `CHECKOUT_CANCELED`, `PAYMENT_OVERDUE`), adicionar guarda `.not("status", "in", "(pago,estornado)")` em todos os passos (1, 2 e 3 do fallback). Ingresso já liquidado nunca volta para `pendente` por evento de expiração.
+- O mesmo para `pedidos_produtos`.
 
-### 3. Prevenir reincidência no checkout-evento-combo / asaas-create-checkout
-Antes de criar um novo checkout, **invalidar (`checkout_id=null`, `checkout_url=null`)** todos os ingressos pendentes do mesmo `user_id + evento_id` que **não** estão no array da requisição atual. Assim eles não ficam "atrelados" a um checkout antigo que o usuário nunca pagará, e o `cancelar-pendentes` ainda os cancela depois.
+### 3. Webhook: restringir o fallback do passo 3
+- O passo 3 só deve atualizar `checkout_id` quando o evento for de **pagamento** (`PAYMENT_*`) ou `CHECKOUT_PAID`. Para `CHECKOUT_EXPIRED/CANCELED`, não regravar `checkout_id` em ingressos cujo `checkout_id` atual seja diferente (sinal de que já foram movidos para outro checkout).
 
 ### Detalhes técnicos
-- Item 1: migração SQL `UPDATE ingressos SET … WHERE id IN (…)` + invoke da função de e-mail via `curl` da edge function.
-- Item 2: nova chamada `asaasGet(/v3/checkouts/{id})` em `supabase/functions/_shared/asaas.ts` + uso no `asaas-webhook/index.ts` antes do passo 3 do fallback.
-- Item 3: `UPDATE ingressos SET checkout_id=null, checkout_url=null WHERE user_id=$u AND evento_id=$e AND status='pendente' AND id NOT IN ($ids)` no início de `asaas-create-checkout` e `checkout-evento-combo`.
+- Migração: `UPDATE ingressos SET status='pago' WHERE id IN ('7dd30efb…','e6740547…')`. Os campos financeiros já estão corretos.
+- No `STATUS_MAP`/`CHECKOUT_STATUS_MAP`, marcar quais eventos são "downgrades" (vão para `pendente`) e aplicar a guarda `status NOT IN ('pago','estornado')` nas três queries de update do bloco de ingressos (e também no bloco de produtos).
+- Não mexer no `cancelar-pendentes` — o comportamento dele (cancelar pendentes antigos) está correto; a falha foi a fonte que os marcou como pendente.
 
 ## Pergunta antes de implementar
-Confirma que devo (a) reativar os 2 ingressos cancelados da Tais (Tarcísio e Ivanice) como pagos e reenviar os comprovantes, e (b) aplicar as correções 2 e 3 para prevenir o problema?
+Confirma que devo (a) reativar Edileia e Gerson como pagos e (b) aplicar as guardas no webhook para não rebaixar ingressos já pagos quando um checkout antigo expirar/cancelar?
