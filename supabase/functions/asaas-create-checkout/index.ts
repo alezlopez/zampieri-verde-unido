@@ -220,7 +220,6 @@ Deno.serve(async (req) => {
       .eq("evento_id", eventoId)
       .eq("status", "pendente")
       .not("id", "in", `(${items.map((i) => `"${i.ingresso_id}"`).join(",")})`);
-    }
 
     return new Response(
       JSON.stringify({ checkout_url: checkoutUrl, checkout_id: checkoutId, reused: false, valor_total: valorTotal }),
