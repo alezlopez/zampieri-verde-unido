@@ -140,8 +140,9 @@ const EventoCompra = () => {
     destaque_label: string | null;
     escassez_template: string | null;
     variacao_recomendada_id: string | null;
-    variacoes: { id: string; nome: string; preco: number; preco_parcelado: number; max_parcelas: number; disponivel: number | null; vendidos: number }[];
+    variacoes: { id: string; nome: string; display_nome: string; preco: number; preco_parcelado: number; max_parcelas: number; disponivel: number | null; vendidos: number }[];
   };
+
   const [extrasDisponiveis, setExtrasDisponiveis] = useState<ProdExtra[]>([]);
   // selecao[produto_id] => { variacao_id, qtd }; ausente = não selecionado
   const [extrasSelecao, setExtrasSelecao] = useState<Record<string, { variacao_id: string; qtd: number }>>({});
