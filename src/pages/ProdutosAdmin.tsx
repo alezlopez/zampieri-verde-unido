@@ -196,6 +196,8 @@ const ProdutosAdmin = () => {
               <CardHeader><CardTitle>{editingVar.id ? "Editar variação" : "Nova variação"}</CardTitle></CardHeader>
               <CardContent className="space-y-3">
                 <div><Label>Nome (ex.: "Cartela simples")</Label><Input value={editingVar.nome || ""} onChange={(e) => setEditingVar({ ...editingVar, nome: e.target.value })} /></div>
+                <div><Label>Selo de destaque (ex.: "Mais vendido")</Label><Input value={editingVar.destaque_label || ""} onChange={(e) => setEditingVar({ ...editingVar, destaque_label: e.target.value })} placeholder="opcional" /></div>
+                <div><Label>Descrição / âncora de valor</Label><Textarea value={editingVar.descricao || ""} onChange={(e) => setEditingVar({ ...editingVar, descricao: e.target.value })} placeholder="opcional — ex.: 6 cartelas + brinde" /></div>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div><Label>Preço à vista</Label><Input type="number" step="0.01" value={editingVar.preco ?? 0} onChange={(e) => setEditingVar({ ...editingVar, preco: Number(e.target.value) })} /></div>
                   <div><Label>Preço parcelado</Label><Input type="number" step="0.01" value={editingVar.preco_parcelado ?? 0} onChange={(e) => setEditingVar({ ...editingVar, preco_parcelado: Number(e.target.value) })} /></div>
