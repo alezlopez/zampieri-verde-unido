@@ -111,7 +111,7 @@ const EventoCompra = () => {
   const [alunosComIngresso, setAlunosComIngresso] = useState<string[]>([]);
 
   // Termos e autorização
-  const [termosAceitos, setTermosAceitos] = useState(false);
+  // (Termos: aceitação implícita ao prosseguir — sem checkbox)
   const [autorizacaoAceita, setAutorizacaoAceita] = useState(false);
   const [termosDialogOpen, setTermosDialogOpen] = useState(false);
   const [autorizacaoDialogOpen, setAutorizacaoDialogOpen] = useState(false);
