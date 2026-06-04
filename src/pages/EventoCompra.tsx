@@ -1081,7 +1081,6 @@ const EventoCompra = () => {
               <div className="border-t pt-4 space-y-3">
                 <div>
                   <label className="text-sm font-medium block text-zampieri-green-dark">✨ Leve junto com seu ingresso</label>
-                  <p className="text-xs text-muted-foreground">Selecione uma opção abaixo para adicionar. Você pode trocar a quantidade depois.</p>
                 </div>
                 {extrasDisponiveis.map((p) => {
                   const sel = extrasSelecao[p.produto_id];
