@@ -17,6 +17,8 @@ import { EventosHeader } from "@/components/EventosHeader";
 import { Footer } from "@/components/Footer";
 import { friendlyCheckoutError } from "@/lib/checkoutErrors";
 
+const LATO = "'Lato', sans-serif";
+
 interface Evento {
   id: string;
   titulo: string;
