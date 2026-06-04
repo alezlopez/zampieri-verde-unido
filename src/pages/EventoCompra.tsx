@@ -1157,11 +1157,9 @@ const EventoCompra = () => {
                                     </span>
                                   )}
                                 </span>
-                                {p.escassez_template && (
+                                {v.escassez_text && (
                                   <span className="text-[10px] text-orange-600 font-semibold">
-                                    🔥 {p.escassez_template
-                                      .replace(/\{disponiveis\}/gi, v.disponivel !== null ? String(v.disponivel) : "")
-                                      .replace(/\{vendidas\}/gi, String(v.vendidos ?? ""))}
+                                    🔥 {v.escassez_text}
                                   </span>
                                 )}
                               </span>
