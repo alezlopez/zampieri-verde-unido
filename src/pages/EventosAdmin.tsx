@@ -146,6 +146,7 @@ const EventosAdmin = () => {
     escassez_variacoes: Record<string, string> | null;
     preco_override: Record<string, number> | null;
     preco_evento: Record<string, number> | null;
+    preco_riscado: Record<string, number> | null;
   };
 
   const [produtosDisponiveis, setProdutosDisponiveis] = useState<ProdutoOpt[]>([]);
@@ -282,7 +283,7 @@ const EventosAdmin = () => {
     // Carregar produtos vinculados (com config de upsell)
     const { data: vinc } = await supabase
       .from("evento_produtos")
-      .select("produto_id, pre_selecionado, variacao_padrao_id, qtd_padrao, destaque_label, nome_override, escassez_template, variacoes_ids, nomes_override_variacoes, escassez_variacoes, preco_override, preco_evento")
+      .select("produto_id, pre_selecionado, variacao_padrao_id, qtd_padrao, destaque_label, nome_override, escassez_template, variacoes_ids, nomes_override_variacoes, escassez_variacoes, preco_override, preco_evento, preco_riscado")
       .eq("evento_id", evento.id);
     setProdutosVinculados((vinc || []).map((v: any) => ({
       produto_id: v.produto_id,
@@ -304,6 +305,9 @@ const EventosAdmin = () => {
         : null,
       preco_evento: (v.preco_evento && typeof v.preco_evento === "object" && !Array.isArray(v.preco_evento))
         ? Object.fromEntries(Object.entries(v.preco_evento).map(([k, val]) => [k, Number(val)]))
+        : null,
+      preco_riscado: (v.preco_riscado && typeof v.preco_riscado === "object" && !Array.isArray(v.preco_riscado))
+        ? Object.fromEntries(Object.entries(v.preco_riscado).map(([k, val]) => [k, Number(val)]))
         : null,
     })));
 
@@ -432,6 +436,7 @@ const EventosAdmin = () => {
           escassez_variacoes: v.escassez_variacoes && Object.keys(v.escassez_variacoes).length > 0 ? v.escassez_variacoes : null,
           preco_override: v.preco_override && Object.keys(v.preco_override).length > 0 ? v.preco_override : null,
           preco_evento: v.preco_evento && Object.keys(v.preco_evento).length > 0 ? v.preco_evento : null,
+          preco_riscado: v.preco_riscado && Object.keys(v.preco_riscado).length > 0 ? v.preco_riscado : null,
         }));
 
         const { error: vErr } = await supabase.from("evento_produtos").insert(rows);
@@ -952,6 +957,7 @@ const EventosAdmin = () => {
                                     escassez_variacoes: null,
                                     preco_override: null,
                                     preco_evento: null,
+                                    preco_riscado: null,
                                   }]);
 
                                 } else {
@@ -1029,7 +1035,7 @@ const EventosAdmin = () => {
                                               className="h-7 text-xs"
                                             />
                                           </div>
-                                          <div className="ml-8 grid grid-cols-2 gap-2">
+                                          <div className="ml-8 grid grid-cols-3 gap-2">
                                             <Input
                                               type="number"
                                               step="0.01"
@@ -1060,6 +1066,27 @@ const EventosAdmin = () => {
                                               }}
                                               className="h-7 text-xs"
                                             />
+                                            {(() => {
+                                              const precoRi = vinc.preco_riscado || {};
+                                              const precoRiVal = precoRi[vr.id] != null ? String(precoRi[vr.id]) : "";
+                                              return (
+                                                <Input
+                                                  type="number"
+                                                  step="0.01"
+                                                  placeholder="Preço no evento (riscado) Ex: 25.00"
+                                                  value={precoRiVal}
+                                                  disabled={!selected}
+                                                  onChange={(e) => {
+                                                    const val = e.target.value;
+                                                    const next = { ...precoRi };
+                                                    if (val === "" || isNaN(Number(val))) delete next[vr.id];
+                                                    else next[vr.id] = Number(val);
+                                                    updateVinc({ preco_riscado: Object.keys(next).length > 0 ? next : null });
+                                                  }}
+                                                  className="h-7 text-xs"
+                                                />
+                                              );
+                                            })()}
                                           </div>
                                         </div>
                                       );
