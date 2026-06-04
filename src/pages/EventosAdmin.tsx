@@ -938,6 +938,7 @@ const EventosAdmin = () => {
                                     escassez_template: null,
                                     variacoes_ids: null,
                                     nomes_override_variacoes: null,
+                                    escassez_variacoes: null,
                                   }]);
 
                                 } else {
