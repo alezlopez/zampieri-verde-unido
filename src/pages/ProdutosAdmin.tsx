@@ -34,6 +34,8 @@ interface Variacao {
   estoque_total: number | null;
   ativo: boolean;
   ordem: number;
+  destaque_label: string | null;
+  descricao: string | null;
 }
 
 const emptyProduto = (): Partial<Produto> => ({
@@ -42,7 +44,7 @@ const emptyProduto = (): Partial<Produto> => ({
 });
 const emptyVariacao = (produto_id: string): Partial<Variacao> => ({
   produto_id, nome: "", preco: 0, preco_parcelado: 0, max_parcelas: 1,
-  estoque_total: null, ativo: true, ordem: 0,
+  estoque_total: null, ativo: true, ordem: 0, destaque_label: "", descricao: "",
 });
 
 const ProdutosAdmin = () => {
@@ -121,6 +123,8 @@ const ProdutosAdmin = () => {
       estoque_total: editingVar.estoque_total ?? null,
       ativo: editingVar.ativo ?? true,
       ordem: Number(editingVar.ordem) || 0,
+      destaque_label: editingVar.destaque_label?.trim() || null,
+      descricao: editingVar.descricao?.trim() || null,
     };
     const { error } = editingVar.id
       ? await supabase.from("produto_variacoes").update(payload).eq("id", editingVar.id)
@@ -192,6 +196,8 @@ const ProdutosAdmin = () => {
               <CardHeader><CardTitle>{editingVar.id ? "Editar variação" : "Nova variação"}</CardTitle></CardHeader>
               <CardContent className="space-y-3">
                 <div><Label>Nome (ex.: "Cartela simples")</Label><Input value={editingVar.nome || ""} onChange={(e) => setEditingVar({ ...editingVar, nome: e.target.value })} /></div>
+                <div><Label>Selo de destaque (ex.: "Mais vendido")</Label><Input value={editingVar.destaque_label || ""} onChange={(e) => setEditingVar({ ...editingVar, destaque_label: e.target.value })} placeholder="opcional" /></div>
+                <div><Label>Descrição / âncora de valor</Label><Textarea value={editingVar.descricao || ""} onChange={(e) => setEditingVar({ ...editingVar, descricao: e.target.value })} placeholder="opcional — ex.: 6 cartelas + brinde" /></div>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div><Label>Preço à vista</Label><Input type="number" step="0.01" value={editingVar.preco ?? 0} onChange={(e) => setEditingVar({ ...editingVar, preco: Number(e.target.value) })} /></div>
                   <div><Label>Preço parcelado</Label><Input type="number" step="0.01" value={editingVar.preco_parcelado ?? 0} onChange={(e) => setEditingVar({ ...editingVar, preco_parcelado: Number(e.target.value) })} /></div>
@@ -236,8 +242,12 @@ const ProdutosAdmin = () => {
                     {(variacoes[p.id] || []).map((v) => (
                       <div key={v.id} className="flex items-start justify-between gap-2 border-b last:border-b-0 py-2">
                         <div className="min-w-0 flex-1">
-                          <span className="font-medium">{v.nome}</span>
-                          <span className="text-sm text-muted-foreground ml-2 block sm:inline">R$ {Number(v.preco).toFixed(2)} {v.preco_parcelado > 0 && `· parc. R$ ${Number(v.preco_parcelado).toFixed(2)} em até ${v.max_parcelas}x`}</span>
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <span className="font-medium">{v.nome}</span>
+                            {v.destaque_label && <Badge className="bg-zampieri-gold text-zampieri-green-dark">{v.destaque_label}</Badge>}
+                          </div>
+                          {v.descricao && <p className="text-xs text-muted-foreground mt-0.5">{v.descricao}</p>}
+                          <span className="text-sm text-muted-foreground block sm:inline">R$ {Number(v.preco).toFixed(2)} {v.preco_parcelado > 0 && `· parc. R$ ${Number(v.preco_parcelado).toFixed(2)} em até ${v.max_parcelas}x`}</span>
                           <div className="flex flex-wrap gap-1 mt-1">
                             {v.estoque_total !== null && <Badge variant="outline">est: {v.estoque_total}</Badge>}
                             {!v.ativo && <Badge variant="outline">inativa</Badge>}
