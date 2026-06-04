@@ -1114,7 +1114,7 @@ const EventoCompra = () => {
                           <div className="flex items-center gap-2 flex-wrap">
                             <p className="text-sm font-semibold text-zampieri-green-dark">{p.nome}</p>
                             {p.destaque_label && (
-                              <span className="text-[10px] px-2 py-0.5 rounded-full bg-zampieri-gold/30 text-zampieri-green-dark border border-zampieri-gold/50 font-bold">
+                              <span style={{ background: "#1A6B3C", color: "#FFFFFF", fontSize: 10, textTransform: "uppercase", padding: "2px 8px", borderRadius: 10, fontFamily: LATO, fontWeight: 700 }}>
                                 {p.destaque_label}
                               </span>
                             )}
