@@ -404,6 +404,7 @@ export type Database = {
           created_at: string
           destaque_label: string | null
           escassez_template: string | null
+          escassez_variacoes: Json | null
           evento_id: string
           id: string
           nome_override: string | null
@@ -420,6 +421,7 @@ export type Database = {
           created_at?: string
           destaque_label?: string | null
           escassez_template?: string | null
+          escassez_variacoes?: Json | null
           evento_id: string
           id?: string
           nome_override?: string | null
@@ -436,6 +438,7 @@ export type Database = {
           created_at?: string
           destaque_label?: string | null
           escassez_template?: string | null
+          escassez_variacoes?: Json | null
           evento_id?: string
           id?: string
           nome_override?: string | null
