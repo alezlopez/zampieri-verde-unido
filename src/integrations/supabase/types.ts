@@ -403,37 +403,46 @@ export type Database = {
           ativo: boolean
           created_at: string
           destaque_label: string | null
+          escassez_template: string | null
           evento_id: string
           id: string
+          nome_override: string | null
           ordem: number
           pre_selecionado: boolean
           produto_id: string
           qtd_padrao: number
           variacao_padrao_id: string | null
+          variacoes_ids: string[] | null
         }
         Insert: {
           ativo?: boolean
           created_at?: string
           destaque_label?: string | null
+          escassez_template?: string | null
           evento_id: string
           id?: string
+          nome_override?: string | null
           ordem?: number
           pre_selecionado?: boolean
           produto_id: string
           qtd_padrao?: number
           variacao_padrao_id?: string | null
+          variacoes_ids?: string[] | null
         }
         Update: {
           ativo?: boolean
           created_at?: string
           destaque_label?: string | null
+          escassez_template?: string | null
           evento_id?: string
           id?: string
+          nome_override?: string | null
           ordem?: number
           pre_selecionado?: boolean
           produto_id?: string
           qtd_padrao?: number
           variacao_padrao_id?: string | null
+          variacoes_ids?: string[] | null
         }
         Relationships: [
           {
