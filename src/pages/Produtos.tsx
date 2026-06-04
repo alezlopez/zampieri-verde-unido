@@ -21,6 +21,8 @@ interface Variacao {
   id: string; produto_id: string; nome: string;
   preco: number; preco_parcelado: number; max_parcelas: number;
   estoque_total: number | null;
+  destaque_label: string | null;
+  descricao: string | null;
 }
 
 const Produtos = () => {
@@ -41,10 +43,38 @@ const Produtos = () => {
   useEffect(() => {
     const load = async () => {
       let prodIds: string[] | null = null;
+      // overrides por evento: variacao_id -> { preco?, preco_parcelado? }
+      const precoMap: Record<string, { preco?: number; preco_parcelado?: number }> = {};
+      // filtro de variações exibidas por produto (quando vier do evento)
+      const variacoesFilter: Record<string, Set<string>> = {};
+
       if (eventoId) {
-        const { data: ep } = await supabase.from("evento_produtos").select("produto_id").eq("evento_id", eventoId).eq("ativo", true);
+        const { data: ep } = await supabase
+          .from("evento_produtos")
+          .select("produto_id, variacoes_ids, preco_override, preco_evento")
+          .eq("evento_id", eventoId)
+          .eq("ativo", true);
         prodIds = (ep || []).map((r: any) => r.produto_id);
+
+        for (const row of (ep || []) as any[]) {
+          if (Array.isArray(row.variacoes_ids) && row.variacoes_ids.length > 0) {
+            variacoesFilter[row.produto_id] = new Set(row.variacoes_ids);
+          }
+          const po = row.preco_override;
+          if (po && typeof po === "object" && !Array.isArray(po)) {
+            for (const [vid, val] of Object.entries(po)) {
+              precoMap[vid] = { ...(precoMap[vid] || {}), preco: Number(val) };
+            }
+          }
+          const pe = row.preco_evento;
+          if (pe && typeof pe === "object" && !Array.isArray(pe)) {
+            for (const [vid, val] of Object.entries(pe)) {
+              precoMap[vid] = { ...(precoMap[vid] || {}), preco_parcelado: Number(val) };
+            }
+          }
+        }
       }
+
       let prodQuery = supabase.from("produtos").select("id,nome,descricao,imagem_url").eq("ativo", true);
       if (prodIds) {
         if (prodIds.length === 0) { setProdutos([]); setLoading(false); return; }
@@ -62,7 +92,23 @@ const Produtos = () => {
           .eq("ativo", true)
           .order("ordem");
         const map: Record<string, Variacao[]> = {};
-        for (const v of (vars || []) as Variacao[]) {
+        for (const raw of (vars || []) as any[]) {
+          // filtra por variacoes_ids do evento (se houver)
+          const allowed = variacoesFilter[raw.produto_id];
+          if (allowed && !allowed.has(raw.id)) continue;
+
+          const ov = precoMap[raw.id] || {};
+          const v: Variacao = {
+            id: raw.id,
+            produto_id: raw.produto_id,
+            nome: raw.nome,
+            preco: ov.preco != null ? ov.preco : Number(raw.preco),
+            preco_parcelado: ov.preco_parcelado != null ? ov.preco_parcelado : Number(raw.preco_parcelado),
+            max_parcelas: raw.max_parcelas,
+            estoque_total: raw.estoque_total,
+            destaque_label: raw.destaque_label || null,
+            descricao: raw.descricao || null,
+          };
           if (!map[v.produto_id]) map[v.produto_id] = [];
           map[v.produto_id].push(v);
         }
@@ -162,7 +208,13 @@ const Produtos = () => {
                       return (
                         <div key={v.id} className="flex items-center justify-between gap-2 border-t pt-2">
                           <div className="min-w-0 flex-1">
-                            <p className="font-medium truncate">{v.nome}</p>
+                            <div className="flex items-center gap-2 flex-wrap">
+                              <p className="font-medium truncate">{v.nome}</p>
+                              {v.destaque_label && (
+                                <Badge className="bg-zampieri-gold text-zampieri-green-dark text-[10px]">{v.destaque_label}</Badge>
+                              )}
+                            </div>
+                            {v.descricao && <p className="text-xs text-muted-foreground mt-0.5">{v.descricao}</p>}
                             <p className="text-sm text-muted-foreground">
                               R$ {Number(v.preco).toFixed(2)}
                               {v.preco_parcelado > 0 && v.max_parcelas > 1 && ` · parc. R$ ${Number(v.preco_parcelado).toFixed(2)} em até ${v.max_parcelas}x`}
@@ -222,6 +274,10 @@ const Produtos = () => {
               </CardContent>
             </Card>
           )}
+
+          <p className="text-center text-muted-foreground mt-8" style={{ fontFamily: "Lato, sans-serif", fontSize: "12px" }}>
+            A retirada é feita presencialmente no dia do evento a partir das 10h. Compras online encerram às 23h59 do dia anterior.
+          </p>
         </div>
       </div>
       <Footer />
