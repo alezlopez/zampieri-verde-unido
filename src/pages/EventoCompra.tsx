@@ -253,14 +253,19 @@ const EventoCompra = () => {
       }
 
       // Busca estoque (disponível + vendidos) para todas as variações exibidas, em paralelo
-      const estoquePromises = allVarIds.map((vid) =>
-        supabase.rpc("contar_estoque_produto" as any, { p_variacao_id: vid }).then(({ data }) => {
-          const row = Array.isArray(data) ? data[0] : data;
+      const estoquePromises: Promise<{ vid: string; disponivel: number | null; vendidos: number }>[] = allVarIds.map(async (vid) => {
+        try {
+          const { data } = await supabase.rpc("contar_estoque_produto" as any, { p_variacao_id: vid });
+          const row: any = Array.isArray(data) ? data[0] : data;
           return { vid, disponivel: row?.disponivel ?? null, vendidos: Number(row?.vendidos ?? 0) };
-        }).catch(() => ({ vid, disponivel: null, vendidos: 0 }))
-      );
+        } catch {
+          return { vid, disponivel: null, vendidos: 0 };
+        }
+      });
       const estoqueResults = await Promise.all(estoquePromises);
-      const estoqueMap = new Map(estoqueResults.map((r) => [r.vid, { disponivel: r.disponivel as number | null, vendidos: r.vendidos }]));
+      const estoqueMap = new Map<string, { disponivel: number | null; vendidos: number }>(
+        estoqueResults.map((r) => [r.vid, { disponivel: r.disponivel, vendidos: r.vendidos }])
+      );
 
       const list: ProdExtra[] = [];
       const sel: Record<string, { variacao_id: string; qtd: number }> = {};
