@@ -123,6 +123,8 @@ const ProdutosAdmin = () => {
       estoque_total: editingVar.estoque_total ?? null,
       ativo: editingVar.ativo ?? true,
       ordem: Number(editingVar.ordem) || 0,
+      destaque_label: editingVar.destaque_label?.trim() || null,
+      descricao: editingVar.descricao?.trim() || null,
     };
     const { error } = editingVar.id
       ? await supabase.from("produto_variacoes").update(payload).eq("id", editingVar.id)
