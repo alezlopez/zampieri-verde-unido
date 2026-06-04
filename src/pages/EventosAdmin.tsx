@@ -947,30 +947,21 @@ const EventosAdmin = () => {
                           </label>
                           {vinc && (
                             <div className="mt-2 ml-6 space-y-2">
-                              {/* Nome exibido no upsell */}
-                              <div>
-                                <label className="text-[10px] text-muted-foreground">Nome exibido no upsell (opcional)</label>
-                                <Input
-                                  placeholder={p.nome}
-                                  value={vinc.nome_override || ""}
-                                  onChange={(e) => updateVinc({ nome_override: e.target.value || null })}
-                                  className="h-8 text-xs"
-                                />
-                              </div>
-
-                              {/* Variações exibidas no upsell */}
+                              {/* Variações exibidas no upsell + nome customizado por variação */}
                               {vars.length > 0 && (
                                 <div>
                                   <label className="text-[10px] text-muted-foreground block mb-1">
-                                    Variações exibidas no upsell (desmarque para ocultar)
+                                    Variações exibidas no upsell — desmarque para ocultar. Personalize o nome exibido (opcional).
                                   </label>
-                                  <div className="flex flex-wrap gap-2 border rounded p-2 bg-background">
+                                  <div className="space-y-1.5 border rounded p-2 bg-background">
                                     {vars.map((vr) => {
                                       const selected = vinc.variacoes_ids
                                         ? vinc.variacoes_ids.includes(vr.id)
                                         : true; // null = todas
+                                      const overrides = vinc.nomes_override_variacoes || {};
+                                      const overrideVal = overrides[vr.id] || "";
                                       return (
-                                        <label key={vr.id} className="flex items-center gap-1 text-xs cursor-pointer">
+                                        <div key={vr.id} className="flex items-center gap-2">
                                           <Checkbox
                                             checked={selected}
                                             onCheckedChange={(c) => {
@@ -978,19 +969,32 @@ const EventosAdmin = () => {
                                               const next = c === true
                                                 ? Array.from(new Set([...current, vr.id]))
                                                 : current.filter((x) => x !== vr.id);
-                                              // Se ficar com todas marcadas, volta para null (todas)
                                               const allIds = vars.map((x) => x.id);
                                               const isAll = next.length === allIds.length && allIds.every((id) => next.includes(id));
                                               updateVinc({ variacoes_ids: isAll ? null : next });
                                             }}
                                           />
-                                          <span>{vr.nome}</span>
-                                        </label>
+                                          <span className="text-xs w-32 truncate" title={vr.nome}>{vr.nome}</span>
+                                          <Input
+                                            placeholder={`Nome no upsell (padrão: ${vr.nome})`}
+                                            value={overrideVal}
+                                            disabled={!selected}
+                                            onChange={(e) => {
+                                              const val = e.target.value;
+                                              const next = { ...overrides };
+                                              if (val.trim()) next[vr.id] = val;
+                                              else delete next[vr.id];
+                                              updateVinc({ nomes_override_variacoes: Object.keys(next).length > 0 ? next : null });
+                                            }}
+                                            className="h-7 text-xs flex-1"
+                                          />
+                                        </div>
                                       );
                                     })}
                                   </div>
                                 </div>
                               )}
+
 
                               {/* Texto de escassez */}
                               <div>
