@@ -1237,25 +1237,18 @@ const EventoCompra = () => {
               </div>
             </div>
 
-            {/* Termos de compra — checkbox + link para popup */}
-            <div className="border-t pt-4 space-y-3">
-              <div className="flex items-start space-x-3">
-                <Checkbox
-                  id="termos"
-                  checked={termosAceitos}
-                  onCheckedChange={(checked) => setTermosAceitos(checked === true)}
-                />
-                <label htmlFor="termos" className="text-xs cursor-pointer">
-                  Li e aceito os{" "}
-                  <button
-                    type="button"
-                    className="text-zampieri-green-dark underline font-medium hover:text-zampieri-gold"
-                    onClick={(e) => { e.preventDefault(); setTermosDialogOpen(true); }}
-                  >
-                    Termos de Compra e Participação
-                  </button>.
-                </label>
-              </div>
+            {/* Termos de compra — aceitação implícita */}
+            <div className="border-t pt-4">
+              <p className="text-xs text-muted-foreground">
+                Ao prosseguir, você concorda com os{" "}
+                <button
+                  type="button"
+                  className="text-zampieri-green-dark underline font-medium hover:text-zampieri-gold"
+                  onClick={(e) => { e.preventDefault(); setTermosDialogOpen(true); }}
+                >
+                  Termos de Compra e Participação
+                </button>.
+              </p>
             </div>
 
             {/* Autorização (somente se evento requer) */}
