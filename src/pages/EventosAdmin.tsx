@@ -277,7 +277,7 @@ const EventosAdmin = () => {
     // Carregar produtos vinculados (com config de upsell)
     const { data: vinc } = await supabase
       .from("evento_produtos")
-      .select("produto_id, pre_selecionado, variacao_padrao_id, qtd_padrao, destaque_label")
+      .select("produto_id, pre_selecionado, variacao_padrao_id, qtd_padrao, destaque_label, nome_override, escassez_template, variacoes_ids")
       .eq("evento_id", evento.id);
     setProdutosVinculados((vinc || []).map((v: any) => ({
       produto_id: v.produto_id,
@@ -285,6 +285,9 @@ const EventosAdmin = () => {
       variacao_padrao_id: v.variacao_padrao_id || null,
       qtd_padrao: Number(v.qtd_padrao) || 1,
       destaque_label: v.destaque_label || null,
+      nome_override: v.nome_override || null,
+      escassez_template: v.escassez_template || null,
+      variacoes_ids: Array.isArray(v.variacoes_ids) ? v.variacoes_ids : null,
     })));
     setShowForm(true);
   };
