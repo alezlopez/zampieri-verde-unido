@@ -1,0 +1,1 @@
+ALTER TABLE public.evento_produtos ADD COLUMN IF NOT EXISTS preco_riscado jsonb;

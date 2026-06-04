@@ -413,6 +413,7 @@ export type Database = {
           pre_selecionado: boolean
           preco_evento: Json | null
           preco_override: Json | null
+          preco_riscado: Json | null
           produto_id: string
           qtd_padrao: number
           variacao_padrao_id: string | null
@@ -432,6 +433,7 @@ export type Database = {
           pre_selecionado?: boolean
           preco_evento?: Json | null
           preco_override?: Json | null
+          preco_riscado?: Json | null
           produto_id: string
           qtd_padrao?: number
           variacao_padrao_id?: string | null
@@ -451,6 +453,7 @@ export type Database = {
           pre_selecionado?: boolean
           preco_evento?: Json | null
           preco_override?: Json | null
+          preco_riscado?: Json | null
           produto_id?: string
           qtd_padrao?: number
           variacao_padrao_id?: string | null
