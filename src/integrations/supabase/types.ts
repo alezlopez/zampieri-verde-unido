@@ -411,6 +411,8 @@ export type Database = {
           nomes_override_variacoes: Json | null
           ordem: number
           pre_selecionado: boolean
+          preco_evento: Json | null
+          preco_override: Json | null
           produto_id: string
           qtd_padrao: number
           variacao_padrao_id: string | null
@@ -428,6 +430,8 @@ export type Database = {
           nomes_override_variacoes?: Json | null
           ordem?: number
           pre_selecionado?: boolean
+          preco_evento?: Json | null
+          preco_override?: Json | null
           produto_id: string
           qtd_padrao?: number
           variacao_padrao_id?: string | null
@@ -445,6 +449,8 @@ export type Database = {
           nomes_override_variacoes?: Json | null
           ordem?: number
           pre_selecionado?: boolean
+          preco_evento?: Json | null
+          preco_override?: Json | null
           produto_id?: string
           qtd_padrao?: number
           variacao_padrao_id?: string | null
@@ -1032,6 +1038,8 @@ export type Database = {
         Row: {
           ativo: boolean
           created_at: string
+          descricao: string | null
+          destaque_label: string | null
           estoque_total: number | null
           id: string
           max_parcelas: number
@@ -1045,6 +1053,8 @@ export type Database = {
         Insert: {
           ativo?: boolean
           created_at?: string
+          descricao?: string | null
+          destaque_label?: string | null
           estoque_total?: number | null
           id?: string
           max_parcelas?: number
@@ -1058,6 +1068,8 @@ export type Database = {
         Update: {
           ativo?: boolean
           created_at?: string
+          descricao?: string | null
+          destaque_label?: string | null
           estoque_total?: number | null
           id?: string
           max_parcelas?: number
