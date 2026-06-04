@@ -280,7 +280,7 @@ const EventosAdmin = () => {
     // Carregar produtos vinculados (com config de upsell)
     const { data: vinc } = await supabase
       .from("evento_produtos")
-      .select("produto_id, pre_selecionado, variacao_padrao_id, qtd_padrao, destaque_label, nome_override, escassez_template, variacoes_ids, nomes_override_variacoes")
+      .select("produto_id, pre_selecionado, variacao_padrao_id, qtd_padrao, destaque_label, nome_override, escassez_template, variacoes_ids, nomes_override_variacoes, escassez_variacoes")
       .eq("evento_id", evento.id);
     setProdutosVinculados((vinc || []).map((v: any) => ({
       produto_id: v.produto_id,
@@ -293,6 +293,9 @@ const EventosAdmin = () => {
       variacoes_ids: Array.isArray(v.variacoes_ids) ? v.variacoes_ids : null,
       nomes_override_variacoes: (v.nomes_override_variacoes && typeof v.nomes_override_variacoes === "object" && !Array.isArray(v.nomes_override_variacoes))
         ? v.nomes_override_variacoes as Record<string, string>
+        : null,
+      escassez_variacoes: (v.escassez_variacoes && typeof v.escassez_variacoes === "object" && !Array.isArray(v.escassez_variacoes))
+        ? v.escassez_variacoes as Record<string, string>
         : null,
     })));
 
