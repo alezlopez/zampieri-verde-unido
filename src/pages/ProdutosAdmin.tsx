@@ -242,8 +242,12 @@ const ProdutosAdmin = () => {
                     {(variacoes[p.id] || []).map((v) => (
                       <div key={v.id} className="flex items-start justify-between gap-2 border-b last:border-b-0 py-2">
                         <div className="min-w-0 flex-1">
-                          <span className="font-medium">{v.nome}</span>
-                          <span className="text-sm text-muted-foreground ml-2 block sm:inline">R$ {Number(v.preco).toFixed(2)} {v.preco_parcelado > 0 && `· parc. R$ ${Number(v.preco_parcelado).toFixed(2)} em até ${v.max_parcelas}x`}</span>
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <span className="font-medium">{v.nome}</span>
+                            {v.destaque_label && <Badge className="bg-zampieri-gold text-zampieri-green-dark">{v.destaque_label}</Badge>}
+                          </div>
+                          {v.descricao && <p className="text-xs text-muted-foreground mt-0.5">{v.descricao}</p>}
+                          <span className="text-sm text-muted-foreground block sm:inline">R$ {Number(v.preco).toFixed(2)} {v.preco_parcelado > 0 && `· parc. R$ ${Number(v.preco_parcelado).toFixed(2)} em até ${v.max_parcelas}x`}</span>
                           <div className="flex flex-wrap gap-1 mt-1">
                             {v.estoque_total !== null && <Badge variant="outline">est: {v.estoque_total}</Badge>}
                             {!v.ativo && <Badge variant="outline">inativa</Badge>}
