@@ -980,6 +980,10 @@ const EventosAdmin = () => {
                                       const overrideVal = overrides[vr.id] || "";
                                       const escassez = vinc.escassez_variacoes || {};
                                       const escassezVal = escassez[vr.id] || "";
+                                      const precoOv = vinc.preco_override || {};
+                                      const precoOvVal = precoOv[vr.id] != null ? String(precoOv[vr.id]) : "";
+                                      const precoEv = vinc.preco_evento || {};
+                                      const precoEvVal = precoEv[vr.id] != null ? String(precoEv[vr.id]) : "";
                                       return (
                                         <div key={vr.id} className="space-y-1 border-b last:border-b-0 pb-2 last:pb-0">
                                           <div className="flex items-center gap-2">
