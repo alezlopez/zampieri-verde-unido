@@ -147,6 +147,7 @@ const EventoCompra = () => {
   const [extrasDisponiveis, setExtrasDisponiveis] = useState<ProdExtra[]>([]);
   // selecao[produto_id] => { variacao_id, qtd }; ausente = não selecionado
   const [extrasSelecao, setExtrasSelecao] = useState<Record<string, { variacao_id: string; qtd: number }>>({});
+  const [confirmRemoveExtraId, setConfirmRemoveExtraId] = useState<string | null>(null);
 
   const setMeiaField = (key: string, patch: Partial<MeiaConfig>) => {
     setMeiaConfigs((prev) => ({
