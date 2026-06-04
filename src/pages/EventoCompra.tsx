@@ -1147,11 +1147,11 @@ const EventoCompra = () => {
                                     </span>
                                   )}
                                 </span>
-                                {p.escassez_template && v.disponivel !== null && (
+                                {p.escassez_template && (
                                   <span className="text-[10px] text-orange-600 font-semibold">
                                     🔥 {p.escassez_template
-                                      .replace(/\{disponiveis\}/gi, String(v.disponivel))
-                                      .replace(/\{vendidas\}/gi, String(v.vendidos))}
+                                      .replace(/\{disponiveis\}/gi, v.disponivel !== null ? String(v.disponivel) : "")
+                                      .replace(/\{vendidas\}/gi, String(v.vendidos ?? ""))}
                                   </span>
                                 )}
                               </span>
