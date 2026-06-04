@@ -933,7 +933,9 @@ const EventosAdmin = () => {
                                     nome_override: null,
                                     escassez_template: null,
                                     variacoes_ids: null,
+                                    nomes_override_variacoes: null,
                                   }]);
+
                                 } else {
                                   setProdutosVinculados((prev) => prev.filter((v) => v.produto_id !== p.id));
                                 }
