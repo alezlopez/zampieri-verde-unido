@@ -139,6 +139,9 @@ const EventosAdmin = () => {
     variacao_padrao_id: string | null;
     qtd_padrao: number;
     destaque_label: string | null;
+    nome_override: string | null;
+    escassez_template: string | null;
+    variacoes_ids: string[] | null;
   };
   const [produtosDisponiveis, setProdutosDisponiveis] = useState<ProdutoOpt[]>([]);
   const [variacoesPorProduto, setVariacoesPorProduto] = useState<Record<string, VariacaoOpt[]>>({});
