@@ -34,6 +34,8 @@ interface Variacao {
   estoque_total: number | null;
   ativo: boolean;
   ordem: number;
+  destaque_label: string | null;
+  descricao: string | null;
 }
 
 const emptyProduto = (): Partial<Produto> => ({
@@ -42,7 +44,7 @@ const emptyProduto = (): Partial<Produto> => ({
 });
 const emptyVariacao = (produto_id: string): Partial<Variacao> => ({
   produto_id, nome: "", preco: 0, preco_parcelado: 0, max_parcelas: 1,
-  estoque_total: null, ativo: true, ordem: 0,
+  estoque_total: null, ativo: true, ordem: 0, destaque_label: "", descricao: "",
 });
 
 const ProdutosAdmin = () => {
