@@ -407,6 +407,9 @@ const EventosAdmin = () => {
           variacao_padrao_id: v.variacao_padrao_id || null,
           qtd_padrao: v.qtd_padrao || 1,
           destaque_label: v.destaque_label || null,
+          nome_override: v.nome_override || null,
+          escassez_template: v.escassez_template || null,
+          variacoes_ids: v.variacoes_ids && v.variacoes_ids.length > 0 ? v.variacoes_ids : null,
         }));
         const { error: vErr } = await supabase.from("evento_produtos").insert(rows);
         if (vErr) {
