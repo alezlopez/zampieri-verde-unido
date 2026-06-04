@@ -17,6 +17,8 @@ import { EventosHeader } from "@/components/EventosHeader";
 import { Footer } from "@/components/Footer";
 import { friendlyCheckoutError } from "@/lib/checkoutErrors";
 
+const LATO = "'Lato', sans-serif";
+
 interface Evento {
   id: string;
   titulo: string;
@@ -1114,7 +1116,7 @@ const EventoCompra = () => {
                           <div className="flex items-center gap-2 flex-wrap">
                             <p className="text-sm font-semibold text-zampieri-green-dark">{p.nome}</p>
                             {p.destaque_label && (
-                              <span className="text-[10px] px-2 py-0.5 rounded-full bg-zampieri-gold/30 text-zampieri-green-dark border border-zampieri-gold/50 font-bold">
+                              <span style={{ background: "#1A6B3C", color: "#FFFFFF", fontSize: 10, textTransform: "uppercase", padding: "2px 8px", borderRadius: 10, fontFamily: LATO, fontWeight: 700 }}>
                                 {p.destaque_label}
                               </span>
                             )}
@@ -1160,14 +1162,29 @@ const EventoCompra = () => {
                                     </span>
                                   )}
                                 </span>
+                                {v.destaque_label && (
+                                  <span style={{ display: "inline-block", background: "#1A6B3C", color: "#FFFFFF", fontSize: 10, textTransform: "uppercase", padding: "2px 8px", borderRadius: 10, fontFamily: LATO, fontWeight: 700 }}>
+                                    {v.destaque_label}
+                                  </span>
+                                )}
+                                {v.descricao && (
+                                  <span style={{ fontSize: 12, color: "hsl(var(--muted-foreground))" }}>
+                                    {v.descricao}
+                                  </span>
+                                )}
                                 {v.escassez_text && (
                                   <span className="text-[10px] text-orange-600 font-semibold">
                                     🔥 {v.escassez_text}
                                   </span>
                                 )}
                               </span>
-                              <span className="text-xs font-bold text-zampieri-green-dark whitespace-nowrap">
-                                R$ {v.preco.toFixed(2).replace(".", ",")}
+                              <span className="text-xs font-bold text-zampieri-green-dark whitespace-nowrap text-right">
+                                <div>R$ {v.preco.toFixed(2).replace(".", ",")}</div>
+                                {v.preco_riscado != null && (
+                                  <div style={{ fontSize: 12, color: "#E24B4A", textDecoration: "line-through", fontWeight: 600 }}>
+                                    R$ {v.preco_riscado.toFixed(2).replace(".", ",")}
+                                  </div>
+                                )}
                               </span>
                             </label>
                           );
