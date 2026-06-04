@@ -275,9 +275,14 @@ const EventoCompra = () => {
         if (!p || !p.ativo) continue;
         const vs = filteredVarsByProd[r.produto_id] || [];
         if (vs.length === 0) continue;
+        const overrides: Record<string, string> = (r.nomes_override_variacoes && typeof r.nomes_override_variacoes === "object" && !Array.isArray(r.nomes_override_variacoes))
+          ? r.nomes_override_variacoes as Record<string, string>
+          : {};
         const vsWithStock = vs.map((v) => {
           const est = estoqueMap.get(v.id);
-          return { ...v, disponivel: est?.disponivel ?? null, vendidos: est?.vendidos ?? 0 };
+          const override = overrides[v.id];
+          const display_nome = (typeof override === "string" && override.trim()) ? override.trim() : v.nome;
+          return { ...v, display_nome, disponivel: est?.disponivel ?? null, vendidos: est?.vendidos ?? 0 };
         });
         list.push({
           produto_id: p.id,
@@ -287,6 +292,7 @@ const EventoCompra = () => {
           escassez_template: r.escassez_template || null,
           variacao_recomendada_id: r.variacao_padrao_id && vsWithStock.find((x: any) => x.id === r.variacao_padrao_id) ? r.variacao_padrao_id : null,
           variacoes: vsWithStock,
+
         });
         if (r.pre_selecionado) {
           const varId = r.variacao_padrao_id && vsWithStock.find((x) => x.id === r.variacao_padrao_id) ? r.variacao_padrao_id : vsWithStock[0].id;
