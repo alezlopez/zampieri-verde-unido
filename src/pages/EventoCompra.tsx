@@ -222,7 +222,7 @@ const EventoCompra = () => {
       if (!id) return;
       const { data: ep } = await supabase
         .from("evento_produtos")
-        .select("produto_id, pre_selecionado, variacao_padrao_id, qtd_padrao, destaque_label, nome_override, escassez_template, variacoes_ids, nomes_override_variacoes, ordem")
+        .select("produto_id, pre_selecionado, variacao_padrao_id, qtd_padrao, destaque_label, nome_override, escassez_template, variacoes_ids, nomes_override_variacoes, escassez_variacoes, ordem")
         .eq("evento_id", id)
         .eq("ativo", true)
         .order("ordem");
