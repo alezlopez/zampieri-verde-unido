@@ -948,6 +948,8 @@ const EventosAdmin = () => {
                                     variacoes_ids: null,
                                     nomes_override_variacoes: null,
                                     escassez_variacoes: null,
+                                    preco_override: null,
+                                    preco_evento: null,
                                   }]);
 
                                 } else {
