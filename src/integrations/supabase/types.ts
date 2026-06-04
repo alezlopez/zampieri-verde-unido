@@ -407,6 +407,7 @@ export type Database = {
           evento_id: string
           id: string
           nome_override: string | null
+          nomes_override_variacoes: Json | null
           ordem: number
           pre_selecionado: boolean
           produto_id: string
@@ -422,6 +423,7 @@ export type Database = {
           evento_id: string
           id?: string
           nome_override?: string | null
+          nomes_override_variacoes?: Json | null
           ordem?: number
           pre_selecionado?: boolean
           produto_id: string
@@ -437,6 +439,7 @@ export type Database = {
           evento_id?: string
           id?: string
           nome_override?: string | null
+          nomes_override_variacoes?: Json | null
           ordem?: number
           pre_selecionado?: boolean
           produto_id?: string

@@ -140,8 +140,9 @@ const EventoCompra = () => {
     destaque_label: string | null;
     escassez_template: string | null;
     variacao_recomendada_id: string | null;
-    variacoes: { id: string; nome: string; preco: number; preco_parcelado: number; max_parcelas: number; disponivel: number | null; vendidos: number }[];
+    variacoes: { id: string; nome: string; display_nome: string; preco: number; preco_parcelado: number; max_parcelas: number; disponivel: number | null; vendidos: number }[];
   };
+
   const [extrasDisponiveis, setExtrasDisponiveis] = useState<ProdExtra[]>([]);
   // selecao[produto_id] => { variacao_id, qtd }; ausente = não selecionado
   const [extrasSelecao, setExtrasSelecao] = useState<Record<string, { variacao_id: string; qtd: number }>>({});
@@ -219,7 +220,7 @@ const EventoCompra = () => {
       if (!id) return;
       const { data: ep } = await supabase
         .from("evento_produtos")
-        .select("produto_id, pre_selecionado, variacao_padrao_id, qtd_padrao, destaque_label, nome_override, escassez_template, variacoes_ids, ordem")
+        .select("produto_id, pre_selecionado, variacao_padrao_id, qtd_padrao, destaque_label, nome_override, escassez_template, variacoes_ids, nomes_override_variacoes, ordem")
         .eq("evento_id", id)
         .eq("ativo", true)
         .order("ordem");
@@ -274,9 +275,14 @@ const EventoCompra = () => {
         if (!p || !p.ativo) continue;
         const vs = filteredVarsByProd[r.produto_id] || [];
         if (vs.length === 0) continue;
+        const overrides: Record<string, string> = (r.nomes_override_variacoes && typeof r.nomes_override_variacoes === "object" && !Array.isArray(r.nomes_override_variacoes))
+          ? r.nomes_override_variacoes as Record<string, string>
+          : {};
         const vsWithStock = vs.map((v) => {
           const est = estoqueMap.get(v.id);
-          return { ...v, disponivel: est?.disponivel ?? null, vendidos: est?.vendidos ?? 0 };
+          const override = overrides[v.id];
+          const display_nome = (typeof override === "string" && override.trim()) ? override.trim() : v.nome;
+          return { ...v, display_nome, disponivel: est?.disponivel ?? null, vendidos: est?.vendidos ?? 0 };
         });
         list.push({
           produto_id: p.id,
@@ -286,6 +292,7 @@ const EventoCompra = () => {
           escassez_template: r.escassez_template || null,
           variacao_recomendada_id: r.variacao_padrao_id && vsWithStock.find((x: any) => x.id === r.variacao_padrao_id) ? r.variacao_padrao_id : null,
           variacoes: vsWithStock,
+
         });
         if (r.pre_selecionado) {
           const varId = r.variacao_padrao_id && vsWithStock.find((x) => x.id === r.variacao_padrao_id) ? r.variacao_padrao_id : vsWithStock[0].id;
@@ -1133,7 +1140,7 @@ const EventoCompra = () => {
                               />
                               <span className="text-xs flex-1 flex flex-col gap-0.5 min-w-0">
                                 <span className="flex items-center gap-2 flex-wrap">
-                                  <span>{v.nome}</span>
+                                  <span>{v.display_nome}</span>
                                   {isRec && (
                                     <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-zampieri-green/15 text-zampieri-green-dark border border-zampieri-green/40 font-bold uppercase tracking-wide">
                                       Recomendado
