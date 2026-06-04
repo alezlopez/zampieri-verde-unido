@@ -430,6 +430,8 @@ const EventosAdmin = () => {
           variacoes_ids: v.variacoes_ids && v.variacoes_ids.length > 0 ? v.variacoes_ids : null,
           nomes_override_variacoes: v.nomes_override_variacoes && Object.keys(v.nomes_override_variacoes).length > 0 ? v.nomes_override_variacoes : null,
           escassez_variacoes: v.escassez_variacoes && Object.keys(v.escassez_variacoes).length > 0 ? v.escassez_variacoes : null,
+          preco_override: v.preco_override && Object.keys(v.preco_override).length > 0 ? v.preco_override : null,
+          preco_evento: v.preco_evento && Object.keys(v.preco_evento).length > 0 ? v.preco_evento : null,
         }));
 
         const { error: vErr } = await supabase.from("evento_produtos").insert(rows);
