@@ -219,7 +219,7 @@ const EventoCompra = () => {
       if (!id) return;
       const { data: ep } = await supabase
         .from("evento_produtos")
-        .select("produto_id, pre_selecionado, variacao_padrao_id, qtd_padrao, destaque_label, ordem")
+        .select("produto_id, pre_selecionado, variacao_padrao_id, qtd_padrao, destaque_label, nome_override, escassez_template, variacoes_ids, ordem")
         .eq("evento_id", id)
         .eq("ativo", true)
         .order("ordem");
@@ -238,23 +238,52 @@ const EventoCompra = () => {
       for (const v of (vars || []) as any[]) {
         (varsByProd[v.produto_id] ||= []).push({ id: v.id, nome: v.nome, preco: Number(v.preco), preco_parcelado: Number(v.preco_parcelado || v.preco), max_parcelas: Number(v.max_parcelas || 1) });
       }
+
+      // Coleta IDs de todas as variações que vamos exibir (após filtro) para carregar estoque em lote
+      const filteredVarsByProd: Record<string, typeof varsByProd[string]> = {};
+      const allVarIds: string[] = [];
+      for (const r of ep as any[]) {
+        const p = prodMap.get(r.produto_id);
+        if (!p || !p.ativo) continue;
+        const all = varsByProd[r.produto_id] || [];
+        const filterIds: string[] | null = Array.isArray(r.variacoes_ids) && r.variacoes_ids.length > 0 ? r.variacoes_ids : null;
+        const filtered = filterIds ? all.filter((v) => filterIds.includes(v.id)) : all;
+        filteredVarsByProd[r.produto_id] = filtered;
+        for (const v of filtered) allVarIds.push(v.id);
+      }
+
+      // Busca estoque (disponível + vendidos) para todas as variações exibidas, em paralelo
+      const estoquePromises = allVarIds.map((vid) =>
+        supabase.rpc("contar_estoque_produto" as any, { p_variacao_id: vid }).then(({ data }) => {
+          const row = Array.isArray(data) ? data[0] : data;
+          return { vid, disponivel: row?.disponivel ?? null, vendidos: Number(row?.vendidos ?? 0) };
+        }).catch(() => ({ vid, disponivel: null, vendidos: 0 }))
+      );
+      const estoqueResults = await Promise.all(estoquePromises);
+      const estoqueMap = new Map(estoqueResults.map((r) => [r.vid, { disponivel: r.disponivel as number | null, vendidos: r.vendidos }]));
+
       const list: ProdExtra[] = [];
       const sel: Record<string, { variacao_id: string; qtd: number }> = {};
       for (const r of ep as any[]) {
         const p = prodMap.get(r.produto_id);
         if (!p || !p.ativo) continue;
-        const vs = varsByProd[r.produto_id] || [];
+        const vs = filteredVarsByProd[r.produto_id] || [];
         if (vs.length === 0) continue;
+        const vsWithStock = vs.map((v) => {
+          const est = estoqueMap.get(v.id);
+          return { ...v, disponivel: est?.disponivel ?? null, vendidos: est?.vendidos ?? 0 };
+        });
         list.push({
           produto_id: p.id,
-          nome: p.nome,
+          nome: r.nome_override || p.nome,
           imagem_url: p.imagem_url,
           destaque_label: r.destaque_label || null,
-          variacao_recomendada_id: r.variacao_padrao_id && vs.find((x: any) => x.id === r.variacao_padrao_id) ? r.variacao_padrao_id : null,
-          variacoes: vs,
+          escassez_template: r.escassez_template || null,
+          variacao_recomendada_id: r.variacao_padrao_id && vsWithStock.find((x: any) => x.id === r.variacao_padrao_id) ? r.variacao_padrao_id : null,
+          variacoes: vsWithStock,
         });
         if (r.pre_selecionado) {
-          const varId = r.variacao_padrao_id && vs.find((x) => x.id === r.variacao_padrao_id) ? r.variacao_padrao_id : vs[0].id;
+          const varId = r.variacao_padrao_id && vsWithStock.find((x) => x.id === r.variacao_padrao_id) ? r.variacao_padrao_id : vsWithStock[0].id;
           sel[p.id] = { variacao_id: varId, qtd: Math.max(1, Number(r.qtd_padrao) || 1) };
         }
       }
