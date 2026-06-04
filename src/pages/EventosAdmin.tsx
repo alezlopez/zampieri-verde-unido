@@ -282,7 +282,7 @@ const EventosAdmin = () => {
     // Carregar produtos vinculados (com config de upsell)
     const { data: vinc } = await supabase
       .from("evento_produtos")
-      .select("produto_id, pre_selecionado, variacao_padrao_id, qtd_padrao, destaque_label, nome_override, escassez_template, variacoes_ids, nomes_override_variacoes, escassez_variacoes")
+      .select("produto_id, pre_selecionado, variacao_padrao_id, qtd_padrao, destaque_label, nome_override, escassez_template, variacoes_ids, nomes_override_variacoes, escassez_variacoes, preco_override, preco_evento")
       .eq("evento_id", evento.id);
     setProdutosVinculados((vinc || []).map((v: any) => ({
       produto_id: v.produto_id,
@@ -298,6 +298,12 @@ const EventosAdmin = () => {
         : null,
       escassez_variacoes: (v.escassez_variacoes && typeof v.escassez_variacoes === "object" && !Array.isArray(v.escassez_variacoes))
         ? v.escassez_variacoes as Record<string, string>
+        : null,
+      preco_override: (v.preco_override && typeof v.preco_override === "object" && !Array.isArray(v.preco_override))
+        ? Object.fromEntries(Object.entries(v.preco_override).map(([k, val]) => [k, Number(val)]))
+        : null,
+      preco_evento: (v.preco_evento && typeof v.preco_evento === "object" && !Array.isArray(v.preco_evento))
+        ? Object.fromEntries(Object.entries(v.preco_evento).map(([k, val]) => [k, Number(val)]))
         : null,
     })));
 
