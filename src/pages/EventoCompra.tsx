@@ -9,6 +9,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { useToast } from "@/hooks/use-toast";
 import { ArrowLeft, Calendar, CheckCircle, MapPin, Minus, Plus, Trash2, UserPlus, AlertTriangle, FileText, ShieldCheck } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { AlertDialog, AlertDialogContent, AlertDialogHeader, AlertDialogTitle, AlertDialogDescription, AlertDialogFooter } from "@/components/ui/alert-dialog";
 import { Progress } from "@/components/ui/progress";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
@@ -146,6 +147,7 @@ const EventoCompra = () => {
   const [extrasDisponiveis, setExtrasDisponiveis] = useState<ProdExtra[]>([]);
   // selecao[produto_id] => { variacao_id, qtd }; ausente = não selecionado
   const [extrasSelecao, setExtrasSelecao] = useState<Record<string, { variacao_id: string; qtd: number }>>({});
+  const [confirmRemoveExtraId, setConfirmRemoveExtraId] = useState<string | null>(null);
 
   const setMeiaField = (key: string, patch: Partial<MeiaConfig>) => {
     setMeiaConfigs((prev) => ({
@@ -1110,9 +1112,7 @@ const EventoCompra = () => {
                           <button
                             type="button"
                             className="text-[11px] text-muted-foreground hover:text-destructive underline"
-                            onClick={() => setExtrasSelecao((prev) => {
-                              const next = { ...prev }; delete next[p.produto_id]; return next;
-                            })}
+                            onClick={() => setConfirmRemoveExtraId(p.produto_id)}
                           >
                             remover
                           </button>
@@ -1143,7 +1143,7 @@ const EventoCompra = () => {
                                   <span>{v.display_nome}</span>
                                   {isRec && (
                                     <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-zampieri-green/15 text-zampieri-green-dark border border-zampieri-green/40 font-bold uppercase tracking-wide">
-                                      Recomendado
+                                      A mais vendida
                                     </span>
                                   )}
                                 </span>
@@ -1462,6 +1462,40 @@ const EventoCompra = () => {
       </div>
       </div>
       <Footer />
+
+      <AlertDialog open={!!confirmRemoveExtraId} onOpenChange={(o) => !o && setConfirmRemoveExtraId(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Realmente deseja perder essa chance?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Você está prestes a remover este item da sua compra.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter className="sm:justify-between gap-2">
+            <Button
+              type="button"
+              variant="destructive"
+              onClick={() => {
+                setExtrasSelecao((prev) => {
+                  const next = { ...prev };
+                  if (confirmRemoveExtraId) delete next[confirmRemoveExtraId];
+                  return next;
+                });
+                setConfirmRemoveExtraId(null);
+              }}
+            >
+              Sim, quero perder essa chance
+            </Button>
+            <Button
+              type="button"
+              className="bg-zampieri-green-dark hover:bg-zampieri-green text-white"
+              onClick={() => setConfirmRemoveExtraId(null)}
+            >
+              Quero continuar aproveitando
+            </Button>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };
