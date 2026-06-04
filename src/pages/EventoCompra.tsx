@@ -1143,7 +1143,7 @@ const EventoCompra = () => {
                                   <span>{v.display_nome}</span>
                                   {isRec && (
                                     <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-zampieri-green/15 text-zampieri-green-dark border border-zampieri-green/40 font-bold uppercase tracking-wide">
-                                      Recomendado
+                                      A mais vendida
                                     </span>
                                   )}
                                 </span>
