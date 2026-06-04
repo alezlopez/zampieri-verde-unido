@@ -1119,23 +1119,32 @@ const EventoCompra = () => {
                           return (
                             <label
                               key={v.id}
-                              className={`flex items-center gap-2 p-2 rounded border cursor-pointer transition ${isSelected ? "border-zampieri-green bg-zampieri-cream/40" : "border-border hover:bg-muted/40"}`}
+                              className={`flex items-start gap-2 p-2 rounded border cursor-pointer transition ${isSelected ? "border-zampieri-green bg-zampieri-cream/40" : "border-border hover:bg-muted/40"}`}
                             >
                               <input
                                 type="radio"
                                 name={`extra-${p.produto_id}`}
-                                className="accent-zampieri-green-dark"
+                                className="accent-zampieri-green-dark mt-1"
                                 checked={isSelected}
                                 onChange={() => setExtrasSelecao((prev) => ({
                                   ...prev,
                                   [p.produto_id]: { variacao_id: v.id, qtd: prev[p.produto_id]?.qtd ?? 1 },
                                 }))}
                               />
-                              <span className="text-xs flex-1 flex items-center gap-2 flex-wrap">
-                                <span>{v.nome}</span>
-                                {isRec && (
-                                  <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-zampieri-green/15 text-zampieri-green-dark border border-zampieri-green/40 font-bold uppercase tracking-wide">
-                                    Recomendado
+                              <span className="text-xs flex-1 flex flex-col gap-0.5 min-w-0">
+                                <span className="flex items-center gap-2 flex-wrap">
+                                  <span>{v.nome}</span>
+                                  {isRec && (
+                                    <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-zampieri-green/15 text-zampieri-green-dark border border-zampieri-green/40 font-bold uppercase tracking-wide">
+                                      Recomendado
+                                    </span>
+                                  )}
+                                </span>
+                                {p.escassez_template && v.disponivel !== null && (
+                                  <span className="text-[10px] text-orange-600 font-semibold">
+                                    🔥 {p.escassez_template
+                                      .replace(/\{disponiveis\}/gi, String(v.disponivel))
+                                      .replace(/\{vendidas\}/gi, String(v.vendidos))}
                                   </span>
                                 )}
                               </span>
