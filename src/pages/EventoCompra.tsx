@@ -1162,14 +1162,29 @@ const EventoCompra = () => {
                                     </span>
                                   )}
                                 </span>
+                                {v.destaque_label && (
+                                  <span style={{ display: "inline-block", background: "#1A6B3C", color: "#FFFFFF", fontSize: 10, textTransform: "uppercase", padding: "2px 8px", borderRadius: 10, fontFamily: LATO, fontWeight: 700 }}>
+                                    {v.destaque_label}
+                                  </span>
+                                )}
+                                {v.descricao && (
+                                  <span style={{ fontSize: 12, color: "hsl(var(--muted-foreground))" }}>
+                                    {v.descricao}
+                                  </span>
+                                )}
                                 {v.escassez_text && (
                                   <span className="text-[10px] text-orange-600 font-semibold">
                                     🔥 {v.escassez_text}
                                   </span>
                                 )}
                               </span>
-                              <span className="text-xs font-bold text-zampieri-green-dark whitespace-nowrap">
-                                R$ {v.preco.toFixed(2).replace(".", ",")}
+                              <span className="text-xs font-bold text-zampieri-green-dark whitespace-nowrap text-right">
+                                <div>R$ {v.preco.toFixed(2).replace(".", ",")}</div>
+                                {v.preco_riscado != null && (
+                                  <div style={{ fontSize: 12, color: "#E24B4A", textDecoration: "line-through", fontWeight: 600 }}>
+                                    R$ {v.preco_riscado.toFixed(2).replace(".", ",")}
+                                  </div>
+                                )}
                               </span>
                             </label>
                           );
