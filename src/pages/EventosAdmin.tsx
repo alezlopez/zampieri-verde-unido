@@ -144,6 +144,8 @@ const EventosAdmin = () => {
     variacoes_ids: string[] | null;
     nomes_override_variacoes: Record<string, string> | null;
     escassez_variacoes: Record<string, string> | null;
+    preco_override: Record<string, number> | null;
+    preco_evento: Record<string, number> | null;
   };
 
   const [produtosDisponiveis, setProdutosDisponiveis] = useState<ProdutoOpt[]>([]);
