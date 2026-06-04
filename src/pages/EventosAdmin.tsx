@@ -922,6 +922,9 @@ const EventosAdmin = () => {
                                     variacao_padrao_id: vars[0]?.id || null,
                                     qtd_padrao: 1,
                                     destaque_label: null,
+                                    nome_override: null,
+                                    escassez_template: null,
+                                    variacoes_ids: null,
                                   }]);
                                 } else {
                                   setProdutosVinculados((prev) => prev.filter((v) => v.produto_id !== p.id));
@@ -934,6 +937,64 @@ const EventosAdmin = () => {
                           </label>
                           {vinc && (
                             <div className="mt-2 ml-6 space-y-2">
+                              {/* Nome exibido no upsell */}
+                              <div>
+                                <label className="text-[10px] text-muted-foreground">Nome exibido no upsell (opcional)</label>
+                                <Input
+                                  placeholder={p.nome}
+                                  value={vinc.nome_override || ""}
+                                  onChange={(e) => updateVinc({ nome_override: e.target.value || null })}
+                                  className="h-8 text-xs"
+                                />
+                              </div>
+
+                              {/* Variações exibidas no upsell */}
+                              {vars.length > 0 && (
+                                <div>
+                                  <label className="text-[10px] text-muted-foreground block mb-1">
+                                    Variações exibidas no upsell (desmarque para ocultar)
+                                  </label>
+                                  <div className="flex flex-wrap gap-2 border rounded p-2 bg-background">
+                                    {vars.map((vr) => {
+                                      const selected = vinc.variacoes_ids
+                                        ? vinc.variacoes_ids.includes(vr.id)
+                                        : true; // null = todas
+                                      return (
+                                        <label key={vr.id} className="flex items-center gap-1 text-xs cursor-pointer">
+                                          <Checkbox
+                                            checked={selected}
+                                            onCheckedChange={(c) => {
+                                              const current = vinc.variacoes_ids ?? vars.map((x) => x.id);
+                                              const next = c === true
+                                                ? Array.from(new Set([...current, vr.id]))
+                                                : current.filter((x) => x !== vr.id);
+                                              // Se ficar com todas marcadas, volta para null (todas)
+                                              const allIds = vars.map((x) => x.id);
+                                              const isAll = next.length === allIds.length && allIds.every((id) => next.includes(id));
+                                              updateVinc({ variacoes_ids: isAll ? null : next });
+                                            }}
+                                          />
+                                          <span>{vr.nome}</span>
+                                        </label>
+                                      );
+                                    })}
+                                  </div>
+                                </div>
+                              )}
+
+                              {/* Texto de escassez */}
+                              <div>
+                                <label className="text-[10px] text-muted-foreground">
+                                  Texto de escassez (opcional) — use <code>{"{disponiveis}"}</code> e <code>{"{vendidas}"}</code>
+                                </label>
+                                <Input
+                                  placeholder="Apenas {disponiveis} disponíveis — {vendidas} já vendidas"
+                                  value={vinc.escassez_template || ""}
+                                  onChange={(e) => updateVinc({ escassez_template: e.target.value || null })}
+                                  className="h-8 text-xs"
+                                />
+                              </div>
+
                               <label className="flex items-center gap-2 text-xs">
                                 <Checkbox
                                   checked={vinc.pre_selecionado}
