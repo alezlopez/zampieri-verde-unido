@@ -34,6 +34,8 @@ const Produtos = () => {
 
   const [produtos, setProdutos] = useState<Produto[]>([]);
   const [variacoes, setVariacoes] = useState<Record<string, Variacao[]>>({});
+  const [precoRiscado, setPrecoRiscado] = useState<Record<string, number>>({});
+  const [eventoNome, setEventoNome] = useState<string | null>(null);
   const [carrinho, setCarrinho] = useState<Record<string, number>>({}); // variacao_id -> qtd
   const [forma, setForma] = useState<"pix" | "credit_card">("pix");
   const [parcelas, setParcelas] = useState(1);
@@ -51,11 +53,12 @@ const Produtos = () => {
       if (eventoId) {
         const { data: ep } = await supabase
           .from("evento_produtos")
-          .select("produto_id, variacoes_ids, preco_override, preco_evento")
+          .select("produto_id, variacoes_ids, preco_override, preco_evento, preco_riscado")
           .eq("evento_id", eventoId)
           .eq("ativo", true);
         prodIds = (ep || []).map((r: any) => r.produto_id);
 
+        const riscadoLocal: Record<string, number> = {};
         for (const row of (ep || []) as any[]) {
           if (Array.isArray(row.variacoes_ids) && row.variacoes_ids.length > 0) {
             variacoesFilter[row.produto_id] = new Set(row.variacoes_ids);
@@ -72,7 +75,17 @@ const Produtos = () => {
               precoMap[vid] = { ...(precoMap[vid] || {}), preco_parcelado: Number(val) };
             }
           }
+          const pr = row.preco_riscado;
+          if (pr && typeof pr === "object" && !Array.isArray(pr)) {
+            for (const [vid, val] of Object.entries(pr)) {
+              riscadoLocal[vid] = Number(val);
+            }
+          }
         }
+        setPrecoRiscado(riscadoLocal);
+
+        const { data: ev } = await supabase.from("eventos").select("titulo").eq("id", eventoId).maybeSingle();
+        if (ev?.titulo) setEventoNome(ev.titulo);
       }
 
       let prodQuery = supabase.from("produtos").select("id,nome,descricao,imagem_url").eq("ativo", true);

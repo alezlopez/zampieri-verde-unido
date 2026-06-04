@@ -141,7 +141,7 @@ const EventoCompra = () => {
     destaque_label: string | null;
     escassez_template: string | null;
     variacao_recomendada_id: string | null;
-    variacoes: { id: string; nome: string; display_nome: string; preco: number; preco_parcelado: number; max_parcelas: number; disponivel: number | null; vendidos: number; escassez_text: string | null }[];
+    variacoes: { id: string; nome: string; display_nome: string; preco: number; preco_parcelado: number; max_parcelas: number; disponivel: number | null; vendidos: number; escassez_text: string | null; destaque_label: string | null; descricao: string | null; preco_riscado: number | null }[];
   };
 
   const [extrasDisponiveis, setExtrasDisponiveis] = useState<ProdExtra[]>([]);
@@ -222,7 +222,7 @@ const EventoCompra = () => {
       if (!id) return;
       const { data: ep } = await supabase
         .from("evento_produtos")
-        .select("produto_id, pre_selecionado, variacao_padrao_id, qtd_padrao, destaque_label, nome_override, escassez_template, variacoes_ids, nomes_override_variacoes, escassez_variacoes, ordem")
+        .select("produto_id, pre_selecionado, variacao_padrao_id, qtd_padrao, destaque_label, nome_override, escassez_template, variacoes_ids, nomes_override_variacoes, escassez_variacoes, preco_riscado, ordem")
         .eq("evento_id", id)
         .eq("ativo", true)
         .order("ordem");
@@ -233,13 +233,13 @@ const EventoCompra = () => {
       const [{ data: prods }, { data: vars }] = await Promise.all([
         supabase.from("produtos").select("id, nome, imagem_url, ativo").in("id", prodIds),
         supabase.from("produto_variacoes")
-          .select("id, produto_id, nome, preco, preco_parcelado, max_parcelas, ativo")
+          .select("id, produto_id, nome, preco, preco_parcelado, max_parcelas, ativo, destaque_label, descricao")
           .in("produto_id", prodIds).eq("ativo", true).order("ordem"),
       ]);
       const prodMap = new Map<string, any>((prods || []).map((p: any) => [p.id, p]));
-      const varsByProd: Record<string, { id: string; nome: string; preco: number; preco_parcelado: number; max_parcelas: number }[]> = {};
+      const varsByProd: Record<string, { id: string; nome: string; preco: number; preco_parcelado: number; max_parcelas: number; destaque_label: string | null; descricao: string | null }[]> = {};
       for (const v of (vars || []) as any[]) {
-        (varsByProd[v.produto_id] ||= []).push({ id: v.id, nome: v.nome, preco: Number(v.preco), preco_parcelado: Number(v.preco_parcelado || v.preco), max_parcelas: Number(v.max_parcelas || 1) });
+        (varsByProd[v.produto_id] ||= []).push({ id: v.id, nome: v.nome, preco: Number(v.preco), preco_parcelado: Number(v.preco_parcelado || v.preco), max_parcelas: Number(v.max_parcelas || 1), destaque_label: v.destaque_label || null, descricao: v.descricao || null });
       }
 
       // Coleta IDs de todas as variações que vamos exibir (após filtro) para carregar estoque em lote
@@ -283,6 +283,9 @@ const EventoCompra = () => {
         const escassezMap: Record<string, string> = (r.escassez_variacoes && typeof r.escassez_variacoes === "object" && !Array.isArray(r.escassez_variacoes))
           ? r.escassez_variacoes as Record<string, string>
           : {};
+        const riscadoMap: Record<string, number> = (r.preco_riscado && typeof r.preco_riscado === "object" && !Array.isArray(r.preco_riscado))
+          ? Object.fromEntries(Object.entries(r.preco_riscado as Record<string, any>).map(([k, v]) => [k, Number(v)]))
+          : {};
         const vsWithStock = vs.map((v) => {
           const est = estoqueMap.get(v.id);
           const override = overrides[v.id];
@@ -294,7 +297,7 @@ const EventoCompra = () => {
                 .replace(/\{disponiveis\}/gi, est?.disponivel != null ? String(est.disponivel) : "")
                 .replace(/\{vendidas\}/gi, String(est?.vendidos ?? ""))
             : null;
-          return { ...v, display_nome, disponivel: est?.disponivel ?? null, vendidos: est?.vendidos ?? 0, escassez_text };
+          return { ...v, display_nome, disponivel: est?.disponivel ?? null, vendidos: est?.vendidos ?? 0, escassez_text, preco_riscado: riscadoMap[v.id] != null ? Number(riscadoMap[v.id]) : null };
         });
         list.push({
           produto_id: p.id,
