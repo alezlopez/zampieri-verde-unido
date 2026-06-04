@@ -1112,9 +1112,7 @@ const EventoCompra = () => {
                           <button
                             type="button"
                             className="text-[11px] text-muted-foreground hover:text-destructive underline"
-                            onClick={() => setExtrasSelecao((prev) => {
-                              const next = { ...prev }; delete next[p.produto_id]; return next;
-                            })}
+                            onClick={() => setConfirmRemoveExtraId(p.produto_id)}
                           >
                             remover
                           </button>
