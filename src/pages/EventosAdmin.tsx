@@ -952,47 +952,66 @@ const EventosAdmin = () => {
                           </label>
                           {vinc && (
                             <div className="mt-2 ml-6 space-y-2">
-                              {/* Variações exibidas no upsell + nome customizado por variação */}
+                              {/* Variações exibidas no upsell + nome customizado + texto de escassez por variação */}
                               {vars.length > 0 && (
                                 <div>
                                   <label className="text-[10px] text-muted-foreground block mb-1">
-                                    Variações exibidas no upsell — desmarque para ocultar. Personalize o nome exibido (opcional).
+                                    Variações exibidas no upsell — desmarque para ocultar. Personalize nome e texto de escassez (opcional, por variação).
                                   </label>
-                                  <div className="space-y-1.5 border rounded p-2 bg-background">
+                                  <div className="space-y-2 border rounded p-2 bg-background">
                                     {vars.map((vr) => {
                                       const selected = vinc.variacoes_ids
                                         ? vinc.variacoes_ids.includes(vr.id)
                                         : true; // null = todas
                                       const overrides = vinc.nomes_override_variacoes || {};
                                       const overrideVal = overrides[vr.id] || "";
+                                      const escassez = vinc.escassez_variacoes || {};
+                                      const escassezVal = escassez[vr.id] || "";
                                       return (
-                                        <div key={vr.id} className="flex items-center gap-2">
-                                          <Checkbox
-                                            checked={selected}
-                                            onCheckedChange={(c) => {
-                                              const current = vinc.variacoes_ids ?? vars.map((x) => x.id);
-                                              const next = c === true
-                                                ? Array.from(new Set([...current, vr.id]))
-                                                : current.filter((x) => x !== vr.id);
-                                              const allIds = vars.map((x) => x.id);
-                                              const isAll = next.length === allIds.length && allIds.every((id) => next.includes(id));
-                                              updateVinc({ variacoes_ids: isAll ? null : next });
-                                            }}
-                                          />
-                                          <span className="text-xs w-32 truncate" title={vr.nome}>{vr.nome}</span>
-                                          <Input
-                                            placeholder={`Nome no upsell (padrão: ${vr.nome})`}
-                                            value={overrideVal}
-                                            disabled={!selected}
-                                            onChange={(e) => {
-                                              const val = e.target.value;
-                                              const next = { ...overrides };
-                                              if (val.trim()) next[vr.id] = val;
-                                              else delete next[vr.id];
-                                              updateVinc({ nomes_override_variacoes: Object.keys(next).length > 0 ? next : null });
-                                            }}
-                                            className="h-7 text-xs flex-1"
-                                          />
+                                        <div key={vr.id} className="space-y-1 border-b last:border-b-0 pb-2 last:pb-0">
+                                          <div className="flex items-center gap-2">
+                                            <Checkbox
+                                              checked={selected}
+                                              onCheckedChange={(c) => {
+                                                const current = vinc.variacoes_ids ?? vars.map((x) => x.id);
+                                                const next = c === true
+                                                  ? Array.from(new Set([...current, vr.id]))
+                                                  : current.filter((x) => x !== vr.id);
+                                                const allIds = vars.map((x) => x.id);
+                                                const isAll = next.length === allIds.length && allIds.every((id) => next.includes(id));
+                                                updateVinc({ variacoes_ids: isAll ? null : next });
+                                              }}
+                                            />
+                                            <span className="text-xs w-32 truncate" title={vr.nome}>{vr.nome}</span>
+                                            <Input
+                                              placeholder={`Nome no upsell (padrão: ${vr.nome})`}
+                                              value={overrideVal}
+                                              disabled={!selected}
+                                              onChange={(e) => {
+                                                const val = e.target.value;
+                                                const next = { ...overrides };
+                                                if (val.trim()) next[vr.id] = val;
+                                                else delete next[vr.id];
+                                                updateVinc({ nomes_override_variacoes: Object.keys(next).length > 0 ? next : null });
+                                              }}
+                                              className="h-7 text-xs flex-1"
+                                            />
+                                          </div>
+                                          <div className="ml-8">
+                                            <Input
+                                              placeholder='Texto de escassez (ex: "Últimas 3 unidades!")'
+                                              value={escassezVal}
+                                              disabled={!selected}
+                                              onChange={(e) => {
+                                                const val = e.target.value;
+                                                const next = { ...escassez };
+                                                if (val.trim()) next[vr.id] = val;
+                                                else delete next[vr.id];
+                                                updateVinc({ escassez_variacoes: Object.keys(next).length > 0 ? next : null });
+                                              }}
+                                              className="h-7 text-xs"
+                                            />
+                                          </div>
                                         </div>
                                       );
                                     })}
@@ -1001,18 +1020,6 @@ const EventosAdmin = () => {
                               )}
 
 
-                              {/* Texto de escassez */}
-                              <div>
-                                <label className="text-[10px] text-muted-foreground">
-                                  Texto de escassez (opcional) — use <code>{"{disponiveis}"}</code> e <code>{"{vendidas}"}</code>
-                                </label>
-                                <Input
-                                  placeholder="Apenas {disponiveis} disponíveis — {vendidas} já vendidas"
-                                  value={vinc.escassez_template || ""}
-                                  onChange={(e) => updateVinc({ escassez_template: e.target.value || null })}
-                                  className="h-8 text-xs"
-                                />
-                              </div>
 
                               <label className="flex items-center gap-2 text-xs">
                                 <Checkbox
