@@ -141,7 +141,7 @@ const EventoCompra = () => {
     destaque_label: string | null;
     escassez_template: string | null;
     variacao_recomendada_id: string | null;
-    variacoes: { id: string; nome: string; display_nome: string; preco: number; preco_parcelado: number; max_parcelas: number; disponivel: number | null; vendidos: number; escassez_text: string | null }[];
+    variacoes: { id: string; nome: string; display_nome: string; preco: number; preco_parcelado: number; max_parcelas: number; disponivel: number | null; vendidos: number; escassez_text: string | null; destaque_label: string | null; descricao: string | null; preco_riscado: number | null }[];
   };
 
   const [extrasDisponiveis, setExtrasDisponiveis] = useState<ProdExtra[]>([]);
@@ -283,6 +283,9 @@ const EventoCompra = () => {
         const escassezMap: Record<string, string> = (r.escassez_variacoes && typeof r.escassez_variacoes === "object" && !Array.isArray(r.escassez_variacoes))
           ? r.escassez_variacoes as Record<string, string>
           : {};
+        const riscadoMap: Record<string, number> = (r.preco_riscado && typeof r.preco_riscado === "object" && !Array.isArray(r.preco_riscado))
+          ? Object.fromEntries(Object.entries(r.preco_riscado as Record<string, any>).map(([k, v]) => [k, Number(v)]))
+          : {};
         const vsWithStock = vs.map((v) => {
           const est = estoqueMap.get(v.id);
           const override = overrides[v.id];
@@ -294,7 +297,7 @@ const EventoCompra = () => {
                 .replace(/\{disponiveis\}/gi, est?.disponivel != null ? String(est.disponivel) : "")
                 .replace(/\{vendidas\}/gi, String(est?.vendidos ?? ""))
             : null;
-          return { ...v, display_nome, disponivel: est?.disponivel ?? null, vendidos: est?.vendidos ?? 0, escassez_text };
+          return { ...v, display_nome, disponivel: est?.disponivel ?? null, vendidos: est?.vendidos ?? 0, escassez_text, preco_riscado: riscadoMap[v.id] != null ? Number(riscadoMap[v.id]) : null };
         });
         list.push({
           produto_id: p.id,
