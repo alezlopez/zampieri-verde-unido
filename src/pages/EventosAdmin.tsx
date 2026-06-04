@@ -143,6 +143,7 @@ const EventosAdmin = () => {
     escassez_template: string | null;
     variacoes_ids: string[] | null;
     nomes_override_variacoes: Record<string, string> | null;
+    escassez_variacoes: Record<string, string> | null;
   };
 
   const [produtosDisponiveis, setProdutosDisponiveis] = useState<ProdutoOpt[]>([]);
