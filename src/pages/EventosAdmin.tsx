@@ -1029,6 +1029,38 @@ const EventosAdmin = () => {
                                               className="h-7 text-xs"
                                             />
                                           </div>
+                                          <div className="ml-8 grid grid-cols-2 gap-2">
+                                            <Input
+                                              type="number"
+                                              step="0.01"
+                                              placeholder="Preço à vista (override)"
+                                              value={precoOvVal}
+                                              disabled={!selected}
+                                              onChange={(e) => {
+                                                const val = e.target.value;
+                                                const next = { ...precoOv };
+                                                if (val === "" || isNaN(Number(val))) delete next[vr.id];
+                                                else next[vr.id] = Number(val);
+                                                updateVinc({ preco_override: Object.keys(next).length > 0 ? next : null });
+                                              }}
+                                              className="h-7 text-xs"
+                                            />
+                                            <Input
+                                              type="number"
+                                              step="0.01"
+                                              placeholder="Preço parcelado (override)"
+                                              value={precoEvVal}
+                                              disabled={!selected}
+                                              onChange={(e) => {
+                                                const val = e.target.value;
+                                                const next = { ...precoEv };
+                                                if (val === "" || isNaN(Number(val))) delete next[vr.id];
+                                                else next[vr.id] = Number(val);
+                                                updateVinc({ preco_evento: Object.keys(next).length > 0 ? next : null });
+                                              }}
+                                              className="h-7 text-xs"
+                                            />
+                                          </div>
                                         </div>
                                       );
                                     })}
