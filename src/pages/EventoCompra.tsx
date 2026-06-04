@@ -1462,6 +1462,40 @@ const EventoCompra = () => {
       </div>
       </div>
       <Footer />
+
+      <AlertDialog open={!!confirmRemoveExtraId} onOpenChange={(o) => !o && setConfirmRemoveExtraId(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Realmente deseja perder essa chance?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Você está prestes a remover este item da sua compra.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter className="sm:justify-between gap-2">
+            <Button
+              type="button"
+              variant="destructive"
+              onClick={() => {
+                setExtrasSelecao((prev) => {
+                  const next = { ...prev };
+                  if (confirmRemoveExtraId) delete next[confirmRemoveExtraId];
+                  return next;
+                });
+                setConfirmRemoveExtraId(null);
+              }}
+            >
+              Sim, quero perder essa chance
+            </Button>
+            <Button
+              type="button"
+              className="bg-zampieri-green-dark hover:bg-zampieri-green text-white"
+              onClick={() => setConfirmRemoveExtraId(null)}
+            >
+              Quero continuar aproveitando
+            </Button>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };
