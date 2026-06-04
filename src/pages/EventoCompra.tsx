@@ -222,7 +222,7 @@ const EventoCompra = () => {
       if (!id) return;
       const { data: ep } = await supabase
         .from("evento_produtos")
-        .select("produto_id, pre_selecionado, variacao_padrao_id, qtd_padrao, destaque_label, nome_override, escassez_template, variacoes_ids, nomes_override_variacoes, escassez_variacoes, ordem")
+        .select("produto_id, pre_selecionado, variacao_padrao_id, qtd_padrao, destaque_label, nome_override, escassez_template, variacoes_ids, nomes_override_variacoes, escassez_variacoes, preco_riscado, ordem")
         .eq("evento_id", id)
         .eq("ativo", true)
         .order("ordem");
@@ -233,13 +233,13 @@ const EventoCompra = () => {
       const [{ data: prods }, { data: vars }] = await Promise.all([
         supabase.from("produtos").select("id, nome, imagem_url, ativo").in("id", prodIds),
         supabase.from("produto_variacoes")
-          .select("id, produto_id, nome, preco, preco_parcelado, max_parcelas, ativo")
+          .select("id, produto_id, nome, preco, preco_parcelado, max_parcelas, ativo, destaque_label, descricao")
           .in("produto_id", prodIds).eq("ativo", true).order("ordem"),
       ]);
       const prodMap = new Map<string, any>((prods || []).map((p: any) => [p.id, p]));
-      const varsByProd: Record<string, { id: string; nome: string; preco: number; preco_parcelado: number; max_parcelas: number }[]> = {};
+      const varsByProd: Record<string, { id: string; nome: string; preco: number; preco_parcelado: number; max_parcelas: number; destaque_label: string | null; descricao: string | null }[]> = {};
       for (const v of (vars || []) as any[]) {
-        (varsByProd[v.produto_id] ||= []).push({ id: v.id, nome: v.nome, preco: Number(v.preco), preco_parcelado: Number(v.preco_parcelado || v.preco), max_parcelas: Number(v.max_parcelas || 1) });
+        (varsByProd[v.produto_id] ||= []).push({ id: v.id, nome: v.nome, preco: Number(v.preco), preco_parcelado: Number(v.preco_parcelado || v.preco), max_parcelas: Number(v.max_parcelas || 1), destaque_label: v.destaque_label || null, descricao: v.descricao || null });
       }
 
       // Coleta IDs de todas as variações que vamos exibir (após filtro) para carregar estoque em lote
