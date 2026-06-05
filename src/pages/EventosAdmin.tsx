@@ -263,6 +263,8 @@ const EventosAdmin = () => {
     setSucessoUpsellBadge("");
     setSucessoUpsellTitulo("");
     setSucessoUpsellSubtitulo("");
+    setSucessoUpsellVariacaoId("");
+    setVariacoesUpsellOpts([]);
     setImagemFile(null);
     setImagemPreview(null);
     setProdutosVinculados([]);
