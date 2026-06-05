@@ -1156,11 +1156,6 @@ const EventoCompra = () => {
                               <span className="text-xs flex-1 flex flex-col gap-0.5 min-w-0">
                                 <span className="flex items-center gap-2 flex-wrap">
                                   <span>{v.display_nome}</span>
-                                  {isRec && (
-                                    <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-zampieri-green/15 text-zampieri-green-dark border border-zampieri-green/40 font-bold uppercase tracking-wide">
-                                      A mais vendida
-                                    </span>
-                                  )}
                                 </span>
                                 {v.destaque_label && (
                                   <span style={{ display: "inline-block", background: "#1A6B3C", color: "#FFFFFF", fontSize: 10, textTransform: "uppercase", padding: "2px 8px", borderRadius: 10, fontFamily: LATO, fontWeight: 700 }}>
