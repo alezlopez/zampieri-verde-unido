@@ -195,7 +195,7 @@ const EventoCompra = () => {
   useEffect(() => {
     if (redirectCountdown === null) return;
     if (redirectCountdown <= 0) {
-      navigate("/eventos/meus-ingressos");
+      navigate("/produtos");
       return;
     }
     const timer = setTimeout(() => {
