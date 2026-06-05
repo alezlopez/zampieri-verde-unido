@@ -409,6 +409,7 @@ const EventosAdmin = () => {
       sucesso_upsell_badge: sucessoUpsellBadge.trim() || null,
       sucesso_upsell_titulo: sucessoUpsellTitulo.trim() || null,
       sucesso_upsell_subtitulo: sucessoUpsellSubtitulo.trim() || null,
+      sucesso_upsell_variacao_id: sucessoUpsellVariacaoId || null,
     };
     if (payload.vagas_disponiveis === undefined) delete (payload as any).vagas_disponiveis;
 
