@@ -185,9 +185,9 @@ Deno.serve(async (req) => {
 
     // ============= Asaas =============
     const SITE_BASE = "https://colegiozampieri.com.br";
-    const successUrl = `${SITE_BASE}/eventos/sucesso?tipo=combo&evento=${eventoId}`;
-    const cancelUrl = `${SITE_BASE}/eventos/meus-ingressos?status=cancel`;
-    const expiredUrl = `${SITE_BASE}/eventos/meus-ingressos?status=expired`;
+    const successUrl = `${SITE_BASE}/produtos?status=success`;
+    const cancelUrl = `${SITE_BASE}/produtos?status=cancel`;
+    const expiredUrl = `${SITE_BASE}/produtos?status=expired`;
 
     const billingTypes = isParcelado ? (["CREDIT_CARD"] as const) : (["PIX", "CREDIT_CARD"] as const);
     const chargeTypes = isParcelado ? (["DETACHED", "INSTALLMENT"] as const) : (["DETACHED"] as const);

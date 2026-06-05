@@ -130,9 +130,9 @@ Deno.serve(async (req) => {
         billingTypes: billingTypesR as any,
         chargeTypes: chargeTypesR as any,
         items: itemsR,
-        successUrl: `${SITE_BASE_R}/eventos/sucesso?tipo=produto${eventoQR}`,
-        cancelUrl: `${SITE_BASE_R}/eventos/meus-ingressos?status=cancel`,
-        expiredUrl: `${SITE_BASE_R}/eventos/meus-ingressos?status=expired`,
+        successUrl: `${SITE_BASE_R}/produtos?status=success`,
+        cancelUrl: `${SITE_BASE_R}/produtos?status=cancel`,
+        expiredUrl: `${SITE_BASE_R}/produtos?status=expired`,
         externalReference: `prod:${pedidosExist.map((p: any) => p.id).join(",")}`,
         minutesToExpire: 60,
         maxInstallmentCount: isParcelado ? maxParcelasReuso : undefined,
@@ -283,10 +283,9 @@ Deno.serve(async (req) => {
     }
 
     const SITE_BASE = "https://colegiozampieri.com.br";
-    const eventoQuery = body.evento_id ? `&evento=${body.evento_id}` : "";
-    const successUrl = `${SITE_BASE}/eventos/sucesso?tipo=produto${eventoQuery}`;
-    const cancelUrl = `${SITE_BASE}/eventos/meus-ingressos?status=cancel`;
-    const expiredUrl = `${SITE_BASE}/eventos/meus-ingressos?status=expired`;
+    const successUrl = `${SITE_BASE}/produtos?status=success`;
+    const cancelUrl = `${SITE_BASE}/produtos?status=cancel`;
+    const expiredUrl = `${SITE_BASE}/produtos?status=expired`;
 
     const billingTypes = isParcelado ? (["CREDIT_CARD"] as const) : (["PIX", "CREDIT_CARD"] as const);
     const chargeTypes = isParcelado ? (["DETACHED", "INSTALLMENT"] as const) : (["DETACHED"] as const);
