@@ -47,7 +47,7 @@ const CompraSucesso = () => {
         const { data: ev } = await supabase
           .from("eventos")
           .select(
-            "titulo, sucesso_upsell_ativo, sucesso_upsell_titulo, sucesso_upsell_subtitulo, sucesso_upsell_badge"
+            "titulo, sucesso_upsell_ativo, sucesso_upsell_titulo, sucesso_upsell_subtitulo, sucesso_upsell_badge, sucesso_upsell_variacao_id"
           )
           .eq("id", eventoId)
           .maybeSingle();
@@ -58,10 +58,11 @@ const CompraSucesso = () => {
             titulo: (ev as any).sucesso_upsell_titulo ?? null,
             subtitulo: (ev as any).sucesso_upsell_subtitulo ?? null,
             badge: (ev as any).sucesso_upsell_badge ?? null,
+            variacao_id: (ev as any).sucesso_upsell_variacao_id ?? null,
           });
         }
       } else {
-        setUpsellConfig({ ativo: true, titulo: null, subtitulo: null, badge: null });
+        setUpsellConfig({ ativo: true, titulo: null, subtitulo: null, badge: null, variacao_id: null });
       }
 
       // sugestões: produtos vinculados ao evento OU globais (até 4)
