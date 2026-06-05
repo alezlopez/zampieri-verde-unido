@@ -352,7 +352,14 @@ const CompraSucesso = () => {
                           color: "#fff",
                         }}
                       >
-                        {formatPreco(destaque.preco_max)}
+                        {formatPreco((() => {
+                          const varId = upsellConfig?.variacao_id;
+                          if (varId && destaque.produto_variacoes) {
+                            const v = destaque.produto_variacoes.find((x: any) => x.id === varId);
+                            if (v && Number(v.preco) > 0) return Number(v.preco);
+                          }
+                          return destaque.preco_max ?? destaque.preco_min ?? 0;
+                        })())}
                       </div>
                     </div>
                   )}
