@@ -325,7 +325,7 @@ const CompraSucesso = () => {
                           color: "#fff",
                         }}
                       >
-                        {destaque.nome}
+                        {upsellConfig?.variacao_nome || destaque.nome}
                       </h3>
                       {destaque.descricao && (
                         <p
