@@ -185,7 +185,9 @@ Deno.serve(async (req) => {
 
     // ============= Asaas =============
     const SITE_BASE = "https://colegiozampieri.com.br";
-    const successUrl = `${SITE_BASE}/produtos?status=success`;
+    const successUrl = eventoId
+      ? `${SITE_BASE}/eventos/sucesso?tipo=combo&evento=${eventoId}&status=success`
+      : `${SITE_BASE}/eventos/sucesso?tipo=combo&status=success`;
     const cancelUrl = `${SITE_BASE}/produtos?status=cancel`;
     const expiredUrl = `${SITE_BASE}/produtos?status=expired`;
 
