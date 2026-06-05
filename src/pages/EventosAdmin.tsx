@@ -39,6 +39,10 @@ interface Evento {
   preco_meia_parcelado: number;
   categorias_meia: string[];
   aluno_cortesia: boolean;
+  sucesso_upsell_ativo?: boolean;
+  sucesso_upsell_titulo?: string | null;
+  sucesso_upsell_subtitulo?: string | null;
+  sucesso_upsell_badge?: string | null;
 }
 
 interface Ingresso {
@@ -125,6 +129,10 @@ const EventosAdmin = () => {
   const [meiaHabilitada, setMeiaHabilitada] = useState(true);
   const [categoriasMeia, setCategoriasMeia] = useState<string[]>(["estudante", "idoso", "pcd", "pcd_acompanhante", "professor"]);
   const [alunoCortesia, setAlunoCortesia] = useState(false);
+  const [sucessoUpsellAtivo, setSucessoUpsellAtivo] = useState(true);
+  const [sucessoUpsellBadge, setSucessoUpsellBadge] = useState("");
+  const [sucessoUpsellTitulo, setSucessoUpsellTitulo] = useState("");
+  const [sucessoUpsellSubtitulo, setSucessoUpsellSubtitulo] = useState("");
   const [syncingId, setSyncingId] = useState<string | null>(null);
   const [imagemFile, setImagemFile] = useState<File | null>(null);
   const [imagemPreview, setImagemPreview] = useState<string | null>(null);
@@ -249,6 +257,10 @@ const EventosAdmin = () => {
     setMeiaHabilitada(true);
     setCategoriasMeia(["estudante", "idoso", "pcd", "pcd_acompanhante", "professor"]);
     setAlunoCortesia(false);
+    setSucessoUpsellAtivo(true);
+    setSucessoUpsellBadge("");
+    setSucessoUpsellTitulo("");
+    setSucessoUpsellSubtitulo("");
     setImagemFile(null);
     setImagemPreview(null);
     setProdutosVinculados([]);
@@ -277,6 +289,10 @@ const EventosAdmin = () => {
         : ["estudante", "idoso", "pcd", "pcd_acompanhante", "professor"]
     );
     setAlunoCortesia(!!(evento as any).aluno_cortesia);
+    setSucessoUpsellAtivo((evento as any).sucesso_upsell_ativo ?? true);
+    setSucessoUpsellBadge((evento as any).sucesso_upsell_badge || "");
+    setSucessoUpsellTitulo((evento as any).sucesso_upsell_titulo || "");
+    setSucessoUpsellSubtitulo((evento as any).sucesso_upsell_subtitulo || "");
     setImagemFile(null);
     setImagemPreview(evento.imagem_url || null);
     setEditingId(evento.id);
@@ -384,6 +400,10 @@ const EventosAdmin = () => {
       preco_meia_parcelado: precoMeiaParcelado,
       categorias_meia: categoriasMeia,
       aluno_cortesia: alunoCortesia,
+      sucesso_upsell_ativo: sucessoUpsellAtivo,
+      sucesso_upsell_badge: sucessoUpsellBadge.trim() || null,
+      sucesso_upsell_titulo: sucessoUpsellTitulo.trim() || null,
+      sucesso_upsell_subtitulo: sucessoUpsellSubtitulo.trim() || null,
     };
     if (payload.vagas_disponiveis === undefined) delete (payload as any).vagas_disponiveis;
 
@@ -1148,6 +1168,52 @@ const EventosAdmin = () => {
                   </div>
                 )}
               </div>
+
+              {/* Página de agradecimento — Upsell pós-compra */}
+              <div className="border-t pt-4 mt-3 space-y-3">
+                <label className="text-sm font-bold text-zampieri-green-dark uppercase tracking-wide">
+                  Página de agradecimento — upsell pós-compra
+                </label>
+                <div className="flex items-start space-x-2 rounded-md border border-zampieri-green/30 bg-zampieri-cream/30 p-3">
+                  <Checkbox
+                    id="sucesso-upsell-ativo"
+                    checked={sucessoUpsellAtivo}
+                    onCheckedChange={(checked) => setSucessoUpsellAtivo(checked === true)}
+                  />
+                  <label htmlFor="sucesso-upsell-ativo" className="text-sm font-medium cursor-pointer text-zampieri-green-dark">
+                    Exibir bloco de upsell na página de agradecimento
+                  </label>
+                </div>
+                {sucessoUpsellAtivo && (
+                  <div className="space-y-3 pl-1">
+                    <div>
+                      <label className="text-xs font-medium text-muted-foreground">Badge do bloco</label>
+                      <Input
+                        value={sucessoUpsellBadge}
+                        onChange={(e) => setSucessoUpsellBadge(e.target.value)}
+                        placeholder="Ex: GARANTA ANTES DO EVENTO"
+                      />
+                    </div>
+                    <div>
+                      <label className="text-xs font-medium text-muted-foreground">Título do bloco</label>
+                      <Input
+                        value={sucessoUpsellTitulo}
+                        onChange={(e) => setSucessoUpsellTitulo(e.target.value)}
+                        placeholder="Ex: Garanta sua cartela pelo preço online"
+                      />
+                    </div>
+                    <div>
+                      <label className="text-xs font-medium text-muted-foreground">Subtítulo do bloco</label>
+                      <Input
+                        value={sucessoUpsellSubtitulo}
+                        onChange={(e) => setSucessoUpsellSubtitulo(e.target.value)}
+                        placeholder="Ex: No dia do evento o valor sobe. Compre agora e economize."
+                      />
+                    </div>
+                  </div>
+                )}
+              </div>
+
               <div className="flex gap-2">
                 <Button onClick={handleSave} className="bg-zampieri-green-dark hover:bg-zampieri-green text-white" disabled={uploading}>
                   {uploading ? "Salvando..." : "Salvar"}
