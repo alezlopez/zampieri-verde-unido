@@ -16,6 +16,7 @@ interface ProdutoSugerido {
   imagem_url: string | null;
   preco_min: number | null;
   preco_max: number | null;
+  produto_variacoes?: Array<{ id: string; preco: number; ativo: boolean; destaque_label?: string | null }>;
 }
 
 interface UpsellConfig {
@@ -23,6 +24,7 @@ interface UpsellConfig {
   titulo: string | null;
   subtitulo: string | null;
   badge: string | null;
+  variacao_id: string | null;
 }
 
 const playfair = { fontFamily: "'Playfair Display', serif" };
