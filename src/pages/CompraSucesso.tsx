@@ -78,7 +78,7 @@ const CompraSucesso = () => {
 
       let query = supabase
         .from("produtos")
-        .select("id,nome,descricao,imagem_url,produto_variacoes(preco,ativo,destaque_label)")
+        .select("id,nome,descricao,imagem_url,produto_variacoes(id,preco,ativo,destaque_label)")
         .eq("ativo", true)
         .limit(4);
       if (prodIds.length > 0) {
@@ -103,6 +103,7 @@ const CompraSucesso = () => {
           imagem_url: p.imagem_url,
           preco_min: precos.length > 0 ? Math.min(...precos) : null,
           preco_max: precosDestaque.length > 0 ? Math.max(...precosDestaque) : (precos.length > 0 ? Math.max(...precos) : null),
+          produto_variacoes: p.produto_variacoes || [],
         };
       });
       list.sort((a, b) => (b.preco_min ?? 0) - (a.preco_min ?? 0));
