@@ -133,6 +133,8 @@ const EventosAdmin = () => {
   const [sucessoUpsellBadge, setSucessoUpsellBadge] = useState("");
   const [sucessoUpsellTitulo, setSucessoUpsellTitulo] = useState("");
   const [sucessoUpsellSubtitulo, setSucessoUpsellSubtitulo] = useState("");
+  const [sucessoUpsellVariacaoId, setSucessoUpsellVariacaoId] = useState<string>("");
+  const [variacoesUpsellOpts, setVariacoesUpsellOpts] = useState<Array<{ id: string; produto_nome: string; variacao_nome: string; preco: number }>>([]);
   const [syncingId, setSyncingId] = useState<string | null>(null);
   const [imagemFile, setImagemFile] = useState<File | null>(null);
   const [imagemPreview, setImagemPreview] = useState<string | null>(null);
@@ -237,6 +239,34 @@ const EventosAdmin = () => {
     }
   }, [isAdmin]);
 
+  // Carrega variações ativas dos produtos vinculados (com preço) para o dropdown de upsell em destaque
+  useEffect(() => {
+    const loadVarsUpsell = async () => {
+      const ids = produtosVinculados.map((p) => p.produto_id);
+      if (ids.length === 0) {
+        setVariacoesUpsellOpts([]);
+        return;
+      }
+      const { data } = await supabase
+        .from("produto_variacoes")
+        .select("id, nome, preco, produto_id, ativo")
+        .in("produto_id", ids)
+        .eq("ativo", true)
+        .order("ordem");
+      const prodMap: Record<string, string> = {};
+      for (const p of produtosDisponiveis) prodMap[p.id] = p.nome;
+      setVariacoesUpsellOpts(
+        (data || []).map((v: any) => ({
+          id: v.id,
+          produto_nome: prodMap[v.produto_id] || "Produto",
+          variacao_nome: v.nome,
+          preco: Number(v.preco) || 0,
+        }))
+      );
+    };
+    loadVarsUpsell();
+  }, [produtosVinculados, produtosDisponiveis]);
+
   const formatBRL = (v: number) =>
     v.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 
@@ -261,6 +291,8 @@ const EventosAdmin = () => {
     setSucessoUpsellBadge("");
     setSucessoUpsellTitulo("");
     setSucessoUpsellSubtitulo("");
+    setSucessoUpsellVariacaoId("");
+    setVariacoesUpsellOpts([]);
     setImagemFile(null);
     setImagemPreview(null);
     setProdutosVinculados([]);
@@ -293,6 +325,7 @@ const EventosAdmin = () => {
     setSucessoUpsellBadge((evento as any).sucesso_upsell_badge || "");
     setSucessoUpsellTitulo((evento as any).sucesso_upsell_titulo || "");
     setSucessoUpsellSubtitulo((evento as any).sucesso_upsell_subtitulo || "");
+    setSucessoUpsellVariacaoId((evento as any).sucesso_upsell_variacao_id || "");
     setImagemFile(null);
     setImagemPreview(evento.imagem_url || null);
     setEditingId(evento.id);
@@ -404,6 +437,7 @@ const EventosAdmin = () => {
       sucesso_upsell_badge: sucessoUpsellBadge.trim() || null,
       sucesso_upsell_titulo: sucessoUpsellTitulo.trim() || null,
       sucesso_upsell_subtitulo: sucessoUpsellSubtitulo.trim() || null,
+      sucesso_upsell_variacao_id: sucessoUpsellVariacaoId || null,
     };
     if (payload.vagas_disponiveis === undefined) delete (payload as any).vagas_disponiveis;
 
@@ -1209,6 +1243,23 @@ const EventosAdmin = () => {
                         onChange={(e) => setSucessoUpsellSubtitulo(e.target.value)}
                         placeholder="Ex: No dia do evento o valor sobe. Compre agora e economize."
                       />
+                    </div>
+                    <div>
+                      <label className="text-xs font-medium text-muted-foreground">
+                        Variação em destaque (preço exibido no card)
+                      </label>
+                      <select
+                        value={sucessoUpsellVariacaoId}
+                        onChange={(e) => setSucessoUpsellVariacaoId(e.target.value)}
+                        className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                      >
+                        <option value="">Selecione uma variação (opcional)</option>
+                        {variacoesUpsellOpts.map((v) => (
+                          <option key={v.id} value={v.id}>
+                            {v.produto_nome} — {v.variacao_nome} — R$ {v.preco.toFixed(2).replace(".", ",")}
+                          </option>
+                        ))}
+                      </select>
                     </div>
                   </div>
                 )}

@@ -16,6 +16,7 @@ interface ProdutoSugerido {
   imagem_url: string | null;
   preco_min: number | null;
   preco_max: number | null;
+  produto_variacoes?: Array<{ id: string; preco: number; ativo: boolean; destaque_label?: string | null }>;
 }
 
 interface UpsellConfig {
@@ -23,6 +24,7 @@ interface UpsellConfig {
   titulo: string | null;
   subtitulo: string | null;
   badge: string | null;
+  variacao_id: string | null;
 }
 
 const playfair = { fontFamily: "'Playfair Display', serif" };
@@ -45,7 +47,7 @@ const CompraSucesso = () => {
         const { data: ev } = await supabase
           .from("eventos")
           .select(
-            "titulo, sucesso_upsell_ativo, sucesso_upsell_titulo, sucesso_upsell_subtitulo, sucesso_upsell_badge"
+            "titulo, sucesso_upsell_ativo, sucesso_upsell_titulo, sucesso_upsell_subtitulo, sucesso_upsell_badge, sucesso_upsell_variacao_id"
           )
           .eq("id", eventoId)
           .maybeSingle();
@@ -56,10 +58,11 @@ const CompraSucesso = () => {
             titulo: (ev as any).sucesso_upsell_titulo ?? null,
             subtitulo: (ev as any).sucesso_upsell_subtitulo ?? null,
             badge: (ev as any).sucesso_upsell_badge ?? null,
+            variacao_id: (ev as any).sucesso_upsell_variacao_id ?? null,
           });
         }
       } else {
-        setUpsellConfig({ ativo: true, titulo: null, subtitulo: null, badge: null });
+        setUpsellConfig({ ativo: true, titulo: null, subtitulo: null, badge: null, variacao_id: null });
       }
 
       // sugestões: produtos vinculados ao evento OU globais (até 4)
@@ -75,7 +78,7 @@ const CompraSucesso = () => {
 
       let query = supabase
         .from("produtos")
-        .select("id,nome,descricao,imagem_url,produto_variacoes(preco,ativo,destaque_label)")
+        .select("id,nome,descricao,imagem_url,produto_variacoes(id,preco,ativo,destaque_label)")
         .eq("ativo", true)
         .limit(4);
       if (prodIds.length > 0) {
@@ -100,6 +103,7 @@ const CompraSucesso = () => {
           imagem_url: p.imagem_url,
           preco_min: precos.length > 0 ? Math.min(...precos) : null,
           preco_max: precosDestaque.length > 0 ? Math.max(...precosDestaque) : (precos.length > 0 ? Math.max(...precos) : null),
+          produto_variacoes: p.produto_variacoes || [],
         };
       });
       list.sort((a, b) => (b.preco_min ?? 0) - (a.preco_min ?? 0));
@@ -348,7 +352,14 @@ const CompraSucesso = () => {
                           color: "#fff",
                         }}
                       >
-                        {formatPreco(destaque.preco_max)}
+                        {formatPreco((() => {
+                          const varId = upsellConfig?.variacao_id;
+                          if (varId && destaque.produto_variacoes) {
+                            const v = destaque.produto_variacoes.find((x: any) => x.id === varId);
+                            if (v && Number(v.preco) > 0) return Number(v.preco);
+                          }
+                          return destaque.preco_max ?? destaque.preco_min ?? 0;
+                        })())}
                       </div>
                     </div>
                   )}

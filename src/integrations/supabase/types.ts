@@ -502,6 +502,7 @@ export type Database = {
           sucesso_upsell_badge: string | null
           sucesso_upsell_subtitulo: string | null
           sucesso_upsell_titulo: string | null
+          sucesso_upsell_variacao_id: string | null
           tipo_evento: string
           titulo: string
           updated_at: string
@@ -533,6 +534,7 @@ export type Database = {
           sucesso_upsell_badge?: string | null
           sucesso_upsell_subtitulo?: string | null
           sucesso_upsell_titulo?: string | null
+          sucesso_upsell_variacao_id?: string | null
           tipo_evento?: string
           titulo: string
           updated_at?: string
@@ -564,13 +566,22 @@ export type Database = {
           sucesso_upsell_badge?: string | null
           sucesso_upsell_subtitulo?: string | null
           sucesso_upsell_titulo?: string | null
+          sucesso_upsell_variacao_id?: string | null
           tipo_evento?: string
           titulo?: string
           updated_at?: string
           vagas_disponiveis?: number
           vagas_total?: number
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "eventos_sucesso_upsell_variacao_id_fkey"
+            columns: ["sucesso_upsell_variacao_id"]
+            isOneToOne: false
+            referencedRelation: "produto_variacoes"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       ingressos: {
         Row: {
