@@ -75,7 +75,7 @@ const CompraSucesso = () => {
 
       let query = supabase
         .from("produtos")
-        .select("id,nome,descricao,imagem_url,produto_variacoes(preco,ativo)")
+        .select("id,nome,descricao,imagem_url,produto_variacoes(preco,ativo,destaque_label)")
         .eq("ativo", true)
         .limit(4);
       if (prodIds.length > 0) {
@@ -85,8 +85,12 @@ const CompraSucesso = () => {
       }
       const { data: prods } = await query;
       const list: ProdutoSugerido[] = (prods || []).map((p: any) => {
-        const precos = (p.produto_variacoes || [])
-          .filter((v: any) => v.ativo)
+        const variacoes = (p.produto_variacoes || []).filter((v: any) => v.ativo);
+        const precos = variacoes
+          .map((v: any) => Number(v.preco))
+          .filter((n: number) => n > 0);
+        const precosDestaque = variacoes
+          .filter((v: any) => v.destaque_label && String(v.destaque_label).trim() !== "")
           .map((v: any) => Number(v.preco))
           .filter((n: number) => n > 0);
         return {
@@ -95,7 +99,7 @@ const CompraSucesso = () => {
           descricao: p.descricao,
           imagem_url: p.imagem_url,
           preco_min: precos.length > 0 ? Math.min(...precos) : null,
-          preco_max: precos.length > 0 ? Math.max(...precos) : null,
+          preco_max: precosDestaque.length > 0 ? Math.max(...precosDestaque) : (precos.length > 0 ? Math.max(...precos) : null),
         };
       });
       list.sort((a, b) => (b.preco_min ?? 0) - (a.preco_min ?? 0));
@@ -254,8 +258,8 @@ const CompraSucesso = () => {
                       position: "absolute",
                       top: -10,
                       left: 20,
-                      background: "#C8A014",
-                      color: "#0F3D24",
+                      background: "#8B1A1A",
+                      color: "#ffffff",
                       fontSize: 11,
                       textTransform: "uppercase",
                       padding: "4px 12px",
