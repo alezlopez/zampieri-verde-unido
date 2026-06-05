@@ -498,6 +498,10 @@ export type Database = {
           preco_parcelado: number
           publico_alvo: string
           requer_autorizacao: boolean
+          sucesso_upsell_ativo: boolean
+          sucesso_upsell_badge: string | null
+          sucesso_upsell_subtitulo: string | null
+          sucesso_upsell_titulo: string | null
           tipo_evento: string
           titulo: string
           updated_at: string
@@ -525,6 +529,10 @@ export type Database = {
           preco_parcelado?: number
           publico_alvo?: string
           requer_autorizacao?: boolean
+          sucesso_upsell_ativo?: boolean
+          sucesso_upsell_badge?: string | null
+          sucesso_upsell_subtitulo?: string | null
+          sucesso_upsell_titulo?: string | null
           tipo_evento?: string
           titulo: string
           updated_at?: string
@@ -552,6 +560,10 @@ export type Database = {
           preco_parcelado?: number
           publico_alvo?: string
           requer_autorizacao?: boolean
+          sucesso_upsell_ativo?: boolean
+          sucesso_upsell_badge?: string | null
+          sucesso_upsell_subtitulo?: string | null
+          sucesso_upsell_titulo?: string | null
           tipo_evento?: string
           titulo?: string
           updated_at?: string
