@@ -96,6 +96,7 @@ const CompraSucesso = () => {
           preco_min: precos.length > 0 ? Math.min(...precos) : null,
         };
       });
+      list.sort((a, b) => (b.preco_min ?? 0) - (a.preco_min ?? 0));
       setSugestoes(list);
       setLoading(false);
     };
