@@ -25,6 +25,7 @@ interface UpsellConfig {
   subtitulo: string | null;
   badge: string | null;
   variacao_id: string | null;
+  variacao_nome: string | null;
 }
 
 const playfair = { fontFamily: "'Playfair Display', serif" };
@@ -53,16 +54,27 @@ const CompraSucesso = () => {
           .maybeSingle();
         setEventoTitulo(ev?.titulo ?? null);
         if (ev) {
+          let variacaoNome: string | null = null;
+          const varId = (ev as any).sucesso_upsell_variacao_id ?? null;
+          if (varId) {
+            const { data: variacaoDestaque } = await supabase
+              .from("produto_variacoes")
+              .select("id, nome, preco")
+              .eq("id", varId)
+              .single();
+            variacaoNome = (variacaoDestaque as any)?.nome ?? null;
+          }
           setUpsellConfig({
             ativo: (ev as any).sucesso_upsell_ativo ?? true,
             titulo: (ev as any).sucesso_upsell_titulo ?? null,
             subtitulo: (ev as any).sucesso_upsell_subtitulo ?? null,
             badge: (ev as any).sucesso_upsell_badge ?? null,
-            variacao_id: (ev as any).sucesso_upsell_variacao_id ?? null,
+            variacao_id: varId,
+            variacao_nome: variacaoNome,
           });
         }
       } else {
-        setUpsellConfig({ ativo: true, titulo: null, subtitulo: null, badge: null, variacao_id: null });
+        setUpsellConfig({ ativo: true, titulo: null, subtitulo: null, badge: null, variacao_id: null, variacao_nome: null });
       }
 
       // sugestões: produtos vinculados ao evento OU globais (até 4)
