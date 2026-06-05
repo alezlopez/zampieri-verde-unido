@@ -239,6 +239,34 @@ const EventosAdmin = () => {
     }
   }, [isAdmin]);
 
+  // Carrega variações ativas dos produtos vinculados (com preço) para o dropdown de upsell em destaque
+  useEffect(() => {
+    const loadVarsUpsell = async () => {
+      const ids = produtosVinculados.map((p) => p.produto_id);
+      if (ids.length === 0) {
+        setVariacoesUpsellOpts([]);
+        return;
+      }
+      const { data } = await supabase
+        .from("produto_variacoes")
+        .select("id, nome, preco, produto_id, ativo")
+        .in("produto_id", ids)
+        .eq("ativo", true)
+        .order("ordem");
+      const prodMap: Record<string, string> = {};
+      for (const p of produtosDisponiveis) prodMap[p.id] = p.nome;
+      setVariacoesUpsellOpts(
+        (data || []).map((v: any) => ({
+          id: v.id,
+          produto_nome: prodMap[v.produto_id] || "Produto",
+          variacao_nome: v.nome,
+          preco: Number(v.preco) || 0,
+        }))
+      );
+    };
+    loadVarsUpsell();
+  }, [produtosVinculados, produtosDisponiveis]);
+
   const formatBRL = (v: number) =>
     v.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 
