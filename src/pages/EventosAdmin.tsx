@@ -297,6 +297,7 @@ const EventosAdmin = () => {
     setSucessoUpsellBadge((evento as any).sucesso_upsell_badge || "");
     setSucessoUpsellTitulo((evento as any).sucesso_upsell_titulo || "");
     setSucessoUpsellSubtitulo((evento as any).sucesso_upsell_subtitulo || "");
+    setSucessoUpsellVariacaoId((evento as any).sucesso_upsell_variacao_id || "");
     setImagemFile(null);
     setImagemPreview(evento.imagem_url || null);
     setEditingId(evento.id);
