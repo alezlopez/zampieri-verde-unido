@@ -1244,6 +1244,23 @@ const EventosAdmin = () => {
                         placeholder="Ex: No dia do evento o valor sobe. Compre agora e economize."
                       />
                     </div>
+                    <div>
+                      <label className="text-xs font-medium text-muted-foreground">
+                        Variação em destaque (preço exibido no card)
+                      </label>
+                      <select
+                        value={sucessoUpsellVariacaoId}
+                        onChange={(e) => setSucessoUpsellVariacaoId(e.target.value)}
+                        className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                      >
+                        <option value="">Selecione uma variação (opcional)</option>
+                        {variacoesUpsellOpts.map((v) => (
+                          <option key={v.id} value={v.id}>
+                            {v.produto_nome} — {v.variacao_nome} — R$ {v.preco.toFixed(2).replace(".", ",")}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
                   </div>
                 )}
               </div>
