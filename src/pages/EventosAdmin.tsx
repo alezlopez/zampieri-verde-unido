@@ -133,6 +133,8 @@ const EventosAdmin = () => {
   const [sucessoUpsellBadge, setSucessoUpsellBadge] = useState("");
   const [sucessoUpsellTitulo, setSucessoUpsellTitulo] = useState("");
   const [sucessoUpsellSubtitulo, setSucessoUpsellSubtitulo] = useState("");
+  const [sucessoUpsellVariacaoId, setSucessoUpsellVariacaoId] = useState<string>("");
+  const [variacoesUpsellOpts, setVariacoesUpsellOpts] = useState<Array<{ id: string; produto_nome: string; variacao_nome: string; preco: number }>>([]);
   const [syncingId, setSyncingId] = useState<string | null>(null);
   const [imagemFile, setImagemFile] = useState<File | null>(null);
   const [imagemPreview, setImagemPreview] = useState<string | null>(null);
