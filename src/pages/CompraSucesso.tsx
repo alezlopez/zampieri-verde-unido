@@ -15,6 +15,7 @@ interface ProdutoSugerido {
   descricao: string | null;
   imagem_url: string | null;
   preco_min: number | null;
+  preco_max: number | null;
 }
 
 interface UpsellConfig {
@@ -94,6 +95,7 @@ const CompraSucesso = () => {
           descricao: p.descricao,
           imagem_url: p.imagem_url,
           preco_min: precos.length > 0 ? Math.min(...precos) : null,
+          preco_max: precos.length > 0 ? Math.max(...precos) : null,
         };
       });
       list.sort((a, b) => (b.preco_min ?? 0) - (a.preco_min ?? 0));
@@ -342,7 +344,7 @@ const CompraSucesso = () => {
                           color: "#fff",
                         }}
                       >
-                        {formatPreco(destaque.preco_min)}
+                        {formatPreco(destaque.preco_max)}
                       </div>
                     </div>
                   )}
