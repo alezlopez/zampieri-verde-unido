@@ -125,7 +125,7 @@ const CompraSucesso = () => {
     load();
   }, [eventoId]);
 
-  const linkProdutos = eventoId ? `/eventos/produtos?evento=${eventoId}` : "/produtos";
+  const linkProdutos = eventoId ? `/produtos?evento=${eventoId}` : "/produtos";
 
   const subtituloConfirmacao =
     tipo === "produto"
