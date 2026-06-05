@@ -110,11 +110,8 @@ const CompraSucesso = () => {
       ? "Seu pedido foi recebido. A retirada é feita presencialmente no dia do evento."
       : "Em até 5 minutos seu ingresso estará disponível em Minhas compras. Apresente o QR Code na portaria.";
 
-  const sugestoesOrdenadas = [...sugestoes].sort(
-    (a, b) => (b.preco_min ?? 0) - (a.preco_min ?? 0)
-  );
-  const destaque = sugestoesOrdenadas[0];
-  const secundarios = sugestoesOrdenadas.slice(1, 3);
+  const destaque = sugestoes[0];
+  const secundarios = sugestoes.slice(1, 3);
 
   const formatPreco = (v: number) => `R$ ${v.toFixed(2).replace(".", ",")}`;
 
@@ -216,24 +213,6 @@ const CompraSucesso = () => {
           {/* Upsell */}
           {!loading && upsellConfig?.ativo === true && sugestoes.length > 0 && (
             <section style={{ marginTop: 32 }}>
-              {upsellConfig.badge && (
-                <span
-                  style={{
-                    background: "#8B1A1A",
-                    color: "#fff",
-                    fontSize: 11,
-                    textTransform: "uppercase",
-                    padding: "4px 12px",
-                    borderRadius: 20,
-                    ...lato,
-                    fontWeight: 700,
-                    letterSpacing: "0.05em",
-                    display: "inline-block",
-                  }}
-                >
-                  {upsellConfig.badge}
-                </span>
-              )}
               <h2
                 style={{
                   ...playfair,
