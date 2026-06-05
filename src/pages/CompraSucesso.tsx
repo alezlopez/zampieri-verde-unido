@@ -17,6 +17,16 @@ interface ProdutoSugerido {
   preco_min: number | null;
 }
 
+interface UpsellConfig {
+  ativo: boolean;
+  titulo: string | null;
+  subtitulo: string | null;
+  badge: string | null;
+}
+
+const playfair = { fontFamily: "'Playfair Display', serif" };
+const lato = { fontFamily: "'Lato', sans-serif" };
+
 const CompraSucesso = () => {
   const [params] = useSearchParams();
   const tipo = params.get("tipo") || "ingresso";
@@ -25,6 +35,7 @@ const CompraSucesso = () => {
   const [eventoTitulo, setEventoTitulo] = useState<string | null>(null);
   const [sugestoes, setSugestoes] = useState<ProdutoSugerido[]>([]);
   const [loading, setLoading] = useState(true);
+  const [upsellConfig, setUpsellConfig] = useState<UpsellConfig | null>(null);
 
   useEffect(() => {
     const load = async () => {
@@ -32,10 +43,22 @@ const CompraSucesso = () => {
       if (eventoId) {
         const { data: ev } = await supabase
           .from("eventos")
-          .select("titulo")
+          .select(
+            "titulo, sucesso_upsell_ativo, sucesso_upsell_titulo, sucesso_upsell_subtitulo, sucesso_upsell_badge"
+          )
           .eq("id", eventoId)
           .maybeSingle();
         setEventoTitulo(ev?.titulo ?? null);
+        if (ev) {
+          setUpsellConfig({
+            ativo: (ev as any).sucesso_upsell_ativo ?? true,
+            titulo: (ev as any).sucesso_upsell_titulo ?? null,
+            subtitulo: (ev as any).sucesso_upsell_subtitulo ?? null,
+            badge: (ev as any).sucesso_upsell_badge ?? null,
+          });
+        }
+      } else {
+        setUpsellConfig({ ativo: true, titulo: null, subtitulo: null, badge: null });
       }
 
       // sugestões: produtos vinculados ao evento OU globais (até 4)
@@ -79,7 +102,20 @@ const CompraSucesso = () => {
     load();
   }, [eventoId]);
 
-  const linkProdutos = eventoId ? `/eventos/${eventoId}/produtos` : "/produtos";
+  const linkProdutos = eventoId ? `/eventos/produtos?evento=${eventoId}` : "/produtos";
+
+  const subtituloConfirmacao =
+    tipo === "produto"
+      ? "Seu pedido foi recebido. A retirada é feita presencialmente no dia do evento."
+      : "Em até 5 minutos seu ingresso estará disponível em Minhas compras. Apresente o QR Code na portaria.";
+
+  const sugestoesOrdenadas = [...sugestoes].sort(
+    (a, b) => (b.preco_min ?? 0) - (a.preco_min ?? 0)
+  );
+  const destaque = sugestoesOrdenadas[0];
+  const secundarios = sugestoesOrdenadas.slice(1, 3);
+
+  const formatPreco = (v: number) => `R$ ${v.toFixed(2).replace(".", ",")}`;
 
   return (
     <div className="min-h-screen bg-background flex flex-col">
@@ -87,86 +123,360 @@ const CompraSucesso = () => {
       <main className="flex-1 py-10 px-4">
         <div className="container mx-auto max-w-3xl">
           {/* Confirmação */}
-          <Card className="border-zampieri-green/40 bg-gradient-to-br from-zampieri-green/5 to-zampieri-cream/40 mb-6">
-            <CardContent className="p-8 text-center">
-              <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-zampieri-green-dark/10 mb-4">
-                <CheckCircle2 className="w-10 h-10 text-zampieri-green-dark" />
-              </div>
-              <h1 className="font-serif text-2xl md:text-3xl font-bold text-zampieri-green-dark mb-2">
-                Recebemos seu pedido!
-              </h1>
-              <p className="text-muted-foreground max-w-xl mx-auto">
-                {tipo === "combo"
-                  ? "Em até 5 minutos seu ingresso e o comprovante do(s) produto(s) estarão disponíveis em Minhas compras — cada um com seu próprio QR Code."
-                  : tipo === "produto"
-                  ? "Em até 5 minutos seu comprovante estará liberado em Minhas compras com o QR Code para retirada no dia."
-                  : "Em até 5 minutos seu ingresso estará disponível em Minhas compras. Apresente o QR Code na portaria."}
-              </p>
-              {eventoTitulo && (
-                <Badge className="mt-4 bg-zampieri-gold/20 text-zampieri-green-dark border border-zampieri-gold/40">
-                  {eventoTitulo}
-                </Badge>
-              )}
+          <div
+            className="text-center"
+            style={{
+              background: "#0F3D24",
+              borderRadius: 12,
+              padding: 32,
+              marginBottom: 24,
+            }}
+          >
+            <div
+              className="inline-flex items-center justify-center mb-4"
+              style={{
+                width: 64,
+                height: 64,
+                borderRadius: "9999px",
+                background: "rgba(255,255,255,0.15)",
+              }}
+            >
+              <CheckCircle2 className="w-8 h-8 text-white" />
+            </div>
+            <h1
+              style={{
+                ...playfair,
+                fontSize: 28,
+                fontWeight: 700,
+                color: "#fff",
+              }}
+            >
+              Ingresso garantido!
+            </h1>
+            <p
+              style={{
+                ...lato,
+                fontSize: 14,
+                color: "#B8D4C0",
+                lineHeight: 1.6,
+                marginTop: 12,
+              }}
+              className="max-w-xl mx-auto"
+            >
+              {subtituloConfirmacao}
+            </p>
+            {eventoTitulo && (
+              <Badge className="mt-4 bg-zampieri-gold/20 text-white border border-zampieri-gold/40">
+                {eventoTitulo}
+              </Badge>
+            )}
+            <div>
+              <Link to="/eventos/meus-ingressos">
+                <button
+                  style={{
+                    border: "1.5px solid rgba(255,255,255,0.4)",
+                    color: "#fff",
+                    background: "transparent",
+                    borderRadius: 8,
+                    padding: "10px 24px",
+                    marginTop: 20,
+                    ...lato,
+                    fontWeight: 700,
+                    display: "inline-flex",
+                    alignItems: "center",
+                    gap: 8,
+                    cursor: "pointer",
+                  }}
+                >
+                  <ShoppingBag className="w-4 h-4" />
+                  Ver minhas compras
+                </button>
+              </Link>
+            </div>
+          </div>
 
-              <div className="flex flex-col sm:flex-row gap-3 justify-center mt-6">
-                <Link to="/eventos/meus-ingressos">
-                  <Button size="lg" className="bg-zampieri-green-dark hover:bg-zampieri-green text-white">
-                    <ShoppingBag className="w-4 h-4 mr-2" />
-                    Ir para Minhas compras
-                  </Button>
-                </Link>
-              </div>
-            </CardContent>
-          </Card>
+          {/* Loading skeleton */}
+          {loading && (
+            <div className="flex flex-col gap-4">
+              {[200, 120, 80].map((h, i) => (
+                <div
+                  key={i}
+                  className="animate-pulse"
+                  style={{
+                    height: h,
+                    borderRadius: 8,
+                    background: "var(--color-background-secondary, hsl(var(--muted)))",
+                  }}
+                />
+              ))}
+            </div>
+          )}
 
           {/* Upsell */}
-          {!loading && sugestoes.length > 0 && (
-            <section>
-              <div className="flex items-center gap-2 mb-4">
-                <Sparkles className="w-5 h-5 text-zampieri-gold" />
-                <h2 className="font-serif text-xl font-bold text-zampieri-green-dark">
-                  {tipo === "combo" ? "Continue complementando seu evento" : eventoId ? "Adicione ao seu evento" : "Você também pode gostar"}
-                </h2>
-              </div>
+          {!loading && upsellConfig?.ativo === true && sugestoes.length > 0 && (
+            <section style={{ marginTop: 32 }}>
+              {upsellConfig.badge && (
+                <span
+                  style={{
+                    background: "#8B1A1A",
+                    color: "#fff",
+                    fontSize: 11,
+                    textTransform: "uppercase",
+                    padding: "4px 12px",
+                    borderRadius: 20,
+                    ...lato,
+                    fontWeight: 700,
+                    letterSpacing: "0.05em",
+                    display: "inline-block",
+                  }}
+                >
+                  {upsellConfig.badge}
+                </span>
+              )}
+              <h2
+                style={{
+                  ...playfair,
+                  fontSize: 22,
+                  fontWeight: 700,
+                  color: "#0F3D24",
+                  marginTop: 8,
+                }}
+              >
+                {upsellConfig.titulo || "Aproveite antes de ir"}
+              </h2>
+              <p
+                style={{
+                  ...lato,
+                  fontSize: 14,
+                  color: "hsl(var(--muted-foreground))",
+                  marginBottom: 20,
+                }}
+              >
+                {upsellConfig.subtitulo || "Produtos disponíveis para este evento."}
+              </p>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                {sugestoes.map((p) => (
-                  <Card key={p.id} className="overflow-hidden hover:shadow-lg transition-shadow border-border">
-                    <CardContent className="p-4 flex gap-4">
-                      <div className="shrink-0">
-                        {p.imagem_url ? (
-                          <img src={p.imagem_url} alt={p.nome} className="w-20 h-20 object-cover rounded" />
-                        ) : (
-                          <div className="w-20 h-20 rounded bg-zampieri-cream flex items-center justify-center">
-                            <Package className="w-8 h-8 text-zampieri-gold" />
-                          </div>
-                        )}
+              {/* Card destaque */}
+              {destaque && (
+                <div
+                  style={{
+                    background: "#0F3D24",
+                    border: "2px solid #C8A014",
+                    borderRadius: 12,
+                    padding: 20,
+                    marginBottom: 12,
+                    position: "relative",
+                  }}
+                >
+                  <span
+                    style={{
+                      position: "absolute",
+                      top: -10,
+                      left: 20,
+                      background: "#C8A014",
+                      color: "#0F3D24",
+                      fontSize: 11,
+                      textTransform: "uppercase",
+                      padding: "4px 12px",
+                      borderRadius: 20,
+                      ...lato,
+                      fontWeight: 700,
+                      letterSpacing: "0.05em",
+                    }}
+                  >
+                    {upsellConfig.badge || "OFERTA DO EVENTO"}
+                  </span>
+                  <div style={{ display: "flex", flexDirection: "row", gap: 16 }}>
+                    {destaque.imagem_url ? (
+                      <img
+                        src={destaque.imagem_url}
+                        alt={destaque.nome}
+                        style={{
+                          width: 80,
+                          height: 80,
+                          borderRadius: 8,
+                          objectFit: "cover",
+                          flexShrink: 0,
+                        }}
+                      />
+                    ) : (
+                      <div
+                        style={{
+                          width: 80,
+                          height: 80,
+                          borderRadius: 8,
+                          background: "rgba(255,255,255,0.1)",
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "center",
+                          flexShrink: 0,
+                        }}
+                      >
+                        <Package className="w-8 h-8 text-zampieri-gold" />
                       </div>
-                      <div className="flex-1 min-w-0">
-                        <h3 className="font-serif font-bold text-zampieri-green-dark line-clamp-1">{p.nome}</h3>
-                        {p.descricao && (
-                          <p className="text-xs text-muted-foreground line-clamp-2 mt-0.5">{p.descricao}</p>
-                        )}
-                        {p.preco_min !== null && (
-                          <p className="text-sm font-bold text-zampieri-green-dark mt-1">
-                            a partir de R$ {p.preco_min.toFixed(2).replace(".", ",")}
-                          </p>
-                        )}
+                    )}
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <h3
+                        style={{
+                          ...playfair,
+                          fontSize: 18,
+                          fontWeight: 700,
+                          color: "#fff",
+                        }}
+                      >
+                        {destaque.nome}
+                      </h3>
+                      {destaque.descricao && (
+                        <p
+                          style={{
+                            ...lato,
+                            fontSize: 13,
+                            color: "#9FD4B0",
+                            marginTop: 4,
+                          }}
+                        >
+                          {destaque.descricao.length > 100
+                            ? destaque.descricao.slice(0, 100) + "..."
+                            : destaque.descricao}
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                  {destaque.preco_min !== null && (
+                    <div style={{ marginTop: 12 }}>
+                      <div
+                        style={{
+                          ...lato,
+                          fontSize: 11,
+                          color: "#9FD4B0",
+                          textTransform: "uppercase",
+                          letterSpacing: "0.05em",
+                        }}
+                      >
+                        A partir de
                       </div>
-                    </CardContent>
-                  </Card>
-                ))}
-              </div>
+                      <div
+                        style={{
+                          ...lato,
+                          fontSize: 24,
+                          fontWeight: 700,
+                          color: "#fff",
+                        }}
+                      >
+                        {formatPreco(destaque.preco_min)}
+                      </div>
+                    </div>
+                  )}
+                  <Link to={linkProdutos} style={{ display: "block" }}>
+                    <button
+                      style={{
+                        background: "#C8A014",
+                        color: "#0F3D24",
+                        ...lato,
+                        fontWeight: 700,
+                        textTransform: "uppercase",
+                        width: "100%",
+                        marginTop: 16,
+                        padding: 12,
+                        border: "none",
+                        borderRadius: 8,
+                        cursor: "pointer",
+                      }}
+                    >
+                      Escolher minha cartela →
+                    </button>
+                  </Link>
+                </div>
+              )}
 
-              <div className="mt-5 text-center">
-                <Link to={linkProdutos}>
-                  <Button size="lg" variant="outline" className="border-zampieri-gold text-zampieri-green-dark hover:bg-zampieri-cream">
-                    Ver produtos disponíveis
-                  </Button>
-                </Link>
-              </div>
+              {/* Cards secundários */}
+              {secundarios.length > 0 && (
+                <div
+                  style={{
+                    display: "grid",
+                    gridTemplateColumns: "repeat(2, minmax(0, 1fr))",
+                    gap: 12,
+                    marginTop: 12,
+                  }}
+                >
+                  {secundarios.map((p) => (
+                    <div
+                      key={p.id}
+                      style={{
+                        background: "var(--color-background-primary, hsl(var(--background)))",
+                        border: "0.5px solid var(--color-border-tertiary, hsl(var(--border)))",
+                        borderRadius: 10,
+                        padding: 14,
+                      }}
+                    >
+                      <h4
+                        style={{
+                          ...playfair,
+                          fontSize: 15,
+                          fontWeight: 700,
+                          color: "#0F3D24",
+                        }}
+                      >
+                        {p.nome}
+                      </h4>
+                      {p.preco_min !== null && (
+                        <p
+                          style={{
+                            ...lato,
+                            fontSize: 14,
+                            color: "#1A6B3C",
+                            fontWeight: 500,
+                            marginTop: 4,
+                          }}
+                        >
+                          A partir de {formatPreco(p.preco_min)}
+                        </p>
+                      )}
+                      <Link to={linkProdutos}>
+                        <button
+                          style={{
+                            border: "1px solid #0F3D24",
+                            color: "#0F3D24",
+                            background: "transparent",
+                            width: "100%",
+                            marginTop: 8,
+                            padding: "8px 12px",
+                            borderRadius: 8,
+                            ...lato,
+                            fontWeight: 700,
+                            cursor: "pointer",
+                          }}
+                        >
+                          Ver opções
+                        </button>
+                      </Link>
+                    </div>
+                  ))}
+                </div>
+              )}
             </section>
           )}
+
+          {/* Rodapé */}
+          <div
+            style={{
+              textAlign: "center",
+              marginTop: 32,
+              paddingBottom: 16,
+              fontSize: 13,
+              color: "hsl(var(--muted-foreground))",
+              ...lato,
+            }}
+          >
+            Dúvidas?{" "}
+            <a
+              href="https://wa.me/5511993796214"
+              target="_blank"
+              rel="noopener noreferrer"
+              style={{ color: "#1A6B3C", fontWeight: 500 }}
+            >
+              Fale com a gente pelo WhatsApp
+            </a>
+          </div>
         </div>
       </main>
       <Footer />
