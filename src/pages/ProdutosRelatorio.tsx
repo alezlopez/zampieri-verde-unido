@@ -306,11 +306,17 @@ const ProdutosRelatorio = () => {
             </CardContent>
           </Card>
 
-          {data && (
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3 mb-4">
+          {data && (() => {
+            const brutoRec = Math.max(0, (data.totais.bruto || 0) - (data.totais.bruto_liquido_pendente || 0));
+            const pctTaxa = brutoRec > 0 ? ((data.totais.taxa || 0) / brutoRec) * 100 : 0;
+            const pendentes = data.totais.qtd_liquido_pendente || 0;
+            const brutoPend = data.totais.bruto_liquido_pendente || 0;
+            return (
+            <>
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3 mb-2">
               <Card className="border-border"><CardContent className="p-4">
                 <p className="text-xs text-muted-foreground">Bruto</p>
-                <p className="text-xl font-bold text-zampieri-green-dark">{formatBRL(data.totais.bruto)}</p>
+                <p className="text-xl font-bold text-zampieri-green-dark">{formatBRL(brutoRec)}</p>
               </CardContent></Card>
               <Card className="border-border"><CardContent className="p-4">
                 <p className="text-xs text-muted-foreground">Líquido</p>
@@ -319,7 +325,7 @@ const ProdutosRelatorio = () => {
               <Card className="border-border"><CardContent className="p-4">
                 <p className="text-xs text-muted-foreground">Taxas</p>
                 <p className="text-xl font-bold text-zampieri-wine">{formatBRL(data.totais.taxa)}</p>
-                <p className="text-[10px] text-muted-foreground">{data.totais.percentual_taxa}% do bruto</p>
+                <p className="text-[10px] text-muted-foreground">{pctTaxa.toFixed(2)}% do bruto</p>
               </CardContent></Card>
               <Card className="border-border"><CardContent className="p-4">
                 <p className="text-xs text-muted-foreground">Pedidos</p>
@@ -335,7 +341,15 @@ const ProdutosRelatorio = () => {
                 <p className="text-xl font-bold">{formatBRL(data.totais.ticket_medio)}</p>
               </CardContent></Card>
             </div>
-          )}
+            {pendentes > 0 && (
+              <p className="text-[11px] text-muted-foreground mb-3">
+                {pendentes} pedido(s) pago(s) aguardando cálculo de líquido — {formatBRL(brutoPend)} em bruto não reconciliados.
+              </p>
+            )}
+            </>
+            );
+          })()}
+
 
           {pendentesCalculo > 0 && (
             <p className="text-xs text-zampieri-wine mb-3">
