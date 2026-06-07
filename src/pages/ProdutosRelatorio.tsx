@@ -223,7 +223,7 @@ const ProdutosRelatorio = () => {
               <Button variant="outline" onClick={() => sincronizarLiquidos(true)} disabled={backfillLoading}
                 className="flex-1 sm:flex-none border-zampieri-green-dark text-zampieri-green-dark hover:bg-zampieri-cream">
                 <Wand2 className={`w-4 h-4 mr-2 ${backfillLoading ? "animate-spin" : ""}`} />
-                Forçar recálculo
+                Reprocessar valores
               </Button>
               <Button onClick={exportarCSV} disabled={!data} className="flex-1 sm:flex-none bg-zampieri-green-dark hover:bg-zampieri-green text-white">
                 <Download className="w-4 h-4 mr-2" />
