@@ -145,10 +145,37 @@ export async function recomputePedidosProdutos(admin: any, opts: {
   bruto = Number(bruto.toFixed(2));
   const liquido = Number((bruto - taxa).toFixed(2));
 
-  const baseSum = pedidos.reduce((s: number, p: any) => s + Number(p.valor_total || 0), 0);
+  // Em checkouts mistos (ingressos + produtos), o `bruto` representa o pagamento inteiro
+  // do checkout no Asaas — inclui também os ingressos. Somamos o valor_total dos ingressos
+  // pagos do mesmo checkout ao denominador e escalonamos bruto/liquido pela participação
+  // dos produtos. Os ingressos têm seu próprio fluxo (financeiro.ts) e não são tocados aqui.
+  const pedidosSum = pedidos.reduce((s: number, p: any) => s + Number(p.valor_total || 0), 0);
+  let denomSum = pedidosSum;
+  if (opts.checkoutId) {
+    try {
+      const { data: ings } = await admin
+        .from("ingressos")
+        .select("valor_total,status")
+        .eq("checkout_id", opts.checkoutId)
+        .in("status", ["pago", "retirado"]);
+      const ingSum = (ings || []).reduce((s: number, r: any) => s + Number(r.valor_total || 0), 0);
+      denomSum = pedidosSum + ingSum;
+    } catch (e) {
+      console.warn("[produtos-financeiro] falha ao ler ingressos do checkout", opts.checkoutId, (e as any)?.message || e);
+    }
+  }
+  let brutoProdutos = bruto;
+  let liquidoProdutos = liquido;
+  if (denomSum > 0 && pedidosSum > 0 && denomSum > pedidosSum) {
+    const share = pedidosSum / denomSum;
+    brutoProdutos = Number((bruto * share).toFixed(2));
+    liquidoProdutos = Number((liquido * share).toFixed(2));
+  }
+
+  const baseSum = pedidosSum;
   const usar = baseSum > 0;
   const dataPagISO = dataPag ? new Date(dataPag).toISOString() : null;
-  let restB = bruto, restL = liquido;
+  let restB = brutoProdutos, restL = liquidoProdutos;
   for (let i = 0; i < pedidos.length; i++) {
     const p = pedidos[i];
     const last = i === pedidos.length - 1;
