@@ -1185,6 +1185,30 @@ export type Database = {
         }
         Relationships: []
       }
+      reativacao_cartela_log: {
+        Row: {
+          canal: string
+          enviado_em: string | null
+          id: string
+          mensagem: string
+          user_id: string
+        }
+        Insert: {
+          canal: string
+          enviado_em?: string | null
+          id?: string
+          mensagem: string
+          user_id: string
+        }
+        Update: {
+          canal?: string
+          enviado_em?: string | null
+          id?: string
+          mensagem?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       rematricula: {
         Row: {
           Anuidade: string | null
@@ -1400,7 +1424,17 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      compradores_sem_cartela: {
+        Row: {
+          celular: string | null
+          email: string | null
+          nome_comprador: string | null
+          status_envio: string | null
+          ultimo_envio: string | null
+          user_id: string | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
       auth_user_exists_by_email: { Args: { p_email: string }; Returns: boolean }
