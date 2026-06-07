@@ -166,20 +166,49 @@ export async function recomputeIngressosFinancials(admin: any, opts: RecomputeOp
   bruto = Number(bruto.toFixed(2));
   let liquido = Number((bruto - taxa).toFixed(2));
 
+  // Em checkouts mistos (ingressos + produtos), o `bruto` do Asaas inclui também
+  // os produtos. Soma o valor_total dos produtos pagos do mesmo checkout e escala
+  // bruto/líquido pela participação dos ingressos. Produtos seguem seu próprio fluxo.
+  const ingressosSum = naoCortesia.reduce((s: number, i: any) => s + Number(i.valor_total || 0), 0);
+  const checkoutIdForShare = opts.checkoutId
+    || (naoCortesia[0] && naoCortesia[0].checkout_id)
+    || null;
+  let denomSum = ingressosSum;
+  if (checkoutIdForShare) {
+    try {
+      const { data: prods } = await admin
+        .from("pedidos_produtos")
+        .select("valor_total,status")
+        .eq("checkout_id", checkoutIdForShare)
+        .in("status", ["pago", "retirado"]);
+      const prodSum = (prods || []).reduce((s: number, r: any) => s + Number(r.valor_total || 0), 0);
+      denomSum = ingressosSum + prodSum;
+    } catch (e) {
+      console.warn("[financeiro] falha ao ler produtos do checkout", checkoutIdForShare, (e as any)?.message || e);
+    }
+  }
+  let brutoIng = bruto;
+  let liquidoIng = liquido;
+  if (denomSum > 0 && ingressosSum > 0 && denomSum > ingressosSum) {
+    const share = ingressosSum / denomSum;
+    brutoIng = Number((bruto * share).toFixed(2));
+    liquidoIng = Number((liquido * share).toFixed(2));
+  }
+
   // Distribui proporcionalmente entre ingressos não-cortesia
-  const baseSum = naoCortesia.reduce((s: number, i: any) => s + Number(i.valor_total || 0), 0);
+  const baseSum = ingressosSum;
   const usarProporcional = baseSum > 0;
   const dataPagISO = dataPag ? new Date(dataPag).toISOString() : null;
 
   // Para evitar perdas por arredondamento, atribui o saldo restante ao último
-  let restanteB = bruto;
-  let restanteL = liquido;
+  let restanteB = brutoIng;
+  let restanteL = liquidoIng;
   for (let idx = 0; idx < naoCortesia.length; idx++) {
     const ing = naoCortesia[idx];
     const isLast = idx === naoCortesia.length - 1;
     const peso = usarProporcional ? Number(ing.valor_total || 0) / baseSum : 1 / naoCortesia.length;
-    const vb = isLast ? Number(restanteB.toFixed(2)) : Number((bruto * peso).toFixed(2));
-    const vl = isLast ? Number(restanteL.toFixed(2)) : Number((liquido * peso).toFixed(2));
+    const vb = isLast ? Number(restanteB.toFixed(2)) : Number((brutoIng * peso).toFixed(2));
+    const vl = isLast ? Number(restanteL.toFixed(2)) : Number((liquidoIng * peso).toFixed(2));
     restanteB = Number((restanteB - vb).toFixed(2));
     restanteL = Number((restanteL - vl).toFixed(2));
 
