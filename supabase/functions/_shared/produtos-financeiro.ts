@@ -180,8 +180,8 @@ export async function recomputePedidosProdutos(admin: any, opts: {
     const p = pedidos[i];
     const last = i === pedidos.length - 1;
     const peso = usar ? Number(p.valor_total || 0) / baseSum : 1 / pedidos.length;
-    const vb = last ? Number(restB.toFixed(2)) : Number((bruto * peso).toFixed(2));
-    const vl = last ? Number(restL.toFixed(2)) : Number((liquido * peso).toFixed(2));
+    const vb = last ? Number(restB.toFixed(2)) : Number((brutoProdutos * peso).toFixed(2));
+    const vl = last ? Number(restL.toFixed(2)) : Number((liquidoProdutos * peso).toFixed(2));
     restB = Number((restB - vb).toFixed(2));
     restL = Number((restL - vl).toFixed(2));
 
