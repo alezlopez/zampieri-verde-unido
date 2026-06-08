@@ -133,14 +133,17 @@ const EventosRelatorio = () => {
   }, [user, isAdmin]);
 
   const sincronizarLiquidos = async (force = false) => {
-    if (force && !confirm("Recalcular líquido de TODOS os ingressos pagos (inclusive os já preenchidos)? Isso aplica as taxas de antecipação atualizadas.")) return;
+    if (force && !confirm("Recalcular bruto/líquido/taxa de TODOS os checkouts pagos (inclusive os já preenchidos)? Use após mudanças na lógica de rateio.")) return;
     setBackfillLoading(true);
     try {
       const { data: resp, error } = await supabase.functions.invoke("backfill-financeiro", { body: { force } });
       if (error) throw error;
+      const ing = resp?.ingressos_atualizados ?? 0;
+      const prod = resp?.produtos_atualizados ?? 0;
+      const sp = resp?.sem_pagamento ?? 0;
       toast({
         title: "Sincronização concluída",
-        description: `Total: ${resp.total} · Processados: ${resp.processados} · Erros: ${resp.erros}`,
+        description: `Checkouts: ${resp.total} · Processados: ${resp.processados} · Ingressos: ${ing} · Produtos: ${prod}${sp > 0 ? ` · Sem pagamento: ${sp}` : ""}${resp.erros > 0 ? ` · Erros: ${resp.erros}` : ""}`,
       });
       fetchRelatorio();
     } catch (e: any) {
