@@ -184,11 +184,12 @@ Deno.serve(async (req) => {
     const porForma: Record<string, { forma: string; bruto: number; liquido: number; taxa: number; qtd: number; pendentes: number }> = {};
 
     for (const r of lista) {
+      const contabilizarFinanceiro = r.status === "pago" || r.status === "retirado";
       tot.qtd++;
       tot.qtd_unidades += Number(r.quantidade || 0);
       if (r.retirado) tot.qtd_retirados++;
-      tot.bruto += r.valor_bruto;
-      if (r.valor_liquido !== null) {
+      if (contabilizarFinanceiro) tot.bruto += r.valor_bruto;
+      if (contabilizarFinanceiro && r.valor_liquido !== null) {
         tot.liquido += r.valor_liquido;
         tot.taxa += r.taxa_total || 0;
       } else if (r.liquido_pendente_calculo) {
@@ -198,10 +199,10 @@ Deno.serve(async (req) => {
 
       const pk = r.produto_id;
       porProduto[pk] = porProduto[pk] || { produto_id: pk, produto_nome: r.produto_nome, bruto: 0, liquido: 0, taxa: 0, qtd: 0, unidades: 0, pendentes: 0 };
-      porProduto[pk].bruto += r.valor_bruto;
+      if (contabilizarFinanceiro) porProduto[pk].bruto += r.valor_bruto;
       porProduto[pk].qtd++;
       porProduto[pk].unidades += Number(r.quantidade || 0);
-      if (r.valor_liquido !== null) {
+      if (contabilizarFinanceiro && r.valor_liquido !== null) {
         porProduto[pk].liquido += r.valor_liquido;
         porProduto[pk].taxa += r.taxa_total || 0;
       } else if (r.liquido_pendente_calculo) {
@@ -210,17 +211,17 @@ Deno.serve(async (req) => {
 
       const vk = r.variacao_id;
       porVariacao[vk] = porVariacao[vk] || { variacao_id: vk, produto_nome: r.produto_nome, variacao_nome: r.variacao_nome, bruto: 0, liquido: 0, qtd: 0, unidades: 0 };
-      porVariacao[vk].bruto += r.valor_bruto;
+      if (contabilizarFinanceiro) porVariacao[vk].bruto += r.valor_bruto;
       porVariacao[vk].qtd++;
       porVariacao[vk].unidades += Number(r.quantidade || 0);
-      if (r.valor_liquido !== null) porVariacao[vk].liquido += r.valor_liquido;
+      if (contabilizarFinanceiro && r.valor_liquido !== null) porVariacao[vk].liquido += r.valor_liquido;
 
       let fk = r.forma_pagamento || "—";
       if (fk === "credit_card" && (r.parcelas || 1) > 1) fk = "credit_card_parcelado";
       porForma[fk] = porForma[fk] || { forma: fk, bruto: 0, liquido: 0, taxa: 0, qtd: 0, pendentes: 0 };
-      porForma[fk].bruto += r.valor_bruto;
+      if (contabilizarFinanceiro) porForma[fk].bruto += r.valor_bruto;
       porForma[fk].qtd++;
-      if (r.valor_liquido !== null) {
+      if (contabilizarFinanceiro && r.valor_liquido !== null) {
         porForma[fk].liquido += r.valor_liquido;
         porForma[fk].taxa += r.taxa_total || 0;
       } else if (r.liquido_pendente_calculo) {
