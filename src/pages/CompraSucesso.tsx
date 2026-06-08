@@ -478,7 +478,7 @@ const CompraSucesso = () => {
           >
             Dúvidas?{" "}
             <a
-              href="https://wa.me/5511993796214"
+              href="https://wa.me/5511939341503"
               target="_blank"
               rel="noopener noreferrer"
               style={{ color: "#1A6B3C", fontWeight: 500 }}
