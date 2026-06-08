@@ -19,7 +19,7 @@ export const MatriculasCTASection = () => {
               <Phone className="h-4 w-4" /> 5560-1473
             </a>
             <a
-              href="https://wa.me/5511993796214"
+              href="https://wa.me/5511939341503"
               target="_blank"
               rel="noopener noreferrer"
               className="inline-flex items-center gap-2 border-2 border-white/70 hover:bg-white hover:text-zampieri-green-dark text-white font-semibold px-6 py-3 rounded-md transition-colors"
