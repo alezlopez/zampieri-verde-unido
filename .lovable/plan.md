@@ -1,70 +1,138 @@
+## Diagnóstico objetivo
 
-## Diagnóstico
+A divergência é real no banco, não apenas visual.
 
-Dois problemas distintos provocam os números errados que você está vendo.
+- Há **527 ingressos pagos não-cortesia**.
+- Soma atual dos ingressos:
+  - `valor_total`: **R$ 38.570,00**
+  - `valor_bruto`: **R$ 39.057,00**
+  - diferença: **R$ 487,00**
+- Existem **32 ingressos pagos** onde `valor_bruto` não bate com o valor base do item.
+- Existem **36 checkouts mistos** com ingressos + produtos; neles ainda há contaminação histórica.
+- Exemplos confirmados no banco:
+  - Checkout `0797...`: 2 ingressos meia de R$20 + produto R$52 = pagamento Asaas R$92. Hoje os ingressos aparecem como **R$46 + R$46**, errado; deveriam somar **R$40** em ingressos e **R$52** em produtos.
+  - Checkout `e1f6...`: 3 ingressos de R$40 + produto R$40 = pagamento Asaas R$160. Hoje os ingressos aparecem como **R$53,34/R$53,33/R$53,33**, errado; deveriam somar **R$120** em ingressos e **R$40** em produtos.
+  - Há compras parceladas da excursão onde `preco` é R$240 e `preco_parcelado` é R$260. Nesses casos, bruto R$260 pode ser correto quando o comprador escolheu cartão parcelado; o problema é quando valor de outro item/checkout vaza para o ingresso.
 
-### 1. Bruto inflado em checkouts mistos (ingressos + produtos)
+## Causa raiz
 
-Em `supabase/functions/_shared/financeiro.ts` (`recomputeIngressosFinancials`), quando um checkout vende ingresso E produto, o `bruto` lido do Asaas é o pagamento inteiro (ingresso + produto), mas o rateio é distribuído **somente entre os ingressos**. Resultado: o valor dos produtos vaza para o bruto dos ingressos.
+1. O cálculo de eventos ainda depende de caminhos diferentes para achar pagamento Asaas: `paymentId`, `installmentId`, `externalReference` ou `checkout_id`.
+2. Em checkouts mistos, o pagamento Asaas representa o checkout inteiro; se o cálculo processa só ingressos, o produto pode vazar para o bruto do ingresso.
+3. O backfill atual chama muito a API Asaas e já bateu limite 429, então parte do histórico ficou sem corrigir.
+4. Produtos e eventos têm lógicas parecidas, mas não usam um rateio central único; isso facilita uma tela ficar certa e outra não.
+5. A taxa por linha é um **rateio da taxa real da transação**. Em PIX, a Asaas cobra R$0,99 por pagamento; se há 2 ingressos, a linha pode receber R$0,49/R$0,50 por arredondamento. Isso precisa ficar explícito como “taxa rateada”, não como se fosse uma cobrança PIX individual.
 
-É o espelho exato do bug que já corrigimos em `produtos-financeiro.ts`. Hoje no banco:
+## Regra contábil definitiva
 
-- Soma `valor_total` (preço real dos ingressos pagos não-cortesia): **R$ 38.090,00**
-- Soma `valor_bruto` calculado: **R$ 39.574,00** → **R$ 1.484,00 inflados** por produtos do mesmo checkout
+Para cada checkout pago:
 
-### 2. Cards "Bruto / Líquido / Taxas" não fecham
+1. Buscar o pagamento Asaas correto pelo `checkout_id` como chave principal.
+2. Somar o bruto real pago no Asaas.
+3. Separar todos os itens locais do checkout:
+   - ingressos, individualmente;
+   - produtos, individualmente por pedido/linha.
+4. Calcular a participação de cada item no checkout:
+   - ingresso de R$40 em checkout de R$160 = 25%;
+   - produto de R$40 em checkout de R$160 = 25%.
+5. Gravar em cada linha:
+   - `valor_bruto`: bruto individual do item, nunca o total do checkout inteiro;
+   - `taxa_total`: taxa Asaas rateada proporcionalmente;
+   - `valor_liquido`: `valor_bruto - taxa_total`.
+6. Garantir reconciliação:
+   - por linha: `bruto - líquido = taxa`;
+   - por checkout: soma dos itens = pagamento Asaas;
+   - por relatório: `Bruto - Líquido = Taxas`.
 
-No print: Bruto 14.224 − Líquido 11.792,36 = **2.431,64**, mas o card "Taxas" mostra **281,64** (1,98%). Isso acontece porque, em `supabase/functions/relatorio-vendas/index.ts` (linhas 142–178), o `bruto` total inclui ingressos pagos cujo líquido ainda não foi calculado, enquanto `liquido` e `taxa` só somam ingressos com líquido pronto. A função já calcula `bruto_liquido_pendente` e `qtd_liquido_pendente`, mas o UI nunca exibe essa distinção.
+## Alterações planejadas
 
-### 3. O que já está OK
+### 1. Centralizar o rateio financeiro
 
-- `relatorio-vendas` já retorna **uma linha por ingresso** em `lista` (mesmo quando vieram do mesmo checkout). A tabela em `EventosRelatorio.tsx` (linhas 445+) já mostra ingresso a ingresso.
-- `relatorio-produtos` + `ProdutosRelatorio.tsx` já fazem o mesmo para pedidos de produtos.
+Criar/ajustar um helper compartilhado para que eventos e produtos usem a mesma lógica:
 
-Ou seja, o requisito de "1 linha por ingresso / 1 linha por produto, mesmo no mesmo checkout" **já existe** — o que falta é os valores fecharem.
+- Fonte principal: `checkout_id`.
+- Fonte de pagamentos:
+  1. `asaas_webhook_events.payload.payment.checkoutSession`, quando existir;
+  2. API Asaas como fallback;
+  3. expansão de parcelas via `installmentId` quando for cartão parcelado.
+- Fonte de itens:
+  - `ingressos` pagos não-cortesia do checkout;
+  - `pedidos_produtos` pagos/retirados do checkout.
+- Resultado: um mapa de valores por item, separado por tipo (`ingresso` ou `produto`).
 
-## Plano
+Arquivos envolvidos:
 
-### A) Corrigir contaminação em `_shared/financeiro.ts`
+- `supabase/functions/_shared/financeiro.ts`
+- `supabase/functions/_shared/produtos-financeiro.ts`
+- possivelmente novo helper em `supabase/functions/_shared/financeiro-rateio.ts`
 
-Aplicar o mesmo padrão que já está em `_shared/produtos-financeiro.ts`:
+### 2. Corrigir eventos
 
-1. Após somar `bruto` e `liquido` dos pagamentos Asaas, quando houver `checkoutId` (ou conseguirmos derivar via `paymentId`/`installmentId`), buscar os `pedidos_produtos` pagos do mesmo `checkout_id` e somar `valor_total`.
-2. Calcular `denomSum = ingressosSum + produtosSum`.
-3. Se `denomSum > ingressosSum`, escalar `bruto`/`liquido` pela participação dos ingressos: `share = ingressosSum / denomSum`, `brutoIng = bruto * share`, `liquidoIng = liquido * share`.
-4. Distribuir apenas `brutoIng`/`liquidoIng` entre os ingressos (loop atual a partir da linha 175 usando `brutoIng` em vez de `bruto`).
+Atualizar `recomputeIngressosFinancials` para:
 
-Isso isola o financeiro dos ingressos do dos produtos sem mexer no checkout, webhook, criação de pagamento ou RLS.
+- não distribuir o pagamento inteiro só entre ingressos quando houver produtos no checkout;
+- usar o rateio central por checkout;
+- continuar suportando pagamentos antigos por `paymentId`, `installmentId` e `externalReference`;
+- preservar `taxa_manual` quando existir;
+- zerar cortesias corretamente.
 
-### B) Cards de totais que fecham em `relatorio-vendas` + `EventosRelatorio.tsx`
+### 3. Corrigir produtos com a mesma regra
 
-Mudar a forma como os 3 cards apresentam os totais para que **sempre** reconcilie:
+Atualizar `recomputePedidosProdutos` para:
 
-- **Bruto exibido** = soma de `valor_bruto` apenas dos ingressos com `valor_liquido` calculado (`brutoComLiquido`, que já é calculado no backend, linha 182).
-- **Líquido** = `tot.liquido` (igual a hoje).
-- **Taxas** = `tot.taxa` (igual a hoje) — agora sempre = Bruto − Líquido.
-- Abaixo dos cards, adicionar uma linha discreta tipo "X ingresso(s) pago(s) aguardando cálculo de líquido — R$ Y,YY em bruto" usando `qtd_liquido_pendente` e `bruto_liquido_pendente` (já vêm do backend). Isso preserva a transparência sem misturar números que não se reconciliam.
+- usar o mesmo rateio central;
+- impedir que ingressos vazem para produtos;
+- manter consistência nos checkouts mistos.
 
-Nenhuma mudança na tabela linha-a-linha — ela continua mostrando ingresso por ingresso.
+### 4. Tornar o backfill confiável
 
-### C) Mesmo tratamento no `ProdutosRelatorio`
+Atualizar `backfill-financeiro` para:
 
-Conferir e replicar o mesmo padrão de cards em `relatorio-produtos/index.ts` + `ProdutosRelatorio.tsx`, para que o card de Taxas também sempre feche Bruto − Líquido lá. A tabela linha-a-linha já está OK desde o ajuste anterior.
+- agrupar por `checkout_id`;
+- usar primeiro os webhooks já gravados, reduzindo chamadas à Asaas;
+- adicionar pausa e retry com backoff para evitar 429;
+- aceitar modo seguro para reprocessar apenas divergências primeiro;
+- retornar detalhes úteis: checkouts corrigidos, sem pagamento localizado, erros e rate-limit.
 
-### D) Backfill histórico após (A)
+Também revisar `backfill-produtos-financeiro` para seguir o mesmo padrão.
 
-Rodar `backfill-financeiro` (ingressos) com `force=true` — análogo ao que já fizemos para produtos — para reprocessar os 514 ingressos pagos com a nova lógica. Como o `EventosRelatorio.tsx` já tem o botão "Reprocessar valores" (admin only), basta clicar nele uma vez após a função ser publicada.
+### 5. Ajustar relatórios e exportação
 
-### E) Linha 1 por ingresso/produto sempre (verificação)
+Em `relatorio-vendas` e `EventosRelatorio.tsx`:
 
-Nada a alterar: a query em `relatorio-vendas` (linha 54) já é `from("ingressos")`, ou seja, uma linha por ingresso individual, com `valor_bruto`/`valor_liquido`/`taxa_total` por linha. O mesmo vale para `relatorio-produtos`. Se você quiser também exportar/exibir `nome_participante` em destaque (já existe na coluna), posso ajustar a tabela para ressaltar isso.
+- manter uma linha por ingresso individual;
+- mostrar taxa como **taxa rateada**;
+- incluir `checkout_id` no CSV para auditoria;
+- garantir que os cards usem apenas valores reconciliados;
+- manter aviso para registros pendentes ou não reconciliados.
 
-## Resumo técnico (arquivos tocados)
+Também revisar:
 
-- `supabase/functions/_shared/financeiro.ts` — desconta produtos do bruto/líquido em checkout misto.
-- `supabase/functions/relatorio-vendas/index.ts` — expor `bruto_reconciliado` (= bruto com líquido) e manter `bruto`/`bruto_liquido_pendente` separados.
-- `src/pages/EventosRelatorio.tsx` — cards Bruto/Líquido/Taxas usam `bruto_reconciliado`; adicionar nota de pendentes.
-- `supabase/functions/relatorio-produtos/index.ts` + `src/pages/ProdutosRelatorio.tsx` — mesmo tratamento de cards.
-- **Nada** alterado em: checkout, webhook, criação de pagamento, ingressos/produtos, RLS, comprovantes, e-mails.
+- `supabase/functions/relatorio-produtos/index.ts`
+- `src/pages/ProdutosRelatorio.tsx`
+- `supabase/functions/resumo-diario-vendas/index.ts`
 
-Depois de aplicar (A), você roda o "Reprocessar valores" em Eventos > Relatório uma vez para limpar o histórico.
+para não deixar outro relatório somando dados antigos de forma diferente.
+
+### 6. Validação com dados reais
+
+Depois da implementação, validar no banco:
+
+- Checkout `0797...`:
+  - ingressos somam R$40;
+  - produtos somam R$52;
+  - total soma R$92;
+  - taxa total do checkout soma R$0,99.
+- Checkout `e1f6...`:
+  - ingressos somam R$120;
+  - produtos somam R$40;
+  - total soma R$160;
+  - taxa total do checkout soma R$0,99.
+- Todos os registros pagos:
+  - `valor_bruto - valor_liquido - taxa_total = 0` por linha;
+  - `sum(valor_bruto) - sum(valor_liquido) = sum(taxa_total)` no relatório;
+  - nenhum checkout misto com produto vazando para ingresso;
+  - nenhum PIX simples com bruto diferente do item vendido sem justificativa.
+
+## Resultado esperado
+
+O relatório financeiro passará a ser confiável para repasse: cada ingresso/produto aparecerá individualmente, com bruto correto do item, taxa rateada e líquido reconciliado com o pagamento real da Asaas.
