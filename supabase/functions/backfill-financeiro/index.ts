@@ -1,7 +1,28 @@
+// Backfill financeiro UNIFICADO (ingressos + produtos).
+//
+// Estratégia:
+// 1) Carrega TODOS os webhooks PAYMENT_* uma vez (1 ou 2 queries).
+// 2) Coleta todos os checkout_ids distintos de ingressos pagos não-cortesia
+//    e pedidos_produtos pagos/retirados.
+// 3) Para cada checkout, calcula totals via webhook cache e aplica rateio
+//    entre ingressos e produtos do mesmo checkout (regra única).
+// 4) Fallback à API Asaas APENAS para checkouts sem webhook (raros).
+//
+// Modos:
+//   default        -> processa apenas checkouts com ingressos/produtos pagos sem valor_liquido (sincronização leve)
+//   { force: true } -> reprocessa todos os checkouts pagos (uso quando a lógica muda)
+//
+// O endpoint mantém o nome `backfill-financeiro` para compatibilidade com o botão atual.
+// Há também `backfill-produtos-financeiro` que delega para esta mesma lógica.
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
 import { corsHeaders } from "../_shared/cors.ts";
-import { recomputeIngressosFinancials, resolveIngressosFromAsaas } from "../_shared/financeiro.ts";
-import { getCheckout, listPayments } from "../_shared/asaas.ts";
+import {
+  aplicarRateioCheckout,
+  loadPaymentsByCheckout,
+  preloadWebhookCacheByCheckout,
+} from "../_shared/checkout-rateio.ts";
+
+const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
@@ -32,211 +53,145 @@ Deno.serve(async (req) => {
       });
     }
 
-    // Lê body opcional: { force: true } recalcula também ingressos com valor_liquido já preenchido
     let force = false;
+    let onlyCheckoutId: string | null = null;
     try {
       const body = await req.json();
       if (body?.force === true) force = true;
+      if (body?.checkout_id && typeof body.checkout_id === "string") onlyCheckoutId = body.checkout_id;
     } catch (_) { /* sem body */ }
 
+    // ---------- 1) Coleta dos checkout_ids alvo ----------
+    const targetCheckouts = new Set<string>();
+
+    if (onlyCheckoutId) {
+      targetCheckouts.add(onlyCheckoutId);
+    } else {
+      // Ingressos
+      let qIng = admin
+        .from("ingressos")
+        .select("checkout_id")
+        .eq("status", "pago")
+        .eq("cortesia", false)
+        .not("checkout_id", "is", null);
+      if (!force) qIng = qIng.is("valor_liquido", null);
+      const { data: ings, error: ingErr } = await qIng.limit(5000);
+      if (ingErr) throw ingErr;
+      for (const r of ings || []) if ((r as any).checkout_id) targetCheckouts.add((r as any).checkout_id);
+
+      // Produtos
+      let qProd = admin
+        .from("pedidos_produtos")
+        .select("checkout_id")
+        .in("status", ["pago", "retirado"])
+        .not("checkout_id", "is", null);
+      if (!force) qProd = qProd.is("valor_liquido", null);
+      const { data: prods, error: prErr } = await qProd.limit(5000);
+      if (prErr) throw prErr;
+      for (const r of prods || []) if ((r as any).checkout_id) targetCheckouts.add((r as any).checkout_id);
+    }
+
+    const totalCheckouts = targetCheckouts.size;
+    if (totalCheckouts === 0) {
+      return new Response(JSON.stringify({ ok: true, total: 0, message: "Nada para processar" }), {
+        status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    // ---------- 2) Pre-carrega webhooks em cache ----------
+    const cache = await preloadWebhookCacheByCheckout(admin);
+
+    // ---------- 3) Processa cada checkout ----------
     let processados = 0;
+    let ingressosAtualizados = 0;
+    let produtosAtualizados = 0;
+    let semPagamento = 0;
     let erros = 0;
     const detalhes: any[] = [];
+    let apiFallbackCount = 0;
+    const MAX_API_FALLBACKS = 50; // proteção anti-429
 
-    // 1) Ingressos pagos não-cortesia (sem líquido OU todos, se force)
-    let q = admin
-      .from("ingressos")
-      .select("id, checkout_id, asaas_payment_id, cortesia")
-      .eq("status", "pago")
-      .eq("cortesia", false);
-    if (!force) q = q.is("valor_liquido", null);
-    const { data: pendentes, error } = await q.limit(2000);
-    if (error) throw error;
-    const total = pendentes?.length || 0;
-
-    // Agrupa primeiro por checkout_id (vínculo mais forte), depois por asaas_payment_id
-    const porCheckout = new Map<string, { ids: string[]; stableId: string | null }>();
-    const porPayment = new Map<string, { ids: string[]; checkoutId: string | null }>();
-    const semChave: any[] = [];
-
-    for (const p of pendentes || []) {
-      if (p.checkout_id) {
-        if (!porCheckout.has(p.checkout_id)) {
-          porCheckout.set(p.checkout_id, { ids: [], stableId: p.asaas_payment_id });
-        }
-        const g = porCheckout.get(p.checkout_id)!;
-        g.ids.push(p.id);
-        if (!g.stableId && p.asaas_payment_id) g.stableId = p.asaas_payment_id;
-      } else if (p.asaas_payment_id) {
-        if (!porPayment.has(p.asaas_payment_id)) {
-          porPayment.set(p.asaas_payment_id, { ids: [], checkoutId: null });
-        }
-        porPayment.get(p.asaas_payment_id)!.ids.push(p.id);
-      } else {
-        semChave.push(p);
-      }
-    }
-
-    // Processa grupos por checkout_id
-    for (const [checkoutId, g] of porCheckout) {
+    for (const checkoutId of targetCheckouts) {
       try {
-        let stableId = g.stableId || "";
-        let resolvedPaymentId: string | null = null;
-        let resolvedInstallmentId: string | null = null;
-
-        // Se não temos stableId, tenta resolver via webhook events (PAYMENT_*) com checkoutSession = checkoutId
-        if (!stableId) {
-          const { data: evs } = await admin
-            .from("asaas_webhook_events")
-            .select("payload, payment_id")
-            .in("event_type", ["PAYMENT_CONFIRMED", "PAYMENT_RECEIVED", "PAYMENT_RECEIVED_IN_CASH", "PAYMENT_CREATED"])
-            .order("created_at", { ascending: false })
-            .limit(1000);
-          for (const ev of evs || []) {
-            const cs = ev.payload?.payment?.checkoutSession;
-            if (cs !== checkoutId) continue;
-            const inst = ev.payload?.payment?.installment || null;
-            const pid = ev.payload?.payment?.id || ev.payment_id || null;
-            if (inst) { resolvedInstallmentId = inst; break; }
-            if (pid && !resolvedPaymentId) resolvedPaymentId = pid;
-          }
-          stableId = resolvedInstallmentId || resolvedPaymentId || "";
-        }
-
-        // Fallback: consulta a API do Asaas pelo checkoutId
-        if (!stableId) {
-          // 1) Tenta GET /checkouts/{id}
-          try {
-            const ck = await getCheckout(checkoutId);
-            const ckPaymentId = ck?.payment?.id || (typeof ck?.payment === "string" ? ck.payment : null);
-            const ckInstallmentId = ck?.installment?.id || (typeof ck?.installment === "string" ? ck.installment : null);
-            if (ckInstallmentId) { resolvedInstallmentId = ckInstallmentId; stableId = ckInstallmentId; }
-            else if (ckPaymentId) { resolvedPaymentId = ckPaymentId; stableId = ckPaymentId; }
-          } catch (e) {
-            console.warn("[backfill] getCheckout falhou", checkoutId, (e as Error).message);
-          }
-          // 2) Lista pagamentos do Asaas e VALIDA via externalReference que pertencem a esses ingressos.
-          //    Sem essa validação, filtros desconhecidos pelo Asaas eram ignorados e retornavam pagamentos
-          //    aleatórios — gerando contaminação cruzada (mesmo asaas_payment_id em vários checkouts).
-          if (!stableId) {
-            const ingressoIdSet = new Set(g.ids);
-            const filtros: Record<string, any>[] = [
-              { checkoutSession: checkoutId },
-              { "checkout[in]": checkoutId },
-              { checkout: checkoutId },
-            ];
-            for (const f of filtros) {
-              try {
-                const lp = await listPayments({ ...f, limit: 100 } as any);
-                const pays = lp?.data || [];
-                // Mantém só pagamentos cujo externalReference contém ao menos um dos ingressos do grupo
-                const validos = pays.filter((p: any) => {
-                  const refs = String(p.externalReference || "").split(",").map((s) => s.trim()).filter(Boolean);
-                  return refs.some((r) => ingressoIdSet.has(r));
-                });
-                if (validos.length > 0) {
-                  const inst = validos.find((p: any) => p.installment)?.installment || null;
-                  if (inst) { resolvedInstallmentId = inst; stableId = inst; }
-                  else { resolvedPaymentId = validos[0].id; stableId = validos[0].id; }
-                  break;
-                }
-              } catch (e) {
-                console.warn("[backfill] listPayments falhou", JSON.stringify(f), (e as Error).message);
-              }
-            }
-          }
-        }
-
-        const isInstallment = !!resolvedInstallmentId || (stableId && !stableId.startsWith("pay_"));
-        const isPayment = !resolvedInstallmentId && stableId && stableId.startsWith("pay_");
-
-        const res = await recomputeIngressosFinancials(admin, {
-          checkoutId,
-          paymentId: isPayment ? stableId : null,
-          installmentId: isInstallment ? (resolvedInstallmentId || stableId) : null,
-          ingressoIds: g.ids,
+        const allowApi = apiFallbackCount < MAX_API_FALLBACKS;
+        const hadCache = cache.has(checkoutId);
+        const totals = await loadPaymentsByCheckout(admin, checkoutId, {
+          allowApiFallback: allowApi,
+          webhookCache: cache,
         });
-        if ((res as any).updated > 0) processados += (res as any).updated;
-        else detalhes.push({ checkoutId, motivo: (res as any).reason, stableId });
+        if (!hadCache && allowApi) {
+          apiFallbackCount++;
+          await sleep(200); // throttle anti-429
+        }
+        if (!totals) {
+          semPagamento++;
+          if (detalhes.length < 20) detalhes.push({ checkoutId, motivo: "sem_pagamento_localizado" });
+          continue;
+        }
+        const res = await aplicarRateioCheckout(admin, checkoutId, totals);
+        processados++;
+        ingressosAtualizados += res.ingressosUpd;
+        produtosAtualizados += res.produtosUpd;
       } catch (e: any) {
+        erros++;
         console.error("[backfill] erro checkout", checkoutId, e);
-        erros += g.ids.length;
-        detalhes.push({ checkoutId, erro: e.message });
+        if (detalhes.length < 20) detalhes.push({ checkoutId, erro: e.message || String(e) });
       }
     }
 
-    // Processa grupos só com asaas_payment_id
-    for (const [stableId, g] of porPayment) {
-      try {
-        const isInstallment = !stableId.startsWith("pay_");
-        const isPayment = stableId.startsWith("pay_");
-        const res = await recomputeIngressosFinancials(admin, {
-          paymentId: isPayment ? stableId : null,
-          installmentId: isInstallment ? stableId : null,
-          ingressoIds: g.ids,
-        });
-        if ((res as any).updated > 0) processados += (res as any).updated;
-        else detalhes.push({ stableId, motivo: (res as any).reason });
-      } catch (e: any) {
-        console.error("[backfill] erro payment", stableId, e);
-        erros += g.ids.length;
-        detalhes.push({ stableId, erro: e.message });
-      }
-    }
-
-    // 2) Ingressos sem chave: tenta resolver via webhook events recentes
-    if (semChave.length > 0) {
-      const { data: events } = await admin
-        .from("asaas_webhook_events")
-        .select("payload, payment_id")
-        .in("event_type", ["PAYMENT_CONFIRMED", "PAYMENT_RECEIVED", "PAYMENT_RECEIVED_IN_CASH"])
-        .order("created_at", { ascending: false })
+    // ---------- 4) Tratamento dos órfãos (sem checkout_id) ----------
+    // Ingressos pagos sem checkout_id mas com asaas_payment_id: tenta resolver via webhook.
+    if (!onlyCheckoutId) {
+      const { data: orfaos } = await admin
+        .from("ingressos")
+        .select("id, asaas_payment_id")
+        .eq("status", "pago")
+        .eq("cortesia", false)
+        .is("checkout_id", null)
+        .not("asaas_payment_id", "is", null)
         .limit(500);
 
-      const vistos = new Set<string>();
-      const ingressoIdsAlvo = new Set(semChave.map((p: any) => p.id));
-
-      for (const ev of events || []) {
-        const pid = ev.payload?.payment?.id || ev.payment_id;
-        const inst = ev.payload?.payment?.installment || null;
-        const ckSession = ev.payload?.payment?.checkoutSession || null;
-        const chave = inst || pid;
-        if (!chave || vistos.has(chave)) continue;
-        vistos.add(chave);
-
-        try {
-          const { ingressoIds } = await resolveIngressosFromAsaas({ paymentId: pid, installmentId: inst });
-
-          // Tenta também pelo checkout session
-          let resolvedIds = ingressoIds;
-          if ((!resolvedIds || resolvedIds.length === 0) && ckSession) {
-            const { data: ingsCk } = await admin
-              .from("ingressos")
-              .select("id")
-              .eq("checkout_id", ckSession);
-            resolvedIds = (ingsCk || []).map((r: any) => r.id);
+      for (const o of orfaos || []) {
+        const pid = (o as any).asaas_payment_id;
+        // Procura no cache de webhooks
+        let foundCheckout: string | null = null;
+        for (const [ck, pays] of cache.entries()) {
+          if (pays.some((p) => p.id === pid || p.installment === pid)) {
+            foundCheckout = ck;
+            break;
           }
-
-          const intersect = (resolvedIds || []).filter((id) => ingressoIdsAlvo.has(id));
-          if (intersect.length === 0) continue;
-
-          await recomputeIngressosFinancials(admin, {
-            checkoutId: ckSession,
-            paymentId: inst ? null : pid,
-            installmentId: inst,
-            ingressoIds: resolvedIds,
-          });
-          processados += intersect.length;
+        }
+        if (!foundCheckout) continue;
+        try {
+          await admin.from("ingressos").update({ checkout_id: foundCheckout }).eq("id", (o as any).id);
+          if (!targetCheckouts.has(foundCheckout)) {
+            const totals = await loadPaymentsByCheckout(admin, foundCheckout, {
+              allowApiFallback: false, webhookCache: cache,
+            });
+            if (totals) {
+              const res = await aplicarRateioCheckout(admin, foundCheckout, totals);
+              ingressosAtualizados += res.ingressosUpd;
+              produtosAtualizados += res.produtosUpd;
+            }
+          }
         } catch (e: any) {
-          console.error("[backfill] erro webhook resolve", chave, e);
-          detalhes.push({ chave, erro: e.message });
+          erros++;
         }
       }
     }
 
-    return new Response(JSON.stringify({ ok: true, total, processados, erros, detalhes: detalhes.slice(0, 20) }), {
-      status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" },
-    });
+    return new Response(JSON.stringify({
+      ok: true,
+      total: totalCheckouts,
+      processados,
+      ingressos_atualizados: ingressosAtualizados,
+      produtos_atualizados: produtosAtualizados,
+      sem_pagamento: semPagamento,
+      erros,
+      api_fallbacks_usados: apiFallbackCount,
+      cache_size: cache.size,
+      detalhes,
+    }), { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } });
   } catch (e: any) {
     console.error("[backfill-financeiro]", e);
     return new Response(JSON.stringify({ error: e.message || String(e) }), {
