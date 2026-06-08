@@ -140,12 +140,13 @@ Deno.serve(async (req) => {
     const porForma: Record<string, { forma: string; bruto: number; liquido: number; taxa: number; qtd: number; pendentes: number }> = {};
 
     for (const r of lista) {
+      const contabilizarFinanceiro = r.status === "pago";
       tot.qtd++;
       if (r.cortesia) tot.qtd_cortesias++;
       if (r.status === "pago") tot.qtd_pagos++;
       if (r.utilizado) tot.qtd_utilizados++;
-      tot.bruto += r.valor_bruto;
-      if (r.valor_liquido !== null) {
+      if (contabilizarFinanceiro) tot.bruto += r.valor_bruto;
+      if (contabilizarFinanceiro && r.valor_liquido !== null) {
         tot.liquido += r.valor_liquido;
         tot.taxa += r.taxa_total || 0;
       } else if (r.liquido_pendente_calculo) {
@@ -155,8 +156,8 @@ Deno.serve(async (req) => {
 
       const ek = r.evento_id;
       porEvento[ek] = porEvento[ek] || { evento_id: ek, evento_titulo: r.evento_titulo, bruto: 0, liquido: 0, taxa: 0, qtd: 0, pendentes: 0 };
-      porEvento[ek].bruto += r.valor_bruto;
-      if (r.valor_liquido !== null) {
+      if (contabilizarFinanceiro) porEvento[ek].bruto += r.valor_bruto;
+      if (contabilizarFinanceiro && r.valor_liquido !== null) {
         porEvento[ek].liquido += r.valor_liquido;
         porEvento[ek].taxa += r.taxa_total || 0;
       } else if (r.liquido_pendente_calculo) {
@@ -167,8 +168,8 @@ Deno.serve(async (req) => {
       let fk = r.forma_pagamento || "—";
       if (fk === "credit_card" && (r.parcelas || 1) > 1) fk = "credit_card_parcelado";
       porForma[fk] = porForma[fk] || { forma: fk, bruto: 0, liquido: 0, taxa: 0, qtd: 0, pendentes: 0 };
-      porForma[fk].bruto += r.valor_bruto;
-      if (r.valor_liquido !== null) {
+      if (contabilizarFinanceiro) porForma[fk].bruto += r.valor_bruto;
+      if (contabilizarFinanceiro && r.valor_liquido !== null) {
         porForma[fk].liquido += r.valor_liquido;
         porForma[fk].taxa += r.taxa_total || 0;
       } else if (r.liquido_pendente_calculo) {
