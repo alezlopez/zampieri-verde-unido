@@ -140,6 +140,7 @@ const ScannerIngressos = () => {
 
   const startScanner = useCallback(async () => {
     setIngresso(null);
+    setProduto(null);
     setError(null);
     setScanning(true);
 
