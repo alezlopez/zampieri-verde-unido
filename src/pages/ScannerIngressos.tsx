@@ -6,7 +6,8 @@ import { Html5Qrcode } from "html5-qrcode";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { ArrowLeft, CheckCircle2, XCircle, AlertTriangle, ScanLine } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { ArrowLeft, CheckCircle2, XCircle, AlertTriangle, ScanLine, Search } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { EventosHeader } from "@/components/EventosHeader";
 import { Footer } from "@/components/Footer";
@@ -65,6 +66,8 @@ const ScannerIngressos = () => {
   const [validadores, setValidadores] = useState<Record<string, string>>({});
   const scannerRef = useRef<Html5Qrcode | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
+  const manualInputRef = useRef<HTMLInputElement>(null);
+  const [manualCode, setManualCode] = useState("");
 
   useEffect(() => {
     if (!authLoading && (!user || !isAdmin)) navigate("/eventos/login");
@@ -269,7 +272,7 @@ const ScannerIngressos = () => {
 
   return (
     <div className="min-h-screen bg-background flex flex-col">
-      <EventosHeader subtitle="Scanner de ingressos" />
+      <EventosHeader subtitle="Scanner de ingressos e produtos" />
 
       <div className="flex-1 py-8 px-4">
         <div className="container mx-auto max-w-md">
@@ -277,17 +280,47 @@ const ScannerIngressos = () => {
             <ArrowLeft className="w-4 h-4 mr-2" />Painel Admin
           </Link>
 
-          <h1 className="font-serif text-2xl md:text-3xl font-bold text-zampieri-green-dark mb-6">Scanner de Ingressos</h1>
+          <h1 className="font-serif text-2xl md:text-3xl font-bold text-zampieri-green-dark mb-6">Scanner de Ingressos e Produtos</h1>
 
           {!scanning && !ingresso && !produto && !error && (
             <div className="text-center">
               <Button onClick={startScanner} className="bg-zampieri-green-dark hover:bg-zampieri-green text-white" size="lg">
                 <ScanLine className="w-5 h-5 mr-2" />
-                Iniciar Scanner
+                Iniciar Scanner (câmera)
               </Button>
               <p className="text-sm text-muted-foreground mt-3">Aponte a câmera para o QR Code do ingresso</p>
             </div>
           )}
+
+          {/* Entrada manual / leitor de código de barras */}
+          {!ingresso && !produto && (
+            <form
+              onSubmit={(e) => {
+                e.preventDefault();
+                const v = manualCode.trim();
+                if (!v) return;
+                setManualCode("");
+                handleScan(v);
+              }}
+              className="mt-4 flex gap-2"
+            >
+              <Input
+                ref={manualInputRef}
+                value={manualCode}
+                onChange={(e) => setManualCode(e.target.value)}
+                onFocus={() => { if (scanning) stopScanner(); }}
+                placeholder="Leia ou cole o código aqui"
+                autoFocus
+                inputMode="text"
+                className="flex-1"
+              />
+              <Button type="submit" className="bg-zampieri-green-dark hover:bg-zampieri-green text-white">
+                <Search className="w-4 h-4 mr-1" />
+                Buscar
+              </Button>
+            </form>
+          )}
+
 
           {scanning && (
             <div className="space-y-4">
