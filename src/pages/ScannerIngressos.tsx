@@ -252,9 +252,11 @@ const ScannerIngressos = () => {
       setMarking(false);
       return;
     }
-    setProduto({ ...produto, status: "retirado", retirado_em: row.retirado_em });
     toast({ title: "Produto retirado!", description: `${produto.produto} - ${produto.variacao} · qtd ${produto.quantidade}` });
     setMarking(false);
+    setProduto(null);
+    setError(null);
+    startScanner();
   };
 
   if (authLoading) {
