@@ -198,10 +198,11 @@ const ScannerIngressos = () => {
       setMarking(false);
       return;
     }
-    setIngresso({ ...ingresso, utilizado: true, utilizado_em: row.utilizado_em, utilizado_por: row.utilizado_por });
-    fetchValidadores([row.utilizado_por]);
     toast({ title: "Ingresso marcado como utilizado!" });
     setMarking(false);
+    setIngresso(null);
+    setError(null);
+    startScanner();
   };
 
   const validarDocMeia = async () => {
@@ -251,9 +252,11 @@ const ScannerIngressos = () => {
       setMarking(false);
       return;
     }
-    setProduto({ ...produto, status: "retirado", retirado_em: row.retirado_em });
     toast({ title: "Produto retirado!", description: `${produto.produto} - ${produto.variacao} · qtd ${produto.quantidade}` });
     setMarking(false);
+    setProduto(null);
+    setError(null);
+    startScanner();
   };
 
   if (authLoading) {

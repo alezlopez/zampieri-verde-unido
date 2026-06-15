@@ -1,26 +1,26 @@
-## Objetivo
+## Problema
+Após o operador clicar em "Confirmar retirada" (produto) ou "Marcar como Utilizado" (ingresso) e a operação ter sucesso, o item permanece na tela agora com status `retirado`/`utilizado` — exibindo o banner vermelho de alerta "ATENÇÃO: já foi retirado/utilizado!". Isso pode confundir o operador, que pode achar que o item já havia sido processado por outra pessoa anteriormente.
 
-No scanner, ao ler um QR de produto (`prod:<token>`), **não retirar automaticamente**. Mostrar primeiro um card com os dados do produto e exigir um clique de confirmação antes de marcar como retirado — mesma UX dos ingressos.
+## Solução
+Alterar os handlers de sucesso para que, após confirmação bem-sucedida, a tela volte ao estado inicial de scan (limpa o card do item e reinicia a câmera automaticamente).
 
-## Mudanças (apenas em `src/pages/ScannerIngressos.tsx`)
+## Alterações
 
-1. Novo estado `produto` (preview do pedido) ao lado de `ingresso` e `error`.
-2. Em `handleScan`, quando o token começar com `prod:`:
-   - Não chamar mais `marcar_produto_retirado`.
-   - Chamar `supabase.rpc("get_comprovante_produto", { p_qr_token: token })` (RPC já existente — retorna produto, variação, quantidade, nome_comprador, status, evento, retirado_em).
-   - Se status ≠ `pago` e ≠ `retirado` → `setError("Pagamento ainda não confirmado (...)")`.
-   - Caso contrário → `setProduto(row)` (mostra o card).
-3. Novo card de produto (renderizado quando `produto` existe):
-   - Evento, produto, variação, quantidade (em destaque), comprador, status.
-   - Se `status === 'retirado'`: banner vermelho "JÁ RETIRADO em <data>", sem botão de confirmar.
-   - Se `status === 'pago'`: botão grande verde **"Confirmar retirada"** que chama `marcar_produto_retirado` e, em sucesso, exibe `toast.success` rápido ("Produto retirado!") e mantém o card mostrando o produto como retirado.
-   - Botão "Escanear Outro" abaixo.
-4. Ajustar `startScanner` / `stopScanner` para também limpar `produto`.
-5. Toast continua usando `@/hooks/use-toast` (padrão atual do arquivo).
+### `markAsUsed` (ingresso)
+Linha ~201: ao invés de `setIngresso({ ...ingresso, utilizado: true, ... })` + `toast(...)`, fazer:
+1. `toast({ title: "Ingresso marcado como utilizado!" })`
+2. `setIngresso(null)`
+3. `setError(null)`
+4. `startScanner()`
 
-## Por que é seguro
+### `confirmarRetiradaProduto` (produto)
+Linha ~254: ao invés de `setProduto({ ...produto, status: "retirado", ... })` + `toast(...)`, fazer:
+1. `toast({ title: "Produto retirado!", description: ... })`
+2. `setProduto(null)`
+3. `setError(null)`
+4. `startScanner()`
 
-- Não toca em RLS, edge functions, schema ou no fluxo de ingressos.
-- `get_comprovante_produto` já existe e é SECURITY DEFINER (só leitura).
-- `marcar_produto_retirado` continua igual — só passa a ser disparada por clique humano.
-- Reaproveita o mesmo padrão visual de ingressos (Card + Badge + Button).
+## Notas técnicas
+- `startScanner` já está no escopo de closure (incluído nas dependências do `useCallback`).
+- Não precisa reiniciar `marking`, pois o `setMarking(false)` já vem em seguida no fluxo atual.
+- Em caso de erro (`ja_utilizado`, `ja_retirado`, etc.), o comportamento atual de manter o card com o aviso permanece — isso é correto, pois indica o problema real.
