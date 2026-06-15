@@ -1,0 +1,2 @@
+ALTER TABLE public.pedidos_produtos DROP CONSTRAINT pedidos_produtos_status_check;
+ALTER TABLE public.pedidos_produtos ADD CONSTRAINT pedidos_produtos_status_check CHECK (status = ANY (ARRAY['pendente'::text,'pago'::text,'cancelado'::text,'estornado'::text,'retirado'::text]));
