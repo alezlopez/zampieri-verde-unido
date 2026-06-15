@@ -59,6 +59,7 @@ const ScannerIngressos = () => {
   const navigate = useNavigate();
   const [scanning, setScanning] = useState(false);
   const [ingresso, setIngresso] = useState<IngressoScanned | null>(null);
+  const [produto, setProduto] = useState<ProdutoScanned | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [marking, setMarking] = useState(false);
   const [validadores, setValidadores] = useState<Record<string, string>>({});
