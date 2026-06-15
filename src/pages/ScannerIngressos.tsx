@@ -231,6 +231,31 @@ const ScannerIngressos = () => {
     setMarking(false);
   };
 
+  const confirmarRetiradaProduto = async () => {
+    if (!produto || !user) return;
+    setMarking(true);
+    const { data, error: err } = await supabase.rpc("marcar_produto_retirado", { p_qr_token: produto.qr_token });
+    if (err) {
+      toast({ title: "Erro ao retirar produto", description: err.message, variant: "destructive" });
+      setMarking(false);
+      return;
+    }
+    const row = Array.isArray(data) ? data[0] : data;
+    if (!row?.ok) {
+      if (row?.message === "ja_retirado") {
+        toast({ title: "Produto JÁ RETIRADO", description: row?.retirado_em ? new Date(row.retirado_em).toLocaleString("pt-BR") : "—", variant: "destructive" });
+        setProduto({ ...produto, status: "retirado", retirado_em: row?.retirado_em ?? produto.retirado_em });
+      } else {
+        toast({ title: "Não foi possível retirar", description: row?.message ?? "", variant: "destructive" });
+      }
+      setMarking(false);
+      return;
+    }
+    setProduto({ ...produto, status: "retirado", retirado_em: row.retirado_em });
+    toast({ title: "Produto retirado!", description: `${produto.produto} - ${produto.variacao} · qtd ${produto.quantidade}` });
+    setMarking(false);
+  };
+
   if (authLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
