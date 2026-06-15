@@ -198,10 +198,11 @@ const ScannerIngressos = () => {
       setMarking(false);
       return;
     }
-    setIngresso({ ...ingresso, utilizado: true, utilizado_em: row.utilizado_em, utilizado_por: row.utilizado_por });
-    fetchValidadores([row.utilizado_por]);
     toast({ title: "Ingresso marcado como utilizado!" });
     setMarking(false);
+    setIngresso(null);
+    setError(null);
+    startScanner();
   };
 
   const validarDocMeia = async () => {
