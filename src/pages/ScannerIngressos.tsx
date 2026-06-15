@@ -32,6 +32,20 @@ interface IngressoScanned {
   } | null;
 }
 
+interface ProdutoScanned {
+  qr_token: string;
+  pedido_id: string;
+  produto: string;
+  variacao: string;
+  quantidade: number;
+  nome_comprador: string;
+  status: string;
+  evento_titulo: string | null;
+  evento_data: string | null;
+  evento_local: string | null;
+  retirado_em: string | null;
+}
+
 const CATEGORIAS_LABELS: Record<string, string> = {
   estudante: "Estudante",
   idoso: "Idoso (60+)",

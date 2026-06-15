@@ -1,43 +1,26 @@
-## Problema
+## Objetivo
 
-Ao escanear o QR de um produto, a RPC `marcar_produto_retirado` executa:
+No scanner, ao ler um QR de produto (`prod:<token>`), **não retirar automaticamente**. Mostrar primeiro um card com os dados do produto e exigir um clique de confirmação antes de marcar como retirado — mesma UX dos ingressos.
 
-```sql
-UPDATE pedidos_produtos SET status = 'retirado', retirado_em = now() ...
-```
+## Mudanças (apenas em `src/pages/ScannerIngressos.tsx`)
 
-Mas o check constraint atual da tabela é:
-
-```
-CHECK (status = ANY (ARRAY['pendente','pago','cancelado','estornado']))
-```
-
-Faltou `'retirado'`. Por isso o Postgres rejeita o UPDATE com a mensagem que aparece no app. O scanner de ingressos funciona porque `ingressos` usa colunas próprias (`utilizado`, `utilizado_em`) — não altera `status`.
-
-Várias outras partes do sistema já assumem que `'retirado'` é válido (relatórios de produtos, contagem de estoque, trigger `validar_estoque_pedido_produto`, função `get_comprovante_produto`), então o constraint está fora de sincronia com o resto do código.
-
-## Correção (1 migração, sem mudança de código)
-
-Recriar o constraint incluindo `'retirado'`:
-
-```sql
-ALTER TABLE public.pedidos_produtos
-  DROP CONSTRAINT pedidos_produtos_status_check;
-
-ALTER TABLE public.pedidos_produtos
-  ADD CONSTRAINT pedidos_produtos_status_check
-  CHECK (status = ANY (ARRAY['pendente','pago','cancelado','estornado','retirado']));
-```
+1. Novo estado `produto` (preview do pedido) ao lado de `ingresso` e `error`.
+2. Em `handleScan`, quando o token começar com `prod:`:
+   - Não chamar mais `marcar_produto_retirado`.
+   - Chamar `supabase.rpc("get_comprovante_produto", { p_qr_token: token })` (RPC já existente — retorna produto, variação, quantidade, nome_comprador, status, evento, retirado_em).
+   - Se status ≠ `pago` e ≠ `retirado` → `setError("Pagamento ainda não confirmado (...)")`.
+   - Caso contrário → `setProduto(row)` (mostra o card).
+3. Novo card de produto (renderizado quando `produto` existe):
+   - Evento, produto, variação, quantidade (em destaque), comprador, status.
+   - Se `status === 'retirado'`: banner vermelho "JÁ RETIRADO em <data>", sem botão de confirmar.
+   - Se `status === 'pago'`: botão grande verde **"Confirmar retirada"** que chama `marcar_produto_retirado` e, em sucesso, exibe `toast.success` rápido ("Produto retirado!") e mantém o card mostrando o produto como retirado.
+   - Botão "Escanear Outro" abaixo.
+4. Ajustar `startScanner` / `stopScanner` para também limpar `produto`.
+5. Toast continua usando `@/hooks/use-toast` (padrão atual do arquivo).
 
 ## Por que é seguro
 
-- Não altera nenhum dado existente (linhas atuais já são `pendente/pago/cancelado/estornado` e seguem válidas).
-- Não muda nenhuma lógica de aplicação, RLS, RPC ou edge function — só amplia o conjunto permitido.
-- Não afeta o scanner de ingressos (tabela diferente).
-- Após a migração, `marcar_produto_retirado` passa a concluir o UPDATE e o fluxo de "ja_retirado / ok" da RPC volta a funcionar normalmente.
-
-## Validação pós-deploy
-
-1. Escanear um QR de produto pago → deve retornar `ok` e marcar `retirado_em`.
-2. Escanear o mesmo QR de novo → deve retornar `ja_retirado` (sem erro de constraint).
-3. Conferir em `Eventos → Relatório` / `Produtos` que pedidos retirados continuam contabilizados como pagos no líquido (lógica já trata `'pago' || 'retirado'`).
+- Não toca em RLS, edge functions, schema ou no fluxo de ingressos.
+- `get_comprovante_produto` já existe e é SECURITY DEFINER (só leitura).
+- `marcar_produto_retirado` continua igual — só passa a ser disparada por clique humano.
+- Reaproveita o mesmo padrão visual de ingressos (Card + Badge + Button).
