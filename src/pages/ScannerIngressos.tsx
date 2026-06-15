@@ -97,29 +97,28 @@ const ScannerIngressos = () => {
     await stopScanner();
     setError(null);
     setIngresso(null);
+    setProduto(null);
 
     decodedText = (decodedText || "").trim();
 
-    // QR de PRODUTO: payload "prod:<qr_token>"
+    // QR de PRODUTO: payload "prod:<qr_token>" — exibe preview e exige confirmação
     if (decodedText.toLowerCase().startsWith("prod:")) {
       const token = decodedText.slice(5).trim();
-      const { data: rpcData, error: rpcErr } = await supabase.rpc("marcar_produto_retirado", { p_qr_token: token });
-      const row = Array.isArray(rpcData) ? rpcData[0] : rpcData;
-      if (rpcErr) {
-        setError(`Erro ao validar produto: ${rpcErr.message}`);
+      const { data, error: err } = await supabase.rpc("get_comprovante_produto", { p_qr_token: token });
+      const row = Array.isArray(data) ? data[0] : data;
+      if (err) {
+        setError(`Erro ao consultar produto: ${err.message}`);
         return;
       }
       if (!row) {
         setError("Comprovante de produto não encontrado.");
         return;
       }
-      if (!row.ok) {
-        if (row.message === "ja_retirado") setError(`Produto JÁ RETIRADO em ${row.retirado_em ? new Date(row.retirado_em).toLocaleString("pt-BR") : "—"} (${row.produto} - ${row.variacao}, qtd ${row.quantidade}).`);
-        else if (row.message?.startsWith("status_invalido")) setError(`Pagamento ainda não confirmado (${row.message.split(":")[1]}).`);
-        else setError(`Erro: ${row.message}`);
+      if (row.status !== "pago" && row.status !== "retirado") {
+        setError(`Pagamento ainda não confirmado (status: ${row.status}).`);
         return;
       }
-      toast({ title: "Produto retirado!", description: `${row.produto} - ${row.variacao} · qtd ${row.quantidade}` });
+      setProduto({ ...(row as any), qr_token: token });
       return;
     }
 
