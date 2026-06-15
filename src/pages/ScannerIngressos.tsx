@@ -32,6 +32,20 @@ interface IngressoScanned {
   } | null;
 }
 
+interface ProdutoScanned {
+  qr_token: string;
+  pedido_id: string;
+  produto: string;
+  variacao: string;
+  quantidade: number;
+  nome_comprador: string;
+  status: string;
+  evento_titulo: string | null;
+  evento_data: string | null;
+  evento_local: string | null;
+  retirado_em: string | null;
+}
+
 const CATEGORIAS_LABELS: Record<string, string> = {
   estudante: "Estudante",
   idoso: "Idoso (60+)",
@@ -45,6 +59,7 @@ const ScannerIngressos = () => {
   const navigate = useNavigate();
   const [scanning, setScanning] = useState(false);
   const [ingresso, setIngresso] = useState<IngressoScanned | null>(null);
+  const [produto, setProduto] = useState<ProdutoScanned | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [marking, setMarking] = useState(false);
   const [validadores, setValidadores] = useState<Record<string, string>>({});
@@ -82,29 +97,28 @@ const ScannerIngressos = () => {
     await stopScanner();
     setError(null);
     setIngresso(null);
+    setProduto(null);
 
     decodedText = (decodedText || "").trim();
 
-    // QR de PRODUTO: payload "prod:<qr_token>"
+    // QR de PRODUTO: payload "prod:<qr_token>" — exibe preview e exige confirmação
     if (decodedText.toLowerCase().startsWith("prod:")) {
       const token = decodedText.slice(5).trim();
-      const { data: rpcData, error: rpcErr } = await supabase.rpc("marcar_produto_retirado", { p_qr_token: token });
-      const row = Array.isArray(rpcData) ? rpcData[0] : rpcData;
-      if (rpcErr) {
-        setError(`Erro ao validar produto: ${rpcErr.message}`);
+      const { data, error: err } = await supabase.rpc("get_comprovante_produto", { p_qr_token: token });
+      const row = Array.isArray(data) ? data[0] : data;
+      if (err) {
+        setError(`Erro ao consultar produto: ${err.message}`);
         return;
       }
       if (!row) {
         setError("Comprovante de produto não encontrado.");
         return;
       }
-      if (!row.ok) {
-        if (row.message === "ja_retirado") setError(`Produto JÁ RETIRADO em ${row.retirado_em ? new Date(row.retirado_em).toLocaleString("pt-BR") : "—"} (${row.produto} - ${row.variacao}, qtd ${row.quantidade}).`);
-        else if (row.message?.startsWith("status_invalido")) setError(`Pagamento ainda não confirmado (${row.message.split(":")[1]}).`);
-        else setError(`Erro: ${row.message}`);
+      if (row.status !== "pago" && row.status !== "retirado") {
+        setError(`Pagamento ainda não confirmado (status: ${row.status}).`);
         return;
       }
-      toast({ title: "Produto retirado!", description: `${row.produto} - ${row.variacao} · qtd ${row.quantidade}` });
+      setProduto({ ...(row as any), qr_token: token });
       return;
     }
 
@@ -126,6 +140,7 @@ const ScannerIngressos = () => {
 
   const startScanner = useCallback(async () => {
     setIngresso(null);
+    setProduto(null);
     setError(null);
     setScanning(true);
 
@@ -216,6 +231,31 @@ const ScannerIngressos = () => {
     setMarking(false);
   };
 
+  const confirmarRetiradaProduto = async () => {
+    if (!produto || !user) return;
+    setMarking(true);
+    const { data, error: err } = await supabase.rpc("marcar_produto_retirado", { p_qr_token: produto.qr_token });
+    if (err) {
+      toast({ title: "Erro ao retirar produto", description: err.message, variant: "destructive" });
+      setMarking(false);
+      return;
+    }
+    const row = Array.isArray(data) ? data[0] : data;
+    if (!row?.ok) {
+      if (row?.message === "ja_retirado") {
+        toast({ title: "Produto JÁ RETIRADO", description: row?.retirado_em ? new Date(row.retirado_em).toLocaleString("pt-BR") : "—", variant: "destructive" });
+        setProduto({ ...produto, status: "retirado", retirado_em: row?.retirado_em ?? produto.retirado_em });
+      } else {
+        toast({ title: "Não foi possível retirar", description: row?.message ?? "", variant: "destructive" });
+      }
+      setMarking(false);
+      return;
+    }
+    setProduto({ ...produto, status: "retirado", retirado_em: row.retirado_em });
+    toast({ title: "Produto retirado!", description: `${produto.produto} - ${produto.variacao} · qtd ${produto.quantidade}` });
+    setMarking(false);
+  };
+
   if (authLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
@@ -236,7 +276,7 @@ const ScannerIngressos = () => {
 
           <h1 className="font-serif text-2xl md:text-3xl font-bold text-zampieri-green-dark mb-6">Scanner de Ingressos</h1>
 
-          {!scanning && !ingresso && !error && (
+          {!scanning && !ingresso && !produto && !error && (
             <div className="text-center">
               <Button onClick={startScanner} className="bg-zampieri-green-dark hover:bg-zampieri-green text-white" size="lg">
                 <ScanLine className="w-5 h-5 mr-2" />
@@ -262,6 +302,76 @@ const ScannerIngressos = () => {
                 <p className="text-destructive font-medium">{error}</p>
                 <Button onClick={startScanner} className="mt-4 bg-zampieri-green-dark hover:bg-zampieri-green text-white">
                   Escanear Novamente
+                </Button>
+              </CardContent>
+            </Card>
+          )}
+
+          {produto && (
+            <Card className={`mt-4 ${produto.status === "retirado" ? "border-destructive/40 bg-destructive/5" : "border-zampieri-green/40 bg-zampieri-green/5"}`}>
+              <CardContent className="p-6">
+                {produto.status === "retirado" && (
+                  <div className="bg-destructive/15 border border-destructive/40 rounded-lg p-3 mb-4">
+                    <div className="flex items-center gap-2">
+                      <AlertTriangle className="w-5 h-5 text-destructive shrink-0" />
+                      <p className="text-sm font-bold text-destructive">ATENÇÃO: Este produto já foi retirado!</p>
+                    </div>
+                    {produto.retirado_em && (
+                      <p className="text-xs text-destructive/90 mt-2 ml-7">
+                        {new Date(produto.retirado_em).toLocaleString("pt-BR")}
+                      </p>
+                    )}
+                  </div>
+                )}
+
+                <div className="space-y-3">
+                  {produto.evento_titulo && (
+                    <div>
+                      <p className="text-xs text-muted-foreground uppercase tracking-wider">Evento</p>
+                      <p className="font-serif font-semibold text-zampieri-green-dark">{produto.evento_titulo}</p>
+                    </div>
+                  )}
+                  <div>
+                    <p className="text-xs text-muted-foreground uppercase tracking-wider">Produto</p>
+                    <p className="font-serif text-lg font-bold text-zampieri-green-dark">{produto.produto}</p>
+                    <p className="text-sm text-foreground">{produto.variacao}</p>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <div className="bg-zampieri-gold/20 border border-zampieri-gold/40 rounded-lg px-4 py-2">
+                      <p className="text-xs text-muted-foreground uppercase tracking-wider">Qtd</p>
+                      <p className="text-2xl font-bold text-zampieri-green-dark leading-none">{produto.quantidade}</p>
+                    </div>
+                    <div className="flex-1">
+                      <p className="text-xs text-muted-foreground uppercase tracking-wider">Comprador</p>
+                      <p className="font-medium text-foreground">{produto.nome_comprador}</p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <p className="text-xs text-muted-foreground uppercase tracking-wider">Status:</p>
+                    <Badge className={
+                      produto.status === "pago" ? "bg-zampieri-green/15 text-zampieri-green-dark border border-zampieri-green/40" :
+                      "bg-destructive/15 text-destructive border border-destructive/40"
+                    }>
+                      {produto.status}
+                    </Badge>
+                  </div>
+                </div>
+
+                {produto.status === "pago" && (
+                  <Button
+                    onClick={confirmarRetiradaProduto}
+                    disabled={marking}
+                    className="w-full mt-4 bg-zampieri-green-dark hover:bg-zampieri-green text-white"
+                    size="lg"
+                  >
+                    <CheckCircle2 className="w-5 h-5 mr-2" />
+                    {marking ? "Confirmando..." : "Confirmar retirada"}
+                  </Button>
+                )}
+
+                <Button onClick={startScanner} variant="outline" className="w-full mt-3 border-zampieri-green-dark text-zampieri-green-dark hover:bg-zampieri-cream">
+                  <ScanLine className="w-4 h-4 mr-2" />
+                  Escanear Outro
                 </Button>
               </CardContent>
             </Card>
