@@ -66,6 +66,8 @@ const ScannerIngressos = () => {
   const [validadores, setValidadores] = useState<Record<string, string>>({});
   const scannerRef = useRef<Html5Qrcode | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
+  const manualInputRef = useRef<HTMLInputElement>(null);
+  const [manualCode, setManualCode] = useState("");
 
   useEffect(() => {
     if (!authLoading && (!user || !isAdmin)) navigate("/eventos/login");
