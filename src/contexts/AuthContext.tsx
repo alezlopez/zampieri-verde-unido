@@ -42,7 +42,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setIsAdmin(!!adminRes.data);
       setIsConferente(!!confRes.data);
     } catch {
-      setIsAdmin(false);
+      setIsAdmin(false); setIsConferente(false);
       setIsConferente(false);
     }
   };
@@ -57,16 +57,16 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           supabase.auth.signOut();
           setSession(null);
           setUser(null);
-          setIsAdmin(false);
+          setIsAdmin(false); setIsConferente(false);
           setLoading(false);
           return;
         }
         setSession(session);
         setUser(session?.user ?? null);
         if (session?.user) {
-          setTimeout(() => checkAdmin(session.user.id), 0);
+          setTimeout(() => checkRoles(session.user.id), 0);
         } else {
-          setIsAdmin(false);
+          setIsAdmin(false); setIsConferente(false);
         }
         setLoading(false);
       }
@@ -76,7 +76,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setSession(session);
       setUser(session?.user ?? null);
       if (session?.user) {
-        checkAdmin(session.user.id);
+        checkRoles(session.user.id);
       }
       setLoading(false);
     });
@@ -102,7 +102,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     await supabase.auth.signOut();
     setUser(null);
     setSession(null);
-    setIsAdmin(false);
+    setIsAdmin(false); setIsConferente(false);
   };
 
   const cleanCpf = (cpf: string) => cpf.replace(/\D/g, "");
