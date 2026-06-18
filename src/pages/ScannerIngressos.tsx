@@ -56,7 +56,7 @@ const CATEGORIAS_LABELS: Record<string, string> = {
 };
 
 const ScannerIngressos = () => {
-  const { user, isAdmin, loading: authLoading } = useAuth();
+  const { user, isAdmin, canScan, loading: authLoading } = useAuth();
   const navigate = useNavigate();
   const [scanning, setScanning] = useState(false);
   const [ingresso, setIngresso] = useState<IngressoScanned | null>(null);
@@ -70,8 +70,8 @@ const ScannerIngressos = () => {
   const [manualCode, setManualCode] = useState("");
 
   useEffect(() => {
-    if (!authLoading && (!user || !isAdmin)) navigate("/eventos/login");
-  }, [user, isAdmin, authLoading, navigate]);
+    if (!authLoading && (!user || !canScan)) navigate("/eventos/login");
+  }, [user, canScan, authLoading, navigate]);
 
   const stopScanner = useCallback(async () => {
     if (scannerRef.current?.isScanning) {
