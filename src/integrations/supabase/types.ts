@@ -1447,6 +1447,27 @@ export type Database = {
           user_id: string
         }[]
       }
+      buscar_ingresso_scan: {
+        Args: { p_id: string }
+        Returns: {
+          categoria_meia: string
+          codigo_aluno: string
+          evento_data: string
+          evento_titulo: string
+          id: string
+          meia_validada_em: string
+          meia_validada_por: string
+          meia_validada_portaria: boolean
+          nome_comprador: string
+          nome_participante: string
+          status: string
+          tipo_ingresso: string
+          tipo_participante: string
+          utilizado: boolean
+          utilizado_em: string
+          utilizado_por: string
+        }[]
+      }
       calcular_vagas_disponiveis: {
         Args: { p_curso: string; p_turno: string }
         Returns: {
@@ -1734,7 +1755,7 @@ export type Database = {
       }
     }
     Enums: {
-      app_role: "admin" | "user"
+      app_role: "admin" | "user" | "conferente"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -1862,7 +1883,7 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
-      app_role: ["admin", "user"],
+      app_role: ["admin", "user", "conferente"],
     },
   },
 } as const
