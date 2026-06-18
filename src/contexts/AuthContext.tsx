@@ -31,18 +31,23 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
   const [isAdmin, setIsAdmin] = useState(false);
+  const [isConferente, setIsConferente] = useState(false);
 
-  const checkAdmin = async (userId: string) => {
+  const checkRoles = async (userId: string) => {
     try {
-      const { data } = await supabase.rpc("has_role", {
-        _user_id: userId,
-        _role: "admin",
-      });
-      setIsAdmin(!!data);
+      const [adminRes, confRes] = await Promise.all([
+        supabase.rpc("has_role", { _user_id: userId, _role: "admin" }),
+        supabase.rpc("has_role", { _user_id: userId, _role: "conferente" as any }),
+      ]);
+      setIsAdmin(!!adminRes.data);
+      setIsConferente(!!confRes.data);
     } catch {
       setIsAdmin(false);
+      setIsConferente(false);
     }
   };
+
+
 
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
