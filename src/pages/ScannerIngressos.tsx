@@ -56,7 +56,7 @@ const CATEGORIAS_LABELS: Record<string, string> = {
 };
 
 const ScannerIngressos = () => {
-  const { user, isAdmin, loading: authLoading } = useAuth();
+  const { user, isAdmin, canScan, loading: authLoading } = useAuth();
   const navigate = useNavigate();
   const [scanning, setScanning] = useState(false);
   const [ingresso, setIngresso] = useState<IngressoScanned | null>(null);
@@ -70,8 +70,8 @@ const ScannerIngressos = () => {
   const [manualCode, setManualCode] = useState("");
 
   useEffect(() => {
-    if (!authLoading && (!user || !isAdmin)) navigate("/eventos/login");
-  }, [user, isAdmin, authLoading, navigate]);
+    if (!authLoading && (!user || !canScan)) navigate("/eventos/login");
+  }, [user, canScan, authLoading, navigate]);
 
   const stopScanner = useCallback(async () => {
     if (scannerRef.current?.isScanning) {
@@ -125,18 +125,31 @@ const ScannerIngressos = () => {
       return;
     }
 
-    const { data, error: err } = await supabase
-      .from("ingressos")
-      .select("id, nome_comprador, nome_participante, tipo_participante, status, utilizado, utilizado_em, utilizado_por, codigo_aluno, tipo_ingresso, categoria_meia, meia_validada_portaria, meia_validada_em, meia_validada_por, eventos(titulo, data_evento)")
-      .eq("id", decodedText)
-      .single();
+    const { data, error: err } = await supabase.rpc("buscar_ingresso_scan", { p_id: decodedText });
+    const row = Array.isArray(data) ? data[0] : data;
 
-    if (err || !data) {
+    if (err || !row) {
       setError("Ingresso não encontrado. Verifique o QR Code.");
       return;
     }
 
-    const ing = data as unknown as IngressoScanned;
+    const ing: IngressoScanned = {
+      id: row.id,
+      nome_comprador: row.nome_comprador,
+      nome_participante: row.nome_participante,
+      tipo_participante: row.tipo_participante,
+      status: row.status,
+      utilizado: row.utilizado,
+      utilizado_em: row.utilizado_em,
+      utilizado_por: row.utilizado_por,
+      codigo_aluno: row.codigo_aluno,
+      tipo_ingresso: row.tipo_ingresso,
+      categoria_meia: row.categoria_meia,
+      meia_validada_portaria: row.meia_validada_portaria,
+      meia_validada_em: row.meia_validada_em,
+      meia_validada_por: row.meia_validada_por,
+      eventos: row.evento_titulo ? { titulo: row.evento_titulo, data_evento: row.evento_data } : null,
+    };
     setIngresso(ing);
     fetchValidadores([ing.utilizado_por, ing.meia_validada_por].filter(Boolean) as string[]);
   }, [stopScanner, fetchValidadores]);
