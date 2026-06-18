@@ -152,7 +152,21 @@ const EventosLogin = () => {
           toast({ title: "Erro no login", description: error.message, variant: "destructive" });
         } else {
           toast({ title: "Login realizado com sucesso!" });
-          navigate("/eventos");
+          // Se o usuário for apenas conferente (não admin), envia direto ao scanner
+          const { data: { user: authedUser } } = await supabase.auth.getUser();
+          if (authedUser) {
+            const [{ data: isAdminRole }, { data: isConfRole }] = await Promise.all([
+              supabase.rpc("has_role", { _user_id: authedUser.id, _role: "admin" }),
+              supabase.rpc("has_role", { _user_id: authedUser.id, _role: "conferente" as any }),
+            ]);
+            if (!isAdminRole && isConfRole) {
+              navigate("/eventos/admin/scanner");
+            } else {
+              navigate("/eventos");
+            }
+          } else {
+            navigate("/eventos");
+          }
         }
       } else if (isRegister) {
         const pwErr = validatePasswordStrength(password);
