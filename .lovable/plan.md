@@ -1,36 +1,44 @@
-# Scanner — Título + Entrada por Leitor de Código de Barras
+## Objetivo
+Criar um novo nível de acesso chamado **conferente**, que pode usar o Scanner de Ingressos e Produtos (validar meia, marcar utilizado, marcar retirado) e ver o nome do comprador, **sem enxergar valores monetários**.
 
-## Mudanças em `src/pages/ScannerIngressos.tsx`
+## 1. Banco de dados (migração)
 
-### 1. Título
-- Trocar `"Scanner de Ingressos"` (h1, linha 280) por **"Scanner de Ingressos e Produtos"**.
-- Atualizar também `subtitle` do `<EventosHeader>` (linha 272) para `"Scanner de ingressos e produtos"`.
+### Enum de papéis
+- `ALTER TYPE public.app_role ADD VALUE IF NOT EXISTS 'conferente';`
 
-### 2. Campo de entrada manual (leitor de código de barras USB/Bluetooth)
-Leitores de código de barras tipicamente se comportam como teclado: digitam o conteúdo lido num input focado e disparam `Enter` no final. Vamos aproveitar isso.
+### Funções RPC já existentes
+As funções `marcar_ingresso_utilizado`, `validar_meia_ingresso` e `marcar_produto_retirado` hoje exigem `has_role(uid, 'admin')`. Vou alterá-las para aceitar `admin` **ou** `conferente`.
 
-Adicionar, logo abaixo do botão "Iniciar Scanner" e também visível quando há resultado/erro (sempre disponível):
+### Leitura de dados sem valores
+Para o conferente conseguir buscar ingresso/produto pelo QR sem expor valores, vou criar duas RPCs `SECURITY DEFINER` que retornam apenas os campos seguros (sem `valor`, `valor_total`, `valor_unitario`, descontos etc.):
 
-- Um `<form>` com:
-  - `<Input>` (`type="text"`, `placeholder="Leia ou cole o código aqui"`, `autoFocus`, `inputMode="text"`).
-  - Botão "Buscar" (submit).
-- No `onSubmit`: chamar `handleScan(valor)` e limpar o campo.
-- Ao focar/digitar nele, se o scanner por câmera estiver ativo, parar a câmera (`stopScanner()`), para evitar conflito.
-- Manter o input visível em todos os estados (idle, erro, resultado de ingresso/produto) — permite o operador apenas apontar o leitor e ler o próximo código sem clicar em nada. Após cada leitura bem sucedida o input é limpo e re-focado.
+- `buscar_ingresso_scan(p_codigo text)` → retorna id, evento, nome_comprador, nome_participante, tipo_ingresso, status, utilizado, utilizado_em, meia_validada_portaria.
+- `buscar_produto_scan(p_qr_token uuid)` → retorna pedido_id, produto, variação, quantidade, nome_comprador, status, evento, retirado_em.
 
-### 3. Câmera continua igual
-- Botão "Iniciar Scanner" + fluxo `Html5Qrcode` permanecem intactos.
-- O input manual fica como caminho alternativo/paralelo.
+Ambas permitidas para `admin` ou `conferente`. O frontend do scanner passa a usar essas RPCs em vez de `select` direto nas tabelas — isso garante que mesmo se o conferente tentar ler `ingressos`/`pedidos_produtos` direto, as policies atuais (restritas a admin/dono) bloqueiam.
 
-## Layout (idle)
+## 2. Frontend
 
-```text
-[ Iniciar Scanner (câmera) ]
-        — ou —
-[ input: Leia/cole o código   ] [Buscar]
+### `AuthContext.tsx`
+- Adicionar `isConferente: boolean` ao contexto, carregado via `has_role(uid, 'conferente')` em paralelo ao `isAdmin`.
+- Expor um helper `canScan = isAdmin || isConferente`.
+
+### `ScannerIngressos.tsx`
+- Trocar a checagem `!isAdmin` por `!canScan` no guard de rota.
+- Substituir os `select` atuais em `ingressos`/`pedidos_produtos` pelas novas RPCs `buscar_ingresso_scan` e `buscar_produto_scan`, removendo qualquer referência a campos de valor na UI (a tela já mostra só nome/tipo/status, então a mudança é mínima).
+
+### Navegação
+- Em `Eventos.tsx`/menu admin, o link "Scanner" passa a aparecer para `canScan` (admin ou conferente). Links de Admin/Relatório continuam só para `isAdmin`.
+
+## 3. Como atribuir o papel
+Você atribui manualmente no Supabase:
+
+```sql
+INSERT INTO public.user_roles (user_id, role)
+VALUES ('<uuid-do-usuario>', 'conferente');
 ```
 
-## Observações técnicas
-- `handleScan` já aceita tanto IDs de ingresso (UUID) quanto payloads `prod:<token>` de produto — nenhuma mudança na lógica de busca é necessária.
-- Usar `useRef<HTMLInputElement>` para re-focar o input após cada leitura/erro, garantindo que o leitor de código de barras continue funcionando sem cliques.
-- Sem alterações em RPCs, banco ou regras de negócio.
+## Detalhes técnicos
+- Enum `app_role`: hoje `('admin','user')`, fica `('admin','user','conferente')`.
+- Policies de `ingressos` e `pedidos_produtos` **não mudam** — o conferente só acessa via RPC SECURITY DEFINER, então nunca vê colunas de valor.
+- Nenhuma alteração em fluxos de compra, pagamento ou relatórios.
