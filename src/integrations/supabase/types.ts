@@ -1464,6 +1464,39 @@ export type Database = {
         }
         Relationships: []
       }
+      rematricula_valores_2027: {
+        Row: {
+          ativo: boolean
+          created_at: string
+          curso_2027: string
+          id: string
+          promocao_ate: string | null
+          updated_at: string
+          valor_promocional: number | null
+          valor_rematricula: number
+        }
+        Insert: {
+          ativo?: boolean
+          created_at?: string
+          curso_2027: string
+          id?: string
+          promocao_ate?: string | null
+          updated_at?: string
+          valor_promocional?: number | null
+          valor_rematricula?: number
+        }
+        Update: {
+          ativo?: boolean
+          created_at?: string
+          curso_2027?: string
+          id?: string
+          promocao_ate?: string | null
+          updated_at?: string
+          valor_promocional?: number | null
+          valor_rematricula?: number
+        }
+        Relationships: []
+      }
       user_profiles: {
         Row: {
           created_at: string
@@ -1503,6 +1536,36 @@ export type Database = {
           id?: string
           role?: Database["public"]["Enums"]["app_role"]
           user_id?: string
+        }
+        Relationships: []
+      }
+      vagas_2027: {
+        Row: {
+          ativo: boolean
+          created_at: string
+          curso_2027: string
+          id: string
+          max_vagas: number
+          turno: string
+          updated_at: string
+        }
+        Insert: {
+          ativo?: boolean
+          created_at?: string
+          curso_2027: string
+          id?: string
+          max_vagas?: number
+          turno: string
+          updated_at?: string
+        }
+        Update: {
+          ativo?: boolean
+          created_at?: string
+          curso_2027?: string
+          id?: string
+          max_vagas?: number
+          turno?: string
+          updated_at?: string
         }
         Relationships: []
       }
@@ -1731,6 +1794,82 @@ export type Database = {
         }[]
       }
       purgar_asaas_webhook_events: { Args: never; Returns: undefined }
+      rematricula_2027_abrir: {
+        Args: { p_data_nascimento: string; p_id_aluno: number }
+        Returns: {
+          celular_mae: string
+          celular_pai: string
+          cep_mae: string
+          cep_pai: string
+          cidade_mae: string
+          cidade_pai: string
+          complemento_mae: string
+          complemento_pai: string
+          cpf_aluno: string
+          cpf_mae: string
+          cpf_pai: string
+          curso_2027: string
+          curso_atual: string
+          data_nascimento_aluno: string
+          data_nascimento_mae: string
+          data_nascimento_pai: string
+          dia_vencimento: number
+          email_mae: string
+          email_pai: string
+          estado_civil_mae: string
+          estado_civil_pai: string
+          estado_mae: string
+          estado_pai: string
+          id_aluno: number
+          logradouro_mae: string
+          logradouro_pai: string
+          nacionalidade_mae: string
+          nacionalidade_pai: string
+          naturalidade_mae: string
+          naturalidade_pai: string
+          nome_aluno: string
+          nome_mae: string
+          nome_pai: string
+          numero_mae: string
+          numero_pai: string
+          percentual_desconto: number
+          responsavel_financeiro: string
+          rg_mae: string
+          rg_pai: string
+          tem_mae: string
+          tem_pai: string
+          turno_escolhido: string
+          valor_cheio: number
+          valor_com_desconto: number
+          valor_rematricula: number
+        }[]
+      }
+      rematricula_2027_buscar: {
+        Args: { p_termo: string }
+        Returns: {
+          curso_2027: string
+          curso_atual: string
+          id_aluno: number
+          nome_aluno: string
+        }[]
+      }
+      rematricula_2027_salvar: {
+        Args: { p_dados: Json; p_data_nascimento: string; p_id_aluno: number }
+        Returns: {
+          message: string
+          success: boolean
+        }[]
+      }
+      rematricula_2027_turnos: {
+        Args: { p_curso_2027: string }
+        Returns: {
+          disponiveis: number
+          disponivel: boolean
+          max_vagas: number
+          ocupadas: number
+          turno: string
+        }[]
+      }
       rematricula_by_codigo_aluno: {
         Args: { p_cod_aluno: number }
         Returns: {
