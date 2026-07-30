@@ -30,6 +30,11 @@ export const StepCurso = ({
   const [turnos, setTurnos] = useState<TurnoDisponivel[]>([]);
   const [loading, setLoading] = useState(true);
   const [erro, setErro] = useState<string | null>(null);
+  const [valores, setValores] = useState<{
+    valor_rematricula: number | null;
+    valor_promocional: number | null;
+    promocao_ate: string | null;
+  } | null>(null);
 
   useEffect(() => {
     const carregar = async () => {
@@ -38,14 +43,31 @@ export const StepCurso = ({
         setLoading(false);
         return;
       }
-      const { data } = await supabase.rpc("rematricula_2027_turnos", {
-        p_curso_2027: aluno.curso_2027,
-      });
+      const [{ data }, { data: val }] = await Promise.all([
+        supabase.rpc("rematricula_2027_turnos", { p_curso_2027: aluno.curso_2027 }),
+        supabase
+          .from("rematricula_valores_2027")
+          .select("valor_rematricula, valor_promocional, promocao_ate")
+          .eq("curso_2027", aluno.curso_2027)
+          .eq("ativo", true)
+          .maybeSingle(),
+      ]);
       setTurnos((data as TurnoDisponivel[]) ?? []);
+      setValores(val ?? null);
       setLoading(false);
     };
     carregar();
   }, [aluno.curso_2027]);
+
+  const hoje = new Date().toISOString().slice(0, 10);
+  const promoAtiva =
+    !!valores?.valor_promocional &&
+    (!valores.promocao_ate || valores.promocao_ate >= hoje) &&
+    Number(valores.valor_promocional) < Number(valores.valor_rematricula ?? 0);
+  const promoAte = valores?.promocao_ate
+    ? valores.promocao_ate.split("-").reverse().join("/")
+    : null;
+
 
   const opcoesResponsavel = [
     aluno.tem_mae?.toLowerCase() !== "não" && aluno.tem_mae?.toLowerCase() !== "nao"
@@ -133,8 +155,23 @@ export const StepCurso = ({
         </div>
         <div className="pt-3 border-t border-border">
           <p className="text-muted-foreground text-sm">Valor da rematrícula</p>
-          <p className="font-bold text-lg text-zampieri-green-dark">{formatBRL(aluno.valor_rematricula)}</p>
+          <div className="flex items-baseline gap-2 flex-wrap">
+            {promoAtiva && (
+              <span className="text-sm line-through text-muted-foreground">
+                {formatBRL(valores?.valor_rematricula)}
+              </span>
+            )}
+            <span className="font-bold text-lg text-zampieri-green-dark">
+              {formatBRL(aluno.valor_rematricula)}
+            </span>
+          </div>
+          {promoAtiva && promoAte && (
+            <p className="text-xs font-medium text-zampieri-green-dark mt-1">
+              Valor promocional válido até {promoAte}
+            </p>
+          )}
         </div>
+
       </div>
 
       <div className="space-y-2">
