@@ -155,8 +155,23 @@ export const StepCurso = ({
         </div>
         <div className="pt-3 border-t border-border">
           <p className="text-muted-foreground text-sm">Valor da rematrícula</p>
-          <p className="font-bold text-lg text-zampieri-green-dark">{formatBRL(aluno.valor_rematricula)}</p>
+          <div className="flex items-baseline gap-2 flex-wrap">
+            {promoAtiva && (
+              <span className="text-sm line-through text-muted-foreground">
+                {formatBRL(valores?.valor_rematricula)}
+              </span>
+            )}
+            <span className="font-bold text-lg text-zampieri-green-dark">
+              {formatBRL(aluno.valor_rematricula)}
+            </span>
+          </div>
+          {promoAtiva && promoAte && (
+            <p className="text-xs font-medium text-zampieri-green-dark mt-1">
+              Valor promocional válido até {promoAte}
+            </p>
+          )}
         </div>
+
       </div>
 
       <div className="space-y-2">
