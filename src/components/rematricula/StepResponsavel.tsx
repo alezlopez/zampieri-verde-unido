@@ -1,0 +1,245 @@
+import { useState } from "react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { ResponsavelForm } from "./types";
+import {
+  ESTADOS_CIVIS,
+  brToIso,
+  buscarCep,
+  isValidCpf,
+  isValidEmail,
+  maskCep,
+  maskCpf,
+  maskDataBr,
+  maskTelefone,
+  onlyDigits,
+} from "./utils";
+
+interface Props {
+  titulo: string;
+  descricao: string;
+  form: ResponsavelForm;
+  travados: Partial<Record<keyof ResponsavelForm, boolean>>;
+  onChange: (form: ResponsavelForm) => void;
+  onVoltar: () => void;
+  onAvancar: () => void;
+}
+
+type Erros = Partial<Record<keyof ResponsavelForm, string>>;
+
+export const StepResponsavel = ({
+  titulo,
+  descricao,
+  form,
+  travados,
+  onChange,
+  onVoltar,
+  onAvancar,
+}: Props) => {
+  const [erros, setErros] = useState<Erros>({});
+  const [editando, setEditando] = useState<Partial<Record<keyof ResponsavelForm, boolean>>>({});
+
+  const set = (campo: keyof ResponsavelForm, valor: string) =>
+    onChange({ ...form, [campo]: valor });
+
+  const bloqueado = (campo: keyof ResponsavelForm) => !!travados[campo] && !editando[campo];
+
+  const validar = () => {
+    const e: Erros = {};
+    const obrig: (keyof ResponsavelForm)[] = [
+      "nome",
+      "cpf",
+      "rg",
+      "estado_civil",
+      "naturalidade",
+      "nacionalidade",
+      "cep",
+      "logradouro",
+      "numero",
+      "cidade",
+      "estado",
+      "data_nascimento",
+      "celular",
+      "email",
+    ];
+    obrig.forEach((c) => {
+      if (!String(form[c] || "").trim()) e[c] = "Campo obrigatório";
+    });
+    if (!e.cpf && !isValidCpf(form.cpf)) e.cpf = "CPF inválido";
+    if (!e.email && !isValidEmail(form.email)) e.email = "E-mail inválido";
+    if (!e.celular && onlyDigits(form.celular).length < 10) e.celular = "Telefone incompleto";
+    if (!e.data_nascimento && !brToIso(form.data_nascimento)) e.data_nascimento = "Data inválida";
+    setErros(e);
+    if (Object.keys(e).length === 0) onAvancar();
+  };
+
+  const preencherCep = async (valor: string) => {
+    const masked = maskCep(valor);
+    const next = { ...form, cep: masked };
+    onChange(next);
+    if (onlyDigits(masked).length === 8) {
+      const end = await buscarCep(masked);
+      if (end) {
+        onChange({
+          ...next,
+          logradouro: end.logradouro || next.logradouro,
+          cidade: end.cidade || next.cidade,
+          estado: end.estado || next.estado,
+        });
+      }
+    }
+  };
+
+  const campo = (
+    key: keyof ResponsavelForm,
+    label: string,
+    props: { placeholder?: string; mask?: (v: string) => string; inputMode?: "numeric" | "text" | "email" } = {}
+  ) => (
+    <div className="space-y-2">
+      <div className="flex items-center justify-between gap-2">
+        <Label htmlFor={`resp-${key}`}>{label}</Label>
+        {travados[key] && !editando[key] && (
+          <button
+            type="button"
+            onClick={() => setEditando((p) => ({ ...p, [key]: true }))}
+            className="text-xs font-medium text-zampieri-green-dark underline"
+          >
+            corrigir
+          </button>
+        )}
+      </div>
+      <Input
+        id={`resp-${key}`}
+        placeholder={props.placeholder}
+        inputMode={props.inputMode}
+        value={form[key]}
+        readOnly={bloqueado(key)}
+        className={bloqueado(key) ? "bg-muted" : undefined}
+        onChange={(e) => set(key, props.mask ? props.mask(e.target.value) : e.target.value)}
+      />
+      {erros[key] && <p className="text-xs text-destructive">{erros[key]}</p>}
+    </div>
+  );
+
+  return (
+    <div className="space-y-5">
+      <div>
+        <h2 className="font-serif text-xl font-bold text-zampieri-green-dark">{titulo}</h2>
+        <p className="text-sm text-muted-foreground mt-1">{descricao}</p>
+      </div>
+
+      <div className="space-y-4">
+        {campo("nome", "Nome completo")}
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          {campo("cpf", "CPF", { placeholder: "000.000.000-00", mask: maskCpf, inputMode: "numeric" })}
+          {campo("rg", "RG")}
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div className="space-y-2">
+            <div className="flex items-center justify-between gap-2">
+              <Label>Estado civil</Label>
+              {travados.estado_civil && !editando.estado_civil && (
+                <button
+                  type="button"
+                  onClick={() => setEditando((p) => ({ ...p, estado_civil: true }))}
+                  className="text-xs font-medium text-zampieri-green-dark underline"
+                >
+                  corrigir
+                </button>
+              )}
+            </div>
+            <Select
+              value={form.estado_civil}
+              onValueChange={(v) => set("estado_civil", v)}
+              disabled={bloqueado("estado_civil")}
+            >
+              <SelectTrigger className={bloqueado("estado_civil") ? "bg-muted" : undefined}>
+                <SelectValue placeholder="Selecione" />
+              </SelectTrigger>
+              <SelectContent className="bg-background z-50">
+                {ESTADOS_CIVIS.map((ec) => (
+                  <SelectItem key={ec} value={ec}>
+                    {ec}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            {erros.estado_civil && <p className="text-xs text-destructive">{erros.estado_civil}</p>}
+          </div>
+          {campo("data_nascimento", "Data de nascimento", {
+            placeholder: "dd/mm/aaaa",
+            mask: maskDataBr,
+            inputMode: "numeric",
+          })}
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          {campo("naturalidade", "Naturalidade", { placeholder: "Cidade de nascimento" })}
+          {campo("nacionalidade", "Nacionalidade", { placeholder: "Brasileira" })}
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          {campo("celular", "Celular", { placeholder: "(11) 99999-9999", mask: maskTelefone, inputMode: "numeric" })}
+          {campo("email", "E-mail", { placeholder: "email@exemplo.com", inputMode: "email" })}
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          <div className="space-y-2">
+            <div className="flex items-center justify-between gap-2">
+              <Label htmlFor="resp-cep">CEP</Label>
+              {travados.cep && !editando.cep && (
+                <button
+                  type="button"
+                  onClick={() => setEditando((p) => ({ ...p, cep: true }))}
+                  className="text-xs font-medium text-zampieri-green-dark underline"
+                >
+                  corrigir
+                </button>
+              )}
+            </div>
+            <Input
+              id="resp-cep"
+              inputMode="numeric"
+              placeholder="00000-000"
+              value={form.cep}
+              readOnly={bloqueado("cep")}
+              className={bloqueado("cep") ? "bg-muted" : undefined}
+              onChange={(e) => preencherCep(e.target.value)}
+            />
+            {erros.cep && <p className="text-xs text-destructive">{erros.cep}</p>}
+          </div>
+          <div className="sm:col-span-2">{campo("logradouro", "Endereço")}</div>
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          {campo("numero", "Número")}
+          {campo("complemento", "Complemento (opcional)")}
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          {campo("cidade", "Cidade")}
+          {campo("estado", "Estado (UF)", { placeholder: "SP" })}
+        </div>
+      </div>
+
+      <div className="flex gap-2">
+        <Button variant="outline" onClick={onVoltar} className="flex-1">
+          Voltar
+        </Button>
+        <Button onClick={validar} className="flex-1 bg-zampieri-green-dark hover:bg-zampieri-green">
+          Continuar
+        </Button>
+      </div>
+    </div>
+  );
+};
