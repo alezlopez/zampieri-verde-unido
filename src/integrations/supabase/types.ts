@@ -68,6 +68,153 @@ export type Database = {
         }
         Relationships: []
       }
+      alunos_rematricula_2027: {
+        Row: {
+          celular_mae: string | null
+          celular_pai: string | null
+          cep_mae: string | null
+          cep_pai: string | null
+          cidade_mae: string | null
+          cidade_pai: string | null
+          complemento_mae: string | null
+          complemento_pai: string | null
+          cpf_aluno: string | null
+          cpf_mae: string | null
+          cpf_pai: string | null
+          created_at: string | null
+          curso_2027: string
+          curso_atual: string
+          data_nascimento_aluno: string
+          data_nascimento_mae: string | null
+          data_nascimento_pai: string | null
+          dia_vencimento: number
+          email_mae: string | null
+          email_pai: string | null
+          estado_civil_mae: string | null
+          estado_civil_pai: string | null
+          estado_mae: string | null
+          estado_pai: string | null
+          id_aluno: number
+          logradouro_mae: string | null
+          logradouro_pai: string | null
+          nacionalidade_mae: string | null
+          nacionalidade_pai: string | null
+          naturalidade_mae: string | null
+          naturalidade_pai: string | null
+          nome_aluno: string
+          nome_mae: string | null
+          nome_pai: string | null
+          numero_mae: string | null
+          numero_pai: string | null
+          percentual_desconto: number
+          responsavel_financeiro: string | null
+          rg_mae: string | null
+          rg_pai: string | null
+          tem_mae: string
+          tem_pai: string
+          turno_escolhido: string | null
+          updated_at: string | null
+          valor_cheio: number | null
+          valor_com_desconto: number
+        }
+        Insert: {
+          celular_mae?: string | null
+          celular_pai?: string | null
+          cep_mae?: string | null
+          cep_pai?: string | null
+          cidade_mae?: string | null
+          cidade_pai?: string | null
+          complemento_mae?: string | null
+          complemento_pai?: string | null
+          cpf_aluno?: string | null
+          cpf_mae?: string | null
+          cpf_pai?: string | null
+          created_at?: string | null
+          curso_2027: string
+          curso_atual: string
+          data_nascimento_aluno: string
+          data_nascimento_mae?: string | null
+          data_nascimento_pai?: string | null
+          dia_vencimento: number
+          email_mae?: string | null
+          email_pai?: string | null
+          estado_civil_mae?: string | null
+          estado_civil_pai?: string | null
+          estado_mae?: string | null
+          estado_pai?: string | null
+          id_aluno: number
+          logradouro_mae?: string | null
+          logradouro_pai?: string | null
+          nacionalidade_mae?: string | null
+          nacionalidade_pai?: string | null
+          naturalidade_mae?: string | null
+          naturalidade_pai?: string | null
+          nome_aluno: string
+          nome_mae?: string | null
+          nome_pai?: string | null
+          numero_mae?: string | null
+          numero_pai?: string | null
+          percentual_desconto: number
+          responsavel_financeiro?: string | null
+          rg_mae?: string | null
+          rg_pai?: string | null
+          tem_mae?: string
+          tem_pai?: string
+          turno_escolhido?: string | null
+          updated_at?: string | null
+          valor_cheio?: number | null
+          valor_com_desconto: number
+        }
+        Update: {
+          celular_mae?: string | null
+          celular_pai?: string | null
+          cep_mae?: string | null
+          cep_pai?: string | null
+          cidade_mae?: string | null
+          cidade_pai?: string | null
+          complemento_mae?: string | null
+          complemento_pai?: string | null
+          cpf_aluno?: string | null
+          cpf_mae?: string | null
+          cpf_pai?: string | null
+          created_at?: string | null
+          curso_2027?: string
+          curso_atual?: string
+          data_nascimento_aluno?: string
+          data_nascimento_mae?: string | null
+          data_nascimento_pai?: string | null
+          dia_vencimento?: number
+          email_mae?: string | null
+          email_pai?: string | null
+          estado_civil_mae?: string | null
+          estado_civil_pai?: string | null
+          estado_mae?: string | null
+          estado_pai?: string | null
+          id_aluno?: number
+          logradouro_mae?: string | null
+          logradouro_pai?: string | null
+          nacionalidade_mae?: string | null
+          nacionalidade_pai?: string | null
+          naturalidade_mae?: string | null
+          naturalidade_pai?: string | null
+          nome_aluno?: string
+          nome_mae?: string | null
+          nome_pai?: string | null
+          numero_mae?: string | null
+          numero_pai?: string | null
+          percentual_desconto?: number
+          responsavel_financeiro?: string | null
+          rg_mae?: string | null
+          rg_pai?: string | null
+          tem_mae?: string
+          tem_pai?: string
+          turno_escolhido?: string | null
+          updated_at?: string | null
+          valor_cheio?: number | null
+          valor_com_desconto?: number
+        }
+        Relationships: []
+      }
       alunosIntegraSae: {
         Row: {
           aluno: string | null
@@ -233,39 +380,6 @@ export type Database = {
           status_boleto?: string | null
           valor_boleto?: string | null
           vencimento_boleto?: string | null
-        }
-        Relationships: []
-      }
-      codigos_verificacao: {
-        Row: {
-          codigo: string
-          codigo_aluno: string
-          created_at: string | null
-          expires_at: string | null
-          id: number
-          novo_valor: string
-          tipo: string
-          verificado: boolean | null
-        }
-        Insert: {
-          codigo: string
-          codigo_aluno: string
-          created_at?: string | null
-          expires_at?: string | null
-          id?: never
-          novo_valor: string
-          tipo: string
-          verificado?: boolean | null
-        }
-        Update: {
-          codigo?: string
-          codigo_aluno?: string
-          created_at?: string | null
-          expires_at?: string | null
-          id?: never
-          novo_valor?: string
-          tipo?: string
-          verificado?: boolean | null
         }
         Relationships: []
       }
