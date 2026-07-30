@@ -50,7 +50,11 @@ export const StepResponsavel = ({
   const set = (campo: keyof ResponsavelForm, valor: string) =>
     onChange({ ...form, [campo]: valor });
 
-  const bloqueado = (campo: keyof ResponsavelForm) => !!travados[campo] && !editando[campo];
+  // CPF de mãe/pai já cadastrado não pode ser corrigido
+  const naoCorrigivel = (campo: keyof ResponsavelForm) => campo === "cpf";
+
+  const bloqueado = (campo: keyof ResponsavelForm) =>
+    !!travados[campo] && (naoCorrigivel(campo) || !editando[campo]);
 
   const validar = () => {
     const e: Erros = {};
@@ -106,7 +110,7 @@ export const StepResponsavel = ({
     <div className="space-y-2">
       <div className="flex items-center justify-between gap-2">
         <Label htmlFor={`resp-${key}`}>{label}</Label>
-        {travados[key] && !editando[key] && (
+        {travados[key] && !naoCorrigivel(key) && !editando[key] && (
           <button
             type="button"
             onClick={() => setEditando((p) => ({ ...p, [key]: true }))}
@@ -125,6 +129,9 @@ export const StepResponsavel = ({
         className={bloqueado(key) ? "bg-muted" : undefined}
         onChange={(e) => set(key, props.mask ? props.mask(e.target.value) : e.target.value)}
       />
+      {key === "cpf" && travados.cpf && (
+        <p className="text-xs text-muted-foreground">CPF já cadastrado e não pode ser alterado.</p>
+      )}
       {erros[key] && <p className="text-xs text-destructive">{erros[key]}</p>}
     </div>
   );
