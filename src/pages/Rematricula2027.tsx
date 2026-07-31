@@ -113,6 +113,7 @@ const Rematricula2027 = () => {
       [`logradouro_${sufixo}`]: f.logradouro,
       [`numero_${sufixo}`]: f.numero,
       [`complemento_${sufixo}`]: f.complemento,
+      [`bairro_${sufixo}`]: f.bairro,
       [`cidade_${sufixo}`]: f.cidade,
       [`estado_${sufixo}`]: f.estado,
       [`data_nascimento_${sufixo}`]: brToIso(f.data_nascimento) || "",
