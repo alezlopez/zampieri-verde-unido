@@ -68,6 +68,7 @@ export const StepResponsavel = ({
       "cep",
       "logradouro",
       "numero",
+      "bairro",
       "cidade",
       "estado",
       "data_nascimento",
