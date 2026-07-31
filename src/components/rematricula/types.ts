@@ -67,6 +67,7 @@ export interface ResponsavelForm {
   logradouro: string;
   numero: string;
   complemento: string;
+  bairro: string;
   cidade: string;
   estado: string;
   data_nascimento: string; // dd/mm/aaaa
