@@ -1,0 +1,178 @@
+import { createClient } from "npm:@supabase/supabase-js@2";
+import { corsHeaders } from "../_shared/cors.ts";
+
+const ZAPSIGN_URL = "https://api.zapsign.com.br/api/v1/models/create-doc/";
+const TEMPLATE_ID = "bef1f2c6-bd16-458e-8fa7-f8bd0b907f6a";
+
+const brl = (v: unknown) => {
+  const n = Number(v);
+  if (!isFinite(n) || v === null || v === undefined || v === "") return "";
+  return n.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
+};
+
+const isoToBr = (v: unknown) => {
+  const s = String(v ?? "").slice(0, 10);
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(s)) return "";
+  return s.split("-").reverse().join("/");
+};
+
+const digits = (v: unknown) => String(v ?? "").replace(/\D/g, "");
+
+const maskCpf = (v: unknown) => {
+  const d = digits(v);
+  if (d.length !== 11) return String(v ?? "");
+  return `${d.slice(0, 3)}.${d.slice(3, 6)}.${d.slice(6, 9)}-${d.slice(9)}`;
+};
+
+const maskCep = (v: unknown) => {
+  const d = digits(v);
+  if (d.length !== 8) return String(v ?? "");
+  return `${d.slice(0, 5)}-${d.slice(5)}`;
+};
+
+const maskTel = (v: unknown) => {
+  const d = digits(v);
+  if (d.length === 11) return `(${d.slice(0, 2)}) ${d.slice(2, 7)}-${d.slice(7)}`;
+  if (d.length === 10) return `(${d.slice(0, 2)}) ${d.slice(2, 6)}-${d.slice(6)}`;
+  return String(v ?? "");
+};
+
+Deno.serve(async (req) => {
+  if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
+
+  const json = (body: unknown, status = 200) =>
+    new Response(JSON.stringify(body), {
+      status,
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
+    });
+
+  try {
+    const token = Deno.env.get("ZAPSIGN_API_TOKEN");
+    if (!token) return json({ error: "ZAPSIGN_API_TOKEN não configurado" }, 500);
+
+    const body = await req.json().catch(() => ({}));
+    const idAluno = Number(body?.id_aluno);
+    const dataNascimento = String(body?.data_nascimento ?? "").slice(0, 10);
+
+    if (!Number.isFinite(idAluno) || !/^\d{4}-\d{2}-\d{2}$/.test(dataNascimento)) {
+      return json({ error: "Parâmetros inválidos" }, 400);
+    }
+
+    const supabase = createClient(
+      Deno.env.get("SUPABASE_URL")!,
+      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
+      { auth: { persistSession: false } },
+    );
+
+    const { data: a, error } = await supabase
+      .from("alunos_rematricula_2027")
+      .select("*")
+      .eq("id_aluno", idAluno)
+      .eq("data_nascimento_aluno", dataNascimento)
+      .maybeSingle();
+
+    if (error) return json({ error: "Erro ao consultar aluno" }, 500);
+    if (!a) return json({ error: "Aluno não encontrado" }, 404);
+
+    // Responsável financeiro escolhido no formulário ("mãe" ou "pai")
+    const respRaw = String(a.responsavel_financeiro ?? "").toLowerCase();
+    const ehMae = respRaw.startsWith("m");
+    const p = (base: string) => a[`${base}_${ehMae ? "mae" : "pai"}` as keyof typeof a];
+
+    const nomeResp = String(p("nome") ?? "");
+    const emailResp = String(p("email") ?? "");
+    const celResp = digits(p("celular"));
+    const enderecoResp = [p("logradouro"), p("numero"), p("complemento")]
+      .filter((x) => String(x ?? "").trim())
+      .join(", ");
+
+    const vars: Record<string, string> = {
+      curso_2027: String(a.curso_2027 ?? ""),
+      anuidade_total: String(a.anuidade_total ?? ""),
+      anuidade_total_ext: String(a.anuidade_total_ext ?? ""),
+      valor_pri_parcela: String(a.valor_pri_parcela ?? ""),
+      valor_pri_parcela_txt: String(a.valor_pri_parcela_ext ?? ""),
+      percentual_desconto: `${Number(a.percentual_desconto ?? 0)}%`,
+      percentual_desconto_ext: String(a.percentual_desconto_ext ?? ""),
+      dia_vencimento: String(a.dia_vencimento ?? ""),
+      valor_com_desconto: brl(a.valor_com_desconto),
+      valor_com_desconto_ext: String(a.valor_com_desconto_ext ?? ""),
+      data_atual: new Date().toLocaleDateString("pt-BR", { timeZone: "America/Sao_Paulo" }),
+
+      responsavel_financeiro: nomeResp,
+      cpf_responsavel_financeiro: maskCpf(p("cpf")),
+      est_civil_responsavel_financeiro: String(p("estado_civil") ?? ""),
+      prof_responsavel_financeiro: "",
+      rg_responsavel_financeiro: String(p("rg") ?? ""),
+      data_nasc_responsavel_financeiro: isoToBr(p("data_nascimento")),
+      nat_responsavel_financeiro: String(p("naturalidade") ?? ""),
+      celular_responsavel_financeiro: maskTel(celResp),
+      email_responsavel_financeiro: emailResp,
+      endereco_res_responsavel_financeiro: enderecoResp,
+      bairro_res_responsavel_financeiro: String(p("bairro") ?? ""),
+      cidade_res_responsavel_financeiro: [p("cidade"), p("estado")]
+        .filter((x) => String(x ?? "").trim())
+        .join(" - "),
+      cep_res_responsavel_financeiro: maskCep(p("cep")),
+      endereco_responsavel_financeiro: enderecoResp,
+      bairro_responsavel_financeiro: String(p("bairro") ?? ""),
+      cidade_responsavel_financeiro: [p("cidade"), p("estado")]
+        .filter((x) => String(x ?? "").trim())
+        .join(" - "),
+      cep_responsavel_financeiro: maskCep(p("cep")),
+
+      aluno: String(a.nome_aluno ?? ""),
+      nome_aluno: String(a.nome_aluno ?? ""),
+      data_nasc_aluno: isoToBr(a.data_nascimento_aluno),
+      data_nascimento_aluno: isoToBr(a.data_nascimento_aluno),
+      id_aluno: String(a.id_aluno ?? ""),
+      turno_escolhido: String(a.turno_escolhido ?? ""),
+
+      nome_pai: String(a.nome_pai ?? ""),
+      cpf_pai: maskCpf(a.cpf_pai),
+      celular_pai: maskTel(a.celular_pai),
+      email_pai: String(a.email_pai ?? ""),
+      nome_mae: String(a.nome_mae ?? ""),
+      cpf_mae: maskCpf(a.cpf_mae),
+      celular_mae: maskTel(a.celular_mae),
+      email_mae: String(a.email_mae ?? ""),
+    };
+
+    const payload = {
+      template_id: TEMPLATE_ID,
+      signer_name: nomeResp || String(a.nome_aluno ?? "Responsável"),
+      signer_email: emailResp || undefined,
+      signer_phone_country: celResp ? "55" : undefined,
+      signer_phone_number: celResp || undefined,
+      lang: "pt-br",
+      external_id: String(a.id_aluno ?? ""),
+      folder_path: "/rematricula-2027/",
+      send_automatic_email: false,
+      data: Object.entries(vars).map(([de, para]) => ({ de: `{{${de}}}`, para })),
+    };
+
+    const resp = await fetch(ZAPSIGN_URL, {
+      method: "POST",
+      headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    });
+
+    const result = await resp.json().catch(() => null);
+    if (!resp.ok) {
+      console.error("ZapSign erro", resp.status, JSON.stringify(result));
+      return json({ error: "Falha ao gerar contrato", detalhe: result }, 502);
+    }
+
+    const signUrl = result?.signers?.[0]?.sign_url ?? null;
+
+    await supabase
+      .from("alunos_rematricula_2027")
+      .update({ contrato_gerado: true })
+      .eq("id_aluno", idAluno);
+
+    return json({ success: true, sign_url: signUrl, token: result?.token ?? null });
+  } catch (e) {
+    console.error("zapsign-gerar-contrato", e);
+    return json({ error: "Erro inesperado" }, 500);
+  }
+});
