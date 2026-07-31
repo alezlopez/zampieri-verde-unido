@@ -95,6 +95,7 @@ export const StepResponsavel = ({
         onChange({
           ...next,
           logradouro: end.logradouro || next.logradouro,
+          bairro: end.bairro || next.bairro,
           cidade: end.cidade || next.cidade,
           estado: end.estado || next.estado,
         });
