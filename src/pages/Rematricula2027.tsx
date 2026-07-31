@@ -63,7 +63,9 @@ const Rematricula2027 = () => {
   const [turno, setTurno] = useState("");
   const [responsavel, setResponsavel] = useState("");
   const [salvando, setSalvando] = useState(false);
+  const [linkContrato, setLinkContrato] = useState<string | null>(null);
   const [erroSalvar, setErroSalvar] = useState<string | null>(null);
+
 
   const incluiMae = !!aluno && temResponsavel(aluno.tem_mae);
   const incluiPai = !!aluno && temResponsavel(aluno.tem_pai);
@@ -147,7 +149,13 @@ const Rematricula2027 = () => {
       return;
     }
     setFase("sucesso");
+
+    const { data: contrato } = await supabase.functions.invoke("zapsign-gerar-contrato", {
+      body: { id_aluno: aluno.id_aluno, data_nascimento: dataIso },
+    });
+    setLinkContrato((contrato as { sign_url?: string } | null)?.sign_url ?? null);
   };
+
 
   return (
     <div className="min-h-screen bg-zampieri-cream/30">
@@ -250,8 +258,14 @@ const Rematricula2027 = () => {
           )}
 
           {fase === "sucesso" && aluno && (
-            <StepSucesso nomeAluno={aluno.nome_aluno} curso={aluno.curso_2027} turno={turno} />
+            <StepSucesso
+              nomeAluno={aluno.nome_aluno}
+              curso={aluno.curso_2027}
+              turno={turno}
+              linkContrato={linkContrato}
+            />
           )}
+
         </section>
 
         <p className="text-center text-xs text-muted-foreground mt-6">
