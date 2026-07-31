@@ -17,6 +17,8 @@ interface Props {
 export const StepAluno = ({ aluno, cpf, semCpf, onChange, onVoltar, onAvancar }: Props) => {
   const [erro, setErro] = useState<string | null>(null);
   const cpfJaCadastrado = !!aluno.cpf_aluno;
+  const digitos = cpf.replace(/\D/g, "");
+  const cpfInvalido = !cpfJaCadastrado && !semCpf && digitos.length === 11 && !isValidCpf(cpf);
 
   const avancar = () => {
     if (!cpfJaCadastrado && !semCpf) {
@@ -65,13 +67,24 @@ export const StepAluno = ({ aluno, cpf, semCpf, onChange, onVoltar, onAvancar }:
                 placeholder="000.000.000-00"
                 value={cpf}
                 disabled={semCpf}
-                onChange={(e) => onChange({ cpf: maskCpf(e.target.value), semCpf })}
+                aria-invalid={cpfInvalido}
+                className={cpfInvalido ? "border-destructive" : undefined}
+                onChange={(e) => {
+                  setErro(null);
+                  onChange({ cpf: maskCpf(e.target.value), semCpf });
+                }}
               />
+              {cpfInvalido && (
+                <p className="text-sm text-destructive">CPF inválido. Confira os números digitados.</p>
+              )}
               <label className="flex items-center gap-2 text-sm text-muted-foreground cursor-pointer pt-1">
                 <input
                   type="checkbox"
                   checked={semCpf}
-                  onChange={(e) => onChange({ cpf: e.target.checked ? "" : cpf, semCpf: e.target.checked })}
+                  onChange={(e) => {
+                    setErro(null);
+                    onChange({ cpf: e.target.checked ? "" : cpf, semCpf: e.target.checked });
+                  }}
                   className="h-4 w-4 accent-[hsl(var(--primary))]"
                 />
                 O aluno não possui CPF
