@@ -235,7 +235,8 @@ export const StepResponsavel = ({
           {campo("complemento", "Complemento (opcional)")}
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          {campo("bairro", "Bairro")}
           {campo("cidade", "Cidade")}
           {campo("estado", "Estado (UF)", { placeholder: "SP" })}
         </div>
