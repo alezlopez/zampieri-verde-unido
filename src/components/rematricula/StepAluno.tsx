@@ -17,6 +17,8 @@ interface Props {
 export const StepAluno = ({ aluno, cpf, semCpf, onChange, onVoltar, onAvancar }: Props) => {
   const [erro, setErro] = useState<string | null>(null);
   const cpfJaCadastrado = !!aluno.cpf_aluno;
+  const digitos = cpf.replace(/\D/g, "");
+  const cpfInvalido = !cpfJaCadastrado && !semCpf && digitos.length === 11 && !isValidCpf(cpf);
 
   const avancar = () => {
     if (!cpfJaCadastrado && !semCpf) {
