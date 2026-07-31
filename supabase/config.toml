@@ -13,3 +13,6 @@ verify_jwt = false
 
 [functions.zapsign-gerar-contrato]
 verify_jwt = false
+
+[functions.zapsign-webhook]
+verify_jwt = false
