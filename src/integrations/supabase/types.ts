@@ -70,6 +70,8 @@ export type Database = {
       }
       alunos_rematricula_2027: {
         Row: {
+          anuidade_total: string | null
+          anuidade_total_ext: string | null
           bairro_mae: string | null
           bairro_pai: string | null
           celular_mae: string | null
@@ -80,6 +82,8 @@ export type Database = {
           cidade_pai: string | null
           complemento_mae: string | null
           complemento_pai: string | null
+          contrato_assinado: boolean | null
+          contrato_gerado: boolean | null
           cpf_aluno: string | null
           cpf_mae: string | null
           cpf_pai: string | null
@@ -109,6 +113,7 @@ export type Database = {
           numero_mae: string | null
           numero_pai: string | null
           percentual_desconto: number
+          percentual_desconto_ext: string | null
           responsavel_financeiro: string | null
           rg_mae: string | null
           rg_pai: string | null
@@ -118,8 +123,13 @@ export type Database = {
           updated_at: string | null
           valor_cheio: number | null
           valor_com_desconto: number
+          valor_com_desconto_ext: string | null
+          valor_pri_parcela: string | null
+          valor_pri_parcela_ext: string | null
         }
         Insert: {
+          anuidade_total?: string | null
+          anuidade_total_ext?: string | null
           bairro_mae?: string | null
           bairro_pai?: string | null
           celular_mae?: string | null
@@ -130,6 +140,8 @@ export type Database = {
           cidade_pai?: string | null
           complemento_mae?: string | null
           complemento_pai?: string | null
+          contrato_assinado?: boolean | null
+          contrato_gerado?: boolean | null
           cpf_aluno?: string | null
           cpf_mae?: string | null
           cpf_pai?: string | null
@@ -159,6 +171,7 @@ export type Database = {
           numero_mae?: string | null
           numero_pai?: string | null
           percentual_desconto: number
+          percentual_desconto_ext?: string | null
           responsavel_financeiro?: string | null
           rg_mae?: string | null
           rg_pai?: string | null
@@ -168,8 +181,13 @@ export type Database = {
           updated_at?: string | null
           valor_cheio?: number | null
           valor_com_desconto: number
+          valor_com_desconto_ext?: string | null
+          valor_pri_parcela?: string | null
+          valor_pri_parcela_ext?: string | null
         }
         Update: {
+          anuidade_total?: string | null
+          anuidade_total_ext?: string | null
           bairro_mae?: string | null
           bairro_pai?: string | null
           celular_mae?: string | null
@@ -180,6 +198,8 @@ export type Database = {
           cidade_pai?: string | null
           complemento_mae?: string | null
           complemento_pai?: string | null
+          contrato_assinado?: boolean | null
+          contrato_gerado?: boolean | null
           cpf_aluno?: string | null
           cpf_mae?: string | null
           cpf_pai?: string | null
@@ -209,6 +229,7 @@ export type Database = {
           numero_mae?: string | null
           numero_pai?: string | null
           percentual_desconto?: number
+          percentual_desconto_ext?: string | null
           responsavel_financeiro?: string | null
           rg_mae?: string | null
           rg_pai?: string | null
@@ -218,6 +239,9 @@ export type Database = {
           updated_at?: string | null
           valor_cheio?: number | null
           valor_com_desconto?: number
+          valor_com_desconto_ext?: string | null
+          valor_pri_parcela?: string | null
+          valor_pri_parcela_ext?: string | null
         }
         Relationships: []
       }
