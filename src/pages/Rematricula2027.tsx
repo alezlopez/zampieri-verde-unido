@@ -149,7 +149,13 @@ const Rematricula2027 = () => {
       return;
     }
     setFase("sucesso");
+
+    const { data: contrato } = await supabase.functions.invoke("zapsign-gerar-contrato", {
+      body: { id_aluno: aluno.id_aluno, data_nascimento: dataIso },
+    });
+    setLinkContrato((contrato as { sign_url?: string } | null)?.sign_url ?? null);
   };
+
 
   return (
     <div className="min-h-screen bg-zampieri-cream/30">
