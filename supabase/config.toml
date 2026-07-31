@@ -10,3 +10,6 @@ verify_jwt = false
 [functions.resumo-diario-vendas]
 verify_jwt = false
 
+
+[functions.zapsign-gerar-contrato]
+verify_jwt = false

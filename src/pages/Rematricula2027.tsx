@@ -63,7 +63,9 @@ const Rematricula2027 = () => {
   const [turno, setTurno] = useState("");
   const [responsavel, setResponsavel] = useState("");
   const [salvando, setSalvando] = useState(false);
+  const [linkContrato, setLinkContrato] = useState<string | null>(null);
   const [erroSalvar, setErroSalvar] = useState<string | null>(null);
+
 
   const incluiMae = !!aluno && temResponsavel(aluno.tem_mae);
   const incluiPai = !!aluno && temResponsavel(aluno.tem_pai);
