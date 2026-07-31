@@ -104,11 +104,16 @@ export const StepResponsavel = ({
     }
   };
 
+  const cpfInvalidoLive =
+    !travados.cpf && onlyDigits(form.cpf).length === 11 && !isValidCpf(form.cpf);
+
   const campo = (
     key: keyof ResponsavelForm,
     label: string,
     props: { placeholder?: string; mask?: (v: string) => string; inputMode?: "numeric" | "text" | "email" } = {}
-  ) => (
+  ) => {
+    const invalido = key === "cpf" && cpfInvalidoLive;
+    return (
     <div className="space-y-2">
       <div className="flex items-center justify-between gap-2">
         <Label htmlFor={`resp-${key}`}>{label}</Label>
@@ -128,15 +133,23 @@ export const StepResponsavel = ({
         inputMode={props.inputMode}
         value={form[key]}
         readOnly={bloqueado(key)}
-        className={bloqueado(key) ? "bg-muted" : undefined}
-        onChange={(e) => set(key, props.mask ? props.mask(e.target.value) : e.target.value)}
+        aria-invalid={invalido || undefined}
+        className={bloqueado(key) ? "bg-muted" : invalido ? "border-destructive" : undefined}
+        onChange={(e) => {
+          if (erros[key]) setErros((p) => ({ ...p, [key]: undefined }));
+          set(key, props.mask ? props.mask(e.target.value) : e.target.value);
+        }}
       />
       {key === "cpf" && travados.cpf && (
         <p className="text-xs text-muted-foreground">CPF já cadastrado e não pode ser alterado.</p>
       )}
+      {invalido && !erros.cpf && (
+        <p className="text-xs text-destructive">CPF inválido. Confira os números digitados.</p>
+      )}
       {erros[key] && <p className="text-xs text-destructive">{erros[key]}</p>}
     </div>
-  );
+    );
+  };
 
   return (
     <div className="space-y-5">
