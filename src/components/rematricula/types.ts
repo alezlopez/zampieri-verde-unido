@@ -86,6 +86,7 @@ export const emptyResponsavel = (): ResponsavelForm => ({
   logradouro: "",
   numero: "",
   complemento: "",
+  bairro: "",
   cidade: "",
   estado: "",
   data_nascimento: "",
