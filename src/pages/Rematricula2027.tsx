@@ -258,8 +258,14 @@ const Rematricula2027 = () => {
           )}
 
           {fase === "sucesso" && aluno && (
-            <StepSucesso nomeAluno={aluno.nome_aluno} curso={aluno.curso_2027} turno={turno} />
+            <StepSucesso
+              nomeAluno={aluno.nome_aluno}
+              curso={aluno.curso_2027}
+              turno={turno}
+              linkContrato={linkContrato}
+            />
           )}
+
         </section>
 
         <p className="text-center text-xs text-muted-foreground mt-6">
