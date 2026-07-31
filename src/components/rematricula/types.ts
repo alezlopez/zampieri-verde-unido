@@ -46,6 +46,7 @@ export interface AlunoCompleto {
   logradouro_mae: string | null;
   numero_mae: string | null;
   complemento_mae: string | null;
+  bairro_mae: string | null;
   cidade_mae: string | null;
   estado_mae: string | null;
   data_nascimento_mae: string | null;
