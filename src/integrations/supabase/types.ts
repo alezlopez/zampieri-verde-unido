@@ -70,6 +70,8 @@ export type Database = {
       }
       alunos_rematricula_2027: {
         Row: {
+          bairro_mae: string | null
+          bairro_pai: string | null
           celular_mae: string | null
           celular_pai: string | null
           cep_mae: string | null
@@ -118,6 +120,8 @@ export type Database = {
           valor_com_desconto: number
         }
         Insert: {
+          bairro_mae?: string | null
+          bairro_pai?: string | null
           celular_mae?: string | null
           celular_pai?: string | null
           cep_mae?: string | null
@@ -166,6 +170,8 @@ export type Database = {
           valor_com_desconto: number
         }
         Update: {
+          bairro_mae?: string | null
+          bairro_pai?: string | null
           celular_mae?: string | null
           celular_pai?: string | null
           cep_mae?: string | null
@@ -509,6 +515,36 @@ export type Database = {
           cod_discplina?: number | null
           disciplina?: string
           id?: number
+        }
+        Relationships: []
+      }
+      enderecos_27: {
+        Row: {
+          bairro: string | null
+          CEP: string | null
+          cidade: string | null
+          codigo_aluno: number
+          complemento: string | null
+          endereco: string | null
+          numero: string | null
+        }
+        Insert: {
+          bairro?: string | null
+          CEP?: string | null
+          cidade?: string | null
+          codigo_aluno?: number
+          complemento?: string | null
+          endereco?: string | null
+          numero?: string | null
+        }
+        Update: {
+          bairro?: string | null
+          CEP?: string | null
+          cidade?: string | null
+          codigo_aluno?: number
+          complemento?: string | null
+          endereco?: string | null
+          numero?: string | null
         }
         Relationships: []
       }
