@@ -29,6 +29,7 @@ export interface AlunoCompleto {
   logradouro_pai: string | null;
   numero_pai: string | null;
   complemento_pai: string | null;
+  bairro_pai: string | null;
   cidade_pai: string | null;
   estado_pai: string | null;
   data_nascimento_pai: string | null;
@@ -45,6 +46,7 @@ export interface AlunoCompleto {
   logradouro_mae: string | null;
   numero_mae: string | null;
   complemento_mae: string | null;
+  bairro_mae: string | null;
   cidade_mae: string | null;
   estado_mae: string | null;
   data_nascimento_mae: string | null;
@@ -65,6 +67,7 @@ export interface ResponsavelForm {
   logradouro: string;
   numero: string;
   complemento: string;
+  bairro: string;
   cidade: string;
   estado: string;
   data_nascimento: string; // dd/mm/aaaa
@@ -83,6 +86,7 @@ export const emptyResponsavel = (): ResponsavelForm => ({
   logradouro: "",
   numero: "",
   complemento: "",
+  bairro: "",
   cidade: "",
   estado: "",
   data_nascimento: "",

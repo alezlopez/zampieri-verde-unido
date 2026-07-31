@@ -518,36 +518,6 @@ export type Database = {
         }
         Relationships: []
       }
-      enderecos_27: {
-        Row: {
-          bairro: string | null
-          CEP: string | null
-          cidade: string | null
-          codigo_aluno: number
-          complemento: string | null
-          endereco: string | null
-          numero: string | null
-        }
-        Insert: {
-          bairro?: string | null
-          CEP?: string | null
-          cidade?: string | null
-          codigo_aluno?: number
-          complemento?: string | null
-          endereco?: string | null
-          numero?: string | null
-        }
-        Update: {
-          bairro?: string | null
-          CEP?: string | null
-          cidade?: string | null
-          codigo_aluno?: number
-          complemento?: string | null
-          endereco?: string | null
-          numero?: string | null
-        }
-        Relationships: []
-      }
       evento_produtos: {
         Row: {
           ativo: boolean
@@ -1833,6 +1803,8 @@ export type Database = {
       rematricula_2027_abrir: {
         Args: { p_data_nascimento: string; p_id_aluno: number }
         Returns: {
+          bairro_mae: string
+          bairro_pai: string
           celular_mae: string
           celular_pai: string
           cep_mae: string

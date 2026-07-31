@@ -66,6 +66,7 @@ export async function buscarCep(cep: string) {
     if (json?.erro) return null;
     return {
       logradouro: json.logradouro as string,
+      bairro: json.bairro as string,
       cidade: json.localidade as string,
       estado: json.uf as string,
     };
