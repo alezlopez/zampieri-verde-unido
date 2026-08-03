@@ -2,7 +2,6 @@ import { createClient } from "npm:@supabase/supabase-js@2";
 import { corsHeaders } from "../_shared/cors.ts";
 
 const ZAPSIGN_PRODUCTION_URL = "https://api.zapsign.com.br/api/v1/models/create-doc/";
-const ZAPSIGN_SANDBOX_URL = "https://sandbox.api.zapsign.com.br/api/v1/models/create-doc/";
 const TEMPLATE_ID = "bef1f2c6-bd16-458e-8fa7-f8bd0b907f6a";
 
 const brl = (v: unknown) => {
