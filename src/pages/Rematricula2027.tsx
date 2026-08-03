@@ -321,7 +321,14 @@ const Rematricula2027 = () => {
               linkContrato={linkContrato}
               jaAssinado={jaAssinado}
               retomada={retomada}
+              idAluno={aluno.id_aluno}
+              dataNascimento={dataIso}
+              status={status}
+              verificando={verificando}
+              onVerificar={() => carregarStatus(aluno.id_aluno, dataIso)}
+              aguardandoPagamento={aguardandoPagamento && !status?.rematricula_concluida}
             />
+
           )}
 
 
