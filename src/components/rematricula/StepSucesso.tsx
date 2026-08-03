@@ -162,4 +162,5 @@ export const StepSucesso = ({
       </Link>
     </div>
   </div>
-);
+  );
+};
