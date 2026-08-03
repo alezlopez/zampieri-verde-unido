@@ -101,13 +101,24 @@ export const StepPagamento = ({
         origin: window.location.origin,
       },
     });
-    const res = data as { checkout_url?: string; error?: string } | null;
+    let res = data as { checkout_url?: string; error?: string } | null;
+    if (!res && error) {
+      try {
+        const ctx = (error as any)?.context;
+        if (ctx && typeof ctx.json === "function") res = await ctx.json();
+      } catch { /* ignore */ }
+    }
     if (error || !res?.checkout_url) {
       setEnviando(false);
+      const code = res?.error;
       setErro(
-        res?.error === "contrato_nao_assinado"
+        code === "contrato_nao_assinado"
           ? "O contrato ainda não consta como assinado."
-          : "Não foi possível abrir o pagamento. Tente novamente em instantes.",
+          : code === "ja_pago"
+            ? "Esta rematrícula já consta como paga."
+            : code
+              ? `Não foi possível abrir o pagamento: ${code}`
+              : "Não foi possível abrir o pagamento. Tente novamente em instantes.",
       );
       return;
     }

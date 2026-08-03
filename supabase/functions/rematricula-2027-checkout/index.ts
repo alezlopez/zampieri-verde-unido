@@ -134,7 +134,8 @@ Deno.serve(async (req) => {
     const checkout = await createCheckout({
       customer: customerId,
       billingTypes: forma === "pix" ? ["PIX"] : ["CREDIT_CARD"],
-      chargeTypes: isParcelado ? ["INSTALLMENT"] : ["DETACHED"],
+      // Asaas exige DETACHED junto com INSTALLMENT
+      chargeTypes: isParcelado ? ["DETACHED", "INSTALLMENT"] : ["DETACHED"],
       items: [{
         name: "Rematricula 2027",
         description: `Rematrícula 2027 - ${aluno.nome_aluno} (${aluno.curso_2027})`,
