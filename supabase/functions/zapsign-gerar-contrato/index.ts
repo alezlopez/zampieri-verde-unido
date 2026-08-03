@@ -47,14 +47,9 @@ Deno.serve(async (req) => {
     });
 
   try {
-    const isSandbox = Deno.env.get("ZAPSIGN_SANDBOX") === "true";
-    const token = Deno.env.get(isSandbox ? "ZAPSIGN_SANDBOX_API_TOKEN" : "ZAPSIGN_API_TOKEN");
+    const token = Deno.env.get("ZAPSIGN_API_TOKEN");
     if (!token) {
-      return json({
-        error: isSandbox
-          ? "ZAPSIGN_SANDBOX_API_TOKEN não configurado"
-          : "ZAPSIGN_API_TOKEN não configurado",
-      }, 500);
+      return json({ error: "ZAPSIGN_API_TOKEN não configurado" }, 500);
     }
 
     const body = await req.json().catch(() => ({}));
