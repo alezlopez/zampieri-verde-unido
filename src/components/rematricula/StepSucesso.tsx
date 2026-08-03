@@ -61,7 +61,7 @@ export const StepSucesso = ({
       )}
     </p>
 
-    {jaAssinado ? null : linkContrato ? (
+    {jaAssinado || status?.contrato_assinado ? null : linkContrato ? (
       <div className="rounded-lg border border-zampieri-gold bg-zampieri-cream/50 p-4 max-w-md mx-auto space-y-3">
         <p className="text-sm font-medium text-zampieri-green-dark">Seu contrato está pronto para assinatura.</p>
         <a href={linkContrato} target="_blank" rel="noopener noreferrer">
@@ -76,6 +76,19 @@ export const StepSucesso = ({
         <Loader2 className="w-4 h-4 animate-spin" /> Gerando contrato…
       </div>
     )}
+
+    <div className="max-w-md mx-auto">
+      <StepPagamento
+        idAluno={idAluno}
+        dataNascimento={dataNascimento}
+        status={status}
+        verificando={verificando}
+        onVerificar={onVerificar}
+        aguardandoPagamento={aguardandoPagamento}
+      />
+    </div>
+
+
 
 
     <div className="flex flex-col sm:flex-row gap-2 justify-center pt-2">
