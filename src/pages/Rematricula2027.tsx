@@ -79,6 +79,13 @@ const Rematricula2027 = () => {
   const carregarStatus = useCallback(
     async (idAluno: number, iso: string) => {
       setVerificando(true);
+      // Sincroniza a assinatura direto na ZapSign (fallback caso o webhook não chegue)
+      await supabase.functions
+        .invoke("zapsign-verificar-assinatura", {
+          body: { id_aluno: idAluno, data_nascimento: iso },
+        })
+        .catch(() => null);
+
       const { data } = await supabase.rpc("rematricula_2027_status", {
         p_id_aluno: idAluno,
         p_data_nascimento: iso,
@@ -93,6 +100,7 @@ const Rematricula2027 = () => {
     },
     [],
   );
+
 
   // Polling enquanto o contrato não está assinado ou o pagamento não foi confirmado
   useEffect(() => {
