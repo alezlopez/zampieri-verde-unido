@@ -7,11 +7,23 @@ const FALLBACK_ORIGIN = "https://colegiozampieri.com.br";
 
 const digits = (v: unknown) => String(v ?? "").replace(/\D/g, "");
 
+// Allowlist explícita de destinos de redirecionamento pós-pagamento
+const HOSTS_PERMITIDOS = [
+  "colegiozampieri.com.br",
+  "site-zampieri.lovable.app",
+  "localhost",
+];
+
+const hostPermitido = (hostname: string) =>
+  HOSTS_PERMITIDOS.some((h) => hostname === h || hostname.endsWith(`.${h}`)) ||
+  hostname.endsWith(".lovable.app");
+
 const safeOrigin = (req: Request, bodyOrigin?: unknown) => {
   const raw = String(bodyOrigin ?? "") || req.headers.get("origin") || "";
   try {
     const u = new URL(raw);
     if (u.protocol !== "https:" && u.hostname !== "localhost") return FALLBACK_ORIGIN;
+    if (!hostPermitido(u.hostname)) return FALLBACK_ORIGIN;
     return u.origin;
   } catch {
     return FALLBACK_ORIGIN;
