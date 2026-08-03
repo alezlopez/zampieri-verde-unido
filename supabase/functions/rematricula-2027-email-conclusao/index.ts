@@ -32,7 +32,7 @@ Deno.serve(async (req) => {
     const { data: aluno, error } = await admin
       .from("alunos_rematricula_2027")
       .select(
-        "id_aluno, nome_aluno, curso_2027, turno_escolhido, valor_com_desconto, email_mae, email_pai, rematricula_concluida, email_conclusao_enviado_em",
+        "id_aluno, nome_aluno, curso_2027, turno_escolhido, valor_com_desconto, link_contrato, email_mae, email_pai, rematricula_concluida, email_conclusao_enviado_em",
       )
       .eq("id_aluno", idAluno)
       .maybeSingle();
@@ -64,6 +64,10 @@ Deno.serve(async (req) => {
             curso_2027: aluno.curso_2027 ?? "",
             turno_escolhido: aluno.turno_escolhido ?? "",
             valor_com_desconto: String(aluno.valor_com_desconto ?? ""),
+            link_contrato: aluno.link_contrato ?? "",
+            link_manual_familia:
+              Deno.env.get("LINK_MANUAL_FAMILIA") ?? "https://colegiozampieri.com.br",
+
           },
         },
       }),
