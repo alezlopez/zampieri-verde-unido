@@ -167,6 +167,16 @@ const Rematricula2027 = () => {
     setFase("aluno");
   };
 
+  const abrirComData = async (iso: string) => {
+    if (!resumo) return;
+    const { data } = await supabase.rpc("rematricula_2027_abrir", {
+      p_id_aluno: resumo.id_aluno,
+      p_data_nascimento: iso,
+    });
+    const row = (data as AlunoCompleto[] | null)?.[0];
+    if (row) abrirAluno(row, iso);
+  };
+
 
   const proximaDepoisAluno = () => setFase(incluiMae ? "mae" : incluiPai ? "pai" : "curso");
   const proximaDepoisMae = () => setFase(incluiPai ? "pai" : "curso");
