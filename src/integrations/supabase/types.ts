@@ -101,6 +101,7 @@ export type Database = {
           estado_mae: string | null
           estado_pai: string | null
           id_aluno: number
+          link_contrato: string | null
           logradouro_mae: string | null
           logradouro_pai: string | null
           nacionalidade_mae: string | null
@@ -126,6 +127,7 @@ export type Database = {
           valor_com_desconto_ext: string | null
           valor_pri_parcela: string | null
           valor_pri_parcela_ext: string | null
+          zapsign_token: string | null
         }
         Insert: {
           anuidade_total?: string | null
@@ -159,6 +161,7 @@ export type Database = {
           estado_mae?: string | null
           estado_pai?: string | null
           id_aluno: number
+          link_contrato?: string | null
           logradouro_mae?: string | null
           logradouro_pai?: string | null
           nacionalidade_mae?: string | null
@@ -184,6 +187,7 @@ export type Database = {
           valor_com_desconto_ext?: string | null
           valor_pri_parcela?: string | null
           valor_pri_parcela_ext?: string | null
+          zapsign_token?: string | null
         }
         Update: {
           anuidade_total?: string | null
@@ -217,6 +221,7 @@ export type Database = {
           estado_mae?: string | null
           estado_pai?: string | null
           id_aluno?: number
+          link_contrato?: string | null
           logradouro_mae?: string | null
           logradouro_pai?: string | null
           nacionalidade_mae?: string | null
@@ -242,6 +247,7 @@ export type Database = {
           valor_com_desconto_ext?: string | null
           valor_pri_parcela?: string | null
           valor_pri_parcela_ext?: string | null
+          zapsign_token?: string | null
         }
         Relationships: []
       }
@@ -1840,6 +1846,8 @@ export type Database = {
           cidade_pai: string
           complemento_mae: string
           complemento_pai: string
+          contrato_assinado: boolean
+          contrato_gerado: boolean
           cpf_aluno: string
           cpf_mae: string
           cpf_pai: string
@@ -1856,6 +1864,7 @@ export type Database = {
           estado_mae: string
           estado_pai: string
           id_aluno: number
+          link_contrato: string
           logradouro_mae: string
           logradouro_pai: string
           nacionalidade_mae: string

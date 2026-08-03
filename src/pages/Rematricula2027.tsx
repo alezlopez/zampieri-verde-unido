@@ -65,6 +65,8 @@ const Rematricula2027 = () => {
   const [salvando, setSalvando] = useState(false);
   const [linkContrato, setLinkContrato] = useState<string | null>(null);
   const [erroSalvar, setErroSalvar] = useState<string | null>(null);
+  const [jaAssinado, setJaAssinado] = useState(false);
+  const [retomada, setRetomada] = useState(false);
 
 
   const incluiMae = !!aluno && temResponsavel(aluno.tem_mae);
@@ -91,8 +93,22 @@ const Rematricula2027 = () => {
     setTravPai(travadosDe(p));
     setTurno(dados.turno_escolhido || "");
     setResponsavel(dados.responsavel_financeiro || "");
+
+    // Contrato já gerado numa visita anterior: pula direto para a assinatura
+    if (dados.contrato_gerado && (dados.link_contrato || dados.contrato_assinado)) {
+      setLinkContrato(dados.link_contrato ?? null);
+      setJaAssinado(!!dados.contrato_assinado);
+      setRetomada(true);
+      setFase("sucesso");
+      return;
+    }
+
+    setLinkContrato(null);
+    setJaAssinado(false);
+    setRetomada(false);
     setFase("aluno");
   };
+
 
   const proximaDepoisAluno = () => setFase(incluiMae ? "mae" : incluiPai ? "pai" : "curso");
   const proximaDepoisMae = () => setFase(incluiPai ? "pai" : "curso");
@@ -263,8 +279,11 @@ const Rematricula2027 = () => {
               curso={aluno.curso_2027}
               turno={turno}
               linkContrato={linkContrato}
+              jaAssinado={jaAssinado}
+              retomada={retomada}
             />
           )}
+
 
         </section>
 
