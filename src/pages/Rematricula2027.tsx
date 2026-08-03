@@ -3,7 +3,8 @@ import { Link } from "react-router-dom";
 import logoZampieri from "@/assets/logo-zampieri.png";
 import { supabase } from "@/integrations/supabase/client";
 import { StepBusca } from "@/components/rematricula/StepBusca";
-import { StepIdentidade } from "@/components/rematricula/StepIdentidade";
+import { StepCanal, type CanalOtp } from "@/components/rematricula/StepCanal";
+import { StepCodigo } from "@/components/rematricula/StepCodigo";
 import { StepAluno } from "@/components/rematricula/StepAluno";
 import { StepResponsavel } from "@/components/rematricula/StepResponsavel";
 import { StepCurso } from "@/components/rematricula/StepCurso";
@@ -18,7 +19,8 @@ import {
 } from "@/components/rematricula/types";
 import { brToIso, isoToBr, maskCep, maskCpf, maskTelefone, onlyDigits } from "@/components/rematricula/utils";
 
-type Fase = "busca" | "identidade" | "aluno" | "mae" | "pai" | "curso" | "sucesso";
+type Fase = "busca" | "canal" | "codigo" | "aluno" | "mae" | "pai" | "curso" | "sucesso";
+
 
 const temResponsavel = (v?: string | null) => {
   const s = (v || "").trim().toLowerCase();
