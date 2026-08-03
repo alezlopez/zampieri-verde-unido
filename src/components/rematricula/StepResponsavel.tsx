@@ -113,9 +113,12 @@ export const StepResponsavel = ({
     if (!e.email && !isValidEmail(form.email)) e.email = "E-mail inválido";
     if (!e.celular && onlyDigits(form.celular).length < 10) e.celular = "Telefone incompleto";
     if (!e.data_nascimento && !brToIso(form.data_nascimento)) e.data_nascimento = "Data inválida";
+    if (!e.celular && celularPendente) e.celular = "Confirme o novo telefone com o código";
+    if (!e.email && emailPendente) e.email = "Confirme o novo e-mail com o código";
     setErros(e);
     if (Object.keys(e).length === 0) onAvancar();
   };
+
 
   const preencherCep = async (valor: string) => {
     const masked = maskCep(valor);
