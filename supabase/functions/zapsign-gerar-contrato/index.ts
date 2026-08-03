@@ -160,7 +160,7 @@ Deno.serve(async (req) => {
       external_id: String(a.id_aluno ?? ""),
       folder_path: "/rematricula-2027/",
       send_automatic_email: false,
-      ...(Deno.env.get("ZAPSIGN_SANDBOX") === "true" ? { sandbox: true } : {}),
+      sandbox: true,
       data: Object.entries(vars).map(([de, para]) => ({ de: `{{${de}}}`, para })),
     };
 
