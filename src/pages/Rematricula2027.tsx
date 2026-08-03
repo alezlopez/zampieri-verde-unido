@@ -56,6 +56,8 @@ const Rematricula2027 = () => {
   const [resumo, setResumo] = useState<AlunoResumo | null>(null);
   const [aluno, setAluno] = useState<AlunoCompleto | null>(null);
   const [dataIso, setDataIso] = useState("");
+  const [canal, setCanal] = useState<CanalOtp | null>(null);
+
 
   const [cpfAluno, setCpfAluno] = useState("");
   const [semCpf, setSemCpf] = useState(false);
