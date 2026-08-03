@@ -47,7 +47,12 @@ export const StepBusca = ({ onSelecionar }: Props) => {
     const { data, error } = await supabase.rpc("rematricula_2027_buscar", { p_termo: digitos });
     setLoading(false);
     if (error) {
-      setErro("Não foi possível consultar agora. Tente novamente em instantes.");
+      const msg = String(error.message || "");
+      setErro(
+        msg.includes("muitas_tentativas")
+          ? "Muitas consultas seguidas. Aguarde alguns minutos e tente novamente."
+          : "Não foi possível consultar agora. Tente novamente em instantes.",
+      );
       return;
     }
     setResultados((data as AlunoResumo[]) ?? []);

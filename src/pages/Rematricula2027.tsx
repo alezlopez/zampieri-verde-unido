@@ -235,10 +235,14 @@ const Rematricula2027 = () => {
     setSalvando(false);
     const res = (data as { success: boolean; message: string }[])?.[0];
     if (error || !res?.success) {
-      const msg = res?.message;
+      const msg = res?.message ?? "";
       setErroSalvar(
         msg === "sem_vagas" || msg === "turno_indisponivel"
           ? "O turno escolhido não tem mais vagas. Selecione outro turno."
+          : msg.startsWith("cpf_invalido")
+          ? `CPF inválido em ${msg.split(":")[1]?.replace("cpf_", "").replace("_", " ") ?? "um dos campos"}. Confira os dados.`
+          : msg.startsWith("email_invalido")
+          ? `E-mail inválido em ${msg.split(":")[1]?.replace("email_", "").replace("_", " ") ?? "um dos campos"}. Confira os dados.`
           : "Não foi possível salvar agora. Tente novamente em instantes."
       );
       return;
