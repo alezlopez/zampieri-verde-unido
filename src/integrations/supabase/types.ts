@@ -1530,6 +1530,27 @@ export type Database = {
         }
         Relationships: []
       }
+      rematricula_2027_rate_limit: {
+        Row: {
+          bucket: string
+          ip: string
+          janela: string
+          tentativas: number
+        }
+        Insert: {
+          bucket: string
+          ip: string
+          janela: string
+          tentativas?: number
+        }
+        Update: {
+          bucket?: string
+          ip?: string
+          janela?: string
+          tentativas?: number
+        }
+        Relationships: []
+      }
       rematricula_valores_2027: {
         Row: {
           ativo: boolean
@@ -1930,6 +1951,10 @@ export type Database = {
           nome_aluno: string
         }[]
       }
+      rematricula_2027_rate_hit: {
+        Args: { p_bucket: string; p_janela_seg: number; p_limite: number }
+        Returns: boolean
+      }
       rematricula_2027_salvar: {
         Args: { p_dados: Json; p_data_nascimento: string; p_id_aluno: number }
         Returns: {
@@ -2088,6 +2113,7 @@ export type Database = {
           isSetofReturn: true
         }
       }
+      valida_cpf: { Args: { p_cpf: string }; Returns: boolean }
       validar_meia_ingresso: {
         Args: { p_id: string }
         Returns: {
