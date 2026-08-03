@@ -1530,6 +1530,51 @@ export type Database = {
         }
         Relationships: []
       }
+      rematricula_2027_otp: {
+        Row: {
+          canal: string
+          chave: string | null
+          codigo_hash: string
+          consumido_em: string | null
+          created_at: string
+          destino_mascarado: string
+          expira_em: string
+          finalidade: string
+          id: string
+          id_aluno: number
+          ip: string | null
+          tentativas: number
+        }
+        Insert: {
+          canal: string
+          chave?: string | null
+          codigo_hash: string
+          consumido_em?: string | null
+          created_at?: string
+          destino_mascarado: string
+          expira_em: string
+          finalidade?: string
+          id?: string
+          id_aluno: number
+          ip?: string | null
+          tentativas?: number
+        }
+        Update: {
+          canal?: string
+          chave?: string | null
+          codigo_hash?: string
+          consumido_em?: string | null
+          created_at?: string
+          destino_mascarado?: string
+          expira_em?: string
+          finalidade?: string
+          id?: string
+          id_aluno?: number
+          ip?: string | null
+          tentativas?: number
+        }
+        Relationships: []
+      }
       rematricula_2027_rate_limit: {
         Row: {
           bucket: string
@@ -1949,6 +1994,14 @@ export type Database = {
           curso_atual: string
           id_aluno: number
           nome_aluno: string
+        }[]
+      }
+      rematricula_2027_canais: {
+        Args: { p_id_aluno: number }
+        Returns: {
+          canal: string
+          chave: string
+          rotulo: string
         }[]
       }
       rematricula_2027_rate_hit: {
