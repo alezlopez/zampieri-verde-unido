@@ -65,6 +65,9 @@ Deno.serve(async (req) => {
             turno_escolhido: aluno.turno_escolhido ?? "",
             valor_com_desconto: String(aluno.valor_com_desconto ?? ""),
             link_contrato: aluno.link_contrato ?? "",
+            link_manual_familia:
+              Deno.env.get("LINK_MANUAL_FAMILIA") ?? "https://colegiozampieri.com.br",
+
           },
         },
       }),
