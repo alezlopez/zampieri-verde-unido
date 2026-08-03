@@ -135,7 +135,11 @@ const Rematricula2027 = () => {
     setResponsavel(dados.responsavel_financeiro || "");
 
     // Contrato já gerado numa visita anterior: pula direto para a assinatura
-    if (dados.contrato_gerado && (dados.link_contrato || dados.contrato_assinado)) {
+    if (
+      dados.rematricula_concluida ||
+      (dados.contrato_gerado && (dados.link_contrato || dados.contrato_assinado))
+    ) {
+
       setLinkContrato(dados.link_contrato ?? null);
       setJaAssinado(!!dados.contrato_assinado);
       setRetomada(true);
