@@ -1503,6 +1503,7 @@ export type Database = {
           promocao_ate: string | null
           updated_at: string
           valor_promocional: number | null
+          valor_promocional_pacelado: number | null
           valor_rematricula: number
         }
         Insert: {
@@ -1513,6 +1514,7 @@ export type Database = {
           promocao_ate?: string | null
           updated_at?: string
           valor_promocional?: number | null
+          valor_promocional_pacelado?: number | null
           valor_rematricula?: number
         }
         Update: {
@@ -1523,6 +1525,7 @@ export type Database = {
           promocao_ate?: string | null
           updated_at?: string
           valor_promocional?: number | null
+          valor_promocional_pacelado?: number | null
           valor_rematricula?: number
         }
         Relationships: []
