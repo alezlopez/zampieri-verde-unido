@@ -3,7 +3,8 @@ import { Link } from "react-router-dom";
 import logoZampieri from "@/assets/logo-zampieri.png";
 import { supabase } from "@/integrations/supabase/client";
 import { StepBusca } from "@/components/rematricula/StepBusca";
-import { StepIdentidade } from "@/components/rematricula/StepIdentidade";
+import { StepCanal, type CanalOtp } from "@/components/rematricula/StepCanal";
+import { StepCodigo } from "@/components/rematricula/StepCodigo";
 import { StepAluno } from "@/components/rematricula/StepAluno";
 import { StepResponsavel } from "@/components/rematricula/StepResponsavel";
 import { StepCurso } from "@/components/rematricula/StepCurso";
@@ -18,7 +19,8 @@ import {
 } from "@/components/rematricula/types";
 import { brToIso, isoToBr, maskCep, maskCpf, maskTelefone, onlyDigits } from "@/components/rematricula/utils";
 
-type Fase = "busca" | "identidade" | "aluno" | "mae" | "pai" | "curso" | "sucesso";
+type Fase = "busca" | "canal" | "codigo" | "aluno" | "mae" | "pai" | "curso" | "sucesso";
+
 
 const temResponsavel = (v?: string | null) => {
   const s = (v || "").trim().toLowerCase();
@@ -54,6 +56,8 @@ const Rematricula2027 = () => {
   const [resumo, setResumo] = useState<AlunoResumo | null>(null);
   const [aluno, setAluno] = useState<AlunoCompleto | null>(null);
   const [dataIso, setDataIso] = useState("");
+  const [canal, setCanal] = useState<CanalOtp | null>(null);
+
 
   const [cpfAluno, setCpfAluno] = useState("");
   const [semCpf, setSemCpf] = useState(false);
@@ -161,6 +165,16 @@ const Rematricula2027 = () => {
     setJaAssinado(false);
     setRetomada(false);
     setFase("aluno");
+  };
+
+  const abrirComData = async (iso: string) => {
+    if (!resumo) return;
+    const { data } = await supabase.rpc("rematricula_2027_abrir", {
+      p_id_aluno: resumo.id_aluno,
+      p_data_nascimento: iso,
+    });
+    const row = (data as AlunoCompleto[] | null)?.[0];
+    if (row) abrirAluno(row, iso);
   };
 
 
@@ -289,13 +303,30 @@ const Rematricula2027 = () => {
             <StepBusca
               onSelecionar={(a) => {
                 setResumo(a);
-                setFase("identidade");
+                setCanal(null);
+                setFase("canal");
               }}
             />
           )}
 
-          {fase === "identidade" && resumo && (
-            <StepIdentidade aluno={resumo} onVoltar={() => setFase("busca")} onLiberado={abrirAluno} />
+          {fase === "canal" && resumo && (
+            <StepCanal
+              aluno={resumo}
+              onVoltar={() => setFase("busca")}
+              onEnviado={(c) => {
+                setCanal(c);
+                setFase("codigo");
+              }}
+            />
+          )}
+
+          {fase === "codigo" && resumo && canal && (
+            <StepCodigo
+              aluno={resumo}
+              canal={canal}
+              onVoltar={() => setFase("canal")}
+              onValidado={abrirComData}
+            />
           )}
 
           {fase === "aluno" && aluno && (
@@ -307,7 +338,7 @@ const Rematricula2027 = () => {
                 setCpfAluno(cpf);
                 setSemCpf(s);
               }}
-              onVoltar={() => setFase("identidade")}
+              onVoltar={() => setFase("busca")}
               onAvancar={proximaDepoisAluno}
             />
           )}
@@ -318,6 +349,9 @@ const Rematricula2027 = () => {
               descricao="Complete os campos que estiverem em branco."
               form={mae}
               travados={travMae}
+              idAluno={aluno?.id_aluno ?? 0}
+              celularOriginal={maskTelefone(aluno?.celular_mae || "")}
+              emailOriginal={aluno?.email_mae || ""}
               onChange={setMae}
               onVoltar={() => setFase("aluno")}
               onAvancar={proximaDepoisMae}
@@ -330,11 +364,16 @@ const Rematricula2027 = () => {
               descricao="Complete os campos que estiverem em branco."
               form={pai}
               travados={travPai}
+              idAluno={aluno?.id_aluno ?? 0}
+              celularOriginal={maskTelefone(aluno?.celular_pai || "")}
+              emailOriginal={aluno?.email_pai || ""}
               onChange={setPai}
               onVoltar={voltarDePai}
               onAvancar={() => setFase("curso")}
             />
           )}
+
+
 
           {fase === "curso" && aluno && (
             <StepCurso

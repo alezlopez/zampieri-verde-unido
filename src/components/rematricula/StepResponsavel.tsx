@@ -1,4 +1,5 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
+import { BadgeCheck, ShieldAlert } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -10,6 +11,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { ResponsavelForm } from "./types";
+import { VerificarContatoDialog } from "./VerificarContatoDialog";
 import {
   ESTADOS_CIVIS,
   brToIso,
@@ -28,6 +30,9 @@ interface Props {
   descricao: string;
   form: ResponsavelForm;
   travados: Partial<Record<keyof ResponsavelForm, boolean>>;
+  idAluno: number;
+  celularOriginal: string;
+  emailOriginal: string;
   onChange: (form: ResponsavelForm) => void;
   onVoltar: () => void;
   onAvancar: () => void;
@@ -40,21 +45,47 @@ export const StepResponsavel = ({
   descricao,
   form,
   travados,
+  idAluno,
+  celularOriginal,
+  emailOriginal,
   onChange,
   onVoltar,
   onAvancar,
 }: Props) => {
   const [erros, setErros] = useState<Erros>({});
   const [editando, setEditando] = useState<Partial<Record<keyof ResponsavelForm, boolean>>>({});
+  const [verificados, setVerificados] = useState<{ celular?: string; email?: string }>({});
+  const [dialogo, setDialogo] = useState<null | "celular" | "email">(null);
 
   const set = (campo: keyof ResponsavelForm, valor: string) =>
     onChange({ ...form, [campo]: valor });
+
+  const celularAlterado = useMemo(
+    () =>
+      !!celularOriginal &&
+      onlyDigits(form.celular).length >= 10 &&
+      onlyDigits(form.celular) !== onlyDigits(celularOriginal),
+    [form.celular, celularOriginal],
+  );
+  const emailAlterado = useMemo(
+    () =>
+      !!emailOriginal &&
+      isValidEmail(form.email) &&
+      form.email.trim().toLowerCase() !== emailOriginal.trim().toLowerCase(),
+    [form.email, emailOriginal],
+  );
+
+  const celularPendente =
+    celularAlterado && onlyDigits(verificados.celular || "") !== onlyDigits(form.celular);
+  const emailPendente =
+    emailAlterado && (verificados.email || "").toLowerCase() !== form.email.trim().toLowerCase();
 
   // CPF de mãe/pai já cadastrado não pode ser corrigido
   const naoCorrigivel = (campo: keyof ResponsavelForm) => campo === "cpf";
 
   const bloqueado = (campo: keyof ResponsavelForm) =>
     !!travados[campo] && (naoCorrigivel(campo) || !editando[campo]);
+
 
   const validar = () => {
     const e: Erros = {};
@@ -82,9 +113,12 @@ export const StepResponsavel = ({
     if (!e.email && !isValidEmail(form.email)) e.email = "E-mail inválido";
     if (!e.celular && onlyDigits(form.celular).length < 10) e.celular = "Telefone incompleto";
     if (!e.data_nascimento && !brToIso(form.data_nascimento)) e.data_nascimento = "Data inválida";
+    if (!e.celular && celularPendente) e.celular = "Confirme o novo telefone com o código";
+    if (!e.email && emailPendente) e.email = "Confirme o novo e-mail com o código";
     setErros(e);
     if (Object.keys(e).length === 0) onAvancar();
   };
+
 
   const preencherCep = async (valor: string) => {
     const masked = maskCep(valor);
@@ -211,9 +245,48 @@ export const StepResponsavel = ({
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          {campo("celular", "Celular", { placeholder: "(11) 99999-9999", mask: maskTelefone, inputMode: "numeric" })}
-          {campo("email", "E-mail", { placeholder: "email@exemplo.com", inputMode: "email" })}
+          <div className="space-y-2">
+            {campo("celular", "Celular", {
+              placeholder: "(11) 99999-9999",
+              mask: maskTelefone,
+              inputMode: "numeric",
+            })}
+            {celularAlterado && celularPendente && (
+              <button
+                type="button"
+                onClick={() => setDialogo("celular")}
+                className="flex items-center gap-1.5 text-xs font-medium text-destructive underline"
+              >
+                <ShieldAlert className="w-3.5 h-3.5" />
+                Novo telefone: verificar com código
+              </button>
+            )}
+            {celularAlterado && !celularPendente && (
+              <p className="flex items-center gap-1.5 text-xs text-zampieri-green-dark">
+                <BadgeCheck className="w-3.5 h-3.5" /> Telefone verificado
+              </p>
+            )}
+          </div>
+          <div className="space-y-2">
+            {campo("email", "E-mail", { placeholder: "email@exemplo.com", inputMode: "email" })}
+            {emailAlterado && emailPendente && (
+              <button
+                type="button"
+                onClick={() => setDialogo("email")}
+                className="flex items-center gap-1.5 text-xs font-medium text-destructive underline"
+              >
+                <ShieldAlert className="w-3.5 h-3.5" />
+                Novo e-mail: verificar com código
+              </button>
+            )}
+            {emailAlterado && !emailPendente && (
+              <p className="flex items-center gap-1.5 text-xs text-zampieri-green-dark">
+                <BadgeCheck className="w-3.5 h-3.5" /> E-mail verificado
+              </p>
+            )}
+          </div>
         </div>
+
 
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
           <div className="space-y-2">
@@ -263,6 +336,22 @@ export const StepResponsavel = ({
           Continuar
         </Button>
       </div>
+
+      <VerificarContatoDialog
+        aberto={dialogo !== null}
+        idAluno={idAluno}
+        canal={dialogo === "email" ? "email" : "whatsapp"}
+        destino={dialogo === "email" ? form.email.trim() : form.celular}
+        onFechar={() => setDialogo(null)}
+        onVerificado={() =>
+          setVerificados((p) =>
+            dialogo === "email"
+              ? { ...p, email: form.email.trim().toLowerCase() }
+              : { ...p, celular: form.celular },
+          )
+        }
+      />
     </div>
   );
+
 };
