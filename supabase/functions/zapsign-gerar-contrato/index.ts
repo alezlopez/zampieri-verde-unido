@@ -37,7 +37,74 @@ const maskTel = (v: unknown) => {
   return String(v ?? "");
 };
 
+const ZAPSIGN_SIGN_URL = "https://api.zapsign.com.br/api/v1/sign/";
+
+/**
+ * Mapa de assinantes da empresa -> user_token da conta ZapSign.
+ * Secret ZAPSIGN_BATCH_USER_TOKENS aceita:
+ *  - objeto: { "email@empresa.com": "user_token", "Nome do Signatário": "user_token" }
+ *  - array : ["user_token_2", "user_token_3", "user_token_4"] (aplicado aos signatários 2..N na ordem)
+ */
+const lerMapaUsuarios = (): { mapa: Record<string, string>; lista: string[] } => {
+  const raw = Deno.env.get("ZAPSIGN_BATCH_USER_TOKENS");
+  if (!raw) return { mapa: {}, lista: [] };
+  try {
+    const parsed = JSON.parse(raw);
+    if (Array.isArray(parsed)) return { mapa: {}, lista: parsed.map(String) };
+    if (parsed && typeof parsed === "object") {
+      const mapa: Record<string, string> = {};
+      for (const [k, v] of Object.entries(parsed)) mapa[String(k).trim().toLowerCase()] = String(v);
+      return { mapa, lista: [] };
+    }
+  } catch {
+    // valor simples: um único user_token para todos os signatários da empresa
+    return { mapa: {}, lista: [raw.trim()] };
+  }
+  return { mapa: {}, lista: [] };
+};
+
+const assinarEmLote = async (apiToken: string, signers: any[]) => {
+  const { mapa, lista } = lerMapaUsuarios();
+  if (!Object.keys(mapa).length && !lista.length) {
+    return { executado: false, motivo: "ZAPSIGN_BATCH_USER_TOKENS não configurado" };
+  }
+
+  // Signatários da empresa = todos, menos o primeiro (responsável financeiro)
+  const empresa = signers.slice(1);
+  const resultados: { signer: string; ok: boolean; detalhe?: unknown }[] = [];
+
+  for (let i = 0; i < empresa.length; i++) {
+    const s = empresa[i];
+    const chaveEmail = String(s?.email ?? "").trim().toLowerCase();
+    const chaveNome = String(s?.name ?? "").trim().toLowerCase();
+    const userToken =
+      mapa[chaveEmail] ?? mapa[chaveNome] ?? (lista.length === 1 ? lista[0] : lista[i]);
+
+    if (!userToken || !s?.token) {
+      resultados.push({ signer: s?.name ?? `#${i + 2}`, ok: false, detalhe: "user_token não mapeado" });
+      continue;
+    }
+
+    try {
+      const r = await fetch(ZAPSIGN_SIGN_URL, {
+        method: "POST",
+        headers: { Authorization: `Bearer ${apiToken}`, "Content-Type": "application/json" },
+        body: JSON.stringify({ user_token: userToken, signer_tokens: [s.token] }),
+      });
+      const txt = await r.text();
+      if (!r.ok) console.error("ZapSign assinar em lote", r.status, txt?.slice(0, 500));
+      resultados.push({ signer: s?.name ?? `#${i + 2}`, ok: r.ok, detalhe: r.ok ? undefined : txt?.slice(0, 300) });
+    } catch (e) {
+      console.error("ZapSign assinar em lote (exceção)", e);
+      resultados.push({ signer: s?.name ?? `#${i + 2}`, ok: false, detalhe: String(e) });
+    }
+  }
+
+  return { executado: true, resultados };
+};
+
 Deno.serve(async (req) => {
+
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
 
   const json = (body: unknown, status = 200) =>
@@ -197,7 +264,8 @@ Deno.serve(async (req) => {
     }
 
 
-    const signUrl = result?.signers?.[0]?.sign_url ?? null;
+    const signers: any[] = Array.isArray(result?.signers) ? result.signers : [];
+    const signUrl = signers[0]?.sign_url ?? null;
 
     await supabase
       .from("alunos_rematricula_2027")
@@ -208,7 +276,11 @@ Deno.serve(async (req) => {
       })
       .eq("id_aluno", idAluno);
 
-    return json({ success: true, sign_url: signUrl, token: result?.token ?? null });
+    // Assinatura em lote dos signatários da empresa (signatários 2..N do modelo).
+    const lote = await assinarEmLote(token, signers);
+
+    return json({ success: true, sign_url: signUrl, token: result?.token ?? null, lote });
+
   } catch (e) {
     console.error("zapsign-gerar-contrato", e);
     return json({ error: "Erro inesperado" }, 500);
