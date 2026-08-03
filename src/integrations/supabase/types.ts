@@ -115,6 +115,7 @@ export type Database = {
           numero_pai: string | null
           percentual_desconto: number
           percentual_desconto_ext: string | null
+          rematricula_concluida: boolean | null
           responsavel_financeiro: string | null
           rg_mae: string | null
           rg_pai: string | null
@@ -175,6 +176,7 @@ export type Database = {
           numero_pai?: string | null
           percentual_desconto: number
           percentual_desconto_ext?: string | null
+          rematricula_concluida?: boolean | null
           responsavel_financeiro?: string | null
           rg_mae?: string | null
           rg_pai?: string | null
@@ -235,6 +237,7 @@ export type Database = {
           numero_pai?: string | null
           percentual_desconto?: number
           percentual_desconto_ext?: string | null
+          rematricula_concluida?: boolean | null
           responsavel_financeiro?: string | null
           rg_mae?: string | null
           rg_pai?: string | null
