@@ -67,6 +67,44 @@ const Rematricula2027 = () => {
   const [erroSalvar, setErroSalvar] = useState<string | null>(null);
   const [jaAssinado, setJaAssinado] = useState(false);
   const [retomada, setRetomada] = useState(false);
+  const [status, setStatus] = useState<StatusRematricula | null>(null);
+  const [verificando, setVerificando] = useState(false);
+
+  const aguardandoPagamento = new URLSearchParams(window.location.search).get("pagamento") === "sucesso";
+
+  const carregarStatus = useCallback(
+    async (idAluno: number, iso: string) => {
+      setVerificando(true);
+      const { data } = await supabase.rpc("rematricula_2027_status", {
+        p_id_aluno: idAluno,
+        p_data_nascimento: iso,
+      });
+      const row = (data as StatusRematricula[] | null)?.[0] ?? null;
+      setVerificando(false);
+      if (row) {
+        setStatus(row);
+        if (row.contrato_assinado) setJaAssinado(true);
+      }
+      return row;
+    },
+    [],
+  );
+
+  // Polling enquanto o contrato não está assinado ou o pagamento não foi confirmado
+  useEffect(() => {
+    if (fase !== "sucesso" || !aluno || !dataIso) return;
+    carregarStatus(aluno.id_aluno, dataIso);
+    const t = setInterval(() => {
+      setStatus((atual) => {
+        if (atual?.rematricula_concluida) return atual;
+        carregarStatus(aluno.id_aluno, dataIso);
+        return atual;
+      });
+    }, 10000);
+    return () => clearInterval(t);
+  }, [fase, aluno, dataIso, carregarStatus]);
+
+
 
 
   const incluiMae = !!aluno && temResponsavel(aluno.tem_mae);
