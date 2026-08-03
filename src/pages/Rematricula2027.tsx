@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import logoZampieri from "@/assets/logo-zampieri.png";
 import { supabase } from "@/integrations/supabase/client";
@@ -8,6 +8,8 @@ import { StepAluno } from "@/components/rematricula/StepAluno";
 import { StepResponsavel } from "@/components/rematricula/StepResponsavel";
 import { StepCurso } from "@/components/rematricula/StepCurso";
 import { StepSucesso } from "@/components/rematricula/StepSucesso";
+import type { StatusRematricula } from "@/components/rematricula/StepPagamento";
+
 import {
   AlunoCompleto,
   AlunoResumo,
