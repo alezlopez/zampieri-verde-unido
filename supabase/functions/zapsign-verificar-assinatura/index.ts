@@ -1,5 +1,7 @@
 import { createClient } from "npm:@supabase/supabase-js@2";
 import { corsHeaders } from "../_shared/cors.ts";
+import { assinarEmLote } from "../_shared/zapsign-lote.ts";
+
 
 /**
  * Consulta ativamente o status do documento na ZapSign e sincroniza
