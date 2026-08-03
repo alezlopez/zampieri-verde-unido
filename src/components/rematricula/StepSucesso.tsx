@@ -1,4 +1,4 @@
-import { CheckCircle2, FileSignature, Loader2 } from "lucide-react";
+import { AlertCircle, CheckCircle2, FileSignature, Loader2, RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
 import { StepPagamento, StatusRematricula } from "./StepPagamento";
@@ -8,6 +8,9 @@ interface Props {
   curso: string | null;
   turno: string;
   linkContrato?: string | null;
+  erroContrato?: string | null;
+  gerandoContrato?: boolean;
+  onTentarContrato: () => void;
   jaAssinado?: boolean;
   retomada?: boolean;
   idAluno: number;
@@ -23,6 +26,9 @@ export const StepSucesso = ({
   curso,
   turno,
   linkContrato,
+  erroContrato,
+  gerandoContrato,
+  onTentarContrato,
   jaAssinado,
   retomada,
   idAluno,
@@ -70,6 +76,20 @@ export const StepSucesso = ({
             Assinar contrato
           </Button>
         </a>
+      </div>
+    ) : erroContrato ? (
+      <div className="rounded-lg border border-destructive/30 bg-destructive/5 p-4 max-w-md mx-auto space-y-3">
+        <div className="flex items-start gap-2 text-left">
+          <AlertCircle className="w-5 h-5 text-destructive shrink-0 mt-0.5" />
+          <div>
+            <p className="text-sm font-medium text-foreground">Não foi possível gerar o contrato</p>
+            <p className="text-sm text-muted-foreground mt-1">{erroContrato}</p>
+          </div>
+        </div>
+        <Button variant="outline" className="w-full" onClick={onTentarContrato} disabled={gerandoContrato}>
+          {gerandoContrato ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <RefreshCw className="w-4 h-4 mr-2" />}
+          Tentar novamente
+        </Button>
       </div>
     ) : (
       <div className="flex items-center justify-center gap-2 text-sm text-muted-foreground">

@@ -177,6 +177,19 @@ Deno.serve(async (req) => {
     try { result = raw ? JSON.parse(raw) : null; } catch { result = null; }
     if (!resp.ok) {
       console.error("ZapSign erro", resp.status, raw?.slice(0, 1000));
+
+      // A ZapSign usa 402 quando a conta de produção não possui o Plano API.
+      // Retornamos uma resposta tratável pelo cliente para não transformar uma
+      // restrição comercial do provedor em erro interno/502 da aplicação.
+      if (resp.status === 402) {
+        return json({
+          success: false,
+          code: "zapsign_plan_required",
+          error: "A geração de contratos está temporariamente indisponível.",
+          detalhe: "A conta ZapSign de produção precisa ter um Plano API ativo.",
+        });
+      }
+
       return json(
         { error: "Falha ao gerar contrato", status: resp.status, detalhe: result ?? raw ?? null },
         502,

@@ -66,6 +66,8 @@ const Rematricula2027 = () => {
   const [responsavel, setResponsavel] = useState("");
   const [salvando, setSalvando] = useState(false);
   const [linkContrato, setLinkContrato] = useState<string | null>(null);
+  const [erroContrato, setErroContrato] = useState<string | null>(null);
+  const [gerandoContrato, setGerandoContrato] = useState(false);
   const [erroSalvar, setErroSalvar] = useState<string | null>(null);
   const [jaAssinado, setJaAssinado] = useState(false);
   const [retomada, setRetomada] = useState(false);
@@ -159,6 +161,31 @@ const Rematricula2027 = () => {
   const voltarDeCurso = () => setFase(incluiPai ? "pai" : incluiMae ? "mae" : "aluno");
   const voltarDePai = () => setFase(incluiMae ? "mae" : "aluno");
 
+  const gerarContrato = async (idAluno: number, nascimento: string) => {
+    setGerandoContrato(true);
+    setErroContrato(null);
+    const { data: contrato, error } = await supabase.functions.invoke("zapsign-gerar-contrato", {
+      body: { id_aluno: idAluno, data_nascimento: nascimento },
+    });
+    setGerandoContrato(false);
+
+    const resultado = contrato as {
+      success?: boolean;
+      sign_url?: string;
+      error?: string;
+      detalhe?: string;
+    } | null;
+
+    if (error || resultado?.success === false || !resultado?.sign_url) {
+      setErroContrato(
+        resultado?.detalhe || resultado?.error || "Não foi possível gerar o contrato agora. Tente novamente.",
+      );
+      return;
+    }
+
+    setLinkContrato(resultado.sign_url);
+  };
+
   const finalizar = async () => {
     if (!aluno) return;
     setSalvando(true);
@@ -209,11 +236,7 @@ const Rematricula2027 = () => {
       return;
     }
     setFase("sucesso");
-
-    const { data: contrato } = await supabase.functions.invoke("zapsign-gerar-contrato", {
-      body: { id_aluno: aluno.id_aluno, data_nascimento: dataIso },
-    });
-    setLinkContrato((contrato as { sign_url?: string } | null)?.sign_url ?? null);
+    await gerarContrato(aluno.id_aluno, dataIso);
   };
 
 
@@ -323,6 +346,9 @@ const Rematricula2027 = () => {
               curso={aluno.curso_2027}
               turno={turno}
               linkContrato={linkContrato}
+              erroContrato={erroContrato}
+              gerandoContrato={gerandoContrato}
+              onTentarContrato={() => gerarContrato(aluno.id_aluno, dataIso)}
               jaAssinado={jaAssinado}
               retomada={retomada}
               idAluno={aluno.id_aluno}
