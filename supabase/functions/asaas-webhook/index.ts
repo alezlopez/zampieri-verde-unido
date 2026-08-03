@@ -98,12 +98,40 @@ Deno.serve(async (req) => {
       }
     }
 
+
     // ============ ROTEAMENTO ============
+    // - "remat:<id_aluno>" → rematrícula 2027
     // - "prod:..." → apenas pedidos_produtos
     // - "mix:ing=...;prod=..." → atualiza pedidos_produtos E continua para atualizar ingressos
     // - default → ingressos (fluxo abaixo)
+    if (externalRef && externalRef.startsWith("remat:")) {
+      const idAluno = Number(externalRef.slice(6));
+      if (Number.isFinite(idAluno)) {
+        if (newStatus === "pago") {
+          const valor = Number(payload?.payment?.value ?? payload?.checkout?.value ?? 0) || null;
+          await admin.from("alunos_rematricula_2027").update({
+            rematricula_concluida: true,
+            asaas_payment_id: installmentId || paymentId,
+            data_pagamento: new Date().toISOString(),
+            valor_pago: valor,
+            updated_at: new Date().toISOString(),
+          }).eq("id_aluno", idAluno);
+        } else if (newStatus === "estornado" || newStatus === "cancelado") {
+          await admin.from("alunos_rematricula_2027").update({
+            rematricula_concluida: false,
+            updated_at: new Date().toISOString(),
+          }).eq("id_aluno", idAluno);
+        }
+      }
+      await admin.from("asaas_webhook_events").update({ processed: true }).eq("event_id", eventId);
+      return new Response(JSON.stringify({ ok: true, kind: "rematricula" }), {
+        status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
     const isProdRef = !!(externalRef && externalRef.startsWith("prod:"));
     const isMixRef = !!(externalRef && externalRef.startsWith("mix:"));
+
 
     let mixProdIds: string[] = [];
     if (isMixRef) {
