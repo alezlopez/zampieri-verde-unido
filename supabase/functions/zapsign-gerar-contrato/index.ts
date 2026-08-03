@@ -74,6 +74,17 @@ Deno.serve(async (req) => {
     if (error) return json({ error: "Erro ao consultar aluno" }, 500);
     if (!a) return json({ error: "Aluno não encontrado" }, 404);
 
+    // Contrato já gerado: reaproveita o link salvo (evita documentos duplicados)
+    if (a.contrato_gerado && a.link_contrato) {
+      return json({
+        success: true,
+        sign_url: a.link_contrato,
+        token: a.zapsign_token ?? null,
+        reutilizado: true,
+        assinado: !!a.contrato_assinado,
+      });
+    }
+
     // Responsável financeiro escolhido no formulário ("mãe" ou "pai")
     const respRaw = String(a.responsavel_financeiro ?? "").toLowerCase();
     const ehMae = respRaw.startsWith("m");
@@ -168,7 +179,11 @@ Deno.serve(async (req) => {
 
     await supabase
       .from("alunos_rematricula_2027")
-      .update({ contrato_gerado: true })
+      .update({
+        contrato_gerado: true,
+        link_contrato: signUrl,
+        zapsign_token: result?.token ?? null,
+      })
       .eq("id_aluno", idAluno);
 
     return json({ success: true, sign_url: signUrl, token: result?.token ?? null });
