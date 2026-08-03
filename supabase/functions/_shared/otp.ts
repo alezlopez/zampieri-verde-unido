@@ -56,25 +56,37 @@ export async function enviarWhatsappOtp(telefone: string, codigo: string) {
     });
   }
 
-  const res = await fetch(`https://graph.facebook.com/v21.0/${phoneId}/messages`, {
-    method: "POST",
-    headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
-    body: JSON.stringify({
-      messaging_product: "whatsapp",
-      to: telefoneE164(telefone),
-      type: "template",
-      template: { name: template, language: { code: lang }, components },
-    }),
-  });
-  const texto = await res.text();
-  console.log(
-    `WhatsApp OTP -> to=${telefoneE164(telefone)} template=${template} lang=${lang} tipo=${tipo} status=${res.status} body=${texto}`,
+  // Tenta o idioma configurado e, se o template não existir nesse locale, tenta variantes
+  const idiomas = [lang, "pt_BR", "pt_PT", "en_US"].filter(
+    (v, i, arr) => arr.indexOf(v) === i,
   );
-  if (!res.ok) {
-    console.error(`WhatsApp OTP falhou [${res.status}]: ${texto}`);
-    throw new Error(`whatsapp_falhou:${res.status}`);
+
+  let ultimoErro = "";
+  for (const code of idiomas) {
+    const res = await fetch(`https://graph.facebook.com/v21.0/${phoneId}/messages`, {
+      method: "POST",
+      headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+      body: JSON.stringify({
+        messaging_product: "whatsapp",
+        to: telefoneE164(telefone),
+        type: "template",
+        template: { name: template, language: { code }, components },
+      }),
+    });
+    const texto = await res.text();
+    console.log(
+      `WhatsApp OTP -> to=${telefoneE164(telefone)} template=${template} lang=${code} tipo=${tipo} status=${res.status} body=${texto}`,
+    );
+    if (res.ok) return;
+    ultimoErro = `${res.status}:${texto}`;
+    // 132001 = template não existe nesse idioma -> tenta o próximo
+    if (!texto.includes("132001")) break;
   }
+
+  console.error(`WhatsApp OTP falhou: ${ultimoErro}`);
+  throw new Error(`whatsapp_falhou:${ultimoErro.slice(0, 80)}`);
 }
+
 
 export async function enviarEmailOtp(email: string, codigo: string, nomeAluno: string) {
   const key = Deno.env.get("RESEND_API_KEY");
