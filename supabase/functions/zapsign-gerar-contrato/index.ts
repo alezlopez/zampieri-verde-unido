@@ -197,7 +197,8 @@ Deno.serve(async (req) => {
     }
 
 
-    const signUrl = result?.signers?.[0]?.sign_url ?? null;
+    const signers: any[] = Array.isArray(result?.signers) ? result.signers : [];
+    const signUrl = signers[0]?.sign_url ?? null;
 
     await supabase
       .from("alunos_rematricula_2027")
@@ -208,7 +209,11 @@ Deno.serve(async (req) => {
       })
       .eq("id_aluno", idAluno);
 
-    return json({ success: true, sign_url: signUrl, token: result?.token ?? null });
+    // Assinatura em lote dos signatários da empresa (signatários 2..N do modelo).
+    const lote = await assinarEmLote(token, signers);
+
+    return json({ success: true, sign_url: signUrl, token: result?.token ?? null, lote });
+
   } catch (e) {
     console.error("zapsign-gerar-contrato", e);
     return json({ error: "Erro inesperado" }, 500);
