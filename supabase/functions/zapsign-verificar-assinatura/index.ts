@@ -63,12 +63,18 @@ Deno.serve(async (req) => {
 
     const signers: any[] = Array.isArray(doc?.signers) ? doc.signers : [];
     const statusDoc = String(doc?.status ?? "").toLowerCase();
+
+    // Signatário 1 (responsável financeiro) já assinou? -> libera o pagamento
+    const respAssinou = String(signers?.[0]?.status ?? "").toLowerCase() === "signed";
     const todosAssinaram =
       signers.length > 0 && signers.every((s) => String(s?.status ?? "").toLowerCase() === "signed");
-    const assinado = statusDoc === "signed" || todosAssinaram;
+    const assinado = respAssinou || statusDoc === "signed" || todosAssinaram;
 
-    // Signatário 1 (responsável financeiro) já assinou?
-    const respAssinou = String(signers?.[0]?.status ?? "").toLowerCase() === "signed";
+    // Signatários da empresa pendentes: tenta assinar em lote agora
+    let lote: unknown = null;
+    if (respAssinou && !todosAssinaram) {
+      lote = await assinarEmLote(apiToken, signers);
+    }
 
     if (assinado) {
       await supabase
@@ -76,6 +82,7 @@ Deno.serve(async (req) => {
         .update({ contrato_assinado: true })
         .eq("id_aluno", idAluno);
     }
+
 
     return json({
       assinado,
