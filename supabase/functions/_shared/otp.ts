@@ -41,53 +41,38 @@ export async function enviarWhatsappOtp(telefone: string, codigo: string) {
   const phoneId = Deno.env.get("WHATSAPP_PHONE_NUMBER_ID");
   const template = Deno.env.get("WHATSAPP_TEMPLATE_OTP") || "codigo_verificacao";
   const lang = Deno.env.get("WHATSAPP_TEMPLATE_LANG") || "pt_BR";
-  const tipo = (Deno.env.get("WHATSAPP_TEMPLATE_TIPO") || "auth").toLowerCase();
   if (!token || !phoneId) throw new Error("WhatsApp Cloud API não configurada");
 
   const body = { type: "body", parameters: [{ type: "text", text: codigo }] };
-  // Templates de autenticação podem ter botão "Copiar código" (copy_code)
-  // ou "Preenchimento automático" (url). Tentamos as variantes até uma entregar.
-  const variantesBotao: unknown[][] =
-    tipo === "auth"
-      ? [
-          [body, { type: "button", sub_type: "copy_code", index: "0", parameters: [{ type: "coupon_code", coupon_code: codigo }] }],
-          [body, { type: "button", sub_type: "url", index: "0", parameters: [{ type: "text", text: codigo }] }],
-          [body],
-        ]
-      : [[body]];
-
-  // Tenta o idioma configurado e, se o template não existir nesse locale, tenta variantes
-  const idiomas = [lang, "pt_BR", "pt_PT", "en_US"].filter(
-    (v, i, arr) => arr.indexOf(v) === i,
+  // A Meta armazena o botão OTP "Copiar código" como URL e exige este payload no envio.
+  const components = [
+    body,
+    {
+      type: "button",
+      sub_type: "url",
+      index: "0",
+      parameters: [{ type: "text", text: codigo }],
+    },
+  ];
+  const res = await fetch(`https://graph.facebook.com/v23.0/${phoneId}/messages`, {
+    method: "POST",
+    headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+    body: JSON.stringify({
+      messaging_product: "whatsapp",
+      recipient_type: "individual",
+      to: telefoneE164(telefone),
+      type: "template",
+      template: { name: template, language: { code: lang }, components },
+    }),
+  });
+  const texto = await res.text();
+  console.log(
+    `WhatsApp OTP -> to=${telefoneE164(telefone)} template=${template} lang=${lang} status=${res.status} body=${texto}`,
   );
+  if (res.ok) return;
 
-  let ultimoErro = "";
-  for (const code of idiomas) {
-    for (const components of variantesBotao) {
-      const res = await fetch(`https://graph.facebook.com/v21.0/${phoneId}/messages`, {
-        method: "POST",
-        headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
-        body: JSON.stringify({
-          messaging_product: "whatsapp",
-          to: telefoneE164(telefone),
-          type: "template",
-          template: { name: template, language: { code }, components },
-        }),
-      });
-      const texto = await res.text();
-      console.log(
-        `WhatsApp OTP -> to=${telefoneE164(telefone)} template=${template} lang=${code} tipo=${tipo} btn=${JSON.stringify((components as any[])[1]?.sub_type ?? "none")} status=${res.status} body=${texto}`,
-      );
-      if (res.ok) return;
-      ultimoErro = `${res.status}:${texto}`;
-      // 132001 = template não existe nesse idioma -> troca idioma
-      if (texto.includes("132001")) break;
-      // demais erros: tenta próxima variante de botão
-    }
-  }
-
-  console.error(`WhatsApp OTP falhou: ${ultimoErro}`);
-  throw new Error(`whatsapp_falhou:${ultimoErro.slice(0, 80)}`);
+  console.error(`WhatsApp OTP falhou: ${res.status}:${texto}`);
+  throw new Error(`whatsapp_falhou:${res.status}:${texto.slice(0, 80)}`);
 }
 
 
