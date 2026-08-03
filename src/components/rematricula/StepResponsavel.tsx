@@ -245,9 +245,48 @@ export const StepResponsavel = ({
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          {campo("celular", "Celular", { placeholder: "(11) 99999-9999", mask: maskTelefone, inputMode: "numeric" })}
-          {campo("email", "E-mail", { placeholder: "email@exemplo.com", inputMode: "email" })}
+          <div className="space-y-2">
+            {campo("celular", "Celular", {
+              placeholder: "(11) 99999-9999",
+              mask: maskTelefone,
+              inputMode: "numeric",
+            })}
+            {celularAlterado && celularPendente && (
+              <button
+                type="button"
+                onClick={() => setDialogo("celular")}
+                className="flex items-center gap-1.5 text-xs font-medium text-destructive underline"
+              >
+                <ShieldAlert className="w-3.5 h-3.5" />
+                Novo telefone: verificar com código
+              </button>
+            )}
+            {celularAlterado && !celularPendente && (
+              <p className="flex items-center gap-1.5 text-xs text-zampieri-green-dark">
+                <BadgeCheck className="w-3.5 h-3.5" /> Telefone verificado
+              </p>
+            )}
+          </div>
+          <div className="space-y-2">
+            {campo("email", "E-mail", { placeholder: "email@exemplo.com", inputMode: "email" })}
+            {emailAlterado && emailPendente && (
+              <button
+                type="button"
+                onClick={() => setDialogo("email")}
+                className="flex items-center gap-1.5 text-xs font-medium text-destructive underline"
+              >
+                <ShieldAlert className="w-3.5 h-3.5" />
+                Novo e-mail: verificar com código
+              </button>
+            )}
+            {emailAlterado && !emailPendente && (
+              <p className="flex items-center gap-1.5 text-xs text-zampieri-green-dark">
+                <BadgeCheck className="w-3.5 h-3.5" /> E-mail verificado
+              </p>
+            )}
+          </div>
         </div>
+
 
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
           <div className="space-y-2">
