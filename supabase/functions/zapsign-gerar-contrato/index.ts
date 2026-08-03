@@ -160,8 +160,10 @@ Deno.serve(async (req) => {
       external_id: String(a.id_aluno ?? ""),
       folder_path: "/rematricula-2027/",
       send_automatic_email: false,
+      ...(Deno.env.get("ZAPSIGN_SANDBOX") === "true" ? { sandbox: true } : {}),
       data: Object.entries(vars).map(([de, para]) => ({ de: `{{${de}}}`, para })),
     };
+
 
     const resp = await fetch(ZAPSIGN_URL, {
       method: "POST",
@@ -169,11 +171,17 @@ Deno.serve(async (req) => {
       body: JSON.stringify(payload),
     });
 
-    const result = await resp.json().catch(() => null);
+    const raw = await resp.text();
+    let result: any = null;
+    try { result = raw ? JSON.parse(raw) : null; } catch { result = null; }
     if (!resp.ok) {
-      console.error("ZapSign erro", resp.status, JSON.stringify(result));
-      return json({ error: "Falha ao gerar contrato", detalhe: result }, 502);
+      console.error("ZapSign erro", resp.status, raw?.slice(0, 1000));
+      return json(
+        { error: "Falha ao gerar contrato", status: resp.status, detalhe: result ?? raw ?? null },
+        502,
+      );
     }
+
 
     const signUrl = result?.signers?.[0]?.sign_url ?? null;
 
