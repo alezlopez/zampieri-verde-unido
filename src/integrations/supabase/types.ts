@@ -100,6 +100,7 @@ export type Database = {
           data_nascimento_pai: string | null
           data_pagamento: string | null
           dia_vencimento: number
+          email_conclusao_enviado_em: string | null
           email_mae: string | null
           email_pai: string | null
           estado_civil_mae: string | null
@@ -170,6 +171,7 @@ export type Database = {
           data_nascimento_pai?: string | null
           data_pagamento?: string | null
           dia_vencimento: number
+          email_conclusao_enviado_em?: string | null
           email_mae?: string | null
           email_pai?: string | null
           estado_civil_mae?: string | null
@@ -240,6 +242,7 @@ export type Database = {
           data_nascimento_pai?: string | null
           data_pagamento?: string | null
           dia_vencimento?: number
+          email_conclusao_enviado_em?: string | null
           email_mae?: string | null
           email_pai?: string | null
           estado_civil_mae?: string | null

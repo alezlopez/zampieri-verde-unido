@@ -116,6 +116,15 @@ Deno.serve(async (req) => {
             valor_pago: valor,
             updated_at: new Date().toISOString(),
           }).eq("id_aluno", idAluno);
+
+          try {
+            await admin.functions.invoke("rematricula-2027-email-conclusao", {
+              body: { id_aluno: idAluno },
+            });
+          } catch (e) {
+            console.error("[asaas-webhook] falha ao enviar e-mail de conclusão", e);
+          }
+
         } else if (newStatus === "estornado" || newStatus === "cancelado") {
           await admin.from("alunos_rematricula_2027").update({
             rematricula_concluida: false,
