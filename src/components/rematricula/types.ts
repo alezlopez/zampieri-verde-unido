@@ -56,6 +56,10 @@ export interface AlunoCompleto {
   contrato_gerado?: boolean | null;
   contrato_assinado?: boolean | null;
   link_contrato?: string | null;
+  rematricula_concluida?: boolean | null;
+  checkout_url?: string | null;
+  forma_pagamento?: string | null;
+
 }
 
 /** Campos de um responsável, sem o sufixo _pai/_mae */

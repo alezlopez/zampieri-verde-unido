@@ -1,6 +1,7 @@
 import { CheckCircle2, FileSignature, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
+import { StepPagamento, StatusRematricula } from "./StepPagamento";
 
 interface Props {
   nomeAluno: string;
@@ -9,9 +10,29 @@ interface Props {
   linkContrato?: string | null;
   jaAssinado?: boolean;
   retomada?: boolean;
+  idAluno: number;
+  dataNascimento: string;
+  status: StatusRematricula | null;
+  verificando: boolean;
+  onVerificar: () => void;
+  aguardandoPagamento?: boolean;
 }
 
-export const StepSucesso = ({ nomeAluno, curso, turno, linkContrato, jaAssinado, retomada }: Props) => (
+export const StepSucesso = ({
+  nomeAluno,
+  curso,
+  turno,
+  linkContrato,
+  jaAssinado,
+  retomada,
+  idAluno,
+  dataNascimento,
+  status,
+  verificando,
+  onVerificar,
+  aguardandoPagamento,
+}: Props) => (
+
   <div className="text-center space-y-4 py-4">
     <div className="w-16 h-16 rounded-full bg-zampieri-cream mx-auto flex items-center justify-center">
       <CheckCircle2 className="w-8 h-8 text-zampieri-green-dark" />
@@ -40,7 +61,7 @@ export const StepSucesso = ({ nomeAluno, curso, turno, linkContrato, jaAssinado,
       )}
     </p>
 
-    {jaAssinado ? null : linkContrato ? (
+    {jaAssinado || status?.contrato_assinado ? null : linkContrato ? (
       <div className="rounded-lg border border-zampieri-gold bg-zampieri-cream/50 p-4 max-w-md mx-auto space-y-3">
         <p className="text-sm font-medium text-zampieri-green-dark">Seu contrato está pronto para assinatura.</p>
         <a href={linkContrato} target="_blank" rel="noopener noreferrer">
@@ -55,6 +76,19 @@ export const StepSucesso = ({ nomeAluno, curso, turno, linkContrato, jaAssinado,
         <Loader2 className="w-4 h-4 animate-spin" /> Gerando contrato…
       </div>
     )}
+
+    <div className="max-w-md mx-auto">
+      <StepPagamento
+        idAluno={idAluno}
+        dataNascimento={dataNascimento}
+        status={status}
+        verificando={verificando}
+        onVerificar={onVerificar}
+        aguardandoPagamento={aguardandoPagamento}
+      />
+    </div>
+
+
 
 
     <div className="flex flex-col sm:flex-row gap-2 justify-center pt-2">

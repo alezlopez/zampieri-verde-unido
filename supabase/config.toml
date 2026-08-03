@@ -16,3 +16,6 @@ verify_jwt = false
 
 [functions.zapsign-webhook]
 verify_jwt = false
+
+[functions.rematricula-2027-checkout]
+verify_jwt = false

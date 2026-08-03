@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import logoZampieri from "@/assets/logo-zampieri.png";
 import { supabase } from "@/integrations/supabase/client";
@@ -8,6 +8,8 @@ import { StepAluno } from "@/components/rematricula/StepAluno";
 import { StepResponsavel } from "@/components/rematricula/StepResponsavel";
 import { StepCurso } from "@/components/rematricula/StepCurso";
 import { StepSucesso } from "@/components/rematricula/StepSucesso";
+import type { StatusRematricula } from "@/components/rematricula/StepPagamento";
+
 import {
   AlunoCompleto,
   AlunoResumo,
@@ -67,6 +69,44 @@ const Rematricula2027 = () => {
   const [erroSalvar, setErroSalvar] = useState<string | null>(null);
   const [jaAssinado, setJaAssinado] = useState(false);
   const [retomada, setRetomada] = useState(false);
+  const [status, setStatus] = useState<StatusRematricula | null>(null);
+  const [verificando, setVerificando] = useState(false);
+
+  const aguardandoPagamento = new URLSearchParams(window.location.search).get("pagamento") === "sucesso";
+
+  const carregarStatus = useCallback(
+    async (idAluno: number, iso: string) => {
+      setVerificando(true);
+      const { data } = await supabase.rpc("rematricula_2027_status", {
+        p_id_aluno: idAluno,
+        p_data_nascimento: iso,
+      });
+      const row = (data as StatusRematricula[] | null)?.[0] ?? null;
+      setVerificando(false);
+      if (row) {
+        setStatus(row);
+        if (row.contrato_assinado) setJaAssinado(true);
+      }
+      return row;
+    },
+    [],
+  );
+
+  // Polling enquanto o contrato não está assinado ou o pagamento não foi confirmado
+  useEffect(() => {
+    if (fase !== "sucesso" || !aluno || !dataIso) return;
+    carregarStatus(aluno.id_aluno, dataIso);
+    const t = setInterval(() => {
+      setStatus((atual) => {
+        if (atual?.rematricula_concluida) return atual;
+        carregarStatus(aluno.id_aluno, dataIso);
+        return atual;
+      });
+    }, 10000);
+    return () => clearInterval(t);
+  }, [fase, aluno, dataIso, carregarStatus]);
+
+
 
 
   const incluiMae = !!aluno && temResponsavel(aluno.tem_mae);
@@ -95,7 +135,11 @@ const Rematricula2027 = () => {
     setResponsavel(dados.responsavel_financeiro || "");
 
     // Contrato já gerado numa visita anterior: pula direto para a assinatura
-    if (dados.contrato_gerado && (dados.link_contrato || dados.contrato_assinado)) {
+    if (
+      dados.rematricula_concluida ||
+      (dados.contrato_gerado && (dados.link_contrato || dados.contrato_assinado))
+    ) {
+
       setLinkContrato(dados.link_contrato ?? null);
       setJaAssinado(!!dados.contrato_assinado);
       setRetomada(true);
@@ -281,7 +325,14 @@ const Rematricula2027 = () => {
               linkContrato={linkContrato}
               jaAssinado={jaAssinado}
               retomada={retomada}
+              idAluno={aluno.id_aluno}
+              dataNascimento={dataIso}
+              status={status}
+              verificando={verificando}
+              onVerificar={() => carregarStatus(aluno.id_aluno, dataIso)}
+              aguardandoPagamento={aguardandoPagamento && !status?.rematricula_concluida}
             />
+
           )}
 
 

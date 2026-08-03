@@ -72,12 +72,17 @@ export type Database = {
         Row: {
           anuidade_total: string | null
           anuidade_total_ext: string | null
+          asaas_checkout_id: string | null
+          asaas_customer_id: string | null
+          asaas_payment_id: string | null
           bairro_mae: string | null
           bairro_pai: string | null
           celular_mae: string | null
           celular_pai: string | null
           cep_mae: string | null
           cep_pai: string | null
+          checkout_criado_em: string | null
+          checkout_url: string | null
           cidade_mae: string | null
           cidade_pai: string | null
           complemento_mae: string | null
@@ -93,6 +98,7 @@ export type Database = {
           data_nascimento_aluno: string
           data_nascimento_mae: string | null
           data_nascimento_pai: string | null
+          data_pagamento: string | null
           dia_vencimento: number
           email_mae: string | null
           email_pai: string | null
@@ -100,6 +106,7 @@ export type Database = {
           estado_civil_pai: string | null
           estado_mae: string | null
           estado_pai: string | null
+          forma_pagamento: string | null
           id_aluno: number
           link_contrato: string | null
           logradouro_mae: string | null
@@ -113,6 +120,7 @@ export type Database = {
           nome_pai: string | null
           numero_mae: string | null
           numero_pai: string | null
+          parcelas: number | null
           percentual_desconto: number
           percentual_desconto_ext: string | null
           rematricula_concluida: boolean | null
@@ -126,6 +134,7 @@ export type Database = {
           valor_cheio: number | null
           valor_com_desconto: number
           valor_com_desconto_ext: string | null
+          valor_pago: number | null
           valor_pri_parcela: string | null
           valor_pri_parcela_ext: string | null
           zapsign_token: string | null
@@ -133,12 +142,17 @@ export type Database = {
         Insert: {
           anuidade_total?: string | null
           anuidade_total_ext?: string | null
+          asaas_checkout_id?: string | null
+          asaas_customer_id?: string | null
+          asaas_payment_id?: string | null
           bairro_mae?: string | null
           bairro_pai?: string | null
           celular_mae?: string | null
           celular_pai?: string | null
           cep_mae?: string | null
           cep_pai?: string | null
+          checkout_criado_em?: string | null
+          checkout_url?: string | null
           cidade_mae?: string | null
           cidade_pai?: string | null
           complemento_mae?: string | null
@@ -154,6 +168,7 @@ export type Database = {
           data_nascimento_aluno: string
           data_nascimento_mae?: string | null
           data_nascimento_pai?: string | null
+          data_pagamento?: string | null
           dia_vencimento: number
           email_mae?: string | null
           email_pai?: string | null
@@ -161,6 +176,7 @@ export type Database = {
           estado_civil_pai?: string | null
           estado_mae?: string | null
           estado_pai?: string | null
+          forma_pagamento?: string | null
           id_aluno: number
           link_contrato?: string | null
           logradouro_mae?: string | null
@@ -174,6 +190,7 @@ export type Database = {
           nome_pai?: string | null
           numero_mae?: string | null
           numero_pai?: string | null
+          parcelas?: number | null
           percentual_desconto: number
           percentual_desconto_ext?: string | null
           rematricula_concluida?: boolean | null
@@ -187,6 +204,7 @@ export type Database = {
           valor_cheio?: number | null
           valor_com_desconto: number
           valor_com_desconto_ext?: string | null
+          valor_pago?: number | null
           valor_pri_parcela?: string | null
           valor_pri_parcela_ext?: string | null
           zapsign_token?: string | null
@@ -194,12 +212,17 @@ export type Database = {
         Update: {
           anuidade_total?: string | null
           anuidade_total_ext?: string | null
+          asaas_checkout_id?: string | null
+          asaas_customer_id?: string | null
+          asaas_payment_id?: string | null
           bairro_mae?: string | null
           bairro_pai?: string | null
           celular_mae?: string | null
           celular_pai?: string | null
           cep_mae?: string | null
           cep_pai?: string | null
+          checkout_criado_em?: string | null
+          checkout_url?: string | null
           cidade_mae?: string | null
           cidade_pai?: string | null
           complemento_mae?: string | null
@@ -215,6 +238,7 @@ export type Database = {
           data_nascimento_aluno?: string
           data_nascimento_mae?: string | null
           data_nascimento_pai?: string | null
+          data_pagamento?: string | null
           dia_vencimento?: number
           email_mae?: string | null
           email_pai?: string | null
@@ -222,6 +246,7 @@ export type Database = {
           estado_civil_pai?: string | null
           estado_mae?: string | null
           estado_pai?: string | null
+          forma_pagamento?: string | null
           id_aluno?: number
           link_contrato?: string | null
           logradouro_mae?: string | null
@@ -235,6 +260,7 @@ export type Database = {
           nome_pai?: string | null
           numero_mae?: string | null
           numero_pai?: string | null
+          parcelas?: number | null
           percentual_desconto?: number
           percentual_desconto_ext?: string | null
           rematricula_concluida?: boolean | null
@@ -248,6 +274,7 @@ export type Database = {
           valor_cheio?: number | null
           valor_com_desconto?: number
           valor_com_desconto_ext?: string | null
+          valor_pago?: number | null
           valor_pri_parcela?: string | null
           valor_pri_parcela_ext?: string | null
           zapsign_token?: string | null
@@ -1845,6 +1872,7 @@ export type Database = {
           celular_pai: string
           cep_mae: string
           cep_pai: string
+          checkout_url: string
           cidade_mae: string
           cidade_pai: string
           complemento_mae: string
@@ -1866,6 +1894,7 @@ export type Database = {
           estado_civil_pai: string
           estado_mae: string
           estado_pai: string
+          forma_pagamento: string
           id_aluno: number
           link_contrato: string
           logradouro_mae: string
@@ -1880,6 +1909,7 @@ export type Database = {
           numero_mae: string
           numero_pai: string
           percentual_desconto: number
+          rematricula_concluida: boolean
           responsavel_financeiro: string
           rg_mae: string
           rg_pai: string
@@ -1905,6 +1935,21 @@ export type Database = {
         Returns: {
           message: string
           success: boolean
+        }[]
+      }
+      rematricula_2027_status: {
+        Args: { p_data_nascimento: string; p_id_aluno: number }
+        Returns: {
+          checkout_url: string
+          contrato_assinado: boolean
+          contrato_gerado: boolean
+          forma_pagamento: string
+          link_contrato: string
+          max_parcelas: number
+          parcelas: number
+          rematricula_concluida: boolean
+          valor_avista: number
+          valor_parcelado: number
         }[]
       }
       rematricula_2027_turnos: {
