@@ -336,6 +336,22 @@ export const StepResponsavel = ({
           Continuar
         </Button>
       </div>
+
+      <VerificarContatoDialog
+        aberto={dialogo !== null}
+        idAluno={idAluno}
+        canal={dialogo === "email" ? "email" : "whatsapp"}
+        destino={dialogo === "email" ? form.email.trim() : form.celular}
+        onFechar={() => setDialogo(null)}
+        onVerificado={() =>
+          setVerificados((p) =>
+            dialogo === "email"
+              ? { ...p, email: form.email.trim().toLowerCase() }
+              : { ...p, celular: form.celular },
+          )
+        }
+      />
     </div>
   );
+
 };
