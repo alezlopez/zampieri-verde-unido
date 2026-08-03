@@ -1,6 +1,7 @@
 import { CheckCircle2, FileSignature, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
+import { StepPagamento, StatusRematricula } from "./StepPagamento";
 
 interface Props {
   nomeAluno: string;
@@ -9,9 +10,29 @@ interface Props {
   linkContrato?: string | null;
   jaAssinado?: boolean;
   retomada?: boolean;
+  idAluno: number;
+  dataNascimento: string;
+  status: StatusRematricula | null;
+  verificando: boolean;
+  onVerificar: () => void;
+  aguardandoPagamento?: boolean;
 }
 
-export const StepSucesso = ({ nomeAluno, curso, turno, linkContrato, jaAssinado, retomada }: Props) => (
+export const StepSucesso = ({
+  nomeAluno,
+  curso,
+  turno,
+  linkContrato,
+  jaAssinado,
+  retomada,
+  idAluno,
+  dataNascimento,
+  status,
+  verificando,
+  onVerificar,
+  aguardandoPagamento,
+}: Props) => (
+
   <div className="text-center space-y-4 py-4">
     <div className="w-16 h-16 rounded-full bg-zampieri-cream mx-auto flex items-center justify-center">
       <CheckCircle2 className="w-8 h-8 text-zampieri-green-dark" />
