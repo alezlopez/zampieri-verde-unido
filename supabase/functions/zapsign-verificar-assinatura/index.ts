@@ -90,8 +90,10 @@ Deno.serve(async (req) => {
       assinado,
       status_documento: statusDoc,
       responsavel_assinou: respAssinou,
+      lote,
       signatarios: signers.map((s) => ({ nome: s?.name ?? null, status: s?.status ?? null })),
     });
+
   } catch (e) {
     console.error("zapsign-verificar-assinatura", e);
     return json({ error: "Erro inesperado" }, 500);
