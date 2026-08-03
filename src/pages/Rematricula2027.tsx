@@ -291,13 +291,30 @@ const Rematricula2027 = () => {
             <StepBusca
               onSelecionar={(a) => {
                 setResumo(a);
-                setFase("identidade");
+                setCanal(null);
+                setFase("canal");
               }}
             />
           )}
 
-          {fase === "identidade" && resumo && (
-            <StepIdentidade aluno={resumo} onVoltar={() => setFase("busca")} onLiberado={abrirAluno} />
+          {fase === "canal" && resumo && (
+            <StepCanal
+              aluno={resumo}
+              onVoltar={() => setFase("busca")}
+              onEnviado={(c) => {
+                setCanal(c);
+                setFase("codigo");
+              }}
+            />
+          )}
+
+          {fase === "codigo" && resumo && canal && (
+            <StepCodigo
+              aluno={resumo}
+              canal={canal}
+              onVoltar={() => setFase("canal")}
+              onValidado={abrirComData}
+            />
           )}
 
           {fase === "aluno" && aluno && (
@@ -309,7 +326,7 @@ const Rematricula2027 = () => {
                 setCpfAluno(cpf);
                 setSemCpf(s);
               }}
-              onVoltar={() => setFase("identidade")}
+              onVoltar={() => setFase("busca")}
               onAvancar={proximaDepoisAluno}
             />
           )}
@@ -320,6 +337,9 @@ const Rematricula2027 = () => {
               descricao="Complete os campos que estiverem em branco."
               form={mae}
               travados={travMae}
+              idAluno={aluno?.id_aluno ?? 0}
+              celularOriginal={maskTelefone(aluno?.celular_mae || "")}
+              emailOriginal={aluno?.email_mae || ""}
               onChange={setMae}
               onVoltar={() => setFase("aluno")}
               onAvancar={proximaDepoisMae}
@@ -332,11 +352,16 @@ const Rematricula2027 = () => {
               descricao="Complete os campos que estiverem em branco."
               form={pai}
               travados={travPai}
+              idAluno={aluno?.id_aluno ?? 0}
+              celularOriginal={maskTelefone(aluno?.celular_pai || "")}
+              emailOriginal={aluno?.email_pai || ""}
               onChange={setPai}
               onVoltar={voltarDePai}
               onAvancar={() => setFase("curso")}
             />
           )}
+
+
 
           {fase === "curso" && aluno && (
             <StepCurso
