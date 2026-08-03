@@ -62,12 +62,22 @@ export const StepPagamento = ({
 
   if (!status?.contrato_assinado) {
     return (
-      <div className="rounded-lg border border-border bg-muted/40 p-4 text-center space-y-3">
-        <Lock className="w-6 h-6 text-muted-foreground mx-auto" />
-        <p className="text-sm text-muted-foreground">
-          Assine o contrato para liberar o pagamento da rematrícula.
-        </p>
-        <Button variant="outline" size="sm" onClick={onVerificar} disabled={verificando}>
+      <div className="rounded-lg border border-border bg-muted/40 p-4 space-y-3 text-left">
+        <div className="flex items-start gap-2">
+          <Lock className="w-5 h-5 text-muted-foreground shrink-0 mt-0.5" />
+          <div>
+            <p className="text-sm font-medium text-foreground">Pagamento bloqueado</p>
+            <p className="text-sm text-muted-foreground">
+              O pagamento da rematrícula é liberado assim que a assinatura do contrato for
+              identificada. A rematrícula só é concluída após o pagamento.
+            </p>
+          </div>
+        </div>
+        <Button className="w-full" disabled>
+          <Lock className="w-4 h-4 mr-2" />
+          Pagar rematrícula
+        </Button>
+        <Button variant="outline" size="sm" className="w-full" onClick={onVerificar} disabled={verificando}>
           {verificando ? (
             <Loader2 className="w-4 h-4 mr-2 animate-spin" />
           ) : (
