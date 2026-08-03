@@ -1,4 +1,5 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
+import { BadgeCheck, ShieldAlert } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -10,6 +11,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { ResponsavelForm } from "./types";
+import { VerificarContatoDialog } from "./VerificarContatoDialog";
 import {
   ESTADOS_CIVIS,
   brToIso,
@@ -28,6 +30,9 @@ interface Props {
   descricao: string;
   form: ResponsavelForm;
   travados: Partial<Record<keyof ResponsavelForm, boolean>>;
+  idAluno: number;
+  celularOriginal: string;
+  emailOriginal: string;
   onChange: (form: ResponsavelForm) => void;
   onVoltar: () => void;
   onAvancar: () => void;
@@ -40,21 +45,47 @@ export const StepResponsavel = ({
   descricao,
   form,
   travados,
+  idAluno,
+  celularOriginal,
+  emailOriginal,
   onChange,
   onVoltar,
   onAvancar,
 }: Props) => {
   const [erros, setErros] = useState<Erros>({});
   const [editando, setEditando] = useState<Partial<Record<keyof ResponsavelForm, boolean>>>({});
+  const [verificados, setVerificados] = useState<{ celular?: string; email?: string }>({});
+  const [dialogo, setDialogo] = useState<null | "celular" | "email">(null);
 
   const set = (campo: keyof ResponsavelForm, valor: string) =>
     onChange({ ...form, [campo]: valor });
+
+  const celularAlterado = useMemo(
+    () =>
+      !!celularOriginal &&
+      onlyDigits(form.celular).length >= 10 &&
+      onlyDigits(form.celular) !== onlyDigits(celularOriginal),
+    [form.celular, celularOriginal],
+  );
+  const emailAlterado = useMemo(
+    () =>
+      !!emailOriginal &&
+      isValidEmail(form.email) &&
+      form.email.trim().toLowerCase() !== emailOriginal.trim().toLowerCase(),
+    [form.email, emailOriginal],
+  );
+
+  const celularPendente =
+    celularAlterado && onlyDigits(verificados.celular || "") !== onlyDigits(form.celular);
+  const emailPendente =
+    emailAlterado && (verificados.email || "").toLowerCase() !== form.email.trim().toLowerCase();
 
   // CPF de mãe/pai já cadastrado não pode ser corrigido
   const naoCorrigivel = (campo: keyof ResponsavelForm) => campo === "cpf";
 
   const bloqueado = (campo: keyof ResponsavelForm) =>
     !!travados[campo] && (naoCorrigivel(campo) || !editando[campo]);
+
 
   const validar = () => {
     const e: Erros = {};
