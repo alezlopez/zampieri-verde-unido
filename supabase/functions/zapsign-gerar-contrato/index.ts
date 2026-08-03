@@ -1,7 +1,8 @@
 import { createClient } from "npm:@supabase/supabase-js@2";
 import { corsHeaders } from "../_shared/cors.ts";
 
-const ZAPSIGN_URL = "https://api.zapsign.com.br/api/v1/models/create-doc/";
+const ZAPSIGN_PRODUCTION_URL = "https://api.zapsign.com.br/api/v1/models/create-doc/";
+const ZAPSIGN_SANDBOX_URL = "https://sandbox.api.zapsign.com.br/api/v1/models/create-doc/";
 const TEMPLATE_ID = "bef1f2c6-bd16-458e-8fa7-f8bd0b907f6a";
 
 const brl = (v: unknown) => {
@@ -47,8 +48,15 @@ Deno.serve(async (req) => {
     });
 
   try {
-    const token = Deno.env.get("ZAPSIGN_API_TOKEN");
-    if (!token) return json({ error: "ZAPSIGN_API_TOKEN não configurado" }, 500);
+    const isSandbox = Deno.env.get("ZAPSIGN_SANDBOX") === "true";
+    const token = Deno.env.get(isSandbox ? "ZAPSIGN_SANDBOX_API_TOKEN" : "ZAPSIGN_API_TOKEN");
+    if (!token) {
+      return json({
+        error: isSandbox
+          ? "ZAPSIGN_SANDBOX_API_TOKEN não configurado"
+          : "ZAPSIGN_API_TOKEN não configurado",
+      }, 500);
+    }
 
     const body = await req.json().catch(() => ({}));
     const idAluno = Number(body?.id_aluno);
@@ -160,12 +168,11 @@ Deno.serve(async (req) => {
       external_id: String(a.id_aluno ?? ""),
       folder_path: "/rematricula-2027/",
       send_automatic_email: false,
-      ...(Deno.env.get("ZAPSIGN_SANDBOX") === "true" ? { sandbox: true } : {}),
       data: Object.entries(vars).map(([de, para]) => ({ de: `{{${de}}}`, para })),
     };
 
 
-    const resp = await fetch(ZAPSIGN_URL, {
+    const resp = await fetch(isSandbox ? ZAPSIGN_SANDBOX_URL : ZAPSIGN_PRODUCTION_URL, {
       method: "POST",
       headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
       body: JSON.stringify(payload),
