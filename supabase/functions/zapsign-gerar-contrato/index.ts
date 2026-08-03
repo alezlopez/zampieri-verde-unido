@@ -153,7 +153,7 @@ Deno.serve(async (req) => {
 
     const payload = {
       template_id: TEMPLATE_ID,
-      name: `Assinar contrato - ${String(a.nome_aluno ?? "")}`.trim(),
+      name: `[REM] - ${String(a.nome_aluno ?? "").trim()} - ${a.id_aluno}`,
       signer_name: nomeResp || String(a.nome_aluno ?? "Responsável"),
       signer_email: emailResp || undefined,
       signer_phone_country: celResp ? "55" : undefined,

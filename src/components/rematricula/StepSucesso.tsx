@@ -37,9 +37,47 @@ export const StepSucesso = ({
   verificando,
   onVerificar,
   aguardandoPagamento,
-}: Props) => (
+}: Props) => {
+  const assinado = !!(jaAssinado || status?.contrato_assinado);
+  const concluida = !!status?.rematricula_concluida;
+  const etapas = [
+    { titulo: "Dados enviados", ok: true },
+    { titulo: "Contrato assinado", ok: assinado },
+    { titulo: "Pagamento e conclusão", ok: concluida },
+  ];
+  const etapaAtiva = concluida ? 3 : assinado ? 3 : 2;
 
+  return (
   <div className="text-center space-y-4 py-4">
+    <div className="rounded-lg border border-border bg-muted/30 p-3 text-left">
+      <p className="text-xs font-medium text-muted-foreground mb-2">
+        Etapa {etapaAtiva} de 3 — a rematrícula só é concluída após o pagamento, que é liberado
+        depois da assinatura do contrato.
+      </p>
+      <ol className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+        {etapas.map((e, i) => (
+          <li
+            key={e.titulo}
+            className={`flex items-center gap-2 rounded-md border p-2 text-xs ${
+              e.ok
+                ? "border-zampieri-green-dark bg-zampieri-cream/50 text-zampieri-green-dark"
+                : i + 1 === etapaAtiva
+                  ? "border-zampieri-gold bg-white text-zampieri-green-dark"
+                  : "border-border bg-white text-muted-foreground"
+            }`}
+          >
+            {e.ok ? (
+              <CheckCircle2 className="w-4 h-4 shrink-0" />
+            ) : (
+              <span className="w-4 h-4 shrink-0 rounded-full border border-current text-[10px] leading-4 text-center">
+                {i + 1}
+              </span>
+            )}
+            <span className="font-medium">{e.titulo}</span>
+          </li>
+        ))}
+      </ol>
+    </div>
     <div className="w-16 h-16 rounded-full bg-zampieri-cream mx-auto flex items-center justify-center">
       <CheckCircle2 className="w-8 h-8 text-zampieri-green-dark" />
     </div>
@@ -124,4 +162,5 @@ export const StepSucesso = ({
       </Link>
     </div>
   </div>
-);
+  );
+};

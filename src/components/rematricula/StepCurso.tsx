@@ -247,7 +247,7 @@ export const StepCurso = ({
           className="flex-1 bg-zampieri-green-dark hover:bg-zampieri-green"
         >
           {salvando && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
-          Concluir rematrícula
+          Gerar e Assinar Contrato
         </Button>
       </div>
     </div>
