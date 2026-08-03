@@ -67,6 +67,9 @@ export async function enviarWhatsappOtp(telefone: string, codigo: string) {
     }),
   });
   const texto = await res.text();
+  console.log(
+    `WhatsApp OTP -> to=${telefoneE164(telefone)} template=${template} lang=${lang} tipo=${tipo} status=${res.status} body=${texto}`,
+  );
   if (!res.ok) {
     console.error(`WhatsApp OTP falhou [${res.status}]: ${texto}`);
     throw new Error(`whatsapp_falhou:${res.status}`);
