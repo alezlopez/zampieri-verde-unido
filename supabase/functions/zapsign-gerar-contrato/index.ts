@@ -166,7 +166,7 @@ Deno.serve(async (req) => {
     };
 
 
-    const resp = await fetch(isSandbox ? ZAPSIGN_SANDBOX_URL : ZAPSIGN_PRODUCTION_URL, {
+    const resp = await fetch(ZAPSIGN_PRODUCTION_URL, {
       method: "POST",
       headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
       body: JSON.stringify(payload),
