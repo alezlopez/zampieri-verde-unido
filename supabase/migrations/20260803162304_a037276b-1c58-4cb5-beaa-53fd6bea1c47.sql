@@ -1,0 +1,1 @@
+ALTER TABLE public.alunos_rematricula_2027 ADD COLUMN IF NOT EXISTS email_conclusao_enviado_em timestamp with time zone;
