@@ -53,6 +53,9 @@ export interface AlunoCompleto {
   celular_mae: string | null;
   email_mae: string | null;
   valor_rematricula: number | null;
+  contrato_gerado?: boolean | null;
+  contrato_assinado?: boolean | null;
+  link_contrato?: string | null;
 }
 
 /** Campos de um responsável, sem o sufixo _pai/_mae */
