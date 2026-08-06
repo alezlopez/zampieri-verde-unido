@@ -49,10 +49,6 @@ const Rematricula2027Admin = () => {
     document.title = "Rematrícula 2027 — Administração";
   }, []);
 
-  useEffect(() => {
-    if (!authLoading && !isAdmin) navigate("/eventos/login");
-  }, [authLoading, isAdmin, navigate]);
-
   const carregar = async () => {
     setLoading(true);
     const { data } = await supabase.rpc("rematricula_2027_admin_listagem");

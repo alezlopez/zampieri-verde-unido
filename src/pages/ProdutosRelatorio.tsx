@@ -99,10 +99,6 @@ const ProdutosRelatorio = () => {
   const [backfillLoading, setBackfillLoading] = useState(false);
 
   useEffect(() => {
-    if (!authLoading && (!user || !isAdmin)) navigate("/eventos");
-  }, [authLoading, user, isAdmin, navigate]);
-
-  useEffect(() => {
     supabase.from("produtos").select("id, nome").order("nome").then(({ data }) => setProdutos(data || []));
     supabase.from("produto_variacoes").select("id, nome, produto_id").order("nome").then(({ data }) => setVariacoes(data || []));
     supabase.from("eventos").select("id, titulo").order("data_evento", { ascending: false }).then(({ data }) => setEventos(data || []));

@@ -69,10 +69,6 @@ const ScannerIngressos = () => {
   const manualInputRef = useRef<HTMLInputElement>(null);
   const [manualCode, setManualCode] = useState("");
 
-  useEffect(() => {
-    if (!authLoading && (!user || !canScan)) navigate("/eventos/login");
-  }, [user, canScan, authLoading, navigate]);
-
   const stopScanner = useCallback(async () => {
     if (scannerRef.current?.isScanning) {
       await scannerRef.current.stop();
