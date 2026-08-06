@@ -148,6 +148,51 @@ const Rematricula2027Admin = () => {
   const [expandido, setExpandido] = useState<number | null>(null);
   const [revisando, setRevisando] = useState<LinhaAdmin | null>(null);
   const [salvando, setSalvando] = useState(false);
+  const [editando, setEditando] = useState<LinhaAdmin | null>(null);
+  const [form, setForm] = useState({
+    cpf_pai: "",
+    telefone_pai: "",
+    celular_pai: "",
+    cpf_mae: "",
+    telefone_mae: "",
+    celular_mae: "",
+  });
+
+  const abrirEdicao = (l: LinhaAdmin) => {
+    setForm({
+      cpf_pai: maskCpf(l.cpf_pai || ""),
+      telefone_pai: maskTelefone(l.telefone_pai || ""),
+      celular_pai: maskTelefone(l.celular_pai || ""),
+      cpf_mae: maskCpf(l.cpf_mae || ""),
+      telefone_mae: maskTelefone(l.telefone_mae || ""),
+      celular_mae: maskTelefone(l.celular_mae || ""),
+    });
+    setEditando(l);
+  };
+
+  const salvarContatos = async () => {
+    if (!editando) return;
+    setSalvando(true);
+    const { data, error } = await supabase.rpc("rematricula_2027_admin_editar_contatos", {
+      p_id_aluno: editando.id_aluno,
+      p_cpf_pai: form.cpf_pai || null,
+      p_telefone_pai: form.telefone_pai || null,
+      p_celular_pai: form.celular_pai || null,
+      p_cpf_mae: form.cpf_mae || null,
+      p_telefone_mae: form.telefone_mae || null,
+      p_celular_mae: form.celular_mae || null,
+    });
+    setSalvando(false);
+    const res = (data as { success: boolean; message: string }[] | null)?.[0];
+    if (error || !res?.success) {
+      toast.error(res?.message || "Não foi possível salvar os dados.");
+      return;
+    }
+    toast.success("Dados atualizados.");
+    setEditando(null);
+    carregar();
+  };
+
 
   useEffect(() => {
     document.title = "Rematrícula 2027 — Administração";
