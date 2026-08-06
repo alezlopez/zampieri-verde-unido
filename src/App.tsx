@@ -79,6 +79,8 @@ const App = () => (
             <Route path="/prematricula" element={<PreMatricula />} />
             <Route path="/prematricula/agendar" element={<PreMatriculaAgendar />} />
             <Route path="/prematricula/admin" element={<RequireAdmin><PreMatriculaAdmin /></RequireAdmin>} />
+            <Route path="/prematricula/agenda" element={<RequireAdmin><PreMatriculaAgenda /></RequireAdmin>} />
+
 
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
