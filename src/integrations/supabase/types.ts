@@ -1281,7 +1281,8 @@ export type Database = {
           serie_pretendida: string
           status: string
           tipo_escola: string | null
-          token_hash: string
+          token: string | null
+          token_hash: string | null
           turno_preferencia: string
           updated_at: string
           usa_medicacao: string | null
@@ -1321,7 +1322,8 @@ export type Database = {
           serie_pretendida: string
           status?: string
           tipo_escola?: string | null
-          token_hash: string
+          token?: string | null
+          token_hash?: string | null
           turno_preferencia: string
           updated_at?: string
           usa_medicacao?: string | null
@@ -1361,7 +1363,8 @@ export type Database = {
           serie_pretendida?: string
           status?: string
           tipo_escola?: string | null
-          token_hash?: string
+          token?: string | null
+          token_hash?: string | null
           turno_preferencia?: string
           updated_at?: string
           usa_medicacao?: string | null
