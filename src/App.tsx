@@ -25,6 +25,7 @@ import Produtos from "./pages/Produtos";
 import ComprovanteProduto from "./pages/ComprovanteProduto";
 import CompraSucesso from "./pages/CompraSucesso";
 import Rematricula2027 from "./pages/Rematricula2027";
+import ManualDaFamilia from "./pages/ManualDaFamilia";
 
 const queryClient = new QueryClient();
 
@@ -58,6 +59,7 @@ const App = () => (
             <Route path="/eventos/sucesso" element={<CompraSucesso />} />
             <Route path="/eventos/minhas-compras" element={<MeusIngressos />} />
             <Route path="/rematricula2027" element={<Rematricula2027 />} />
+            <Route path="/manualdafamilia" element={<ManualDaFamilia />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>
