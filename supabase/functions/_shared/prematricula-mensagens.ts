@@ -58,7 +58,7 @@ const TEMPLATES: Record<
   reprovada: {
     envVar: "WHATSAPP_TPL_PREMATRICULA_REPROVADA",
     padrao: "prematricula_reprovada",
-    params: (d) => [primeiroNome(d.respNome), d.alunoNome, d.motivoReprovacao || "-"],
+    params: (d) => [primeiroNome(d.respNome), d.alunoNome],
   },
   agendada: {
     envVar: "WHATSAPP_TPL_PREMATRICULA_AGENDADA",
@@ -83,15 +83,21 @@ async function enviarWhatsapp(evento: EventoMensagem, d: DadosMensagem) {
     console.warn("WhatsApp não configurado; mensagem não enviada:", evento);
     return;
   }
+  // Template de conclusão ainda não aprovado na Meta: só e-mail por enquanto.
+  if (evento === "concluida") {
+    console.log("WhatsApp prematricula[concluida] desativado (template pendente)");
+    return;
+  }
   const cfg = TEMPLATES[evento];
   const nomeTemplate = Deno.env.get(cfg.envVar) || cfg.padrao;
   const lang = Deno.env.get("WHATSAPP_TEMPLATE_LANG") || "pt_BR";
 
-  // Quando o template "aprovada" usa botão de URL dinâmica na Meta
+  // Template "aprovada" usa botão de URL dinâmica na Meta
   // (base fixa: https://colegiozampieri.com.br/prematricula/agendar?t={{1}}),
-  // o corpo não leva o link e o token vai no componente `button`.
+  // então o corpo não leva o link e o token vai no componente `button`.
   const usaBotao =
-    evento === "aprovada" && Deno.env.get("WHATSAPP_TPL_PREMATRICULA_APROVADA_BOTAO") === "1";
+    evento === "aprovada" &&
+    Deno.env.get("WHATSAPP_TPL_PREMATRICULA_APROVADA_BOTAO") !== "0";
 
   const textos = cfg.params(d);
   const corpo = usaBotao ? textos.slice(0, 2) : textos;
