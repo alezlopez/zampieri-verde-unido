@@ -1,4 +1,4 @@
-import { useLocation, Link } from "react-router-dom";
+import { useLocation, Link, Navigate } from "react-router-dom";
 import { useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Home } from "lucide-react";
@@ -13,6 +13,12 @@ const NotFound = () => {
       location.pathname
     );
   }, [location.pathname]);
+
+  // Fallback: link de agendamento gerado sem "?t=" (ex.: /prematricula/agendar<token>)
+  const agendarMatch = location.pathname.match(/^\/prematricula\/agendar[/?]?([A-Za-z0-9_-]{8,})$/);
+  if (agendarMatch) {
+    return <Navigate to={`/prematricula/agendar?t=${agendarMatch[1]}`} replace />;
+  }
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-background px-4">
