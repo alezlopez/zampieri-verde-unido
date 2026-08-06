@@ -1,10 +1,11 @@
 import { Fragment, useEffect, useMemo, useState } from "react";
-import { Check, ChevronDown, ChevronUp, Loader2, RefreshCw, Search, Undo2 } from "lucide-react";
+import { Check, ChevronDown, ChevronUp, Loader2, Pencil, RefreshCw, Search, Undo2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
-import { formatBRL } from "@/components/rematricula/utils";
+import { formatBRL, maskCpf, maskTelefone } from "@/components/rematricula/utils";
+
 import { toast } from "sonner";
 import {
   Dialog,
