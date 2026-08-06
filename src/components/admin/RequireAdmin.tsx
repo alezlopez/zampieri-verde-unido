@@ -34,7 +34,23 @@ export const RequireAdmin = ({ children, allow = "admin" }: Props) => {
     );
   }
 
-  return <>{children}</>;
+  const naHome = location.pathname === "/admin";
+
+  return (
+    <>
+      {children}
+      {!naHome && (
+        <Link
+          to="/admin"
+          className="fixed bottom-4 right-4 z-50 inline-flex items-center gap-2 rounded-full bg-zampieri-green-dark px-4 py-2.5 text-sm font-medium text-white shadow-lg transition-transform hover:scale-105"
+        >
+          <LayoutDashboard className="w-4 h-4" />
+          Painel Admin
+        </Link>
+      )}
+    </>
+  );
 };
+
 
 export default RequireAdmin;
