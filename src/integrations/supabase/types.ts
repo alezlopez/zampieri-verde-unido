@@ -1533,6 +1533,38 @@ export type Database = {
         }
         Relationships: []
       }
+      rematricula_2027_numeros_sorte: {
+        Row: {
+          created_at: string
+          faixa: string
+          id: string
+          id_aluno: number
+          numero: string
+        }
+        Insert: {
+          created_at?: string
+          faixa: string
+          id?: string
+          id_aluno: number
+          numero: string
+        }
+        Update: {
+          created_at?: string
+          faixa?: string
+          id?: string
+          id_aluno?: number
+          numero?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "rematricula_2027_numeros_sorte_id_aluno_fkey"
+            columns: ["id_aluno"]
+            isOneToOne: false
+            referencedRelation: "alunos_rematricula_2027"
+            referencedColumns: ["id_aluno"]
+          },
+        ]
+      }
       rematricula_2027_otp: {
         Row: {
           canal: string
@@ -1844,6 +1876,10 @@ export type Database = {
         }[]
       }
       find_user_id_by_cpf: { Args: { p_cpf: string }; Returns: string }
+      gerar_numeros_sorte_2027: {
+        Args: { p_id_aluno: number }
+        Returns: number
+      }
       get_comprador_dados: {
         Args: { p_user_id: string }
         Returns: {
@@ -1990,6 +2026,26 @@ export type Database = {
           valor_rematricula: number
         }[]
       }
+      rematricula_2027_admin_listagem: {
+        Args: never
+        Returns: {
+          contrato_assinado: boolean
+          contrato_gerado: boolean
+          curso_2027: string
+          curso_atual: string
+          data_pagamento: string
+          forma_pagamento: string
+          id_aluno: number
+          link_contrato: string
+          nome_aluno: string
+          numeros: string[]
+          parcelas: number
+          rematricula_concluida: boolean
+          responsavel_financeiro: string
+          turno_escolhido: string
+          valor_pago: number
+        }[]
+      }
       rematricula_2027_buscar: {
         Args: { p_termo: string }
         Returns: {
@@ -2005,6 +2061,23 @@ export type Database = {
           canal: string
           chave: string
           rotulo: string
+        }[]
+      }
+      rematricula_2027_numeros_consultar: {
+        Args: { p_data_nascimento: string; p_termo: string }
+        Returns: {
+          curso_2027: string
+          faixa: string
+          id_aluno: number
+          nome_aluno: string
+          numero: string
+        }[]
+      }
+      rematricula_2027_numeros_do_aluno: {
+        Args: { p_data_nascimento: string; p_id_aluno: number }
+        Returns: {
+          faixa: string
+          numero: string
         }[]
       }
       rematricula_2027_rate_hit: {
