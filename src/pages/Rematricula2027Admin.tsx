@@ -579,7 +579,105 @@ const Rematricula2027Admin = () => {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <Dialog open={!!editando} onOpenChange={(o) => !o && setEditando(null)}>
+        <DialogContent className="max-w-lg max-h-[85vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Editar contatos dos responsáveis</DialogTitle>
+            <DialogDescription>
+              {editando ? `${editando.nome_aluno} · ID ${editando.id_aluno}` : ""}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 text-sm">
+            <div className="rounded-lg border border-border p-3 space-y-3">
+              <p className="font-medium text-zampieri-green-dark">
+                Pai {editando?.nome_pai ? `· ${editando.nome_pai}` : ""}
+              </p>
+              <div>
+                <label className="text-xs text-muted-foreground">CPF do pai</label>
+                <Input
+                  value={form.cpf_pai}
+                  onChange={(e) => setForm({ ...form, cpf_pai: maskCpf(e.target.value) })}
+                  placeholder="000.000.000-00"
+                />
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="text-xs text-muted-foreground">Telefone do pai</label>
+                  <Input
+                    value={form.telefone_pai}
+                    onChange={(e) =>
+                      setForm({ ...form, telefone_pai: maskTelefone(e.target.value) })
+                    }
+                    placeholder="(11) 0000-0000"
+                  />
+                </div>
+                <div>
+                  <label className="text-xs text-muted-foreground">Celular do pai</label>
+                  <Input
+                    value={form.celular_pai}
+                    onChange={(e) =>
+                      setForm({ ...form, celular_pai: maskTelefone(e.target.value) })
+                    }
+                    placeholder="(11) 90000-0000"
+                  />
+                </div>
+              </div>
+            </div>
+
+            <div className="rounded-lg border border-border p-3 space-y-3">
+              <p className="font-medium text-zampieri-green-dark">
+                Mãe {editando?.nome_mae ? `· ${editando.nome_mae}` : ""}
+              </p>
+              <div>
+                <label className="text-xs text-muted-foreground">CPF da mãe</label>
+                <Input
+                  value={form.cpf_mae}
+                  onChange={(e) => setForm({ ...form, cpf_mae: maskCpf(e.target.value) })}
+                  placeholder="000.000.000-00"
+                />
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="text-xs text-muted-foreground">Telefone da mãe</label>
+                  <Input
+                    value={form.telefone_mae}
+                    onChange={(e) =>
+                      setForm({ ...form, telefone_mae: maskTelefone(e.target.value) })
+                    }
+                    placeholder="(11) 0000-0000"
+                  />
+                </div>
+                <div>
+                  <label className="text-xs text-muted-foreground">Celular da mãe</label>
+                  <Input
+                    value={form.celular_mae}
+                    onChange={(e) =>
+                      setForm({ ...form, celular_mae: maskTelefone(e.target.value) })
+                    }
+                    placeholder="(11) 90000-0000"
+                  />
+                </div>
+              </div>
+            </div>
+            <p className="text-xs text-muted-foreground">
+              Campos deixados em branco mantêm o valor atual. As mudanças ficam registradas no
+              histórico de alterações.
+            </p>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setEditando(null)}>
+              Cancelar
+            </Button>
+            <Button disabled={salvando} onClick={salvarContatos}>
+              {salvando && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
+              Salvar
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </main>
+
   );
 };
 
