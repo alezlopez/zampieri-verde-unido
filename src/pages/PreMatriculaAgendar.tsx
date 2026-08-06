@@ -111,8 +111,27 @@ const PreMatriculaAgendar = () => {
 
   if (erro || !info) {
     return (
-      <main className="min-h-screen flex items-center justify-center px-4">
-        <p className="text-sm text-muted-foreground text-center">{erro}</p>
+      <main className="min-h-screen bg-zampieri-cream/30 flex items-center justify-center px-4 py-16">
+        <div className="max-w-md w-full rounded-2xl bg-white border border-border p-8 text-center space-y-4">
+          <CalendarCheck className="w-10 h-10 mx-auto text-zampieri-green-dark" />
+          <h1 className="font-serif text-xl font-bold text-zampieri-green-dark">
+            Link de agendamento necessário
+          </h1>
+          <p className="text-sm text-muted-foreground">
+            {erro ?? "Não encontramos este agendamento."} Esta página só abre pelo link
+            personalizado enviado por WhatsApp/e-mail após a aprovação da pré-matrícula.
+          </p>
+          <div className="flex flex-col gap-2">
+            <Button asChild className="bg-zampieri-green-dark hover:bg-zampieri-green">
+              <a href="/prematricula">Fazer pré-matrícula</a>
+            </Button>
+            <Button asChild variant="outline">
+              <a href="https://wa.me/5511939341503" target="_blank" rel="noreferrer">
+                Falar com a secretaria
+              </a>
+            </Button>
+          </div>
+        </div>
       </main>
     );
   }
