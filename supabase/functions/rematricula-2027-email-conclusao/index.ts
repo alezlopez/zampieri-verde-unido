@@ -50,6 +50,13 @@ Deno.serve(async (req) => {
     const to = [...new Set(destinatarios)];
     if (!to.length) return json({ ok: true, skipped: "sem_email" });
 
+    const { data: sorteRows } = await admin
+      .from("rematricula_2027_numeros_sorte")
+      .select("numero")
+      .eq("id_aluno", idAluno)
+      .order("numero");
+    const numerosSorte = (sorteRows ?? []).map((r: { numero: string }) => r.numero).join(", ");
+
     const res = await fetch(RESEND_API, {
       method: "POST",
       headers: { Authorization: `Bearer ${RESEND_KEY}`, "Content-Type": "application/json" },
@@ -65,6 +72,7 @@ Deno.serve(async (req) => {
             turno_escolhido: aluno.turno_escolhido ?? "",
             valor_com_desconto: String(aluno.valor_com_desconto ?? ""),
             link_contrato: aluno.link_contrato ?? "",
+            numeros_sorte: numerosSorte,
             link_manual_familia:
               Deno.env.get("LINK_MANUAL_FAMILIA") ?? "https://colegiozampieri.com.br",
 
