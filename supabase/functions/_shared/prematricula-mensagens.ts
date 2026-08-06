@@ -58,7 +58,7 @@ const TEMPLATES: Record<
   reprovada: {
     envVar: "WHATSAPP_TPL_PREMATRICULA_REPROVADA",
     padrao: "prematricula_reprovada",
-    params: (d) => [primeiroNome(d.respNome), d.alunoNome, d.motivoReprovacao || "-"],
+    params: (d) => [primeiroNome(d.respNome), d.alunoNome],
   },
   agendada: {
     envVar: "WHATSAPP_TPL_PREMATRICULA_AGENDADA",
@@ -81,6 +81,11 @@ async function enviarWhatsapp(evento: EventoMensagem, d: DadosMensagem) {
   const phoneId = Deno.env.get("WHATSAPP_PHONE_NUMBER_ID");
   if (!token || !phoneId) {
     console.warn("WhatsApp não configurado; mensagem não enviada:", evento);
+    return;
+  }
+  // Template de conclusão ainda não aprovado na Meta: só e-mail por enquanto.
+  if (evento === "concluida") {
+    console.log("WhatsApp prematricula[concluida] desativado (template pendente)");
     return;
   }
   const cfg = TEMPLATES[evento];
