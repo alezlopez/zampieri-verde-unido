@@ -32,6 +32,9 @@ import RequireAdmin from "./components/admin/RequireAdmin";
 import NumerosDaSorte from "./pages/NumerosDaSorte";
 import Rematricula2027Admin from "./pages/Rematricula2027Admin";
 import Rematricula2027Followup from "./pages/Rematricula2027Followup";
+import PreMatricula from "./pages/PreMatricula";
+import PreMatriculaAgendar from "./pages/PreMatriculaAgendar";
+import PreMatriculaAdmin from "./pages/PreMatriculaAdmin";
 
 const queryClient = new QueryClient();
 
