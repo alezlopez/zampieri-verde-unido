@@ -86,6 +86,12 @@ const blocos: Bloco[] = [
         icone: GraduationCap,
       },
       {
+        titulo: "Follow-up de pendentes",
+        descricao: "Quem parou antes do contrato, da assinatura ou do pagamento.",
+        href: "/rematricula2027/followup",
+        icone: GraduationCap,
+      },
+      {
         titulo: "Números da sorte",
         descricao: "Consultar os números gerados para o sorteio.",
         href: "/numerosdasorte",
