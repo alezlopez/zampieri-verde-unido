@@ -86,7 +86,27 @@ async function enviarWhatsapp(evento: EventoMensagem, d: DadosMensagem) {
   const cfg = TEMPLATES[evento];
   const nomeTemplate = Deno.env.get(cfg.envVar) || cfg.padrao;
   const lang = Deno.env.get("WHATSAPP_TEMPLATE_LANG") || "pt_BR";
-  const parameters = cfg.params(d).map((text) => ({ type: "text", text }));
+
+  // Quando o template "aprovada" usa botão de URL dinâmica na Meta
+  // (base fixa: https://colegiozampieri.com.br/prematricula/agendar?t={{1}}),
+  // o corpo não leva o link e o token vai no componente `button`.
+  const usaBotao =
+    evento === "aprovada" && Deno.env.get("WHATSAPP_TPL_PREMATRICULA_APROVADA_BOTAO") === "1";
+
+  const textos = cfg.params(d);
+  const corpo = usaBotao ? textos.slice(0, 2) : textos;
+  const parameters = corpo.map((text) => ({ type: "text", text }));
+
+  const components: unknown[] = parameters.length ? [{ type: "body", parameters }] : [];
+  if (usaBotao) {
+    const tokenLink = (d.linkAgendamento || "").split("t=")[1] || "";
+    components.push({
+      type: "button",
+      sub_type: "url",
+      index: "0",
+      parameters: [{ type: "text", text: tokenLink }],
+    });
+  }
 
   const res = await fetch(`https://graph.facebook.com/v23.0/${phoneId}/messages`, {
     method: "POST",
@@ -99,7 +119,7 @@ async function enviarWhatsapp(evento: EventoMensagem, d: DadosMensagem) {
       template: {
         name: nomeTemplate,
         language: { code: lang },
-        components: parameters.length ? [{ type: "body", parameters }] : [],
+        components,
       },
     }),
   });
