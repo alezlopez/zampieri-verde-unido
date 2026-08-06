@@ -35,6 +35,8 @@ import Rematricula2027Followup from "./pages/Rematricula2027Followup";
 import PreMatricula from "./pages/PreMatricula";
 import PreMatriculaAgendar from "./pages/PreMatriculaAgendar";
 import PreMatriculaAdmin from "./pages/PreMatriculaAdmin";
+import PreMatriculaAgenda from "./pages/PreMatriculaAgenda";
+
 
 const queryClient = new QueryClient();
 
