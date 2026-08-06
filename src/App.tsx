@@ -31,6 +31,7 @@ import AdminHome from "./pages/AdminHome";
 import RequireAdmin from "./components/admin/RequireAdmin";
 import NumerosDaSorte from "./pages/NumerosDaSorte";
 import Rematricula2027Admin from "./pages/Rematricula2027Admin";
+import Rematricula2027Followup from "./pages/Rematricula2027Followup";
 
 const queryClient = new QueryClient();
 
