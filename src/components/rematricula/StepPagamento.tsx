@@ -37,6 +37,25 @@ export const StepPagamento = ({
   const [parcelas, setParcelas] = useState(12);
   const [enviando, setEnviando] = useState(false);
   const [erro, setErro] = useState<string | null>(null);
+  const [numeros, setNumeros] = useState<{ numero: string; faixa: string }[]>([]);
+
+  const concluida = !!status?.rematricula_concluida;
+
+  useEffect(() => {
+    if (!concluida) return;
+    let ativo = true;
+    supabase
+      .rpc("rematricula_2027_numeros_do_aluno", {
+        p_id_aluno: idAluno,
+        p_data_nascimento: dataNascimento,
+      })
+      .then(({ data }) => {
+        if (ativo) setNumeros((data as { numero: string; faixa: string }[]) ?? []);
+      });
+    return () => {
+      ativo = false;
+    };
+  }, [concluida, idAluno, dataNascimento]);
 
   const valorAvista = Number(status?.valor_avista || 0);
   const valorParcelado = Number(status?.valor_parcelado || 0);
@@ -48,17 +67,50 @@ export const StepPagamento = ({
     [maxParcelas],
   );
 
-  if (status?.rematricula_concluida) {
+  if (concluida) {
     return (
-      <div className="rounded-lg border border-zampieri-green-dark bg-zampieri-cream/60 p-4 text-center space-y-2">
-        <CheckCircle2 className="w-7 h-7 text-zampieri-green-dark mx-auto" />
-        <p className="font-semibold text-zampieri-green-dark">Rematrícula concluída!</p>
-        <p className="text-sm text-muted-foreground">
-          Pagamento confirmado. Nossa secretaria dará sequência ao processo.
-        </p>
+      <div className="space-y-3">
+        <div className="rounded-lg border border-zampieri-green-dark bg-zampieri-cream/60 p-4 text-center space-y-2">
+          <CheckCircle2 className="w-7 h-7 text-zampieri-green-dark mx-auto" />
+          <p className="font-semibold text-zampieri-green-dark">Rematrícula concluída!</p>
+          <p className="text-sm text-muted-foreground">
+            Pagamento confirmado. Nossa secretaria dará sequência ao processo.
+          </p>
+        </div>
+
+        {numeros.length > 0 && (
+          <div className="rounded-lg border border-zampieri-gold bg-white p-4 text-center space-y-3">
+            <div>
+              <Sparkles className="w-6 h-6 text-zampieri-gold mx-auto" />
+              <p className="font-semibold text-zampieri-green-dark mt-1">
+                Seus números da sorte
+              </p>
+              <p className="text-xs text-muted-foreground">
+                {numeros.length} número(s) gerados para o sorteio.
+              </p>
+            </div>
+            <div className="flex flex-wrap justify-center gap-2">
+              {numeros.map((n) => (
+                <span
+                  key={n.numero}
+                  className="rounded-lg border border-zampieri-green-dark bg-zampieri-cream px-4 py-2 font-mono text-lg font-bold tracking-widest text-zampieri-green-dark"
+                >
+                  {n.numero}
+                </span>
+              ))}
+            </div>
+            <a
+              href="/numerosdasorte"
+              className="inline-block text-xs font-medium text-zampieri-green-dark underline"
+            >
+              Consultar depois em /numerosdasorte
+            </a>
+          </div>
+        )}
       </div>
     );
   }
+
 
   if (!status?.contrato_assinado) {
     return (
