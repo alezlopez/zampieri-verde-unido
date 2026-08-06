@@ -92,11 +92,12 @@ async function enviarWhatsapp(evento: EventoMensagem, d: DadosMensagem) {
   const nomeTemplate = Deno.env.get(cfg.envVar) || cfg.padrao;
   const lang = Deno.env.get("WHATSAPP_TEMPLATE_LANG") || "pt_BR";
 
-  // Quando o template "aprovada" usa botão de URL dinâmica na Meta
+  // Template "aprovada" usa botão de URL dinâmica na Meta
   // (base fixa: https://colegiozampieri.com.br/prematricula/agendar?t={{1}}),
-  // o corpo não leva o link e o token vai no componente `button`.
+  // então o corpo não leva o link e o token vai no componente `button`.
   const usaBotao =
-    evento === "aprovada" && Deno.env.get("WHATSAPP_TPL_PREMATRICULA_APROVADA_BOTAO") === "1";
+    evento === "aprovada" &&
+    Deno.env.get("WHATSAPP_TPL_PREMATRICULA_APROVADA_BOTAO") !== "0";
 
   const textos = cfg.params(d);
   const corpo = usaBotao ? textos.slice(0, 2) : textos;
