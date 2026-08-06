@@ -103,6 +103,13 @@ const blocos: Bloco[] = [
         href: "/prematricula/admin",
         icone: GraduationCap,
       },
+      {
+        titulo: "Agenda da entrevista",
+        descricao: "Definir horários por dia da semana e bloquear datas.",
+        href: "/prematricula/agenda",
+        icone: GraduationCap,
+      },
+
     ],
   },
 ];
