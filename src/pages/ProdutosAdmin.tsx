@@ -59,10 +59,6 @@ const ProdutosAdmin = () => {
   const [editing, setEditing] = useState<Partial<Produto> | null>(null);
   const [editingVar, setEditingVar] = useState<Partial<Variacao> | null>(null);
 
-  useEffect(() => {
-    if (!authLoading && (!user || !isAdmin)) navigate("/eventos/login");
-  }, [user, isAdmin, authLoading, navigate]);
-
   const loadAll = async () => {
     setLoading(true);
     const { data: prods } = await supabase.from("produtos").select("*").order("created_at", { ascending: false });

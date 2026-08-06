@@ -97,10 +97,6 @@ const EventosRelatorio = () => {
   const [backfillLoading, setBackfillLoading] = useState(false);
 
   useEffect(() => {
-    if (!authLoading && (!user || !isAdmin)) navigate("/eventos");
-  }, [authLoading, user, isAdmin, navigate]);
-
-  useEffect(() => {
     supabase.from("eventos").select("id, titulo").order("data_evento", { ascending: false }).then(({ data }) => {
       setEventos(data || []);
     });

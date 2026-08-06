@@ -169,12 +169,6 @@ const EventosAdmin = () => {
   const [resumoGeral, setResumoGeral] = useState<ResumoFinanceiro>(emptyResumo());
   const [resumoPorEvento, setResumoPorEvento] = useState<Record<string, ResumoFinanceiro>>({});
 
-  useEffect(() => {
-    if (!authLoading && (!user || !isAdmin)) {
-      navigate("/eventos/login");
-    }
-  }, [user, isAdmin, authLoading, navigate]);
-
   const fetchEventos = async () => {
     // Admin sees all events (including inactive) via the "Admins can manage events" policy
     const { data } = await supabase
