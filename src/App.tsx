@@ -31,6 +31,7 @@ import AdminHome from "./pages/AdminHome";
 import RequireAdmin from "./components/admin/RequireAdmin";
 import NumerosDaSorte from "./pages/NumerosDaSorte";
 import Rematricula2027Admin from "./pages/Rematricula2027Admin";
+import Rematricula2027Followup from "./pages/Rematricula2027Followup";
 
 const queryClient = new QueryClient();
 
@@ -69,6 +70,8 @@ const App = () => (
             <Route path="/admin" element={<RequireAdmin allow="scan"><AdminHome /></RequireAdmin>} />
             <Route path="/numerosdasorte" element={<NumerosDaSorte />} />
             <Route path="/rematricula2027/admin" element={<RequireAdmin><Rematricula2027Admin /></RequireAdmin>} />
+            <Route path="/rematricula2027/followup" element={<RequireAdmin><Rematricula2027Followup /></RequireAdmin>} />
+
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>

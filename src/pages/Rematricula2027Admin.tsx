@@ -231,14 +231,19 @@ const Rematricula2027Admin = () => {
               Controle de alunos rematriculados, conferência e números da sorte.
             </p>
           </div>
-          <Button variant="outline" onClick={carregar} disabled={loading}>
-            {loading ? (
-              <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-            ) : (
-              <RefreshCw className="w-4 h-4 mr-2" />
-            )}
-            Atualizar
-          </Button>
+          <div className="flex gap-2">
+            <Button variant="outline" asChild>
+              <a href="/rematricula2027/followup">Follow-up de pendentes</a>
+            </Button>
+            <Button variant="outline" onClick={carregar} disabled={loading}>
+              {loading ? (
+                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+              ) : (
+                <RefreshCw className="w-4 h-4 mr-2" />
+              )}
+              Atualizar
+            </Button>
+          </div>
         </header>
 
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
