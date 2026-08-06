@@ -87,6 +87,9 @@ export type Database = {
           cidade_pai: string | null
           complemento_mae: string | null
           complemento_pai: string | null
+          conferida: boolean
+          conferida_em: string | null
+          conferida_por: string | null
           contrato_assinado: boolean | null
           contrato_gerado: boolean | null
           cpf_aluno: string | null
@@ -158,6 +161,9 @@ export type Database = {
           cidade_pai?: string | null
           complemento_mae?: string | null
           complemento_pai?: string | null
+          conferida?: boolean
+          conferida_em?: string | null
+          conferida_por?: string | null
           contrato_assinado?: boolean | null
           contrato_gerado?: boolean | null
           cpf_aluno?: string | null
@@ -229,6 +235,9 @@ export type Database = {
           cidade_pai?: string | null
           complemento_mae?: string | null
           complemento_pai?: string | null
+          conferida?: boolean
+          conferida_em?: string | null
+          conferida_por?: string | null
           contrato_assinado?: boolean | null
           contrato_gerado?: boolean | null
           cpf_aluno?: string | null
@@ -1533,6 +1542,41 @@ export type Database = {
         }
         Relationships: []
       }
+      rematricula_2027_alteracoes: {
+        Row: {
+          campo: string
+          created_at: string
+          id: string
+          id_aluno: number
+          valor_anterior: string | null
+          valor_novo: string | null
+        }
+        Insert: {
+          campo: string
+          created_at?: string
+          id?: string
+          id_aluno: number
+          valor_anterior?: string | null
+          valor_novo?: string | null
+        }
+        Update: {
+          campo?: string
+          created_at?: string
+          id?: string
+          id_aluno?: number
+          valor_anterior?: string | null
+          valor_novo?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "rematricula_2027_alteracoes_id_aluno_fkey"
+            columns: ["id_aluno"]
+            isOneToOne: false
+            referencedRelation: "alunos_rematricula_2027"
+            referencedColumns: ["id_aluno"]
+          },
+        ]
+      }
       rematricula_2027_numeros_sorte: {
         Row: {
           created_at: string
@@ -2026,23 +2070,45 @@ export type Database = {
           valor_rematricula: number
         }[]
       }
+      rematricula_2027_admin_conferir: {
+        Args: { p_conferida: boolean; p_id_aluno: number }
+        Returns: {
+          message: string
+          success: boolean
+        }[]
+      }
       rematricula_2027_admin_listagem: {
         Args: never
         Returns: {
+          alteracoes: Json
+          celular_mae: string
+          celular_pai: string
+          conferida: boolean
+          conferida_em: string
           contrato_assinado: boolean
           contrato_gerado: boolean
+          cpf_mae: string
+          cpf_pai: string
           curso_2027: string
           curso_atual: string
           data_pagamento: string
+          email_mae: string
+          email_pai: string
           forma_pagamento: string
           id_aluno: number
           link_contrato: string
           nome_aluno: string
+          nome_mae: string
+          nome_pai: string
           numeros: string[]
           parcelas: number
+          percentual_desconto: number
+          qtd_alteracoes: number
           rematricula_concluida: boolean
           responsavel_financeiro: string
           turno_escolhido: string
+          valor_cheio: number
+          valor_com_desconto: number
           valor_pago: number
         }[]
       }
