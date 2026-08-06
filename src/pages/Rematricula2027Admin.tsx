@@ -99,7 +99,9 @@ const LABEL_CAMPO: Record<string, string> = {
   estado_mae: "Estado da mãe",
   data_nascimento_mae: "Nascimento da mãe",
   celular_mae: "Celular da mãe",
+  telefone_mae: "Telefone da mãe",
   email_mae: "E-mail da mãe",
+
 };
 
 const Badge = ({ ok, label }: { ok: boolean; label: string }) => (
