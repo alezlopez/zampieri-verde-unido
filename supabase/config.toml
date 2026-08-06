@@ -25,3 +25,12 @@ verify_jwt = false
 
 [functions.rematricula-2027-otp-validar]
 verify_jwt = false
+
+[functions.prematricula-enviar]
+verify_jwt = false
+
+[functions.prematricula-agenda]
+verify_jwt = false
+
+[functions.prematricula-admin-acao]
+verify_jwt = false

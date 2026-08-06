@@ -97,6 +97,12 @@ const blocos: Bloco[] = [
         href: "/numerosdasorte",
         icone: Sparkles,
       },
+      {
+        titulo: "Pré-matrículas",
+        descricao: "Aprovar CPF, acompanhar agendamentos e concluir entrevistas.",
+        href: "/prematricula/admin",
+        icone: GraduationCap,
+      },
     ],
   },
 ];
