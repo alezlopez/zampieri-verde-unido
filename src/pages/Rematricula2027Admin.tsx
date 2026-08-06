@@ -1,10 +1,11 @@
 import { Fragment, useEffect, useMemo, useState } from "react";
-import { Check, ChevronDown, ChevronUp, Loader2, RefreshCw, Search, Undo2 } from "lucide-react";
+import { Check, ChevronDown, ChevronUp, Loader2, Pencil, RefreshCw, Search, Undo2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
-import { formatBRL } from "@/components/rematricula/utils";
+import { formatBRL, maskCpf, maskTelefone } from "@/components/rematricula/utils";
+
 import { toast } from "sonner";
 import {
   Dialog,
@@ -46,11 +47,14 @@ interface LinhaAdmin {
   nome_pai: string | null;
   cpf_pai: string | null;
   celular_pai: string | null;
+  telefone_pai: string | null;
   email_pai: string | null;
   nome_mae: string | null;
   cpf_mae: string | null;
   celular_mae: string | null;
+  telefone_mae: string | null;
   email_mae: string | null;
+
   qtd_alteracoes: number;
   alteracoes: Alteracao[];
 }
@@ -77,7 +81,9 @@ const LABEL_CAMPO: Record<string, string> = {
   estado_pai: "Estado do pai",
   data_nascimento_pai: "Nascimento do pai",
   celular_pai: "Celular do pai",
+  telefone_pai: "Telefone do pai",
   email_pai: "E-mail do pai",
+
   nome_mae: "Nome da mãe",
   cpf_mae: "CPF da mãe",
   rg_mae: "RG da mãe",
@@ -93,7 +99,9 @@ const LABEL_CAMPO: Record<string, string> = {
   estado_mae: "Estado da mãe",
   data_nascimento_mae: "Nascimento da mãe",
   celular_mae: "Celular da mãe",
+  telefone_mae: "Telefone da mãe",
   email_mae: "E-mail da mãe",
+
 };
 
 const Badge = ({ ok, label }: { ok: boolean; label: string }) => (
@@ -140,6 +148,51 @@ const Rematricula2027Admin = () => {
   const [expandido, setExpandido] = useState<number | null>(null);
   const [revisando, setRevisando] = useState<LinhaAdmin | null>(null);
   const [salvando, setSalvando] = useState(false);
+  const [editando, setEditando] = useState<LinhaAdmin | null>(null);
+  const [form, setForm] = useState({
+    cpf_pai: "",
+    telefone_pai: "",
+    celular_pai: "",
+    cpf_mae: "",
+    telefone_mae: "",
+    celular_mae: "",
+  });
+
+  const abrirEdicao = (l: LinhaAdmin) => {
+    setForm({
+      cpf_pai: maskCpf(l.cpf_pai || ""),
+      telefone_pai: maskTelefone(l.telefone_pai || ""),
+      celular_pai: maskTelefone(l.celular_pai || ""),
+      cpf_mae: maskCpf(l.cpf_mae || ""),
+      telefone_mae: maskTelefone(l.telefone_mae || ""),
+      celular_mae: maskTelefone(l.celular_mae || ""),
+    });
+    setEditando(l);
+  };
+
+  const salvarContatos = async () => {
+    if (!editando) return;
+    setSalvando(true);
+    const { data, error } = await supabase.rpc("rematricula_2027_admin_editar_contatos", {
+      p_id_aluno: editando.id_aluno,
+      p_cpf_pai: form.cpf_pai || null,
+      p_telefone_pai: form.telefone_pai || null,
+      p_celular_pai: form.celular_pai || null,
+      p_cpf_mae: form.cpf_mae || null,
+      p_telefone_mae: form.telefone_mae || null,
+      p_celular_mae: form.celular_mae || null,
+    });
+    setSalvando(false);
+    const res = (data as { success: boolean; message: string }[] | null)?.[0];
+    if (error || !res?.success) {
+      toast.error(res?.message || "Não foi possível salvar os dados.");
+      return;
+    }
+    toast.success("Dados atualizados.");
+    setEditando(null);
+    carregar();
+  };
+
 
   useEffect(() => {
     document.title = "Rematrícula 2027 — Administração";
@@ -336,7 +389,15 @@ const Rematricula2027Admin = () => {
                         <p className="text-xs text-muted-foreground">
                           ID {l.id_aluno} · {l.curso_atual}
                         </p>
+                        <button
+                          type="button"
+                          onClick={() => abrirEdicao(l)}
+                          className="mt-1 inline-flex items-center gap-1 text-xs text-zampieri-green-dark underline"
+                        >
+                          <Pencil className="w-3 h-3" /> Editar contatos
+                        </button>
                       </td>
+
                       <td className="p-3">
                         {l.curso_2027}
                         <p className="text-xs text-muted-foreground">{l.turno_escolhido || "—"}</p>
@@ -518,7 +579,105 @@ const Rematricula2027Admin = () => {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <Dialog open={!!editando} onOpenChange={(o) => !o && setEditando(null)}>
+        <DialogContent className="max-w-lg max-h-[85vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Editar contatos dos responsáveis</DialogTitle>
+            <DialogDescription>
+              {editando ? `${editando.nome_aluno} · ID ${editando.id_aluno}` : ""}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 text-sm">
+            <div className="rounded-lg border border-border p-3 space-y-3">
+              <p className="font-medium text-zampieri-green-dark">
+                Pai {editando?.nome_pai ? `· ${editando.nome_pai}` : ""}
+              </p>
+              <div>
+                <label className="text-xs text-muted-foreground">CPF do pai</label>
+                <Input
+                  value={form.cpf_pai}
+                  onChange={(e) => setForm({ ...form, cpf_pai: maskCpf(e.target.value) })}
+                  placeholder="000.000.000-00"
+                />
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="text-xs text-muted-foreground">Telefone do pai</label>
+                  <Input
+                    value={form.telefone_pai}
+                    onChange={(e) =>
+                      setForm({ ...form, telefone_pai: maskTelefone(e.target.value) })
+                    }
+                    placeholder="(11) 0000-0000"
+                  />
+                </div>
+                <div>
+                  <label className="text-xs text-muted-foreground">Celular do pai</label>
+                  <Input
+                    value={form.celular_pai}
+                    onChange={(e) =>
+                      setForm({ ...form, celular_pai: maskTelefone(e.target.value) })
+                    }
+                    placeholder="(11) 90000-0000"
+                  />
+                </div>
+              </div>
+            </div>
+
+            <div className="rounded-lg border border-border p-3 space-y-3">
+              <p className="font-medium text-zampieri-green-dark">
+                Mãe {editando?.nome_mae ? `· ${editando.nome_mae}` : ""}
+              </p>
+              <div>
+                <label className="text-xs text-muted-foreground">CPF da mãe</label>
+                <Input
+                  value={form.cpf_mae}
+                  onChange={(e) => setForm({ ...form, cpf_mae: maskCpf(e.target.value) })}
+                  placeholder="000.000.000-00"
+                />
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="text-xs text-muted-foreground">Telefone da mãe</label>
+                  <Input
+                    value={form.telefone_mae}
+                    onChange={(e) =>
+                      setForm({ ...form, telefone_mae: maskTelefone(e.target.value) })
+                    }
+                    placeholder="(11) 0000-0000"
+                  />
+                </div>
+                <div>
+                  <label className="text-xs text-muted-foreground">Celular da mãe</label>
+                  <Input
+                    value={form.celular_mae}
+                    onChange={(e) =>
+                      setForm({ ...form, celular_mae: maskTelefone(e.target.value) })
+                    }
+                    placeholder="(11) 90000-0000"
+                  />
+                </div>
+              </div>
+            </div>
+            <p className="text-xs text-muted-foreground">
+              Campos deixados em branco mantêm o valor atual. As mudanças ficam registradas no
+              histórico de alterações.
+            </p>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setEditando(null)}>
+              Cancelar
+            </Button>
+            <Button disabled={salvando} onClick={salvarContatos}>
+              {salvando && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
+              Salvar
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </main>
+
   );
 };
 

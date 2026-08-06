@@ -131,6 +131,8 @@ export type Database = {
           responsavel_financeiro: string | null
           rg_mae: string | null
           rg_pai: string | null
+          telefone_mae: string | null
+          telefone_pai: string | null
           tem_mae: string
           tem_pai: string
           turno_escolhido: string | null
@@ -205,6 +207,8 @@ export type Database = {
           responsavel_financeiro?: string | null
           rg_mae?: string | null
           rg_pai?: string | null
+          telefone_mae?: string | null
+          telefone_pai?: string | null
           tem_mae?: string
           tem_pai?: string
           turno_escolhido?: string | null
@@ -279,6 +283,8 @@ export type Database = {
           responsavel_financeiro?: string | null
           rg_mae?: string | null
           rg_pai?: string | null
+          telefone_mae?: string | null
+          telefone_pai?: string | null
           tem_mae?: string
           tem_pai?: string
           turno_escolhido?: string | null
@@ -2077,6 +2083,21 @@ export type Database = {
           success: boolean
         }[]
       }
+      rematricula_2027_admin_editar_contatos: {
+        Args: {
+          p_celular_mae?: string
+          p_celular_pai?: string
+          p_cpf_mae?: string
+          p_cpf_pai?: string
+          p_id_aluno: number
+          p_telefone_mae?: string
+          p_telefone_pai?: string
+        }
+        Returns: {
+          message: string
+          success: boolean
+        }[]
+      }
       rematricula_2027_admin_listagem: {
         Args: never
         Returns: {
@@ -2108,6 +2129,8 @@ export type Database = {
           qtd_alteracoes: number
           rematricula_concluida: boolean
           responsavel_financeiro: string
+          telefone_mae: string
+          telefone_pai: string
           turno_escolhido: string
           updated_at: string
           valor_cheio: number
