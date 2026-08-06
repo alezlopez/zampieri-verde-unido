@@ -26,6 +26,8 @@ import ComprovanteProduto from "./pages/ComprovanteProduto";
 import CompraSucesso from "./pages/CompraSucesso";
 import Rematricula2027 from "./pages/Rematricula2027";
 import ManualDaFamilia from "./pages/ManualDaFamilia";
+import NumerosDaSorte from "./pages/NumerosDaSorte";
+import Rematricula2027Admin from "./pages/Rematricula2027Admin";
 
 const queryClient = new QueryClient();
 
