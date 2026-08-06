@@ -2083,6 +2083,8 @@ export type Database = {
           alteracoes: Json
           celular_mae: string
           celular_pai: string
+          checkout_criado_em: string
+          checkout_url: string
           conferida: boolean
           conferida_em: string
           contrato_assinado: boolean
@@ -2107,6 +2109,7 @@ export type Database = {
           rematricula_concluida: boolean
           responsavel_financeiro: string
           turno_escolhido: string
+          updated_at: string
           valor_cheio: number
           valor_com_desconto: number
           valor_pago: number
