@@ -389,7 +389,15 @@ const Rematricula2027Admin = () => {
                         <p className="text-xs text-muted-foreground">
                           ID {l.id_aluno} · {l.curso_atual}
                         </p>
+                        <button
+                          type="button"
+                          onClick={() => abrirEdicao(l)}
+                          className="mt-1 inline-flex items-center gap-1 text-xs text-zampieri-green-dark underline"
+                        >
+                          <Pencil className="w-3 h-3" /> Editar contatos
+                        </button>
                       </td>
+
                       <td className="p-3">
                         {l.curso_2027}
                         <p className="text-xs text-muted-foreground">{l.turno_escolhido || "—"}</p>
