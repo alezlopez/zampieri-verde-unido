@@ -46,11 +46,14 @@ interface LinhaAdmin {
   nome_pai: string | null;
   cpf_pai: string | null;
   celular_pai: string | null;
+  telefone_pai: string | null;
   email_pai: string | null;
   nome_mae: string | null;
   cpf_mae: string | null;
   celular_mae: string | null;
+  telefone_mae: string | null;
   email_mae: string | null;
+
   qtd_alteracoes: number;
   alteracoes: Alteracao[];
 }
