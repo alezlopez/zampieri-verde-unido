@@ -81,7 +81,9 @@ const LABEL_CAMPO: Record<string, string> = {
   estado_pai: "Estado do pai",
   data_nascimento_pai: "Nascimento do pai",
   celular_pai: "Celular do pai",
+  telefone_pai: "Telefone do pai",
   email_pai: "E-mail do pai",
+
   nome_mae: "Nome da mãe",
   cpf_mae: "CPF da mãe",
   rg_mae: "RG da mãe",
