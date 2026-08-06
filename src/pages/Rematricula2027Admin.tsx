@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { Fragment, useEffect, useMemo, useState } from "react";
 import { Check, ChevronDown, ChevronUp, Loader2, RefreshCw, Search, Undo2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -324,8 +324,8 @@ const Rematricula2027Admin = () => {
                 const respNome = resp === "Pai" ? l.nome_pai : resp === "Mãe" ? l.nome_mae : null;
                 const respCpf = resp === "Pai" ? l.cpf_pai : resp === "Mãe" ? l.cpf_mae : null;
                 return (
-                  <>
-                    <tr key={l.id_aluno} className="border-t border-border align-top">
+                  <Fragment key={l.id_aluno}>
+                    <tr className="border-t border-border align-top">
                       <td className="p-3">
                         <p className="font-medium text-zampieri-green-dark">{l.nome_aluno}</p>
                         <p className="text-xs text-muted-foreground">
@@ -423,13 +423,13 @@ const Rematricula2027Admin = () => {
                       </td>
                     </tr>
                     {expandido === l.id_aluno && l.alteracoes.length > 0 && (
-                      <tr key={`${l.id_aluno}-alt`} className="bg-amber-50/60">
+                      <tr className="bg-amber-50/60">
                         <td colSpan={8} className="p-3">
                           <ListaAlteracoes itens={l.alteracoes} />
                         </td>
                       </tr>
                     )}
-                  </>
+                  </Fragment>
                 );
               })}
             </tbody>
