@@ -510,17 +510,13 @@ const EventosLogin = () => {
                         {isRegister ? "Já tem conta? Faça login" : "Não tem conta? Cadastre-se"}
                       </button>
                     )}
-                    <button
-                      onClick={() => {
-                        setIsAdminLogin(!isAdminLogin);
-                        setIsRegister(false);
-                        setIsForgotPassword(false);
-                        clearUnconfirmed();
-                      }}
+                    <Link
+                      to="/admin/login"
                       className="text-xs text-muted-foreground hover:text-zampieri-green-dark hover:underline block w-full"
                     >
-                      {isAdminLogin ? "Login como responsável" : "Acesso administrativo"}
-                    </button>
+                      Acesso administrativo
+                    </Link>
+
                   </div>
                 </>
               )}
