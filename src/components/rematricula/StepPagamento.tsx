@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { CreditCard, Loader2, Lock, QrCode, RefreshCw, CheckCircle2 } from "lucide-react";
+import { CreditCard, Loader2, Lock, QrCode, RefreshCw, CheckCircle2, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 
