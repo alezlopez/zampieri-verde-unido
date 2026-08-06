@@ -1,0 +1,1167 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Manual da Família 2027 — Colégio Zampieri</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,500;0,600;0,700;1,500;1,600&family=Lato:wght@300;400;700;900&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --verde-escuro:#0F3D24;
+    --verde-medio:#1A5C38;
+    --verde-claro:#2D7A4E;
+    --vermelho:#8B1A1A;
+    --dourado:#B8860B;
+    --dourado-claro:#D4A017;
+    --creme:#F5F0E8;
+    --branco-quente:#FAF8F4;
+    --sidebar-w:296px;
+  }
+  *{box-sizing:border-box;margin:0;padding:0;}
+  html{scroll-behavior:smooth;}
+  body{
+    font-family:'Lato',sans-serif;
+    background:var(--branco-quente);
+    color:var(--verde-escuro);
+    line-height:1.7;
+  }
+  h1,h2,h3{font-family:'Playfair Display',serif;color:var(--verde-escuro);}
+  a{color:var(--verde-medio);}
+
+  /* tricolor stripe */
+  .tricolor{height:5px;width:100%;background:linear-gradient(to right,var(--verde-medio) 0 33.3%,#FAF8F4 33.3% 66.6%,var(--vermelho) 66.6% 100%);}
+
+  /* topbar (mobile) */
+  .topbar{
+    display:none;
+    position:sticky;top:0;z-index:50;
+    background:var(--verde-escuro);
+    color:var(--branco-quente);
+    align-items:center;justify-content:space-between;
+    padding:14px 18px;
+  }
+  .topbar-brand{display:flex;align-items:center;gap:10px;}
+  .topbar-brand img{height:34px;width:auto;}
+  .topbar-brand span{font-family:'Playfair Display',serif;font-weight:700;font-size:17px;}
+  .menu-btn{background:none;border:1px solid rgba(250,248,244,.4);color:var(--branco-quente);
+    width:38px;height:38px;border-radius:6px;font-size:18px;cursor:pointer;}
+
+  .layout{display:flex;min-height:100vh;}
+
+  /* SIDEBAR */
+  .sidebar{
+    width:var(--sidebar-w);flex-shrink:0;
+    background:var(--verde-escuro);
+    color:var(--branco-quente);
+    position:sticky;top:0;height:100vh;overflow-y:auto;
+    padding:34px 26px 30px;
+  }
+  .sidebar-brand{display:flex;align-items:center;gap:14px;margin-bottom:6px;}
+  .sidebar-brand img{width:56px;height:auto;}
+  .sidebar-brand .name{font-family:'Playfair Display',serif;font-weight:700;font-size:19px;line-height:1.15;}
+  .sidebar-brand .tag{font-size:10px;letter-spacing:.12em;color:var(--dourado-claro);text-transform:uppercase;margin-top:3px;}
+  .sidebar .stripe-mini{height:3px;width:100%;background:linear-gradient(to right,var(--verde-claro) 0 33.3%,#FAF8F4 33.3% 66.6%,var(--vermelho) 66.6% 100%);margin:20px 0 26px;border-radius:2px;}
+  .sidebar-title{font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--dourado-claro);margin-bottom:12px;}
+  .back-link{display:flex;align-items:center;gap:8px;font-size:12.5px;color:var(--dourado-claro);
+    text-decoration:none;margin-bottom:22px;border:1px solid rgba(212,160,23,.4);padding:10px 12px;border-radius:6px;}
+  .back-link:hover{background:rgba(212,160,23,.1);}
+  .toc{list-style:none;}
+  .toc li{margin-bottom:2px;}
+  .toc a{
+    display:flex;gap:10px;align-items:baseline;
+    text-decoration:none;color:rgba(250,248,244,.72);
+    font-size:13.5px;padding:8px 10px;border-radius:6px;
+    transition:background .15s,color .15s;
+  }
+  .toc a .num{font-family:'Playfair Display',serif;font-style:italic;color:var(--dourado);font-size:12px;width:20px;flex-shrink:0;}
+  .toc a:hover{background:rgba(250,248,244,.06);color:var(--branco-quente);}
+  .toc a.active{background:var(--verde-medio);color:var(--branco-quente);}
+  .toc a.active .num{color:var(--dourado-claro);}
+
+  /* MAIN */
+  main{flex:1;min-width:0;}
+
+  .hero{
+    background:var(--verde-escuro);
+    color:var(--branco-quente);
+    padding:76px 64px 64px;
+    position:relative;overflow:hidden;
+  }
+  .hero::after{
+    content:"";position:absolute;right:-60px;top:-60px;width:340px;height:340px;
+    border:1px solid rgba(212,160,23,.18);border-radius:50%;
+  }
+  .hero .eyebrow{font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:var(--dourado-claro);margin-bottom:16px;}
+  .hero h1{font-size:44px;font-weight:700;max-width:640px;line-height:1.15;}
+  .hero h1 em{color:var(--dourado-claro);font-style:italic;font-weight:500;}
+  .hero p.lead{max-width:560px;margin-top:18px;color:rgba(250,248,244,.82);font-size:16px;}
+  .hero-crest{position:absolute;right:56px;bottom:-10px;width:150px;opacity:.9;}
+
+  .datas-rapidas{
+    background:var(--creme);
+    border-top:1px solid rgba(15,61,36,.08);
+    padding:26px 64px;
+    display:flex;gap:18px;flex-wrap:wrap;
+  }
+  .data-card{
+    background:var(--branco-quente);
+    border:1px solid rgba(184,134,11,.25);
+    border-left:4px solid var(--dourado);
+    border-radius:8px;
+    padding:14px 18px;
+    flex:1;min-width:210px;
+  }
+  .data-card .lbl{font-size:10.5px;letter-spacing:.08em;text-transform:uppercase;color:var(--vermelho);font-weight:700;}
+  .data-card .val{font-family:'Playfair Display',serif;font-size:19px;font-weight:700;color:var(--verde-escuro);margin-top:4px;}
+
+  .content{padding:8px 64px 100px;max-width:820px;}
+
+  section.chapter{padding:56px 0;border-bottom:1px solid rgba(15,61,36,.08);}
+  section.chapter:last-child{border-bottom:none;}
+  .chapter-eyebrow{display:flex;align-items:center;gap:12px;margin-bottom:14px;}
+  .chapter-eyebrow .n{font-family:'Playfair Display',serif;font-style:italic;font-size:15px;color:var(--dourado);}
+  .chapter-eyebrow .line{flex:1;height:1px;background:linear-gradient(to right,var(--dourado) 0 40px,transparent 40px);}
+  section.chapter h2{font-size:29px;margin-bottom:18px;}
+  section.chapter h3{font-size:18px;margin:26px 0 10px;color:var(--verde-medio);}
+  section.chapter p{margin-bottom:14px;color:#2a2a2a;}
+  section.chapter ul{margin:8px 0 16px 20px;color:#2a2a2a;}
+  section.chapter li{margin-bottom:8px;}
+  section.chapter li::marker{color:var(--dourado);}
+
+  .highlight-date{
+    display:inline-block;background:var(--verde-escuro);color:var(--branco-quente);
+    font-family:'Playfair Display',serif;font-weight:700;font-size:16px;
+    padding:12px 22px;border-radius:8px;margin:6px 0 8px;
+    border-left:4px solid var(--dourado-claro);
+  }
+
+  .info-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin:14px 0 6px;}
+  @media(max-width:640px){.info-grid{grid-template-columns:1fr;}}
+  .info-box{
+    background:var(--creme);border-radius:10px;padding:18px 20px;
+    border-top:3px solid var(--verde-medio);
+  }
+  .info-box.accent{border-top-color:var(--vermelho);}
+  .info-box.gold{border-top-color:var(--dourado);}
+  .info-box h4{font-family:'Playfair Display',serif;font-size:15px;color:var(--verde-escuro);margin-bottom:6px;}
+  .info-box p{font-size:14px;margin-bottom:6px;color:#333;}
+  .info-box a{font-weight:700;}
+
+  details.credencial{
+    background:var(--creme);border-radius:10px;padding:18px 20px;margin-bottom:14px;
+    border:1px solid rgba(184,134,11,.25);
+  }
+  details.credencial summary{
+    cursor:pointer;font-family:'Playfair Display',serif;font-weight:700;font-size:16px;
+    color:var(--verde-escuro);list-style:none;display:flex;justify-content:space-between;align-items:center;
+  }
+  details.credencial summary::-webkit-details-marker{display:none;}
+  details.credencial summary::after{content:"+";font-size:20px;color:var(--dourado);transition:transform .2s;}
+  details.credencial[open] summary::after{transform:rotate(45deg);}
+  details.credencial .body{margin-top:12px;font-size:14px;color:#333;}
+  details.credencial .body code{background:var(--branco-quente);padding:2px 7px;border-radius:4px;font-family:monospace;border:1px solid rgba(15,61,36,.15);}
+  details.credencial .body div{margin-bottom:6px;}
+
+  .checklist{list-style:none;margin:14px 0;}
+  .checklist li{
+    display:flex;gap:10px;align-items:flex-start;
+    padding:10px 0;border-bottom:1px dashed rgba(15,61,36,.15);
+    font-size:14.5px;color:#2a2a2a;
+  }
+  .checklist li:last-child{border-bottom:none;}
+  .checklist .chk{
+    width:18px;height:18px;flex-shrink:0;margin-top:2px;
+    border:2px solid var(--verde-medio);border-radius:4px;
+    display:inline-block;
+  }
+
+  .signature{
+    margin-top:22px;padding-top:16px;border-top:1px solid rgba(15,61,36,.12);
+    font-family:'Playfair Display',serif;font-style:italic;font-size:14.5px;color:var(--verde-medio);
+    line-height:1.8;
+  }
+
+  .tricolor-end{height:6px;width:100%;background:linear-gradient(to right,var(--verde-medio) 0 33.3%,#FAF8F4 33.3% 66.6%,var(--vermelho) 66.6% 100%);}
+  .footer{background:var(--verde-escuro);color:rgba(250,248,244,.6);text-align:center;padding:26px;font-size:12px;letter-spacing:.04em;}
+  .footer strong{color:var(--dourado-claro);}
+
+  /* ANEXO — Regimento Escolar */
+  .anexo-wrap{margin-top:10px;padding:0 0 60px;}
+  .anexo-toggle{
+    width:100%;display:flex;align-items:center;justify-content:space-between;gap:16px;
+    background:var(--verde-escuro);color:var(--branco-quente);
+    border:none;border-radius:10px;padding:20px 26px;cursor:pointer;
+    font-family:'Playfair Display',serif;
+  }
+  .anexo-toggle:hover{background:var(--verde-medio);}
+  .anexo-toggle .txt{text-align:left;}
+  .anexo-toggle .txt .eyebrow2{font-family:'Lato',sans-serif;font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--dourado-claro);margin-bottom:4px;}
+  .anexo-toggle .txt .title2{font-size:19px;font-weight:700;}
+  .anexo-toggle .chev{font-size:22px;color:var(--dourado-claro);transition:transform .25s;flex-shrink:0;}
+  .anexo-toggle[aria-expanded="true"] .chev{transform:rotate(180deg);}
+
+  .anexo-panel{display:none;margin-top:22px;}
+  .anexo-panel.open{display:block;}
+  .anexo-meta{display:flex;gap:26px;flex-wrap:wrap;background:var(--creme);border-radius:10px;padding:16px 22px;margin-bottom:10px;}
+  .anexo-meta div{font-size:12px;color:var(--verde-medio);}
+  .anexo-meta strong{display:block;color:var(--verde-escuro);font-family:'Playfair Display',serif;font-size:15px;margin-top:2px;}
+
+  section.titulo-section{padding:44px 0;border-bottom:1px solid rgba(15,61,36,.08);}
+  section.titulo-section:last-child{border-bottom:none;}
+  section.titulo-section h2{font-size:22px;margin-bottom:18px;line-height:1.3;}
+
+  ul.cap-quicklinks{list-style:none;display:flex;flex-wrap:wrap;gap:8px;margin-bottom:30px;padding:0;}
+  ul.cap-quicklinks li a{
+    display:block;font-size:12px;color:var(--verde-medio);text-decoration:none;
+    background:var(--creme);border:1px solid rgba(184,134,11,.3);border-radius:20px;padding:7px 14px;
+  }
+  ul.cap-quicklinks li a:hover{background:var(--verde-escuro);color:var(--branco-quente);}
+
+  .capitulo{margin-bottom:34px;padding-left:18px;border-left:3px solid var(--creme);}
+  .capitulo h3{font-size:15.5px;color:var(--verde-medio);margin-bottom:10px;letter-spacing:.01em;}
+  .artigo-body p{margin-bottom:12px;color:#2a2a2a;font-size:14.5px;}
+  .artigo-body p strong:first-child{color:var(--vermelho);}
+  .artigo-body ol{margin:6px 0 16px 22px;color:#2a2a2a;font-size:14px;}
+  .artigo-body ol li{margin-bottom:8px;padding-left:4px;}
+  .artigo-body ol li::marker{color:var(--dourado);font-weight:700;}
+  .artigo-body ul{margin:6px 0 16px 22px;}
+  .artigo-body table{width:100%;border-collapse:collapse;margin:14px 0;font-size:13px;}
+  .artigo-body table td,.artigo-body table th{border:1px solid rgba(15,61,36,.15);padding:8px 10px;text-align:left;}
+  .artigo-body table th{background:var(--creme);}
+  .artigo-body blockquote{margin:0;padding:0;}
+
+  @media(max-width:960px){
+    .topbar{display:flex;}
+    .sidebar{
+      position:fixed;left:0;top:60px;bottom:0;z-index:40;
+      transform:translateX(-100%);transition:transform .25s;
+      box-shadow:8px 0 30px rgba(0,0,0,.25);
+    }
+    .sidebar.open{transform:translateX(0);}
+    .hero{padding:44px 26px 34px;}
+    .hero h1{font-size:32px;}
+    .hero-crest{display:none;}
+    .datas-rapidas{padding:20px 26px;}
+    .content{padding:8px 26px 70px;}
+  }
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="topbar-brand">
+    <img src="https://lzdhrtcugqnqmyapgmbs.supabase.co/storage/v1/object/public/zampieri/fotos/Logotipo.png" alt="Colégio Zampieri">
+    <span>Manual da Família</span>
+  </div>
+  <button class="menu-btn" id="menuBtn" aria-label="Abrir menu">☰</button>
+</div>
+
+<div class="tricolor"></div>
+
+<div class="layout">
+  <nav class="sidebar" id="sidebar">
+    <div class="sidebar-brand">
+      <img src="https://lzdhrtcugqnqmyapgmbs.supabase.co/storage/v1/object/public/zampieri/fotos/Logotipo.png" alt="Colégio Zampieri">
+      <div>
+        <div class="name">Colégio Zampieri</div>
+        <div class="tag">Tradição em Educação · 1980</div>
+      </div>
+    </div>
+    <div class="stripe-mini"></div>
+    <a class="back-link" href="#anexo-regimento" onclick="abrirAnexo(event)">📖 Ler o Regimento Escolar</a>
+    <div class="sidebar-title">Manual da Família · 2027</div>
+    <ul class="toc" id="toc">
+      <li><a href="#boas-vindas"><span class="num">00</span>Boas-vindas</a></li>
+      <li><a href="#volta-aulas"><span class="num">01</span>Volta às Aulas</a></li>
+      <li><a href="#ano-letivo"><span class="num">02</span>O Ano Letivo</a></li>
+      <li><a href="#filosofia"><span class="num">03</span>A Filosofia</a></li>
+      <li><a href="#material"><span class="num">04</span>Material Didático</a></li>
+      <li><a href="#comunicacao"><span class="num">05</span>Canais de Comunicação</a></li>
+      <li><a href="#sistemas"><span class="num">06</span>Sistemas e Acessos</a></li>
+      <li><a href="#financeiro"><span class="num">07</span>Administração Financeira</a></li>
+      <li><a href="#rendimento"><span class="num">08</span>Rendimento Escolar</a></li>
+      <li><a href="#frequencia"><span class="num">09</span>Frequência Escolar</a></li>
+      <li><a href="#conduta"><span class="num">10</span>Conduta do Aluno</a></li>
+      <li><a href="#celular"><span class="num">11</span>Uso de Celular</a></li>
+      <li><a href="#bullying"><span class="num">12</span>Bullying</a></li>
+      <li><a href="#encerramento"><span class="num">13</span>Encerramento</a></li>
+    </ul>
+  </nav>
+
+  <main>
+    <div class="hero">
+      <div class="eyebrow">Ano letivo 2027</div>
+      <h1>Manual da <em>Família</em> Zampieri</h1>
+      <p class="lead">Tudo o que sua família precisa saber sobre o funcionamento, as normas e a rotina do Colégio Zampieri para o ano letivo de 2027.</p>
+      <img class="hero-crest" src="https://lzdhrtcugqnqmyapgmbs.supabase.co/storage/v1/object/public/zampieri/fotos/Logotipo.png" alt="">
+    </div>
+
+    <div class="datas-rapidas">
+      <div class="data-card">
+        <div class="lbl">Dia dos Calouros</div>
+        <div class="val">01/02/2027</div>
+      </div>
+      <div class="data-card">
+        <div class="lbl">Prazo de compra do material</div>
+        <div class="val">08/01/2027</div>
+      </div>
+      <div class="data-card">
+        <div class="lbl">Início da entrega do material</div>
+        <div class="val">18/01/2027</div>
+      </div>
+    </div>
+
+    <div class="content">
+
+      <section class="chapter" id="boas-vindas">
+        <div class="chapter-eyebrow"><span class="n">00</span><span class="line"></span></div>
+        <h2>Mensagem de Boas-Vindas</h2>
+        <p>Prezados pais e alunos,</p>
+        <p>Iniciar o ano letivo é sempre motivo de grande motivação para nós do Colégio Zampieri — principalmente porque, a partir de agora, vocês também estarão conosco, participando de um dia a dia no qual a formação completa dos alunos é a nossa prioridade. No Colégio Zampieri, o futuro é construído todos os dias, passo a passo, por meio de aulas curriculares, aulas maker, convivência e comunicação direta com a família.</p>
+        <p>Para conhecer melhor o Colégio Zampieri, seu funcionamento e suas normas, indicamos a leitura completa deste manual. Temos certeza de que faremos, em 2027, um ano de muitas descobertas e realizações.</p>
+      </section>
+
+      <section class="chapter" id="volta-aulas">
+        <div class="chapter-eyebrow"><span class="n">01</span><span class="line"></span></div>
+        <h2>Volta às Aulas</h2>
+        <p>Este é um momento especial do ano letivo — um recomeço. É preciso que o reinício das aulas seja marcado pela atenção de todos os que fazem parte da escola: professores, coordenadores, funcionários e diretores. Muitos alunos estão chegando pela primeira vez e precisam de ambientação. Por esse motivo, esses alunos começam as aulas um dia antes dos demais — chamamos esse momento de <strong>"Dia dos Calouros"</strong>, ocasião em que todos podem se familiarizar com toda a nossa equipe e estrutura.</p>
+        <div class="highlight-date">🗓 Dia dos Calouros — 01/02/2027</div>
+      </section>
+
+      <section class="chapter" id="ano-letivo">
+        <div class="chapter-eyebrow"><span class="n">02</span><span class="line"></span></div>
+        <h2>O Ano Letivo</h2>
+        <p>Oferecer, em uma mesma escola, turmas de Educação Infantil, Ensino Fundamental e Médio é uma tarefa que exige sintonia de toda a equipe e uma estrutura adequada para que todos os alunos se sintam em um espaço só seu.</p>
+        <p>Contamos com 2 mil metros quadrados de estrutura para atender a todos. Alunos da Educação Infantil e do Fundamental I possuem horários de intervalo reservados para suas atividades, assim como os alunos do Fundamental II e do Ensino Médio. Dessa forma, mantemos a escola organizada para um convívio perfeito.</p>
+      </section>
+
+      <section class="chapter" id="filosofia">
+        <div class="chapter-eyebrow"><span class="n">03</span><span class="line"></span></div>
+        <h2>A Filosofia</h2>
+        <p>O Zampieri acredita em uma educação conjunta entre escola e família. Há 46 anos, praticamos e oferecemos um ambiente familiar e acolhedor: alunos não são números, são parte da nossa família. Trabalhamos com um planejamento individual, entendendo as necessidades específicas de cada aluno, com olhar atencioso por parte de professores e da coordenação pedagógica.</p>
+        <p>Para que isso funcione, também é preciso colaboração e proatividade da família. O ambiente doméstico é uma extensão da escola e, quando os dois trabalham em conjunto, o sucesso é alcançado. Precisamos dessa parceria entre família e escola.</p>
+      </section>
+
+      <section class="chapter" id="material">
+        <div class="chapter-eyebrow"><span class="n">04</span><span class="line"></span></div>
+        <h2>Material Didático</h2>
+        <p>Acreditamos que nenhum material está definitivamente acabado — sempre há modificações e adaptações a serem introduzidas pelo professor conforme as necessidades que ele verificar.</p>
+        <p>Contamos com o material didático da <strong>Editora SAE Digital</strong>, um sistema completo, tecnológico e em constante atualização para as necessidades atuais. Integrado ao Sistema SAE, para alunos do 2º ao 9º ano também oferecemos material <strong>Maker da editora Nave a Vela</strong>, parceira da SAE Digital.</p>
+
+        <h3>Organização do material</h3>
+        <p>O material é adquirido pela família diretamente com a editora, pelo link <a href="https://colegiozampieri.com.br/material2027" target="_blank">colegiozampieri.com.br/material2027</a>, e entregue na escola, onde ficará disponível para retirada.</p>
+        <p>O material é de uso obrigatório, não está incluído na mensalidade escolar e deve ser adquirido <strong>até 08/01/2027</strong> — data definida para uma melhor organização da entrega, já que o material só é solicitado após a compra.</p>
+        <p>A partir de <strong>18/01/2027</strong>, o material será entregue e deverá ser retirado antes do início das aulas, dando às famílias tempo hábil para organização, conferência e etiquetagem.</p>
+
+        <h3>Cronograma de entregas</h3>
+        <ul class="checklist">
+          <li><span class="chk"></span><div><strong>1ª entrega (principal)</strong> — materiais do 1º bimestre, livros anuais e agenda.</div></li>
+          <li><span class="chk"></span><div><strong>2ª entrega</strong> — materiais referentes ao 2º bimestre.</div></li>
+          <li><span class="chk"></span><div><strong>3ª entrega</strong> — materiais referentes ao 3º bimestre.</div></li>
+          <li><span class="chk"></span><div><strong>4ª entrega</strong> — materiais referentes ao 4º bimestre.</div></li>
+        </ul>
+        <p style="font-size:13px;color:var(--vermelho);"><em>A escola entra em contato diretamente com a família a cada nova entrega.</em></p>
+      </section>
+
+      <section class="chapter" id="comunicacao">
+        <div class="chapter-eyebrow"><span class="n">05</span><span class="line"></span></div>
+        <h2>Canais de Comunicação</h2>
+        <div class="info-grid">
+          <div class="info-box">
+            <h4>WhatsApp</h4>
+            <p><strong>11 93934-1503</strong></p>
+            <p>Destinado ao recebimento de solicitações para secretaria, coordenação e financeiro. É o nosso canal mais prático e rápido — por ele também enviamos informativos e circulares.</p>
+          </div>
+          <div class="info-box gold">
+            <h4>Canais de WhatsApp</h4>
+            <p>Canais segmentados por segmento — Educação Infantil e Fundamental I, Fundamental II e Ensino Médio — para comunicação geral com os alunos.</p>
+          </div>
+          <div class="info-box accent">
+            <h4>Instagram</h4>
+            <p><strong>@colegio_zampieri</strong></p>
+            <p>Usado para publicar nossa rotina, novidades, projetos e comunicados.</p>
+          </div>
+          <div class="info-box">
+            <h4>Telefones</h4>
+            <p><strong>5560-1473</strong> · <strong>5560-0723</strong></p>
+          </div>
+        </div>
+        <h3>E-mails</h3>
+        <p>Utilizados para uma comunicação mais formal:</p>
+        <ul>
+          <li>financeiro@colegiozampieri.com.br</li>
+          <li>coordenacao@colegiozampieri.com.br</li>
+          <li>secretaria@colegiozampieri.com.br</li>
+        </ul>
+
+        <h3>Secretaria</h3>
+        <p>A secretaria atende solicitações gerais pelo WhatsApp e pelos e-mails já indicados acima, das <strong>7h30 às 16h45</strong>. Entre os serviços prestados, estão:</p>
+        <ul>
+          <li>Emissão e cadastro do Bilhete Único (transporte estudantil)</li>
+          <li>Emissão e atualização de documentação do aluno</li>
+          <li>Registro de autorizações (retirada por terceiros, saídas antecipadas etc.)</li>
+          <li>Esclarecimento de dúvidas gerais</li>
+        </ul>
+        <p class="signature">Cristiane Brito e Mariana Batista — Secretárias</p>
+      </section>
+
+      <section class="chapter" id="sistemas">
+        <div class="chapter-eyebrow"><span class="n">06</span><span class="line"></span></div>
+        <h2>Sistemas e Acessos</h2>
+        <p>O Zampieri utiliza tecnologia para acompanhamento pedagógico, financeiro e de comunicação. Toque para ver os dados de acesso de cada sistema.</p>
+
+        <details class="credencial">
+          <summary>Portal do Aluno e da Família — Mhund</summary>
+          <div class="body">
+            <div>Utilizado para acompanhamento pedagógico e financeiro.</div>
+            <div>Acesso: <code>mhund.com.br</code></div>
+            <div>Código da escola: <code>14656</code></div>
+            <div>Login: seu e-mail cadastrado na secretaria</div>
+            <div>Senha: dia e mês do seu aniversário, no formato <code>ddmm</code></div>
+          </div>
+        </details>
+
+        <details class="credencial">
+          <summary>AVA SAE Digital</summary>
+          <div class="body">
+            <div>Atividades pedagógicas extras, disciplinas online, simulados e material Maker.</div>
+            <div>Acesso: <code>ava.sae.digital/login</code></div>
+            <div>O login será encaminhado no início do ano letivo.</div>
+          </div>
+        </details>
+      </section>
+
+      <section class="chapter" id="financeiro">
+        <div class="chapter-eyebrow"><span class="n">07</span><span class="line"></span></div>
+        <h2>Administração Financeira</h2>
+        <p>Tão importante quanto o projeto pedagógico é a administração financeira — um dos pilares mais importantes da instituição de ensino. Saber administrar uma escola é uma questão de necessidade. Estamos sempre reinvestindo em nossa estrutura para proporcionar, cada vez mais, um ambiente educacional que atenda às necessidades da nossa comunidade.</p>
+        <p>Não à toa, nos últimos 5 anos a escola passou pela maior reestruturação de sua história: modernização das salas de aula (piso, iluminação, sonorização, ar-condicionado, projetores e internet), ampliação e modernização do pátio, novo parque para a Educação Infantil e o Fundamental I, reforma da quadra e investimento em tecnologia para melhor comunicação, entre outros.</p>
+        <p>Novos projetos estão previstos para conclusão até 2030: reforma e modernização da fachada, troca das coberturas dos pátios para melhor conforto térmico, energia solar, sistema de reuso de água e reestruturação da cantina.</p>
+
+        <h3>Cobrança das mensalidades</h3>
+        <p>As mensalidades são cobradas via boleto bancário, emitido pela escola em nome de <strong>Escolinha de Educação Infantil Pingo de Ouro LTDA</strong>, CNPJ 55.704.506/0001-73.</p>
+        <p>Os boletos devem ser retirados no portal do aluno Mhund e pagos até a data de vencimento. Por conveniência, enviamos lembretes para o celular cadastrado poucos dias antes do vencimento.</p>
+
+        <p class="signature">Alexandre Zampieri Lopez e Daniel Stroebele<br>Diretores Administrativos</p>
+      </section>
+
+      <section class="chapter" id="rendimento">
+        <div class="chapter-eyebrow"><span class="n">08</span><span class="line"></span></div>
+        <h2>Rendimento Escolar</h2>
+        <p>A verificação do rendimento escolar será bimestral e obedecerá aos critérios descritos abaixo.</p>
+        <p>Os instrumentos de avaliação do rendimento escolar podem ser: provas mensais e bimestrais, trabalhos, atividades, visto de caderno, lições de casa e projetos.</p>
+        <p>A média do Colégio Zampieri é igual a <strong>6 (seis)</strong> e será obtida pela média das atividades acima listadas, a critério do professor e da coordenação.</p>
+      </section>
+
+      <section class="chapter" id="frequencia">
+        <div class="chapter-eyebrow"><span class="n">09</span><span class="line"></span></div>
+        <h2>Frequência Escolar</h2>
+        <p>A frequência escolar é regida pela Lei de Diretrizes e Bases da Educação Nacional (LDB), que define a presença mínima de 75% do total de horas letivas para aprovação no Ensino Fundamental e Médio, além de estabelecer regras para a Educação Infantil e o acionamento de órgãos de proteção.</p>
+
+        <h3>Regras de frequência e limites</h3>
+        <ul>
+          <li><strong>Ensino Fundamental e Médio:</strong> exigência de, no mínimo, 75% de presença nas aulas. Em um ano padrão de 200 dias letivos, o aluno pode ter no máximo 50 faltas totais; ultrapassar esse limite gera reprovação por faltas, mesmo com boas notas.</li>
+          <li><strong>Educação Infantil (pré-escola):</strong> para crianças de 5 anos, a frequência mínima exigida é de 60% do total de horas.</li>
+        </ul>
+
+        <h3>Notificação ao Conselho Tutelar</h3>
+        <p>A legislação obriga a escola a avisar o Conselho Tutelar quando o aluno atingir 30% do limite de faltas permitido — ou seja, por volta de 15 dias de ausências não justificadas, dentro do limite de 25% (50 dias) previsto pela regra dos 75% de presença.</p>
+        <p>O controle visa combater a evasão escolar. É dever dos pais ou responsáveis acompanhar a presença e justificar as ausências por escrito.</p>
+
+        <h3>Atendimento domiciliar</h3>
+        <p>Alunos com problemas graves de saúde que impeçam a ida à escola têm direito ao regime especial de frequência, mediante apresentação de laudo médico, com compensação por meio de exercícios domiciliares.</p>
+
+        <p class="signature">Agda Silvia Zampieri Stroebele — Diretora Escolar<br>Chenya Stroebele e Deborah Stroebele — Vice-diretoras Pedagógicas<br>Thiago Gandra, Ana Ortelan e Sandra Gerez — Coordenadores Pedagógicos</p>
+      </section>
+
+      <section class="chapter" id="conduta">
+        <div class="chapter-eyebrow"><span class="n">10</span><span class="line"></span></div>
+        <h2>Conduta do Aluno</h2>
+
+        <h3>O aluno deverá</h3>
+        <ul>
+          <li>Comparecer pontualmente às aulas com todo o material didático.</li>
+          <li>Comportar-se adequadamente dentro do colégio, respeitando professores, funcionários, coordenadores, diretores e colegas.</li>
+          <li>Colaborar com o professor regente na tarefa de promover a integração, a ordem e a disciplina em sala de aula.</li>
+          <li>Zelar pela limpeza e conservação das instalações, dos materiais e dos equipamentos do colégio.</li>
+        </ul>
+
+        <h3>É vetado ao aluno</h3>
+        <ul>
+          <li>Fumar ou fazer uso de bebida alcoólica ou de outras substâncias dentro das dependências do colégio.</li>
+          <li>Promover jogos, excursões, coletas ou campanhas de qualquer natureza sem prévia autorização da direção.</li>
+          <li>Entrar e sair da sala de aula sem autorização do professor.</li>
+          <li>Comparecer às aulas sem uniforme escolar.</li>
+        </ul>
+
+        <h3>Relacionamento</h3>
+        <p>Com a finalidade de manter um ambiente de respeito, segurança e companheirismo, o aluno que promover ou se envolver em brigas — dentro ou nas imediações do Colégio Zampieri — estará sujeito a encaminhamento educativo como medida extrema.</p>
+        <p style="font-size:14px;"><em>As regras acima são um resumo. Todas as normas de conduta, direitos e deveres estão descritas na íntegra no <a href="#anexo-regimento" onclick="abrirAnexo(event)"><strong>Regimento Escolar</strong></a>, de conhecimento obrigatório de todas as famílias.</em></p>
+      </section>
+
+      <section class="chapter" id="celular">
+        <div class="chapter-eyebrow"><span class="n">11</span><span class="line"></span></div>
+        <h2>Sobre o Uso de Celular</h2>
+        <p>O uso de celulares permanece proibido nas dependências do Colégio, em conformidade com a <strong>Lei nº 15.100/2025</strong>. Caso o aluno necessite trazer o aparelho para a escola, este deverá ser entregue à Coordenação Pedagógica no momento da chegada e retirado somente ao término das aulas.</p>
+      </section>
+
+      <section class="chapter" id="bullying">
+        <div class="chapter-eyebrow"><span class="n">12</span><span class="line"></span></div>
+        <h2>Bullying</h2>
+        <p>O Zampieri trabalha intensamente para conscientizar sobre os danos do bullying. Tais atos, no Zampieri, são tratados com extrema seriedade, sendo a família e o aluno responsáveis pelas medidas deles decorrentes.</p>
+      </section>
+
+      <section class="chapter" id="encerramento" style="border-bottom:none;">
+        <div class="chapter-eyebrow"><span class="n">13</span><span class="line"></span></div>
+        <h2>Encerramento</h2>
+        <p>Chegamos ao fim deste manual, mas ao início de um novo ano letivo. Contamos com a parceria de cada família para que 2027 seja mais um ano de conquistas para nossos alunos.</p>
+        <p>Dúvidas que não foram esclarecidas aqui podem ser encaminhadas a qualquer um dos canais indicados no capítulo de Comunicação.</p>
+        <p>Sejam bem-vindos ao ano letivo de 2027.</p>
+        <p class="signature">A Direção do Colégio Zampieri</p>
+      </section>
+
+    </div>
+
+    <div class="anexo-wrap">
+      <button class="anexo-toggle" id="anexoToggle" aria-expanded="false">
+        <div class="txt">
+          <div class="eyebrow2">Anexo · Documento Oficial</div>
+          <div class="title2">📖 Regimento Escolar Completo</div>
+        </div>
+        <span class="chev">⌄</span>
+      </button>
+
+      <div class="anexo-panel" id="anexo-regimento">
+        <div class="anexo-meta">
+          <div>Aprovação em vigor<strong>26/12/2024</strong></div>
+          <div>CIE<strong>35142876</strong></div>
+        </div>
+<section class="chapter titulo-section" id="titulo-1">
+<div class="chapter-eyebrow"><span class="n">I</span><span class="line"></span></div>
+<h2>TÍTULO I - DAS DISPOSIÇÕES PRELIMINARES</h2>
+<ul class="cap-quicklinks">
+<li><a href="#titulo-1-cap-1">CAPÍTULO I - FILOSOFIA DO COLÉGIO</a></li>
+<li><a href="#titulo-1-cap-2">CAPÍTULO II - DA CARACTERIZAÇÃO DA ESCOLA</a></li>
+</ul>
+<div class="capitulo" id="titulo-1-cap-1">
+<h3>CAPÍTULO I - FILOSOFIA DO COLÉGIO</h3>
+<div class="artigo-body">
+<p><strong>Artigo 1º -</strong> Nossa Missão – Assegurar um ensino de qualidade, formando cidadãos críticos, conscientes e participativos, capazes de interagir e intervir na realidade. O Colégio Zampieri tem como objetivo, ser um espaço de conhecimento, cultura, pesquisa e criatividade, onde o aperfeiçoamento constante favoreça o aprimoramento da formação pedagógica e técnico-científica, de forma a responder as necessidades emergentes da sociedade.</p>
+<p>O Colégio Zampieri, regida pela LDB – 9394-96, trabalhando com a BNCC em seu âmbito escolar, tendo como objetivo final que o aluno possa ter adquirido em seu “agir” e “pensar” na conclusão do curso do Ensino Médio – “A Dignidade da Pessoa Humana”.</p>
+<p>“Nortear o perfil do aluno para questionar, pesquisar e refletir sobre a realidade”</p>
+</div>
+</div>
+<div class="capitulo" id="titulo-1-cap-2">
+<h3>CAPÍTULO II - DA CARACTERIZAÇÃO DA ESCOLA</h3>
+<div class="artigo-body">
+<p><strong>Artigo 2° -</strong> O Colégio Zampieri com sede à Rua dos Acarapévas, N° 03 e 80, Balneário São Francisco, CEP 04473-160, São Paulo, Capital, mantido pela Escolinha de Educação Infantil Pingo de Ouro LTDA, CNPJ N° 55.704.506/0001-73, no Registro de Pessoas Jurídicas, funcionará segundo este Regimento, com base na Lei de Diretrizes e Bases da Educação Nacional e no Estatuto da Criança e Adolescente e demais diplomas legais supervenientes.</p>
+<p><strong>Artigo 3° -</strong> O Colégio Zampieri mantém os cursos de Educação Básica, formada pela Educação Infantil, Ensino Fundamental, Ensino Médio na forma regular.</p>
+<p><strong>Artigo 4° -</strong> A Educação Escolar, inspirada nos princípios de liberdade e nos ideais de solidariedade humana, tem por finalidade o pleno desenvolvimento do educando, seu preparo para o exercício da cidadania e sua qualificação para o trabalho, possibilitando o prosseguimento de estudos posteriores.</p>
+</div>
+</div>
+</section>
+<section class="chapter titulo-section" id="titulo-2">
+<div class="chapter-eyebrow"><span class="n">II</span><span class="line"></span></div>
+<h2>TÍTULO II - DA ORGANIZAÇÃO E DESENVOLVIMENTO DO ENSINO</h2>
+<ul class="cap-quicklinks">
+<li><a href="#titulo-2-cap-1">CAPÍTULO I – OBJETIVOS EDUCACIONAIS DO COLÉGIO</a></li>
+<li><a href="#titulo-2-cap-2">CAPÍTULO II - DOS CURRÍCULOS</a></li>
+<li><a href="#titulo-2-cap-3">CAPÍTULO III - DA ORGANIZAÇÃO E FUNCIONAMENTO DA ESCOLA</a></li>
+</ul>
+<div class="capitulo" id="titulo-2-cap-1">
+<h3>CAPÍTULO I – OBJETIVOS EDUCACIONAIS DO COLÉGIO</h3>
+<div class="artigo-body">
+<p><strong>Artigo 5° -</strong> A Educação Escolar, inspirada nos princípios de liberdade e nos ideais de solidariedade humana, tem por finalidade o pleno desenvolvimento do educando, seu preparo para o exercício da cidadania e sua qualificação para o trabalho, possibilitando o prosseguimento de estudos posteriores.</p>
+<p><strong>Artigo 6º -</strong> Os objetivos do ensino devem convergir para os fins mais amplos da Educação Nacional, expressos na Lei 9394/96 e suas atualizações.</p>
+<ol type="I">
+<li><blockquote>
+<p>Estimular e incentivar o protagonismo dos alunos, motivando-os para o estudo, a pesquisa e o convívio social;</p>
+</blockquote></li>
+<li><blockquote>
+<p>Elevar, sistematicamente, a qualidade de ensino oferecido aos educandos;</p>
+</blockquote></li>
+<li><blockquote>
+<p>Formar cidadãos conscientes de seus direitos e deveres;</p>
+</blockquote></li>
+<li><blockquote>
+<p>Promover a integração escola-comunidade;</p>
+</blockquote></li>
+<li><blockquote>
+<p>Proporcionar um ambiente favorável ao estudo, ao ensino e à convivência social;</p>
+</blockquote></li>
+<li><blockquote>
+<p>Estimular, em seus alunos, a participação bem como a atuação solidária junto à comunidade;</p>
+</blockquote></li>
+<li><blockquote>
+<p>Promover a inclusão de alunos com necessidades especiais, nos termos da legislação vigente, e de acordo com as condições da escola.</p>
+</blockquote></li>
+</ol>
+<p><strong>Artigo 7º -</strong> Como instituição educativa, e no cumprimento de seu dever, este Colégio:</p>
+<ol type="I">
+<li><blockquote>
+<p>Assegurará que aos alunos com menor rendimento sejam oferecidas condições de serem devidamente atendidos ao longo do ano letivo;</p>
+</blockquote></li>
+</ol>
+<ol start="8" type="I">
+<li><blockquote>
+<p>Proverá estudos de recuperação, de preferência paralelos ao período letivo, aos alunos de menor rendimento;</p>
+</blockquote></li>
+<li><blockquote>
+<p>Atuará preventivamente de modo a evitar que os alunos faltem às aulas, alertando os alunos e seus pais para a possibilidade de não aprovação daqueles que obtiverem um percentual inferior a 75% do total de horas letivas, mesmo quando o rendimento escolar for satisfatório;</p>
+</blockquote></li>
+<li><blockquote>
+<p>Alertará a família de que a Educação Básica é obrigatória, dos 4 aos 17 anos, o que implica o dever da família de zelar para que seus filhos frequentem a instituição de ensino;</p>
+</blockquote></li>
+<li><blockquote>
+<p>Possibilitará a aceleração de estudos quando ocorrer defasagem entre a idade do aluno e o ano/série que ele está cursando;</p>
+</blockquote></li>
+<li><blockquote>
+<p>Possibilitará o avanço nos cursos e nos anos mediante verificação do aprendizado;</p>
+</blockquote></li>
+<li><blockquote>
+<p>Possibilitará o aproveitamento de estudos concluídos com êxito pelos alunos.</p>
+</blockquote></li>
+</ol>
+</div>
+</div>
+<div class="capitulo" id="titulo-2-cap-2">
+<h3>CAPÍTULO II - DOS CURRÍCULOS</h3>
+<div class="artigo-body">
+<p><strong>Seção I</strong></p>
+<p><strong>Da Organização Curricular na Educação Infantil</strong></p>
+<p><strong>Artigo 8º -</strong> A Educação Infantil, primeira etapa da Educação Básica, tem como finalidade o desenvolvimento integral da criança, em seus aspectos físicos, psicológicos, intelectual e social, desenvolvendo atitudes de iniciativa, cooperação e criatividade.</p>
+<p><strong>Seção II</strong></p>
+<p><strong>Da Organização Curricular no Ensino Fundamental</strong></p>
+<p><strong>Artigo 9º -</strong> No Ensino Fundamental, nos termos da legislação vigente, os currículos, elementos integrantes do Plano Escolar, contam com uma base nacional comum curricular e uma parte diversificada.</p>
+<p><strong>§ 1º</strong> - Os componentes curriculares a serem trabalhados nos anos e nas séries estão identificados no Plano Escolar.</p>
+<p><strong>§ 2º</strong> - O ensino religioso, de matrícula facultativa, constituirá disciplina do horário normal no ensino fundamental e será ministrado de acordo com as normas do sistema, assegurado o respeito à diversidade cultural e religiosa dos alunos.</p>
+<p><strong>Seção III</strong></p>
+<p><strong>Da Organização Curricular no Ensino Médio</strong></p>
+<p><strong>Artigo 10º -</strong> O Ensino Médio é composto pela Formação Geral Básica (comum a todos os alunos), com carga horária máxima de 2.400 horas e por Itinerários Formativos (parte diversificada e flexível), com carga mínima de 600 horas.</p>
+<p><strong>§ 1º</strong> - Os componentes curriculares do Ensino Médio são organizados por áreas de conhecimento que têm por finalidade integrar esses componentes. São elas:</p>
+<p>I - Área de Linguagens e suas Tecnologias: Integrada pela Língua Portuguesa e suas literaturas, Arte, Educação Física e Língua Inglesa;</p>
+<p>II - Área de Matemática e suas Tecnologias: Matemática;</p>
+<p>III - Área de Ciências da Natureza e suas Tecnologias, integrada por Biologia, Física e Química;</p>
+<p>IV - Área de Ciências Humanas e Sociais Aplicadas: Integrada por Filosofia, Geografia, História e Sociologia.</p>
+<p><strong>§ 2º</strong> - As competências específicas para cada área do conhecimento, as respectivas habilidades, campos de atuação/unidade temática/categoria, bem como os objetos de conhecimento que serão trabalhados ao longo dos três anos estão identificados no Plano Escolar. E as propostas pedagógicas serão estruturadas considerando os seguintes elementos:</p>
+<ol type="I">
+<li><p>Promoção de metodologias investigativas no processo de ensino e aprendizagem;</p></li>
+<li><p>Conexão dos processos de ensino e aprendizagem com a vida comunitária e social;</p></li>
+<li><p>Reconhecimento do trabalho e de seu caráter formativo; e</p></li>
+<li><p>Articulação entre os diferentes saberes com base nas áreas das áreas do conhecimento.</p></li>
+</ol>
+<p><strong>§ 3º</strong> - Os itinerários formativos de aprofundamento (IFAs), estruturados a partir dos Parâmetros Nacionais para a Oferta dos IFA<strong>s</strong>, serão ofertados por meio de diferentes arranjos curriculares, por área de conhecimento ou de forma integrada articulando as diferentes áreas do conhecimento, podendo incluir, a critério dos sistemas de ensino, projetos e pesquisas, envolvendo temas transversais que componham os currículos. Os IFAs consistem em percursos educacionais com carga horária mínima de 600 horas, de livre escolha dos estudantes, com foco no aprofundamento em uma ou mais áreas do conhecimento. São realizados por meio de projetos interdisciplinares e integradores, valorizando a articulação entre teoria e prática, bem como a diversidade territorial e cultural do país.</p>
+<p>Cada aluno deverá ter a opção de escolher entre pelo menos dois itinerários formativos, ofertados pela instituição, conforme exigência legal.</p>
+<p>Estes serão trabalhados usando metodologias que favoreçam o protagonismo juvenil, sendo organizados em torno de um ou mais eixos estruturantes que são: investigação científica, processos criativos, mediação e intervenção e empreendedorismo, de acordo com as atividades propostas para o desenvolvimento das habilidades e desenvolvimento integral do aluno com a preparação para atuação cidadã no mundo do trabalho e na vida pessoal.</p>
+<p>Os objetivos dos IFAs incluem:</p>
+<ul>
+<li><p>Aprofundar o desenvolvimento cognitivo dos estudantes;</p></li>
+<li><p>Estimular pensamento crítico, reflexão e análise complexa de problemas;</p></li>
+<li><p>Fomentar protagonismo estudantil, formação de projeto de vida e protagonismo social e ético-cidadão.</p></li>
+</ul>
+<p>Organização didático-pedagógica:</p>
+<p>I. Adoção dos quatro eixos curriculares estruturantes<strong>:</strong></p>
+<ul>
+<li><p>Método, Conhecimento e Ciência</p></li>
+<li><p>Mediação e Intervenção sociocultural</p></li>
+<li><p>Inovação e Intervenção. Tecnológica</p></li>
+<li><p>Mundo do Trabalho e Transformação Social</p></li>
+</ul>
+<p>II. Implementação de projetos integradores, interdisciplinares e contextuais, conectados ao projeto de vida estudantil;</p>
+<p>III. Monitoramento e avaliação contínua com enfoque formativo, incluindo recuperação e apoio à aprendizagem</p>
+<p>2. Ações de suporte à implementação:</p>
+<ol type="1">
+<li><p>Formação continuada de professores e equipes gestoras;</p></li>
+<li><p>Revisão e atualização da proposta pedagógica e documentos da escola;</p></li>
+<li><p>Orientação e apoio aos estudantes quanto à escolha dos itinerários e acompanhamento de seu percurso individual;</p></li>
+<li><p>Disponibilização de infraestrutura, materiais didáticos, recursos tecnológicos e acessibilidade;</p></li>
+</ol>
+<p><strong>§ 4º</strong> - O Ensino Híbrido será ofertado através de nossa Plataforma de Ensino AVA, SAE Digital com intervenções pedagógicas presenciais das Disciplinas dos Itinerários Formativos. Na forma de avaliações – provas, simulados, atividades da apostila e seminários.</p>
+<p><strong>§ 5º</strong> - Serão asseguradas às estudantes oportunidades de construção de projetos de vida, em perspectiva orientada pelo desenvolvimento integral, nas dimensões física, cognitiva e socioemocional pela integração comunitária, pela participação cidadã e pela preparação para o mundo do trabalho, de forma ambiental e socialmente responsável. O Projeto de Vida trabalhará como um eixo central ao visar ao desenvolvimento de jovens autônomos e protagonistas das próprias histórias de vida, e o professor responsável trabalhará de forma que o Projeto de Vida se articule na intenção de formar jovens capazes de tomar decisões, fazer escolhas, traçar e executar planos relacionados ao futuro,</p>
+<p>possuindo habilidades e competências relacionadas ao aprendizado socioemocional, devendo ainda considerar três dimensões formativas:</p>
+<ul>
+<li><p>A dimensão do autoconhecimento, que contribui para o conhecimento de si.</p></li>
+<li><p>A dimensão do outro, que envolve o reconhecimento do mundo e qual lugar se ocupa nele.</p></li>
+<li><p>A dimensão do planejamento, que diz respeito ao encontro com um futuro factível</p></li>
+</ul>
+<blockquote>
+<p><strong>Seção IV</strong></p>
+</blockquote>
+<p><strong>Projetos Especiais</strong></p>
+<p><strong>Artigo 11º –</strong> O Colégio desenvolve, sempre que necessário, e dentro das suas possibilidades, projetos especiais abrangendo:</p>
+<blockquote>
+<p>I- Atividades de reforço e recuperação de aprendizagem e</p>
+<p>Orientação de estudos;</p>
+<p>II- Programas especiais de aceleração de estudos para alunos com defasagem idade/ano ou série;</p>
+<p>III- Organização e utilização de salas ambiente, de multimeios, de multimídia, de leitura, laboratórios, e salas de recursos, para atender às disposições da Del. CEE 149/2016, quando se tratar da educação especial;</p>
+<p>IV- Flexibilização e adaptação curricular envolvendo conteúdos, metodologias, recursos didáticos e avaliação diferenciada para os alunos público-alvo da educação especial;</p>
+<p>V- Atendimento aos alunos com altas habilidades pelo aprofundamento e/ou enriquecimento curricular, e aceleração de estudos para os alunos com altas</p>
+<p>habilidades que têm grande facilidade e rapidez no domínio de conceitos e procedimentos em todas as áreas do conhecimento;</p>
+</blockquote>
+<p>VI- Grupos de estudo e pesquisa;</p>
+<p>VII- Programas de cultura e de lazer.</p>
+<p><strong>§ 1º</strong> - As atividades de reforço, com caráter de enriquecimento, destinam-se a todos os alunos de um determinado ano, série, classe ou ciclo.</p>
+<p><strong>§ 2º</strong> - As atividades de recuperação destinam-se somente aos alunos de baixo rendimento escolar.</p>
+<p><strong>§ 3º</strong> - Os projetos especiais, integrados aos objetivos gerais, são planejados e desenvolvidos pelos profissionais da própria escola.</p>
+<p><strong>§ 4º</strong> - No interesse da comunidade escolar, a direção poderá firmar convênios e propor termos de cooperação com entidades públicas e privadas, para a realização dos projetos especiais, submetendo-os à apreciação do Conselho de Escola.</p>
+</div>
+</div>
+<div class="capitulo" id="titulo-2-cap-3">
+<h3>CAPÍTULO III - DA ORGANIZAÇÃO E FUNCIONAMENTO DA ESCOLA</h3>
+<div class="artigo-body">
+<p><strong>Artigo 12º -</strong> O Colégio está organizado para atender às necessidades socioeducacionais e de aprendizagem de seus alunos oferecendo salas e mobiliários, equipamentos e material didático-pedagógico adequados às diferentes faixas etárias, níveis de ensino e cursos que ministra.</p>
+<p>Parágrafo Único - O Colégio funcionará em dois turnos diurno e vespertino.</p>
+<p><strong>Artigo 13º -</strong> O Colégio Zampieri, ministrará a Educação Básica formada pela:</p>
+<p>I – Educação Infantil, em regime anual nas modalidades:</p>
+<ol type="a">
+<li><p>Creche: Crianças de 02 anos de idade ou a completar, conforme legislação vigente;</p></li>
+<li><p>Creche II: Crianças de 03 anos de idade ou a completar, conforme legislação vigente;</p></li>
+<li><p>Pré-escola I: Crianças até 04 anos de idade ou a completar, conforme legislação Vigente;</p></li>
+<li><p>Pré-escola II: Crianças até 05 anos de idade ou a completar, conforme legislação vigente.</p></li>
+</ol>
+<p>II- Ensino Fundamental, que terá nove anos de duração em dois Ciclos, sendo o Ciclo I de primeiro a quinto ano e o Ciclo II de sexto a nono ano, com no mínimo 200 dias letivos.</p>
+<p>III- Ensino Médio constituído de 3 séries anuais, distribuídas por um mínimo de 200 dias de efetivo trabalho escolar;</p>
+<p><strong>§1°</strong> - Consideram-se de efetivo trabalho escolar, os dias em que forem desenvolvidas atividades regulares de aulas ou outra programações didático-pedagógicas, planejadas pela escola, contando sempre com a presença de professores e com a frequência dos alunos controlada.</p>
+<p><strong>§2°</strong> - Para cumprimento da carga horária prevista em lei, o tempo de intervalo entre uma aula e outra, assim, como o destinado ao recreio, serão considerados como atividades escolares e computados na carga horária diária da classe.</p>
+<p><strong>Artigo 14º</strong> - A – O horário de entrada e saída dos alunos será definido no calendário escolar e amplamente divulgado à comunidade educativa no início de cada ano letivo.</p>
+<p><strong>§1º</strong> - O aluno deverá comparecer pontualmente, sendo tolerado um limite máximo de 10 (dez) minutos de atraso, o ingresso na sala de aula após, dependerá da autorização da direção ou da coordenação pedagógica.</p>
+<p><strong>§2º</strong> - O comparecimento após o horário estabelecido, de forma recorrente, será comunicado à família e registrado no histórico de frequência, podendo gerar encaminhamento à orientação educacional e à direção escolar.</p>
+<p><strong>§3º</strong> - Compete à equipe gestora promover ações educativas e de conscientização sobre a importância da pontualidade como valor formativo e responsabilidade social.</p>
+<p><strong>§4º</strong> - Casos excepcionais e devidamente justificados poderão ser avaliados individualmente pela direção.</p>
+</div>
+</div>
+</section>
+<section class="chapter titulo-section" id="titulo-3">
+<div class="chapter-eyebrow"><span class="n">III</span><span class="line"></span></div>
+<h2>TÍTULO III - DA ORGANIZAÇÃO TÉCNICO-ADMINISTRATIVA E GESTÃO DEMOCRÁTICA E PARTICIPATIVA</h2>
+<ul class="cap-quicklinks">
+<li><a href="#titulo-3-cap-1">CAPÍTULO I – DA CARACTERIZAÇÃO</a></li>
+<li><a href="#titulo-3-cap-2">CAPÍTULO II - Da Direção</a></li>
+<li><a href="#titulo-3-cap-3">CAPÍTULO III - DA COORDENAÇÃO PEDAGÓGICA</a></li>
+<li><a href="#titulo-3-cap-4">CAPÍTULO IV – DO NÚCLEO ADMINISTRATIVO</a></li>
+<li><a href="#titulo-3-cap-5">CAPÍTULO V – DO NÚCLEO OPERACIONAL</a></li>
+<li><a href="#titulo-3-cap-6">CAPÍTULO VI – DO CORPO DOCENTE</a></li>
+<li><a href="#titulo-3-cap-7">CAPÍTULO VII – DO CORPO DISCENTE</a></li>
+<li><a href="#titulo-3-cap-8">CAPÍTULO VIII – DO CONSELHO DE CLASSE E SÉRIE</a></li>
+<li><a href="#titulo-3-cap-9">CAPÍTULO IX – DO PLANO ESCOLAR</a></li>
+</ul>
+<div class="capitulo" id="titulo-3-cap-1">
+<h3>CAPÍTULO I – DA CARACTERIZAÇÃO</h3>
+<div class="artigo-body">
+<p><strong>Artigo 15º</strong> - A organização técnico-administrativa do Colégio abrange:</p>
+<p>I - Direção;</p>
+<p>II - Coordenador Pedagógico;</p>
+<p>III - Núcleo Administrativo;</p>
+<p>IV - Núcleo Operacional;</p>
+<p>V - Corpo Docente;</p>
+<p>IV - Corpo Discente.</p>
+</div>
+</div>
+<div class="capitulo" id="titulo-3-cap-2">
+<h3>CAPÍTULO II - Da Direção</h3>
+<div class="artigo-body">
+<p><strong>Artigo 16º</strong> - A direção da escola executará suas funções objetivando garantir:</p>
+<p>I - a elaboração e execução da Proposta Pedagógica;</p>
+<p>II - a administração do pessoal e dos recursos materiais e financeiro;</p>
+<p>III - o cumprimento dos dias letivos e horas de aula estabelecidos;</p>
+<p>IV - a legalidade e a autenticidade da vida escolar dos alunos;</p>
+<p>V - os meios para o reforço e recuperação da aprendizagem dos alunos;</p>
+<p>VI - a articulação e integração da escola com as famílias dos alunos;</p>
+<p>VII- as informações aos pais ou responsável sobre a frequência e o rendimento dos alunos;</p>
+<p>VIII- a comunicação ao Conselho Tutelar sobre maus tratos envolvendo alunos menores.</p>
+<p><strong>Artigo 17º -</strong> Cabe ainda à direção subsidiar os profissionais da escola, no tocante às normas vigentes e orientá-los sempre que houver decisões em desacordo com a legislação.</p>
+</div>
+</div>
+<div class="capitulo" id="titulo-3-cap-3">
+<h3>CAPÍTULO III - DA COORDENAÇÃO PEDAGÓGICA</h3>
+<div class="artigo-body">
+<p><strong>Artigo 18º</strong> <strong>-</strong> A Coordenação Pedagógica terá a função de proporcionar apoio técnico-pedagógico aos docentes e discentes, relativo a:</p>
+<p>I - a elaboração desenvolvimento e avaliação da proposta pedagógica;</p>
+<p>II - coordenação pedagógica.</p>
+</div>
+</div>
+<div class="capitulo" id="titulo-3-cap-4">
+<h3>CAPÍTULO IV – DO NÚCLEO ADMINISTRATIVO</h3>
+<div class="artigo-body">
+<p><strong>Artigo 19º –</strong> O núcleo administrativo terá a função de dar apoio ao processo</p>
+<p>educacional, auxiliando a direção nas atividades relativas a:</p>
+<p>I - documentação e escrituração escolar e de pessoal;</p>
+<p>II - organização e atualização de arquivos;</p>
+<p>III - expedição, registro e controle de expedientes;</p>
+<p>IV - registro e controle de bens patrimoniais;</p>
+<p>V - registro e controle de recursos financeiros.</p>
+<p>Parágrafo Único: O Núcleo Administrativo é composto por uma secretária e auxiliares de secretaria.</p>
+</div>
+</div>
+<div class="capitulo" id="titulo-3-cap-5">
+<h3>CAPÍTULO V – DO NÚCLEO OPERACIONAL</h3>
+<div class="artigo-body">
+<p><strong>Artigo 20º -</strong> O núcleo operacional terá a função de proporcionar apoio ao conjunto de ações complementares de natureza administrativa e curricular, relativas às atividades de:</p>
+<p>I - zeladoria, vigilância e atendimento aos alunos;</p>
+<p>II - limpeza, manutenção e conservação da área interna e externa do prédio escolar;</p>
+<p>III - controle, manutenção e conservação de mobiliários, equipamentos e materiais didático-pedagógico.</p>
+<p>O Núcleo Operacional é composto por: zelador, inspetores de alunos e serventes.</p>
+</div>
+</div>
+<div class="capitulo" id="titulo-3-cap-6">
+<h3>CAPÍTULO VI – DO CORPO DOCENTE</h3>
+<div class="artigo-body">
+<p><strong>Artigo 21º -</strong> integram o corpo docente os professores da escola, que exercerão</p>
+<p>suas funções, incumbindo-se de:</p>
+<p>I - participar da elaboração da proposta pedagógica da escola;</p>
+<p>II - elaborar e cumprir plano de trabalho;</p>
+<p>III - zelar pela aprendizagem dos alunos;</p>
+<p>IV - Estabelecer estratégias de recuperação para os alunos de menor rendimento;</p>
+<p>V - cumprir os dias letivos e carga horária de efetivo trabalho escolar, além de participar integralmente dos períodos dedicados ao planejamento, à avaliação e ao desenvolvimento profissional;</p>
+<p>VI - Colaborar com as atividades de articulação da escola com as famílias e a comunidade.</p>
+<p>VII - acatar as penalidades previstas na Lei quando do descumprimento dos objetivos deste regimento.</p>
+</div>
+</div>
+<div class="capitulo" id="titulo-3-cap-7">
+<h3>CAPÍTULO VII – DO CORPO DISCENTE</h3>
+<div class="artigo-body">
+<p><strong>Artigo 22º</strong> <strong>-</strong> integram o corpo discente todos os alunos da escola a quem se garantirá livre acesso às informações necessárias à sua educação, ao seu desenvolvimento como pessoa, ao seu preparo para o exercício da cidadania e a sua qualificação para o mundo do trabalho.</p>
+<p><strong>§ 1°</strong> - Ao aluno são atribuídos direitos e deveres. São direitos dos alunos:</p>
+<p>I - receber da escola o ensino cujos objetivos e métodos enfatizam a organização das informações das informações já constantes de seu repertório ou a ele acrescidas para sua ampliação;</p>
+<p>II - Receber equidade de tratamento, sem distinção de nacionalidade, credo religioso ou político, de raça ou cor;</p>
+<p>III - Ser ouvido em suas queixas e reclamações;</p>
+<p>IV - Ser respeitado como pessoa humana;</p>
+<p>V - Ser atendido em suas dificuldades de aprendizagem.</p>
+<p><strong>§2°</strong> - São deveres dos alunos:</p>
+<p>I - Comparecer assiduamente às aulas;</p>
+<p>II - Manter cordialidade e urbanidade no trato com os colegas, funcionários e professores;</p>
+<p>III - Adquirir todo o material exigido, trazendo tudo em ordem, conforme recomendação do professor, munindo-se do que for necessário para as atividades de cada dia;</p>
+<p>IV - Frequentar a escola devidamente uniformizado.</p>
+<p><strong>§3°</strong> - São penalidades previstas neste Regimento, quando da transgressão do mesmo:</p>
+<p>I - Advertência e repreensão do aluno, prevista neste regimento, pelo professor ou pelo Diretor, com registro em livro próprio e, em caso de menor de idade, comunicado aos pais;</p>
+<p>II - Suspensão pelo Diretor;</p>
+<p>III - Transferência, ouvido o conselho de classe ou série, com direito a ampla defesa e respeitando o Estatuto do Menor e do Adolescente. De acordo com a Legislação vigente.</p>
+<p>IV - O aluno perderá o benefício de desconto em caso de:</p>
+<p>– Rendimento inferior à média 6,0 (seis);</p>
+<p>- Com 03 (três) atas de indisciplina registradas;</p>
+<p>- Mais de 30 (trinta) dias de atraso no pagamento de qualquer mensalidade;</p>
+<p>- Não ter adquirido o material didático de uso obrigatório.</p>
+</div>
+</div>
+<div class="capitulo" id="titulo-3-cap-8">
+<h3>CAPÍTULO VIII – DO CONSELHO DE CLASSE E SÉRIE</h3>
+<div class="artigo-body">
+<p><strong>Artigo 23º -</strong> Os conselhos de classe e série, constituídos por todos os professores da mesma classe ou série, enquanto colegiados responsáveis pelo processo coletivo de acompanhamento e avaliação do ensino aprendizagem,</p>
+<p>Organizar-se-ão de forma a:</p>
+<p>I - Possibilitar a inter-relação entre profissionais e alunos, entre turnos e entre séries e turmas;</p>
+<p>II - Propiciar o debate permanente sobre o processo de ensino aprendizagem;</p>
+<p>III- Favorecer a integração e sequência dos conteúdos curriculares de cada série/classe.</p>
+<p><strong>§ 1°</strong> - Os conselhos de classe e série deverão se reunir, ordinariamente, uma vez por bimestre ou quando convocados pelo Diretor.</p>
+<p><strong>§ 2°</strong> - Os conselhos de classe e série serão presididos pelo Diretor da Escola, que poderá delegar a presidência a qualquer elemento integrante do conselho.</p>
+</div>
+</div>
+<div class="capitulo" id="titulo-3-cap-9">
+<h3>CAPÍTULO IX – DO PLANO ESCOLAR</h3>
+<div class="artigo-body">
+<p><strong>Artigo 24º -</strong> O Plano Escolar é o documento que traça o perfil da escola, contemplando as intenções de todos os envolvidos, norteando as ações pedagógicas e operacionalizando a proposta pedagógica.</p>
+<p>Parágrafo único- O Plano Escolar deverá contemplar:</p>
+<p>I - Identificação e caracterização do Colégio, de sua clientela, de seus recursos físicos, materiais e humanos.</p>
+<p>II - Definição das metas a serem atingidas e das ações a serem desencadeadas;</p>
+<p>III - Objetivos da escola;</p>
+<p>IV - Planos dos cursos mantidos pelo Colégio;</p>
+<p>V - Planos de trabalho dos diversos núcleos que compõem a organização técnico-administrativa do Colégio;</p>
+<p>VI - Critérios para acompanhamento, controle e avaliação da execução do trabalho realizado pelos diferentes atores do processo educacional;</p>
+<p>VII- Agrupamento de alunos e sua distribuição por turno, curso, série e turma;</p>
+<p>VIII- Quadro curricular por curso e série;</p>
+<p>IX - Calendário escolar;</p>
+<p>X - Matrizes curriculares dos cursos;</p>
+<p>XI - Quadro docente, com identificação (RG e MEC);</p>
+<p>XII- Critérios de Classificação / Reclassificação;</p>
+<p>XIII - Critérios de Promoção/ Retenção/ Recuperação / Compensação de Ausência;</p>
+<p>XIV- Período de Matrícula;</p>
+<p>XV - Adaptação de Estudos.</p>
+<p><strong>Artigo 25º -</strong> O Plano Escolar será documento que ficará à disposição da Comunidade Escolar, da Direção e da Supervisão de Ensino.</p>
+</div>
+</div>
+</section>
+<section class="chapter titulo-section" id="titulo-4">
+<div class="chapter-eyebrow"><span class="n">IV</span><span class="line"></span></div>
+<h2>TÍTULO IV - DA AVALIAÇÃO E DAS DISPOSIÇÕES GERAIS</h2>
+<ul class="cap-quicklinks">
+<li><a href="#titulo-4-cap-1">CAPÍTULO I DOS PRINCÍPIOS</a></li>
+<li><a href="#titulo-4-cap-2">CAPÍTULO II - DA AVALIAÇÃO DO ENSINO E DA APRENDIZAGEM</a></li>
+</ul>
+<div class="capitulo" id="titulo-4-cap-1">
+<h3>CAPÍTULO I DOS PRINCÍPIOS</h3>
+<div class="artigo-body">
+<p><strong>Artigo 26º</strong> - A avaliação, em sua nova concepção terá como princípio o aprimoramento da qualidade de ensino.</p>
+<p><strong>Artigo 27º</strong> - A avaliação será subsidiada por registros contínuos e observação sistemática e terão por objetivo permitir o acompanhamento:</p>
+<p>I - Sistemático e contínuo do processo de ensino e de aprendizagem, de acordo com os objetivos e metas propostos;</p>
+<p>II - Do desempenho da direção, dos professores, dos alunos e dos demais funcionários nos diferentes momentos do processo educacional;</p>
+<p>III - Da participação efetiva da comunidade escolar nas mais diversas atividades propostas pela escola;</p>
+<p>IV - Da execução do planejamento curricular.</p>
+</div>
+</div>
+<div class="capitulo" id="titulo-4-cap-2">
+<h3>CAPÍTULO II - DA AVALIAÇÃO DO ENSINO E DA APRENDIZAGEM</h3>
+<div class="artigo-body">
+<p><strong>Artigo 28º</strong> - A avaliação, do processo ensino e aprendizagem, realizada de forma contínua, cumulativa e sistemática tem por objetivo:</p>
+<p>I - Diagnosticar e registrar os processos do aluno e suas dificuldades;</p>
+<p>II - Possibilitar que os alunos autoavaliem sua aprendizagem;</p>
+<p>III - Orientar o aluno quanto aos esforços necessários para superar as dificuldades;</p>
+<p>IV - Fundamentar as decisões do conselho de classe quanto à necessidade de procedimentos paralelos ou intensivos de reforço e recuperação da aprendizagem, de classificação e reclassificação dos alunos;</p>
+<p>V - Orientar as atividades de planejamento e replanejamento dos conteúdos curriculares.</p>
+<p><strong>Artigo 29º</strong> - A escala de notas adotada por esta Unidade Escolar vai de zero a dez, com variação de cinco em cinco décimos.</p>
+<p><strong>Artigo 30º</strong> - Será considerado com avaliação suficiente o aluno que conseguir média igual ou superior a 6 (seis).</p>
+<p><strong>Artigo 31º</strong> - No final de cada bimestre o professor analisará a evolução do desempenho do aluno, avaliando o processo de aprendizagem dele, se as habilidades e competências para o período foram alcançadas, juntamente com o total de faltas e encaminhará o resultado à Secretaria do Colégio para o competente registro.</p>
+<p><strong>Artigo 32º -</strong> A nota final de cada disciplina, será mensurada pela evolução do desempenho do aluno, avaliando o processo de aprendizagem do mesmo e se as habilidades e competências para o ano/série forem alcançadas.</p>
+<p><strong>Artigo 33º -</strong> O conselho de classe e série será reunido bimestralmente para análise e reflexão sobre os procedimentos de ensino adotados e resultados de aprendizagem alcançados.</p>
+</div>
+</div>
+</section>
+<section class="chapter titulo-section" id="titulo-5">
+<div class="chapter-eyebrow"><span class="n">V</span><span class="line"></span></div>
+<h2>TÍTULO V - DA ORGANIZAÇÃO DA VIDA ESCOLAR</h2>
+<ul class="cap-quicklinks">
+<li><a href="#titulo-5-cap-1">CAPÍTULO I - DA CARACTERIZAÇÃO</a></li>
+<li><a href="#titulo-5-cap-2">CAPÍTULO II – DAS FORMAS DE INGRESSO, CLASSIFICAÇÃO, RECLASSIFICAÇÃO E ADAPTAÇÃO</a></li>
+<li><a href="#titulo-5-cap-3">CAPÍTULO III - DA FREQUÊNCIA E COMPENSAÇÃO DE AUSÊNCIAS</a></li>
+<li><a href="#titulo-5-cap-4">CAPÍTULO IV – DA PROMOÇÃO, RETENÇÃO E RECUPERAÇÃO</a></li>
+<li><a href="#titulo-5-cap-5">CAPÍTULO V – DA EXPEDIÇÃO DOS DOCUMENTOS DE VIDA ESCOLAR</a></li>
+</ul>
+<div class="capitulo" id="titulo-5-cap-1">
+<h3>CAPÍTULO I - DA CARACTERIZAÇÃO</h3>
+<div class="artigo-body">
+<p><strong>Artigo 34º -</strong> A organização da vida escolar implica em um conjunto de normas, a saber:</p>
+<p>I - formas de ingresso, classificação e reclassificação;</p>
+<p>II - frequência e compensação de ausências;</p>
+<p>III - promoção e recuperação;</p>
+<p>IV - expedição de documentos de vida escolar.</p>
+</div>
+</div>
+<div class="capitulo" id="titulo-5-cap-2">
+<h3>CAPÍTULO II – DAS FORMAS DE INGRESSO, CLASSIFICAÇÃO, RECLASSIFICAÇÃO E ADAPTAÇÃO</h3>
+<div class="artigo-body">
+<p><strong>Artigo 35º –</strong> A matrícula será efetuada pelo pai ou responsável ou pelo próprio aluno, quando maior de idade, observadas as normas legais e os seguintes critérios:</p>
+<p>I - por ingresso, no 1° Ano do Ensino Fundamental, com base na idade legal;</p>
+<p>II - por classificação ou reclassificação, a partir do 2° Ano do Ensino Fundamental;</p>
+<p>III - com a documentação necessária que comprove os anos cursados, quando em caso de matrícula por transferência durante o Curso Fundamental ou Médio.</p>
+<p>IV - com apresentação de fotografias para os documentos escolares.</p>
+<p><strong>Artigo 36º –</strong> A classificação ocorrerá:</p>
+<p><strong>§1º</strong> - Classificação de Alunos Excetuado o ingresso do aluno no sistema de ensino (1º ano Ensino Fundamental), exclusivamente pelo critério da idade, a classificação pode ser concebida como um primeiro marco da instituição pois, possibilita, a partir de diagnósticos e/ou documentos anteriores, indicar a série/ano/etapa/módulo etc. adequado para o aluno em sua trajetória. Assim, pode-se entender o ato de promoção ou retenção de um aluno concretizado nos assentamentos escolares como um ato de Classificação.</p>
+<p><strong>§2º</strong> - A classificação em qualquer série ou etapa, também pode ser feita “independentemente de escolarização anterior, mediante avaliação feita pelo Colégio, que defina o grau de desenvolvimento e experiência do aluno e permita sua inscrição na série ou etapa adequada, conforme regulamentação do respectivo sistema de ensino” (art. 24, inciso II, alínea c), excetuada a primeira do ensino fundamental (que se assenta apenas no critério da idade).</p>
+<p><strong>Artigo 37º -</strong> A reclassificação apresenta-se como ato da instituição a ser aplicado para a devida readequação com base na defasagem idade/série, considerada a partir de peculiaridades pedagógicas próprias. Essa ideia apoia-se no art. 24, inciso V, alínea c,</p>
+<p>ao prever “possibilidade de avanço nos cursos e nas séries mediante verificação do aprendizado” (LDB 9394/1996).</p>
+<p><strong>§1º</strong> - O Colégio poderá reclassificar os alunos, inclusive quando se tratar de transferências entre estabelecimentos situados no País e no exterior, para estudantes que realizaram estudos fora do país, deverá ser oferecida a Equivalência de Estudos, nos termos da Deliberação CEE 21/01.</p>
+<p><strong>§2º</strong> - Para a devida utilização desse instituto, destacam-se alguns critérios a serem observados pela instituição e pelos interessados. Entre eles apontam-se:</p>
+<p>I - o aluno interessado ou seus pais poderão pleitear procedimento de reclassificação sempre que estiver caracterizada uma situação de defasagem idade/série;</p>
+<p>II - parecer de Comissão de Professores, destinada para fins de avaliação das habilidades e conhecimentos previstos no Currículo Oficial, inclusive com a presença de uma redação no conjunto avaliativo. A partir desse Parecer, o Diretor do Colégio oficiará o ato de classificação na série/etapa adequada;</p>
+<p>III - a série/etapa pleiteada e indicada ao final do processo avaliativo do pedido de reclassificação não poderá exceder a correlação idade/série do sistema brasileiro, no intervalo permitido pela LDB;</p>
+<p>IV- o processo de reclassificação para alunos da própria escola ocorra até o final do primeiro mês letivo e nos casos de transferência a qualquer tempo;</p>
+<p>V - o ato de classificação, a partir do processo avaliativo de reclassificação, só produzirá efeitos para continuidade de estudos na Unidade Escolar em que foi objeto de apreciação. Em caso de mudança de escola ele deverá ser requerido na Unidade de destino, a qualquer época, conforme previsto nos casos de transferência.</p>
+<p><strong>Artigo 38º -</strong> O aluno poderá ser reclassificado, em série mais avançada, respeitando a idade, com defasagem de conhecimentos ou lacuna curricular das séries anteriores suprimindo-se a defasagem através de atividades de reforço e recuperação ou de adaptação de estudos ou pela adoção do regime de progressão parcial de estudos, quando se tratar de aluno do Ensino Médio.</p>
+<p><strong>Artigo 39º -</strong> O Colégio adotará o regime de progressão parcial de ensino para os alunos do Ensino Médio, regular e último ano do Ensino Fundamental, que, após estudos de recuperação não apresentarem rendimento escolar satisfatório.</p>
+<p>Parágrafo Único - O aluno com rendimento insatisfatório em até 3 (três) componentes curriculares será classificado na série subsequente, devendo cursar concomitantemente, ou não estes componentes curriculares.</p>
+<p><strong>Artigo 40º -</strong> A adaptação de estudos ocorrerá quando houver lacuna curricular das séries anteriores ou da série em que o aluno estiver sendo matriculado por transferência, com frequência obrigatória, em período diverso, quando tratar-se</p>
+<p>de matéria da BNCC.</p>
+</div>
+</div>
+<div class="capitulo" id="titulo-5-cap-3">
+<h3>CAPÍTULO III - DA FREQUÊNCIA E COMPENSAÇÃO DE AUSÊNCIAS</h3>
+<div class="artigo-body">
+<p><strong>Artigo 41º –</strong> O Colégio fará o controle sistemático do controle de frequência dos seus alunos e, bimestralmente, adotará as medidas necessárias para que os alunos possam compensar ausências que ultrapassarem o limite de 20% do total das aulas dadas ao longo de cada mês letivo.</p>
+<p><strong>§ 1°</strong> - As atividades de compensação de ausências serão programadas, orientadas e registradas pelo professor de classe ou das disciplinas, com a finalidade de sanar as dificuldades de aprendizagem provocadas por frequência irregular às aulas.</p>
+<p><strong>§ 2°</strong> - As faltas dos alunos serão comunicadas ao pai ou responsável quando atingir um número significativo, que o professor julgue.</p>
+<p>Comprometedor para o andamento do processo ensino-aprendizagem do mesmo e obrigatória quando ultrapassar 20%.</p>
+<p><strong>Artigo 42º -</strong> A frequência mínima exigida para a promoção é de 75%.</p>
+<p>Parágrafo Único - poderá ser reclassificado o aluno que no período letivo anterior, não atingiu a frequência mínima exigida.</p>
+<p><strong>Artigo 43º -</strong> A frequência do aluno será controlada e registrada pelo professor da classe ou disciplina e entregue à secretaria do Colégio, bimestralmente ou quando houver excesso de faltas, comunicada à direção imediatamente para as providências cabíveis.</p>
+</div>
+</div>
+<div class="capitulo" id="titulo-5-cap-4">
+<h3>CAPÍTULO IV – DA PROMOÇÃO, RETENÇÃO E RECUPERAÇÃO</h3>
+<div class="artigo-body">
+<p><strong>Artigo 44º –</strong> Será considerado promovido na disciplina área de estudo ou atividade, o aluno que tiver alcançado:</p>
+<p>I - Frequência mínima de 75% e somatória das médias bimestrais igual a 24 pontos, sendo a nota mínima bimestral igual a 6 pontos (seis inteiros).</p>
+<p>II - Frequência inferior a 75% até 50% e somatória das médias bimestrais igual a 32 pontos, sendo a nota mínima igual a 8 pontos (oito inteiros), compensação de ausência.</p>
+<p>III- Frequência mínima de 75% e somatória de 24 pontos, após estudos de recuperação;</p>
+<p>IV- Frequência inferior a 75% até 60%, que apresentar melhoria de aproveitamento após estudos de recuperação, com somatória de 24 pontos.</p>
+<p><strong>Artigo 45º -</strong> Será considerado retido o aluno que apresentar ao final do ano letivo:</p>
+<p>I - Frequência inferior a 50%, qualquer que seja seu aproveitamento;</p>
+<p>II - Frequência mínima de 75% e média inferior a 6,0 inteiros, independentemente do número de componentes curriculares.</p>
+<p>III- Frequência mínima de 75% e somatória das médias bimestrais e estudos de recuperação final inferior a 24 pontos.</p>
+</div>
+</div>
+<div class="capitulo" id="titulo-5-cap-5">
+<h3>CAPÍTULO V – DA EXPEDIÇÃO DOS DOCUMENTOS DE VIDA ESCOLAR</h3>
+<div class="artigo-body">
+<p><strong>Artigo 46º –</strong> O Colégio expedirá históricos escolares, declarações de escolaridades, certificados de conclusão de curso com especificações que assegurem a clareza, a regularidade e a autenticidade da vida escolar, do aluno, de conformidade com a legislação vigente.</p>
+<p>Parágrafo Único - Os certificados de conclusão dos cursos de Ensino Fundamental e Médio, só serão expedidos aos alunos que contarem com a idade de término prevista na legislação em vigor.</p>
+</div>
+</div>
+</section>
+<section class="chapter titulo-section" id="titulo-6">
+<div class="chapter-eyebrow"><span class="n">VI</span><span class="line"></span></div>
+<h2>TÍTULO VI - DISPOSIÇÕES GERAIS E TRANSITÓRIAS</h2>
+<ul class="cap-quicklinks">
+<li><a href="#titulo-6-cap-1">CAPÍTULO I – DAS DISPOSIÇÕES GERAIS</a></li>
+<li><a href="#titulo-6-cap-2">CAPÍTULO II – DOS CASOS OMISSOS</a></li>
+<li><a href="#titulo-6-cap-3">CAPÍTULO III - DAS AÇÕES DE COMBATE AO BULLYING E CYBERBULLYING</a></li>
+<li><a href="#titulo-6-cap-4">CAPÍTULO IV - DO USO DO CELULAR</a></li>
+<li><a href="#titulo-6-cap-5">CAPÍTULO V - DA EDUCAÇÃO ESPECIAL E INCLUSÃO ESCOLAR</a></li>
+<li><a href="#titulo-6-cap-6">CAPÍTULO VI – DO ATENDIMENTO EDUCACIONAL ESPECIALIZADO (AEE)</a></li>
+</ul>
+<div class="capitulo" id="titulo-6-cap-1">
+<h3>CAPÍTULO I – DAS DISPOSIÇÕES GERAIS</h3>
+<div class="artigo-body">
+<p><strong>Artigo 47º -</strong> O Colégio manterá à disposição dos pais e alunos cópia do regimento Escolar aprovado.</p>
+<p>Parágrafo Único - No ato da matrícula, a escola fornecerá documento síntese de sua Proposta Pedagógica, cópia de parte de seu regimento referente às normas (direitos e deveres), processo de avaliação, reforço e recuperação, para conhecimento das famílias.</p>
+</div>
+</div>
+<div class="capitulo" id="titulo-6-cap-2">
+<h3>CAPÍTULO II – DOS CASOS OMISSOS</h3>
+<div class="artigo-body">
+<p><strong>Artigo 48º -</strong> Os casos omissos neste Regimento Escolar serão resolvidos pelo diretor, sendo submetidos posteriormente à consideração das autoridades de ensino a que está jurisdicionada ao Colégio.</p>
+<p><strong>Artigo 49º -</strong> Toda legislação ou regulamentação relativa ao ensino, passará a fazer parte deste regimento escolar em seus termos, até que venha a ser nele incluída, por alteração regimental, a ser aprovada pelo órgão da Secretaria de Educação do Estado de São Paulo.</p>
+</div>
+</div>
+<div class="capitulo" id="titulo-6-cap-3">
+<h3>CAPÍTULO III - DAS AÇÕES DE COMBATE AO BULLYING E CYBERBULLYING</h3>
+<div class="artigo-body">
+<p><strong>1 – Do conceito de violência praticada contra criança e adolescentes</strong></p>
+<p>A Lei 14.811/2024, institui medidas de proteção à criança e ao adolescente contra violência nos estabelecimentos educacionais e similares, faz a previsão da elaboração de uma Política Nacional de Prevenção e Combate ao Abuso e Exploração Sexual de Criança e Adolescente, com o claro propósito de proteção ao hipossuficiente, no caso é a criança e do adolescente. Para com isso, robustecer os princípios da proteção integral e absoluta prioridade, princípios norteadores para a tutela dos infantes. As medidas de prevenção e de combate à violência contra as crianças e adolescentes em estabelecimentos educacionais ou similares, sejam eles públicos ou privados<strong>,</strong> por determinação legal, deverá ser implementado pelo Poder Executivo Municipal, com a colaboração dos Estados e da União. Mas sem dúvida, deverá ter a participação da família, da sociedade para a melhor valia dessa política protetiva da criança e do adolescente. A propósito, essa participação da família e da sociedade já tem previsão no artigo <a href="https://www.jusbrasil.com.br/topicos/10619550/artigo-4-da-lei-n-8069-de-13-de-julho-de-1990">4º</a> do <a href="https://www.jusbrasil.com.br/legislacao/91764/estatuto-da-crianca-e-do-adolescente-lei-8069-90">Estatuto da Criança e do Adolescente</a>.</p>
+<p><strong>Artigo 50º -</strong> Entende-se por bullying as atitudes agressivas, intencionais e repetitivas, adotadas por um indivíduo ou grupo de indivíduos contra outro (s), sem motivação evidente, causando dor, angústia e sofrimento e executadas em uma relação desigual de poder, o que possibilita a vitimização. Cyberbullying é o bullying realizado por meio das tecnologias digitais. Pode ocorrer nas mídias sociais, plataformas de mensagens, plataformas de jogos e celulares. É o comportamento repetido, com intuito de assustar, enfurecer ou envergonhar aqueles que são vítimas.</p>
+<p><strong>Artigo 52º -</strong> A escola desenvolverá projetos, em conformidade com a Lei Federal nº 14.811/2024, esta Lei institui medidas de proteção à criança e ao adolescente</p>
+<p>contra a violência nos estabelecimentos educacionais ou similares, prevê a Política Nacional de Prevenção e Combate ao Abuso e Exploração Sexual da Criança e do Adolescente e altera o Decreto-Lei nº <a href="https://www.jusbrasil.com.br/legislacao/91614/codigo-penal-decreto-lei-2848-40">2.848</a>, de 7 de dezembro de 1940 ( <a href="https://www.jusbrasil.com.br/legislacao/91614/codigo-penal-decreto-lei-2848-40">Código Penal</a>), e as Leis n.º <a href="https://www.jusbrasil.com.br/legislacao/103283/lei-dos-crimes-hediondos-lei-8072-90">8.072</a>, de 25 de julho de 1990 ( <a href="https://www.jusbrasil.com.br/legislacao/103283/lei-dos-crimes-hediondos-lei-8072-90">Lei dos Crimes Hediondos</a>), e <a href="https://www.jusbrasil.com.br/legislacao/91764/estatuto-da-crianca-e-do-adolescente-lei-8069-90">8.069</a>, de 13 de julho de 1990 ( <a href="https://www.jusbrasil.com.br/legislacao/91764/estatuto-da-crianca-e-do-adolescente-lei-8069-90">Estatuto da Criança e do Adolescente</a>), com os seguintes objetivos:</p>
+<p>I - Prevenir e combater a prática de intimidação sistemática (bullying/cyberbullying) em toda a comunidade escolar;</p>
+<p>II - Capacitar docentes e equipe pedagógica para a implantação de ações de discussão, prevenção, orientação e solução do problema;</p>
+<p>III - Implementar e disseminar campanhas de educação, conscientização e informação;</p>
+<p>IV - Instruir práticas de condutas e orientação aos pais, familiares e responsáveis diante da identificação de vítimas e agressores;</p>
+<p>V - Orientar sobre a assistência psicológica, social e jurídica às vítimas e aos agressores;</p>
+<p>VI - Integrar os meios de comunicação de massa com as escolas e sociedade, como forma de identificação e conscientização do problema e forma de preveni-lo e combatê-lo;</p>
+<p>VII - Promover a cidadania, a capacidade empática e o respeito a terceiros, nos marcos da cultura da paz e tolerância mútua;</p>
+<p>VIII - Evitar, tanto quanto possível, a punição dos agressores, privilegiando mecanismos e instrumentos alternativos que promovam a efetiva responsabilização e a mudança de comportamento hostil;</p>
+<p>IX - Promover medidas de conscientização, prevenção e combate a todos os tipos de violência, com ênfase nas práticas recorrentes de intimidação sistemática (bullying/cyberbullying), ou constrangimento físico e psicológico, cometidas por alunos, professores e outros profissionais integrantes de escola e de comunidade escolar.</p>
+</div>
+</div>
+<div class="capitulo" id="titulo-6-cap-4">
+<h3>CAPÍTULO IV - DO USO DO CELULAR</h3>
+<div class="artigo-body">
+<p>1 - <strong>Da Conscientização:</strong></p>
+<p>Adotamos as Diretrizes Operacionais Nacionais da Resolução CNE/CEB nº 2, de 21 de março de 2025, como base para organização da rotina escolar e alinhamento ao PPP, junto com a Lei 15100/2025 que proíbe o uso de celular nas escolas, esta proibição se aplica, inclusive, aos períodos de recreio, lanche e almoço. A única exceção prevista nesta lei é o uso para fins pedagógicos, quando solicitado pelos professores. Trata-se de uma medida de saúde pública. É consenso entre os especialistas que o uso excessivo dos dispositivos eletrônicos está associado a problemas de saúde mental, como ansiedade, depressão e isolamento social, bem como a dificuldades de concentração e à queda do desempenho acadêmico. Com esta medida, acreditamos que aumentará a interação entre os alunos e entre alunos e equipe da Escola. Com isso iremos organizar as rotinas e atividades, com o intuito de promover o uso consciente de tecnologias, a proteção da saúde mental dos estudantes e o desenvolvimento de competências digitais para a vida em sociedade, além de promover a integração curricular da educação digital e midiática, capacitando os</p>
+<p>estudantes para um uso crítico e responsável das tecnologias.</p>
+<p><strong>2</strong> - <strong>Dos Procedimentos de Armazenamento:</strong></p>
+<p>Os alunos que vierem para a Escola com o celular e smartwatch deverão deixá-los na entrada da sala de aula ao chegar e retirá-los no final das aulas (escaninhos seguros estão instalados na sala da coordenação), não havendo responsabilidade do Colégio, por possíveis danos ou extravios;</p>
+<p>Para se comunicar com os pais, os alunos deverão dirigir-se à Secretaria ou à Coordenação, que transmitirá as mensagens;</p>
+<p>Da mesma forma, para se comunicar com seus filhos, os responsáveis deverão ligar para a Escola;</p>
+<p><strong>3 - Dos Casos de Exceção:</strong></p>
+<p>O uso pessoal de dispositivos em sala de aula, recreio ou intervalos é vedado, exceto em casos de:</p>
+<ol type="I">
+<li><p>Fins Pedagógicos: Apenas com autorização prévia e mediadas por profissionais da educação ou professor responsável. </p></li>
+<li><p>Saúde: Para monitoramento de condições médicas ou comunicação em situações de necessidade. </p></li>
+<li><p>Inclusão e Acessibilidade: Para garantir os direitos fundamentais de alunos com deficiência. </p></li>
+<li><p>Na Educação Infantil<strong>,</strong> o uso é excepcional, com mediação docente, e limitado em tempo;</p></li>
+<li><p>No Ensino Fundamental e Médio, o uso é recomendado, com progressão gradual de autonomia;</p></li>
+<li><p>Emergência ou necessidade ou necessidade urgente;</p></li>
+<li><p>A escola promoverá formação continuada para sua equipe com foco</p></li>
+<li><p>No uso consciente e pedagógico dos dispositivos;</p></li>
+<li><p>Esta política se articula com a BNCC, normativas do CNE e demais legislações vigentes.</p></li>
+</ol>
+<p><strong>4 - Das Consequências:</strong></p>
+<p>Em caso de descumprimento da regra, além de receber uma advertência, o aluno terá seu celular recolhido; a devolução do celular será feita a um dos responsáveis;</p>
+<p>Como estabelece o regimento escolar, três advertências resultam em uma suspensão.</p>
+<p><strong>5 - Dos Canais de Comunicação dos Responsáveis:</strong></p>
+<p>Divulgaremos o número de telefone que os pais e responsáveis devem usar para se comunicar com a escola em caso de emergência ou necessidade de falar com os alunos, conforme sugere a Instrução Normativa SME Nº 5. </p>
+<p><strong>6 - Da Promoção do Diálogo:</strong></p>
+<p>Será discutido a lei e suas implicações em reuniões de pais, conselhos escolares e outros momentos da vida escolar para fortalecer a colaboração entre a escola e as famílias.</p>
+<p>Será criar mecanismos para identificar e atender às necessidades específicas dos estudantes que se enquadram nessas exceções, garantindo que seus direitos fundamentais sejam respeitados.</p>
+</div>
+</div>
+<div class="capitulo" id="titulo-6-cap-5">
+<h3>CAPÍTULO V - DA EDUCAÇÃO ESPECIAL E INCLUSÃO ESCOLAR</h3>
+<div class="artigo-body">
+<p><strong>Artigo 53º –</strong> A escola assegura a matrícula e permanência de estudantes com deficiência, transtornos globais do desenvolvimento e altas habilidades/superdotação, garantindo o direito à educação inclusiva em todos os níveis e etapas, conforme previsto na Constituição Federal, na LDB nº 9.394/96 e na Lei Brasileira de Inclusão nº 13.146/2015.</p>
+<p><strong>Artigo 54º –</strong> O atendimento educacional especializado (AEE) será oferecido, de forma complementar ou suplementar à escolarização, em conformidade com as Diretrizes Nacionais para a Educação Especial na Educação Básica.</p>
+<p><strong>Artigo 55º –</strong> A escola assegurará:</p>
+<p>I – adaptações curriculares, metodológicas e avaliativas, respeitando as necessidades individuais;</p>
+<p>II – acessibilidade arquitetônica, comunicacional, pedagógica e atitudinal;<br/>
+III – disponibilização de recursos de tecnologia assistiva e materiais pedagógicos adequados;</p>
+<p>IV – atuação de profissionais capacitados e formação continuada dos docentes e demais colaboradores;</p>
+<p>V – articulação com a família e serviços de apoio especializados, quando necessário;</p>
+<p><strong>Artigo 56º</strong> – A avaliação dos estudantes da Educação Especial priorizará o acompanhamento contínuo, considerando o progresso individual, potencialidades e habilidades desenvolvidas, em consonância com os objetivos educacionais do grupo escolar.</p>
+<p><strong>Artigo 57º –</strong> A escola incentivará a participação da família no processo educativo, promovendo reuniões, orientações e parcerias que favoreçam o desenvolvimento integral do estudante.</p>
+<p><strong>Artigo 58º –</strong> Os casos omissos serão resolvidos pela equipe gestora, em conjunto com o Conselho Escolar, garantindo sempre o direito à inclusão e ao atendimento adequado.</p>
+</div>
+</div>
+<div class="capitulo" id="titulo-6-cap-6">
+<h3>CAPÍTULO VI – DO ATENDIMENTO EDUCACIONAL ESPECIALIZADO (AEE)</h3>
+<div class="artigo-body">
+<p><strong>Artigo 59º</strong> – O Atendimento Educacional Especializado – AEE é parte integrante da proposta pedagógica da escola, destinado a identificar, elaborar e organizar recursos pedagógicos e de acessibilidade que eliminem as barreiras à plena participação dos estudantes público-alvo da Educação Especial no processo de ensino e aprendizagem.</p>
+<p><strong>Artigo 60º</strong> – O AEE será ofertado de forma complementar ou suplementar à escolarização, não substituindo a sala de aula comum, conforme previsto na LDB nº 9.394/96, no Decreto nº 7.611/2011 e na Política Nacional de Educação Especial.</p>
+<p><strong>Artigo 61º - São</strong> objetivos do AEE:</p>
+<p>I – apoiar o desenvolvimento da autonomia e independência dos estudantes;<br/>
+II – garantir o acesso ao currículo por meio de recursos, serviços e estratégias pedagógicas diferenciadas;</p>
+<p>III – promover acessibilidade em todas as dimensões (física, pedagógica, comunicacional e tecnológica);</p>
+<p>IV – favorecer a interação e a socialização dos estudantes no ambiente escolar;<br/>
+V – orientar professores e famílias sobre as estratégias de ensino e acompanhamento.</p>
+<p><strong>Artigo 62º –</strong> O AEE será realizado preferencialmente em Salas de Recursos Multifuncionais, em horário distinto ao da classe comum, individualmente ou em pequenos grupos, de acordo com as necessidades específicas dos estudantes.</p>
+<p><strong>Artigo 63º –</strong> O AEE contará com profissionais qualificados e, quando necessário, com apoio de equipe multidisciplinar para o atendimento das demandas educacionais dos estudantes.</p>
+<p><strong>Artigo 64º –</strong> A família deverá ser comunicada sobre o plano de atendimento individual do estudante e orientada quanto à continuidade do processo educativo em outros espaços sociais.</p>
+<p><strong>Artigo 65º -</strong> O presente Regimento Escolar, entrará em vigor após sua publicação no Diário Oficial.</p>
+</div>
+</div>
+</section>
+
+      </div>
+    </div>
+
+  </main>
+</div>
+
+<div class="tricolor-end"></div>
+<div class="footer">Colégio Zampieri · Manual da Família · <strong>Ano Letivo 2027</strong> · Tradição em Educação desde 1980</div>
+
+<script>
+  // mobile menu
+  const menuBtn = document.getElementById('menuBtn');
+  const sidebar = document.getElementById('sidebar');
+  if(menuBtn){
+    menuBtn.addEventListener('click', () => sidebar.classList.toggle('open'));
+    document.querySelectorAll('#toc a').forEach(a=>{
+      a.addEventListener('click', ()=> sidebar.classList.remove('open'));
+    });
+  }
+
+  // active link highlight on scroll
+  const links = document.querySelectorAll('#toc a');
+  const sections = document.querySelectorAll('section.chapter');
+  const map = {};
+  links.forEach(l => map[l.getAttribute('href').substring(1)] = l);
+
+  const observer = new IntersectionObserver((entries)=>{
+    entries.forEach(entry=>{
+      const id = entry.target.getAttribute('id');
+      if(entry.isIntersecting){
+        links.forEach(l=>l.classList.remove('active'));
+        if(map[id]) map[id].classList.add('active');
+      }
+    });
+  }, {rootMargin: '-15% 0px -70% 0px', threshold: 0});
+
+  sections.forEach(s => observer.observe(s));
+
+  // Anexo — Regimento Escolar (expandir/recolher)
+  function abrirAnexo(e){
+    if(e) e.preventDefault();
+    const panel = document.getElementById('anexo-regimento');
+    const btn = document.getElementById('anexoToggle');
+    panel.classList.add('open');
+    btn.setAttribute('aria-expanded', 'true');
+    panel.scrollIntoView({behavior:'smooth', block:'start'});
+  }
+  document.getElementById('anexoToggle').addEventListener('click', function(){
+    const panel = document.getElementById('anexo-regimento');
+    const isOpen = panel.classList.toggle('open');
+    this.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
+    if(isOpen){ panel.scrollIntoView({behavior:'smooth', block:'start'}); }
+  });
+</script>
+
+</body>
+</html>
