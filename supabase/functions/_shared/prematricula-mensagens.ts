@@ -92,9 +92,9 @@ async function enviarWhatsapp(evento: EventoMensagem, d: DadosMensagem) {
   const nomeTemplate = Deno.env.get(cfg.envVar) || cfg.padrao;
   const lang = Deno.env.get("WHATSAPP_TEMPLATE_LANG") || "pt_BR";
 
-  // Template "aprovada" usa botão de URL dinâmica na Meta
-  // (base fixa: https://colegiozampieri.com.br/prematricula/agendar?t={{1}}),
-  // então o corpo não leva o link e o token vai no componente `button`.
+  // Template "aprovada" usa botão de URL dinâmica na Meta.
+  // Como a URL-base aprovada termina em /prematricula/agendar, o parâmetro
+  // dinâmico precisa levar o sufixo completo: ?t=<token>.
   const usaBotao =
     evento === "aprovada" &&
     Deno.env.get("WHATSAPP_TPL_PREMATRICULA_APROVADA_BOTAO") !== "0";
@@ -105,12 +105,13 @@ async function enviarWhatsapp(evento: EventoMensagem, d: DadosMensagem) {
 
   const components: unknown[] = parameters.length ? [{ type: "body", parameters }] : [];
   if (usaBotao) {
-    const tokenLink = (d.linkAgendamento || "").split("t=")[1] || "";
+    const linkAgendamento = d.linkAgendamento || "";
+    const tokenLink = linkAgendamento.match(/[?&]t=([^&#]+)/)?.[1] || "";
     components.push({
       type: "button",
       sub_type: "url",
       index: "0",
-      parameters: [{ type: "text", text: tokenLink }],
+      parameters: [{ type: "text", text: `?t=${tokenLink}` }],
     });
   }
 
