@@ -1150,6 +1150,224 @@ export type Database = {
           },
         ]
       }
+      prematricula_agenda_bloqueios: {
+        Row: {
+          created_at: string
+          data: string
+          id: string
+          motivo: string | null
+        }
+        Insert: {
+          created_at?: string
+          data: string
+          id?: string
+          motivo?: string | null
+        }
+        Update: {
+          created_at?: string
+          data?: string
+          id?: string
+          motivo?: string | null
+        }
+        Relationships: []
+      }
+      prematricula_agenda_regras: {
+        Row: {
+          ativo: boolean
+          capacidade: number
+          created_at: string
+          dia_semana: number
+          duracao_min: number
+          hora_fim: string
+          hora_inicio: string
+          id: string
+          updated_at: string
+        }
+        Insert: {
+          ativo?: boolean
+          capacidade?: number
+          created_at?: string
+          dia_semana: number
+          duracao_min?: number
+          hora_fim: string
+          hora_inicio: string
+          id?: string
+          updated_at?: string
+        }
+        Update: {
+          ativo?: boolean
+          capacidade?: number
+          created_at?: string
+          dia_semana?: number
+          duracao_min?: number
+          hora_fim?: string
+          hora_inicio?: string
+          id?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      prematricula_agendamentos: {
+        Row: {
+          created_at: string
+          fim: string
+          id: string
+          inicio: string
+          prematricula_id: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          fim: string
+          id?: string
+          inicio: string
+          prematricula_id: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          fim?: string
+          id?: string
+          inicio?: string
+          prematricula_id?: string
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "prematricula_agendamentos_prematricula_id_fkey"
+            columns: ["prematricula_id"]
+            isOneToOne: false
+            referencedRelation: "prematriculas"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      prematriculas: {
+        Row: {
+          agendado_em: string | null
+          alergias: string | null
+          aluno_nascimento: string
+          aluno_nome: string
+          aprovado_em: string | null
+          atendimento_complementar: string | null
+          boletim_path: string | null
+          consentimento_privacidade: boolean
+          consentimento_veracidade: boolean
+          created_at: string
+          desconto_percentual: number | null
+          diagnostico: string | null
+          diagnostico_detalhe: string | null
+          dificuldade_aprendizagem: string | null
+          dificuldade_atencao: string | null
+          dificuldade_socializacao: string | null
+          entrevista_concluida_em: string | null
+          escola_atual: string | null
+          id: string
+          laudo_path: string | null
+          medicacao_detalhe: string | null
+          motivo_reprovacao: string | null
+          observacoes_entrevista: string | null
+          observacoes_saude: string | null
+          protocolo: string
+          repetiu_ano: string | null
+          reprovado_em: string | null
+          resp_cpf: string
+          resp_email: string
+          resp_nome: string
+          resp_whatsapp: string
+          serie_pretendida: string
+          status: string
+          tipo_escola: string | null
+          token_hash: string
+          turno_preferencia: string
+          updated_at: string
+          usa_medicacao: string | null
+        }
+        Insert: {
+          agendado_em?: string | null
+          alergias?: string | null
+          aluno_nascimento: string
+          aluno_nome: string
+          aprovado_em?: string | null
+          atendimento_complementar?: string | null
+          boletim_path?: string | null
+          consentimento_privacidade?: boolean
+          consentimento_veracidade?: boolean
+          created_at?: string
+          desconto_percentual?: number | null
+          diagnostico?: string | null
+          diagnostico_detalhe?: string | null
+          dificuldade_aprendizagem?: string | null
+          dificuldade_atencao?: string | null
+          dificuldade_socializacao?: string | null
+          entrevista_concluida_em?: string | null
+          escola_atual?: string | null
+          id?: string
+          laudo_path?: string | null
+          medicacao_detalhe?: string | null
+          motivo_reprovacao?: string | null
+          observacoes_entrevista?: string | null
+          observacoes_saude?: string | null
+          protocolo?: string
+          repetiu_ano?: string | null
+          reprovado_em?: string | null
+          resp_cpf: string
+          resp_email: string
+          resp_nome: string
+          resp_whatsapp: string
+          serie_pretendida: string
+          status?: string
+          tipo_escola?: string | null
+          token_hash: string
+          turno_preferencia: string
+          updated_at?: string
+          usa_medicacao?: string | null
+        }
+        Update: {
+          agendado_em?: string | null
+          alergias?: string | null
+          aluno_nascimento?: string
+          aluno_nome?: string
+          aprovado_em?: string | null
+          atendimento_complementar?: string | null
+          boletim_path?: string | null
+          consentimento_privacidade?: boolean
+          consentimento_veracidade?: boolean
+          created_at?: string
+          desconto_percentual?: number | null
+          diagnostico?: string | null
+          diagnostico_detalhe?: string | null
+          dificuldade_aprendizagem?: string | null
+          dificuldade_atencao?: string | null
+          dificuldade_socializacao?: string | null
+          entrevista_concluida_em?: string | null
+          escola_atual?: string | null
+          id?: string
+          laudo_path?: string | null
+          medicacao_detalhe?: string | null
+          motivo_reprovacao?: string | null
+          observacoes_entrevista?: string | null
+          observacoes_saude?: string | null
+          protocolo?: string
+          repetiu_ano?: string | null
+          reprovado_em?: string | null
+          resp_cpf?: string
+          resp_email?: string
+          resp_nome?: string
+          resp_whatsapp?: string
+          serie_pretendida?: string
+          status?: string
+          tipo_escola?: string | null
+          token_hash?: string
+          turno_preferencia?: string
+          updated_at?: string
+          usa_medicacao?: string | null
+        }
+        Relationships: []
+      }
       produto_variacoes: {
         Row: {
           ativo: boolean
