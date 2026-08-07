@@ -945,6 +945,265 @@ export type Database = {
           },
         ]
       }
+      matricula_documentos: {
+        Row: {
+          created_at: string
+          id: string
+          matricula_id: string
+          motivo: string | null
+          nome_arquivo: string | null
+          status: string
+          storage_path: string
+          tipo: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          matricula_id: string
+          motivo?: string | null
+          nome_arquivo?: string | null
+          status?: string
+          storage_path: string
+          tipo: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          matricula_id?: string
+          motivo?: string | null
+          nome_arquivo?: string | null
+          status?: string
+          storage_path?: string
+          tipo?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "matricula_documentos_matricula_id_fkey"
+            columns: ["matricula_id"]
+            isOneToOne: false
+            referencedRelation: "matriculas"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      matriculas: {
+        Row: {
+          anuidade_total: string | null
+          anuidade_total_ext: string | null
+          asaas_checkout_id: string | null
+          asaas_customer_id: string | null
+          asaas_payment_id: string | null
+          bairro: string | null
+          celular_mae: string | null
+          celular_pai: string | null
+          cep: string | null
+          checkout_criado_em: string | null
+          checkout_url: string | null
+          cidade: string | null
+          complemento: string | null
+          concluida_em: string | null
+          contrato_assinado: boolean
+          contrato_assinado_em: string | null
+          contrato_gerado: boolean
+          contrato_gerado_em: string | null
+          cpf_mae: string | null
+          cpf_pai: string | null
+          created_at: string
+          curso: string | null
+          data_nascimento_aluno: string | null
+          data_pagamento: string | null
+          dia_vencimento: number | null
+          documentos_aprovados_em: string | null
+          email_conclusao_enviado_em: string | null
+          email_mae: string | null
+          email_pai: string | null
+          estado: string | null
+          forma_pagamento: string | null
+          id: string
+          link_contrato: string | null
+          logradouro: string | null
+          max_parcelas: number
+          nome_aluno: string | null
+          nome_mae: string | null
+          nome_pai: string | null
+          numero: string | null
+          parcelas: number | null
+          percentual_desconto: number | null
+          percentual_desconto_ext: string | null
+          permite_avista: boolean
+          permite_parcelado: boolean
+          prematricula_id: string
+          resp_fin_celular: string | null
+          resp_fin_cpf: string | null
+          resp_fin_data_nascimento: string | null
+          resp_fin_email: string | null
+          resp_fin_estado_civil: string | null
+          resp_fin_nacionalidade: string | null
+          resp_fin_naturalidade: string | null
+          resp_fin_nome: string | null
+          resp_fin_profissao: string | null
+          resp_fin_quem: string | null
+          resp_fin_rg: string | null
+          status: string
+          turno: string | null
+          updated_at: string
+          valor_com_desconto: number | null
+          valor_com_desconto_ext: string | null
+          valor_matricula: number | null
+          valor_pago: number | null
+          valor_pri_parcela: string | null
+          valor_pri_parcela_ext: string | null
+          zapsign_token: string | null
+        }
+        Insert: {
+          anuidade_total?: string | null
+          anuidade_total_ext?: string | null
+          asaas_checkout_id?: string | null
+          asaas_customer_id?: string | null
+          asaas_payment_id?: string | null
+          bairro?: string | null
+          celular_mae?: string | null
+          celular_pai?: string | null
+          cep?: string | null
+          checkout_criado_em?: string | null
+          checkout_url?: string | null
+          cidade?: string | null
+          complemento?: string | null
+          concluida_em?: string | null
+          contrato_assinado?: boolean
+          contrato_assinado_em?: string | null
+          contrato_gerado?: boolean
+          contrato_gerado_em?: string | null
+          cpf_mae?: string | null
+          cpf_pai?: string | null
+          created_at?: string
+          curso?: string | null
+          data_nascimento_aluno?: string | null
+          data_pagamento?: string | null
+          dia_vencimento?: number | null
+          documentos_aprovados_em?: string | null
+          email_conclusao_enviado_em?: string | null
+          email_mae?: string | null
+          email_pai?: string | null
+          estado?: string | null
+          forma_pagamento?: string | null
+          id?: string
+          link_contrato?: string | null
+          logradouro?: string | null
+          max_parcelas?: number
+          nome_aluno?: string | null
+          nome_mae?: string | null
+          nome_pai?: string | null
+          numero?: string | null
+          parcelas?: number | null
+          percentual_desconto?: number | null
+          percentual_desconto_ext?: string | null
+          permite_avista?: boolean
+          permite_parcelado?: boolean
+          prematricula_id: string
+          resp_fin_celular?: string | null
+          resp_fin_cpf?: string | null
+          resp_fin_data_nascimento?: string | null
+          resp_fin_email?: string | null
+          resp_fin_estado_civil?: string | null
+          resp_fin_nacionalidade?: string | null
+          resp_fin_naturalidade?: string | null
+          resp_fin_nome?: string | null
+          resp_fin_profissao?: string | null
+          resp_fin_quem?: string | null
+          resp_fin_rg?: string | null
+          status?: string
+          turno?: string | null
+          updated_at?: string
+          valor_com_desconto?: number | null
+          valor_com_desconto_ext?: string | null
+          valor_matricula?: number | null
+          valor_pago?: number | null
+          valor_pri_parcela?: string | null
+          valor_pri_parcela_ext?: string | null
+          zapsign_token?: string | null
+        }
+        Update: {
+          anuidade_total?: string | null
+          anuidade_total_ext?: string | null
+          asaas_checkout_id?: string | null
+          asaas_customer_id?: string | null
+          asaas_payment_id?: string | null
+          bairro?: string | null
+          celular_mae?: string | null
+          celular_pai?: string | null
+          cep?: string | null
+          checkout_criado_em?: string | null
+          checkout_url?: string | null
+          cidade?: string | null
+          complemento?: string | null
+          concluida_em?: string | null
+          contrato_assinado?: boolean
+          contrato_assinado_em?: string | null
+          contrato_gerado?: boolean
+          contrato_gerado_em?: string | null
+          cpf_mae?: string | null
+          cpf_pai?: string | null
+          created_at?: string
+          curso?: string | null
+          data_nascimento_aluno?: string | null
+          data_pagamento?: string | null
+          dia_vencimento?: number | null
+          documentos_aprovados_em?: string | null
+          email_conclusao_enviado_em?: string | null
+          email_mae?: string | null
+          email_pai?: string | null
+          estado?: string | null
+          forma_pagamento?: string | null
+          id?: string
+          link_contrato?: string | null
+          logradouro?: string | null
+          max_parcelas?: number
+          nome_aluno?: string | null
+          nome_mae?: string | null
+          nome_pai?: string | null
+          numero?: string | null
+          parcelas?: number | null
+          percentual_desconto?: number | null
+          percentual_desconto_ext?: string | null
+          permite_avista?: boolean
+          permite_parcelado?: boolean
+          prematricula_id?: string
+          resp_fin_celular?: string | null
+          resp_fin_cpf?: string | null
+          resp_fin_data_nascimento?: string | null
+          resp_fin_email?: string | null
+          resp_fin_estado_civil?: string | null
+          resp_fin_nacionalidade?: string | null
+          resp_fin_naturalidade?: string | null
+          resp_fin_nome?: string | null
+          resp_fin_profissao?: string | null
+          resp_fin_quem?: string | null
+          resp_fin_rg?: string | null
+          status?: string
+          turno?: string | null
+          updated_at?: string
+          valor_com_desconto?: number | null
+          valor_com_desconto_ext?: string | null
+          valor_matricula?: number | null
+          valor_pago?: number | null
+          valor_pri_parcela?: string | null
+          valor_pri_parcela_ext?: string | null
+          zapsign_token?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "matriculas_prematricula_id_fkey"
+            columns: ["prematricula_id"]
+            isOneToOne: true
+            referencedRelation: "prematriculas"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       message_usage: {
         Row: {
           created_at: string | null
