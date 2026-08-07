@@ -2,6 +2,7 @@ import { createClient } from "npm:@supabase/supabase-js@2";
 import { corsHeaders } from "../_shared/cors.ts";
 import { getOrCreateCustomer, createCheckout } from "../_shared/asaas.ts";
 import { DOCUMENTOS, TIPOS_VALIDOS, labelDoc } from "../_shared/matricula-docs.ts";
+import { notificar } from "../_shared/prematricula-mensagens.ts";
 
 const FALLBACK_ORIGIN = "https://colegiozampieri.com.br";
 const MAX_BYTES = 10 * 1024 * 1024;
@@ -186,7 +187,18 @@ Deno.serve(async (req) => {
         .from("matriculas")
         .update({ status: "documentos_em_analise", updated_at: new Date().toISOString() })
         .eq("id", mat.id);
+      const jaEstava = mat.status === "documentos_em_analise";
       mat.status = "documentos_em_analise";
+      if (!jaEstava) {
+        // Apenas e-mail (não há template de WhatsApp para esta etapa).
+        await notificar("documentos_recebidos", {
+          respNome: pm.resp_nome,
+          respEmail: pm.resp_email,
+          respWhatsapp: pm.resp_whatsapp,
+          alunoNome: pm.aluno_nome,
+          protocolo: pm.protocolo,
+        }).catch((e) => console.error("email documentos_recebidos:", e));
+      }
       return json(await estado());
     }
 

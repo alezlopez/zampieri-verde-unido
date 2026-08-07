@@ -314,6 +314,18 @@ const Matricula = () => {
                     : "Enviar para análise"}
                 </Button>
               )}
+              {m.status === "documentos_em_analise" && (
+                <div className="rounded-lg border border-emerald-200 bg-emerald-50 p-4">
+                  <p className="flex items-center gap-2 text-sm font-semibold text-emerald-800">
+                    <CheckCircle2 className="w-4 h-4" /> Documentação enviada com sucesso!
+                  </p>
+                  <p className="mt-1 text-sm text-emerald-800/90">
+                    Nossa equipe vai conferir os arquivos e, em até <strong>24 horas úteis</strong>,
+                    retornaremos com o contrato para assinatura e o link de pagamento. Você receberá
+                    um aviso por e-mail — é só voltar a esta mesma página quando isso acontecer.
+                  </p>
+                </div>
+              )}
               {m.status === "documentos_aprovados" && (
                 <p className="text-sm text-emerald-700">
                   Documentação aprovada. Estamos preparando o seu contrato.
