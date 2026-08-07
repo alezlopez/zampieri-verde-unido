@@ -75,10 +75,42 @@ Deno.serve(async (req) => {
       return json({ ok: true, ignored: "responsavel_nao_assinou" });
     }
 
-    const idReal = Number(doc?.external_id ?? externalId);
+    const externalReal = String(doc?.external_id ?? externalId ?? "");
+
+    // Contratos de matrícula usam external_id no formato "mat:<uuid>"
+    if (externalReal.startsWith("mat:")) {
+      const matId = externalReal.slice(4);
+      const supabaseMat = createClient(
+        Deno.env.get("SUPABASE_URL")!,
+        Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
+        { auth: { persistSession: false } },
+      );
+      const { data: mat } = await supabaseMat
+        .from("matriculas")
+        .select("id, zapsign_token")
+        .eq("id", matId)
+        .maybeSingle();
+      if (!mat) return json({ ok: true, warning: "matricula nao encontrada" });
+      if (mat.zapsign_token && mat.zapsign_token !== docToken) {
+        return json({ error: "Documento não corresponde à matrícula" }, 403);
+      }
+      await supabaseMat
+        .from("matriculas")
+        .update({
+          contrato_assinado: true,
+          contrato_assinado_em: new Date().toISOString(),
+          status: "contrato_assinado",
+          updated_at: new Date().toISOString(),
+        })
+        .eq("id", matId);
+      return json({ ok: true, matricula_id: matId });
+    }
+
+    const idReal = Number(externalReal);
     if (!Number.isFinite(idReal)) {
       return json({ ok: true, warning: "external_id invalido" });
     }
+
 
     const supabase = createClient(
       Deno.env.get("SUPABASE_URL")!,

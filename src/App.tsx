@@ -36,6 +36,8 @@ import PreMatricula from "./pages/PreMatricula";
 import PreMatriculaAgendar from "./pages/PreMatriculaAgendar";
 import PreMatriculaAdmin from "./pages/PreMatriculaAdmin";
 import PreMatriculaAgenda from "./pages/PreMatriculaAgenda";
+import Matricula from "./pages/Matricula";
+import MatriculaAdmin from "./pages/MatriculaAdmin";
 
 
 const queryClient = new QueryClient();
@@ -80,6 +82,9 @@ const App = () => (
             <Route path="/prematricula/agendar" element={<PreMatriculaAgendar />} />
             <Route path="/prematricula/admin" element={<RequireAdmin><PreMatriculaAdmin /></RequireAdmin>} />
             <Route path="/prematricula/agenda" element={<RequireAdmin><PreMatriculaAgenda /></RequireAdmin>} />
+            <Route path="/matricula" element={<Matricula />} />
+            <Route path="/matricula/admin" element={<RequireAdmin><MatriculaAdmin /></RequireAdmin>} />
+
 
 
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}

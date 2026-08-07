@@ -109,6 +109,13 @@ const blocos: Bloco[] = [
         href: "/prematricula/agenda",
         icone: GraduationCap,
       },
+      {
+        titulo: "Matrículas",
+        descricao: "Conferir documentos, preencher o contrato e liberar o pagamento.",
+        href: "/matricula/admin",
+        icone: GraduationCap,
+      },
+
 
     ],
   },
