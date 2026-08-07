@@ -226,6 +226,17 @@ function montarEmail(evento: EventoMensagem, d: DadosMensagem): { subject: strin
             p("Este link é pessoal e válido apenas para este cadastro."),
         ),
       };
+    case "documentos_recebidos":
+      return {
+        subject: `Documentação recebida — ${d.alunoNome}`,
+        html: wrapper(
+          "Documentação recebida",
+          p(`Olá, ${primeiroNome(d.respNome)}!`) +
+            p(`Recebemos toda a documentação da matrícula de <strong>${d.alunoNome}</strong>.`) +
+            p("Nossa equipe fará a conferência e, em até <strong>24 horas úteis</strong>, retornaremos com o contrato para assinatura e o link de pagamento.") +
+            p("Você pode acompanhar tudo pelo mesmo link, sem precisar fazer nada agora."),
+        ),
+      };
     case "documentos_reenvio":
       return {
         subject: `Documentação pendente — ${d.alunoNome}`,
