@@ -16,6 +16,7 @@ export type EventoMensagem =
   | "reprovada"
   | "agendada"
   | "concluida"
+  | "documentos_recebidos"
   | "documentos_reenvio"
   | "documentos_aprovados"
   | "contrato_pronto"
