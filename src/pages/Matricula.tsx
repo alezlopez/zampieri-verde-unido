@@ -248,6 +248,9 @@ const Matricula = () => {
                 </p>
               </div>
 
+              {podeEditarDocs && <GuiaEnvio />}
+
+
               <div className="space-y-3">
                 {estado.documentos.map((d) => (
                   <div
