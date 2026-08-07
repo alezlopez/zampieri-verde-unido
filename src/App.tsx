@@ -36,6 +36,8 @@ import PreMatricula from "./pages/PreMatricula";
 import PreMatriculaAgendar from "./pages/PreMatriculaAgendar";
 import PreMatriculaAdmin from "./pages/PreMatriculaAdmin";
 import PreMatriculaAgenda from "./pages/PreMatriculaAgenda";
+import Matricula from "./pages/Matricula";
+import MatriculaAdmin from "./pages/MatriculaAdmin";
 
 
 const queryClient = new QueryClient();
