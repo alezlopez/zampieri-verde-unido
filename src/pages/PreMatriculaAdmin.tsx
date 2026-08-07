@@ -101,6 +101,8 @@ const PreMatriculaAdmin = () => {
   const [desconto, setDesconto] = useState<string>("");
   const [observacoes, setObservacoes] = useState("");
   const [acaoEmCurso, setAcaoEmCurso] = useState(false);
+  const [slots, setSlots] = useState<{ inicio: string; texto: string }[] | null>(null);
+  const [novoHorario, setNovoHorario] = useState("");
 
   useEffect(() => {
     document.title = "Pré-matrículas — Painel Administrativo";
@@ -158,10 +160,27 @@ const PreMatriculaAdmin = () => {
     }
     toast({ title: "Pronto!", description: "Status atualizado e responsável notificado." });
     setAberta(null);
+    setSlots(null);
+    setNovoHorario("");
     setMotivo("");
     setDesconto("");
     setObservacoes("");
     carregar();
+  };
+
+  const carregarSlots = async () => {
+    if (!aberta) return;
+    setAcaoEmCurso(true);
+    const { data, error } = await supabase.functions.invoke("prematricula-admin-acao", {
+      body: { acao: "slots", id: aberta.id },
+    });
+    setAcaoEmCurso(false);
+    if (error || !data?.ok) {
+      toast({ title: "Não foi possível carregar os horários", variant: "destructive" });
+      return;
+    }
+    setSlots((data.slots as { inicio: string; texto: string }[]) ?? []);
+    setNovoHorario("");
   };
 
   const abrirArquivo = async (campo: "boletim" | "laudo") => {
@@ -429,6 +448,47 @@ const PreMatriculaAdmin = () => {
                       >
                         Cancelar horário
                       </Button>
+                    </div>
+
+                    <div className="space-y-2 border-t border-border pt-3">
+                      {slots === null ? (
+                        <Button variant="outline" disabled={acaoEmCurso} onClick={carregarSlots}>
+                          Reagendar entrevista
+                        </Button>
+                      ) : (
+                        <>
+                          <Label>Novo horário</Label>
+                          <Select value={novoHorario} onValueChange={setNovoHorario}>
+                            <SelectTrigger>
+                              <SelectValue placeholder="Selecione o horário" />
+                            </SelectTrigger>
+                            <SelectContent className="bg-background z-50 max-h-72">
+                              {slots.map((s) => (
+                                <SelectItem key={s.inicio} value={s.inicio}>
+                                  {s.texto}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                          {slots.length === 0 && (
+                            <p className="text-xs text-muted-foreground">
+                              Nenhum horário disponível na agenda.
+                            </p>
+                          )}
+                          <div className="flex gap-2">
+                            <Button
+                              className="flex-1 bg-zampieri-green-dark hover:bg-zampieri-green"
+                              disabled={acaoEmCurso || !novoHorario}
+                              onClick={() => executar("reagendar", { inicio: novoHorario })}
+                            >
+                              Confirmar reagendamento
+                            </Button>
+                            <Button variant="ghost" onClick={() => setSlots(null)}>
+                              Cancelar
+                            </Button>
+                          </div>
+                        </>
+                      )}
                     </div>
                   </section>
                 )}

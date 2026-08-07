@@ -17,6 +17,7 @@ interface Info {
   resp_nome: string;
   status: string;
   agendamento: { inicio: string; texto: string } | null;
+  pode_reagendar?: boolean;
   slots: Slot[];
 }
 
@@ -44,6 +45,7 @@ const PreMatriculaAgendar = () => {
   const [salvando, setSalvando] = useState(false);
   const [erro, setErro] = useState<string | null>(null);
   const [escolhido, setEscolhido] = useState<string | null>(null);
+  const [reagendando, setReagendando] = useState(false);
 
   useEffect(() => {
     document.title = "Agendar entrevista familiar — Colégio Zampieri";
@@ -82,7 +84,7 @@ const PreMatriculaAgendar = () => {
     if (!escolhido) return;
     setSalvando(true);
     const { data, error } = await supabase.functions.invoke("prematricula-agenda", {
-      body: { token, acao: "agendar", inicio: escolhido },
+      body: { token, acao: reagendando ? "reagendar" : "agendar", inicio: escolhido },
     });
     setSalvando(false);
     if (error || !data?.ok) {
@@ -98,6 +100,12 @@ const PreMatriculaAgendar = () => {
       setEscolhido(null);
       return;
     }
+    setReagendando(false);
+    setEscolhido(null);
+    toast({
+      title: reagendando ? "Entrevista reagendada" : "Entrevista agendada",
+      description: data.agendamento?.texto,
+    });
     setInfo((p) => (p ? { ...p, status: "entrevista_agendada", agendamento: data.agendamento } : p));
   };
 
@@ -136,7 +144,9 @@ const PreMatriculaAgendar = () => {
     );
   }
 
-  const jaAgendado = info.status === "entrevista_agendada" || info.status === "entrevista_concluida";
+  const jaAgendado =
+    !reagendando &&
+    (info.status === "entrevista_agendada" || info.status === "entrevista_concluida");
 
   return (
     <main className="min-h-screen bg-zampieri-cream/30 px-4 py-10">
@@ -155,15 +165,39 @@ const PreMatriculaAgendar = () => {
             <CalendarCheck className="w-10 h-10 mx-auto text-zampieri-green-dark" />
             <p className="font-semibold text-zampieri-green-dark">Entrevista agendada</p>
             <p className="text-sm text-muted-foreground">{info.agendamento.texto}</p>
-            <p className="text-xs text-muted-foreground">
-              Precisa remarcar? Fale com a secretaria pelo WhatsApp.
-            </p>
+            {info.status === "entrevista_agendada" ? (
+              <div className="flex flex-col gap-2 pt-2">
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    setReagendando(true);
+                    setEscolhido(null);
+                  }}
+                >
+                  Reagendar entrevista
+                </Button>
+                <p className="text-xs text-muted-foreground">
+                  Precisa de ajuda? Fale com a secretaria pelo WhatsApp.
+                </p>
+              </div>
+            ) : (
+              <p className="text-xs text-muted-foreground">
+                Precisa remarcar? Fale com a secretaria pelo WhatsApp.
+              </p>
+            )}
           </div>
         ) : (
           <div className="rounded-2xl bg-white border border-border p-6 sm:p-8 space-y-5">
-            <p className="text-sm text-muted-foreground">
-              Escolha o melhor dia e horário para a conversa com nossa equipe pedagógica.
-            </p>
+            <div className="space-y-1">
+              <p className="text-sm text-muted-foreground">
+                Escolha o melhor dia e horário para a conversa com nossa equipe pedagógica.
+              </p>
+              {reagendando && info.agendamento && (
+                <p className="text-xs text-muted-foreground">
+                  Horário atual: {info.agendamento.texto}. Ao confirmar, ele será substituído.
+                </p>
+              )}
+            </div>
 
             {porDia.length === 0 && (
               <p className="text-sm text-muted-foreground">
@@ -201,8 +235,13 @@ const PreMatriculaAgendar = () => {
               onClick={agendar}
             >
               {salvando && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
-              Confirmar agendamento
+              {reagendando ? "Confirmar novo horário" : "Confirmar agendamento"}
             </Button>
+            {reagendando && (
+              <Button variant="ghost" className="w-full" onClick={() => setReagendando(false)}>
+                Manter horário atual
+              </Button>
+            )}
           </div>
         )}
       </div>

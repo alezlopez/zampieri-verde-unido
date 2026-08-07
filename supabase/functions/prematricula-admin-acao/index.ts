@@ -1,6 +1,7 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
 import { corsHeaders } from "../_shared/cors.ts";
 import { SITE_URL, formatarDataHora, notificar } from "../_shared/prematricula-mensagens.ts";
+import { gerarSlots } from "../_shared/prematricula-slots.ts";
 
 const json = (body: unknown, status = 200) =>
   new Response(JSON.stringify(body), {
@@ -168,6 +169,55 @@ Deno.serve(async (req) => {
         ag?.inicio ? formatarDataHora(ag.inicio) : "",
       );
       return json({ ok: true, status: "aprovado_aguardando_agendamento" });
+    }
+
+    if (acao === "slots") {
+      const slots = await gerarSlots(admin, id);
+      const { data: agAtual } = await admin
+        .from("prematricula_agendamentos")
+        .select("inicio")
+        .eq("prematricula_id", id)
+        .eq("status", "agendado")
+        .maybeSingle();
+      return json({
+        ok: true,
+        slots,
+        agendamento: agAtual
+          ? { inicio: agAtual.inicio, texto: formatarDataHora(agAtual.inicio) }
+          : null,
+      });
+    }
+
+    if (acao === "reagendar") {
+      if (pm.status !== "entrevista_agendada" && pm.status !== "aprovado_aguardando_agendamento") {
+        return json({ error: "status_invalido" }, 400);
+      }
+      const slots = await gerarSlots(admin, id);
+      const inicio = String(body?.inicio || "");
+      const escolhido = slots.find((s) => s.inicio === inicio);
+      if (!escolhido) return json({ error: "horario_indisponivel" }, 409);
+
+      await admin
+        .from("prematricula_agendamentos")
+        .update({ status: "cancelado" })
+        .eq("prematricula_id", id)
+        .eq("status", "agendado");
+
+      const { error: erroIns } = await admin.from("prematricula_agendamentos").insert({
+        prematricula_id: id,
+        inicio: escolhido.inicio,
+        fim: escolhido.fim,
+      });
+      if (erroIns) throw erroIns;
+
+      const { error: erroUp } = await admin
+        .from("prematriculas")
+        .update({ status: "entrevista_agendada", agendado_em: new Date().toISOString() })
+        .eq("id", id);
+      if (erroUp) throw erroUp;
+
+      await notificar("agendada", { ...base, dataEntrevista: escolhido.texto });
+      return json({ ok: true, status: "entrevista_agendada" });
     }
 
     return json({ error: "acao_invalida" }, 400);
