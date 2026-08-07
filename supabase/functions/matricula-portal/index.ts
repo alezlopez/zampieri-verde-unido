@@ -186,7 +186,18 @@ Deno.serve(async (req) => {
         .from("matriculas")
         .update({ status: "documentos_em_analise", updated_at: new Date().toISOString() })
         .eq("id", mat.id);
+      const jaEstava = mat.status === "documentos_em_analise";
       mat.status = "documentos_em_analise";
+      if (!jaEstava) {
+        // Apenas e-mail (não há template de WhatsApp para esta etapa).
+        await notificar("documentos_recebidos", {
+          respNome: pm.resp_nome,
+          respEmail: pm.resp_email,
+          respWhatsapp: pm.resp_whatsapp,
+          alunoNome: pm.aluno_nome,
+          protocolo: pm.protocolo,
+        }).catch((e) => console.error("email documentos_recebidos:", e));
+      }
       return json(await estado());
     }
 
