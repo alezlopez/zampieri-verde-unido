@@ -12,6 +12,7 @@ import {
 } from "@/components/ui/select";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import GuiaEnvio from "@/components/matricula/GuiaEnvio";
 
 interface DocEstado {
   tipo: string;
@@ -247,6 +248,9 @@ const Matricula = () => {
                   Envie os documentos abaixo em PDF, JPG ou PNG (até 10 MB cada).
                 </p>
               </div>
+
+              {podeEditarDocs && <GuiaEnvio />}
+
 
               <div className="space-y-3">
                 {estado.documentos.map((d) => (
