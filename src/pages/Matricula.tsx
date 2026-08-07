@@ -12,6 +12,7 @@ import {
 } from "@/components/ui/select";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import GuiaEnvio from "@/components/matricula/GuiaEnvio";
 
 interface DocEstado {
   tipo: string;
