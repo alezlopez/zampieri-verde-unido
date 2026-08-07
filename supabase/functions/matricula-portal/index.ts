@@ -2,6 +2,7 @@ import { createClient } from "npm:@supabase/supabase-js@2";
 import { corsHeaders } from "../_shared/cors.ts";
 import { getOrCreateCustomer, createCheckout } from "../_shared/asaas.ts";
 import { DOCUMENTOS, TIPOS_VALIDOS, labelDoc } from "../_shared/matricula-docs.ts";
+import { notificar } from "../_shared/prematricula-mensagens.ts";
 
 const FALLBACK_ORIGIN = "https://colegiozampieri.com.br";
 const MAX_BYTES = 10 * 1024 * 1024;
