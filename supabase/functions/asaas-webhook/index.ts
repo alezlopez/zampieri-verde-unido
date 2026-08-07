@@ -2,6 +2,7 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
 import { corsHeaders } from "../_shared/cors.ts";
 import { recomputeIngressosFinancials } from "../_shared/financeiro.ts";
 import { getCheckout } from "../_shared/asaas.ts";
+import { notificar } from "../_shared/prematricula-mensagens.ts";
 
 const STATUS_MAP: Record<string, string> = {
   PAYMENT_CONFIRMED: "pago",
@@ -137,6 +138,54 @@ Deno.serve(async (req) => {
         status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
+
+    // "mat:<uuid>" → matrícula (pós pré-matrícula)
+    if (externalRef && externalRef.startsWith("mat:")) {
+      const matId = externalRef.slice(4);
+      if (newStatus === "pago") {
+        const valor = Number(payload?.payment?.value ?? payload?.checkout?.value ?? 0) || null;
+        const { data: mat } = await admin
+          .from("matriculas")
+          .update({
+            status: "concluida",
+            concluida_em: new Date().toISOString(),
+            asaas_payment_id: installmentId || paymentId,
+            data_pagamento: new Date().toISOString(),
+            valor_pago: valor,
+            updated_at: new Date().toISOString(),
+          })
+          .eq("id", matId)
+          .select("prematricula_id, nome_aluno, resp_fin_nome, resp_fin_email, resp_fin_celular")
+          .maybeSingle();
+
+        try {
+          const { data: pm } = await admin
+            .from("prematriculas")
+            .select("protocolo, resp_nome, resp_email, resp_whatsapp, aluno_nome")
+            .eq("id", mat?.prematricula_id)
+            .maybeSingle();
+          await notificar("matricula_concluida", {
+            respNome: mat?.resp_fin_nome || pm?.resp_nome || "",
+            respEmail: mat?.resp_fin_email || pm?.resp_email || "",
+            respWhatsapp: mat?.resp_fin_celular || pm?.resp_whatsapp || "",
+            alunoNome: mat?.nome_aluno || pm?.aluno_nome || "",
+            protocolo: pm?.protocolo || "",
+          });
+        } catch (e) {
+          console.error("[asaas-webhook] falha ao notificar matrícula concluída", e);
+        }
+      } else if (newStatus === "estornado" || newStatus === "cancelado") {
+        await admin.from("matriculas").update({
+          status: "contrato_assinado",
+          updated_at: new Date().toISOString(),
+        }).eq("id", matId);
+      }
+      await admin.from("asaas_webhook_events").update({ processed: true }).eq("event_id", eventId);
+      return new Response(JSON.stringify({ ok: true, kind: "matricula" }), {
+        status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
 
     const isProdRef = !!(externalRef && externalRef.startsWith("prod:"));
     const isMixRef = !!(externalRef && externalRef.startsWith("mix:"));

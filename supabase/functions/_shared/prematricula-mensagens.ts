@@ -15,7 +15,11 @@ export type EventoMensagem =
   | "aprovada"
   | "reprovada"
   | "agendada"
-  | "concluida";
+  | "concluida"
+  | "documentos_reenvio"
+  | "documentos_aprovados"
+  | "contrato_pronto"
+  | "matricula_concluida";
 
 export interface DadosMensagem {
   respNome: string;
@@ -24,6 +28,9 @@ export interface DadosMensagem {
   alunoNome: string;
   protocolo: string;
   linkAgendamento?: string;
+  linkMatricula?: string;
+  linkContrato?: string;
+  documentosPendentes?: string[];
   motivoReprovacao?: string;
   dataEntrevista?: string;
   descontoPercentual?: number | null;
@@ -41,9 +48,11 @@ export const telefoneE164 = (tel: string) => {
 const primeiroNome = (nome: string) => (nome || "").trim().split(/\s+/)[0] || "";
 
 /** Nome do template aprovado na Meta + parâmetros do corpo, por evento. */
-const TEMPLATES: Record<
-  EventoMensagem,
-  { envVar: string; padrao: string; params: (d: DadosMensagem) => string[] }
+const TEMPLATES: Partial<
+  Record<
+    EventoMensagem,
+    { envVar: string; padrao: string; params: (d: DadosMensagem) => string[] }
+  >
 > = {
   recebida: {
     envVar: "WHATSAPP_TPL_PREMATRICULA_RECEBIDA",
@@ -83,30 +92,36 @@ async function enviarWhatsapp(evento: EventoMensagem, d: DadosMensagem) {
     console.warn("WhatsApp não configurado; mensagem não enviada:", evento);
     return;
   }
-  // Template de conclusão ainda não aprovado na Meta: só e-mail por enquanto.
-  if (evento === "concluida") {
+  // Template de conclusão só é enviado quando aprovado na Meta.
+  if (evento === "concluida" && Deno.env.get("WHATSAPP_TPL_PREMATRICULA_CONCLUIDA_ATIVO") !== "1") {
     console.log("WhatsApp prematricula[concluida] desativado (template pendente)");
     return;
   }
   const cfg = TEMPLATES[evento];
+  if (!cfg) {
+    console.log(`WhatsApp sem template para evento ${evento}; apenas e-mail.`);
+    return;
+  }
   const nomeTemplate = Deno.env.get(cfg.envVar) || cfg.padrao;
   const lang = Deno.env.get("WHATSAPP_TEMPLATE_LANG") || "pt_BR";
 
-  // Template "aprovada" usa botão de URL dinâmica na Meta.
-  // Como a URL-base aprovada termina em /prematricula/agendar, o parâmetro
+  // Templates "aprovada" e "concluida" usam botão de URL dinâmica na Meta.
+  // Como a URL-base aprovada termina no caminho da página, o parâmetro
   // dinâmico precisa levar o sufixo completo: ?t=<token>.
   const usaBotao =
-    evento === "aprovada" &&
-    Deno.env.get("WHATSAPP_TPL_PREMATRICULA_APROVADA_BOTAO") !== "0";
+    (evento === "aprovada" &&
+      Deno.env.get("WHATSAPP_TPL_PREMATRICULA_APROVADA_BOTAO") !== "0") ||
+    (evento === "concluida" &&
+      Deno.env.get("WHATSAPP_TPL_PREMATRICULA_CONCLUIDA_BOTAO") !== "0");
 
   const textos = cfg.params(d);
-  const corpo = usaBotao ? textos.slice(0, 2) : textos;
+  const corpo = usaBotao && evento === "aprovada" ? textos.slice(0, 2) : textos;
   const parameters = corpo.map((text) => ({ type: "text", text }));
 
   const components: unknown[] = parameters.length ? [{ type: "body", parameters }] : [];
   if (usaBotao) {
-    const linkAgendamento = d.linkAgendamento || "";
-    const tokenLink = linkAgendamento.match(/[?&]t=([^&#]+)/)?.[1] || "";
+    const link = (evento === "concluida" ? d.linkMatricula : d.linkAgendamento) || "";
+    const tokenLink = link.match(/[?&]t=([^&#]+)/)?.[1] || "";
     components.push({
       type: "button",
       sub_type: "url",
@@ -114,6 +129,7 @@ async function enviarWhatsapp(evento: EventoMensagem, d: DadosMensagem) {
       parameters: [{ type: "text", text: `?t=${tokenLink}` }],
     });
   }
+
 
   const res = await fetch(`https://graph.facebook.com/v23.0/${phoneId}/messages`, {
     method: "POST",
@@ -198,13 +214,60 @@ function montarEmail(evento: EventoMensagem, d: DadosMensagem): { subject: strin
       };
     case "concluida":
       return {
-        subject: `Entrevista concluída — ${d.alunoNome}`,
+        subject: `Entrevista concluída — próximos passos da matrícula de ${d.alunoNome}`,
         html: wrapper(
           "Entrevista concluída",
           p(`Olá, ${primeiroNome(d.respNome)}!`) +
             p(`Foi um prazer receber a família. A entrevista de <strong>${d.alunoNome}</strong> foi concluída.`) +
             p(`Desconto aplicado na mensalidade: <strong>${d.descontoPercentual ?? 0}%</strong>.`) +
-            p("Em breve entraremos em contato com as instruções para a matrícula."),
+            p("O próximo passo é enviar a documentação necessária pelo link abaixo.") +
+            botao(d.linkMatricula || SITE_URL, "Enviar documentação") +
+            p("Este link é pessoal e válido apenas para este cadastro."),
+        ),
+      };
+    case "documentos_reenvio":
+      return {
+        subject: `Documentação pendente — ${d.alunoNome}`,
+        html: wrapper(
+          "Documentos pendentes",
+          p(`Olá, ${primeiroNome(d.respNome)}!`) +
+            p(`Precisamos que você reenvie alguns documentos da matrícula de <strong>${d.alunoNome}</strong>:`) +
+            (d.documentosPendentes?.length
+              ? `<ul style="color:#444;font-size:14px;line-height:1.6">${d.documentosPendentes
+                  .map((x) => `<li>${x}</li>`)
+                  .join("")}</ul>`
+              : "") +
+            botao(d.linkMatricula || SITE_URL, "Reenviar documentos"),
+        ),
+      };
+    case "documentos_aprovados":
+      return {
+        subject: `Documentação aprovada — ${d.alunoNome}`,
+        html: wrapper(
+          "Documentação aprovada",
+          p(`Olá, ${primeiroNome(d.respNome)}!`) +
+            p(`A documentação de <strong>${d.alunoNome}</strong> foi conferida e aprovada.`) +
+            p("Estamos preparando o contrato de matrícula. Avisaremos assim que estiver pronto para assinatura."),
+        ),
+      };
+    case "contrato_pronto":
+      return {
+        subject: `Contrato de matrícula pronto — ${d.alunoNome}`,
+        html: wrapper(
+          "Contrato pronto para assinatura",
+          p(`Olá, ${primeiroNome(d.respNome)}!`) +
+            p(`O contrato de matrícula de <strong>${d.alunoNome}</strong> está pronto. Após a assinatura, o pagamento é liberado no mesmo link.`) +
+            botao(d.linkMatricula || SITE_URL, "Assinar e pagar"),
+        ),
+      };
+    case "matricula_concluida":
+      return {
+        subject: `Matrícula confirmada — ${d.alunoNome}`,
+        html: wrapper(
+          "Matrícula confirmada",
+          p(`Olá, ${primeiroNome(d.respNome)}!`) +
+            p(`A matrícula de <strong>${d.alunoNome}</strong> está confirmada. Contrato assinado e pagamento aprovado.`) +
+            p("Seja muito bem-vindo à família Zampieri!"),
         ),
       };
   }

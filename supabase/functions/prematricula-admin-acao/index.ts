@@ -101,6 +101,10 @@ Deno.serve(async (req) => {
       if (!DESCONTOS.includes(desconto)) return json({ error: "desconto_invalido" }, 400);
       const observacoes = String(body?.observacoes || "").trim().slice(0, 2000);
 
+      const token =
+        pm.token ||
+        crypto.randomUUID().replace(/-/g, "") + crypto.randomUUID().replace(/-/g, "");
+
       const { error } = await admin
         .from("prematriculas")
         .update({
@@ -108,6 +112,7 @@ Deno.serve(async (req) => {
           desconto_percentual: desconto,
           observacoes_entrevista: observacoes || null,
           entrevista_concluida_em: new Date().toISOString(),
+          token,
         })
         .eq("id", id);
       if (error) throw error;
@@ -118,7 +123,29 @@ Deno.serve(async (req) => {
         .eq("prematricula_id", id)
         .eq("status", "agendado");
 
-      await notificar("concluida", { ...base, descontoPercentual: desconto });
+      // Abre a etapa de matrícula (upload de documentos) para a família
+      const { error: erroMat } = await admin.from("matriculas").upsert(
+        {
+          prematricula_id: id,
+          nome_aluno: pm.aluno_nome,
+          data_nascimento_aluno: pm.aluno_nascimento,
+          curso: pm.serie_pretendida,
+          turno: pm.turno_preferencia,
+          percentual_desconto: desconto,
+          resp_fin_nome: pm.resp_nome,
+          resp_fin_cpf: pm.resp_cpf,
+          resp_fin_celular: pm.resp_whatsapp,
+          resp_fin_email: pm.resp_email,
+        },
+        { onConflict: "prematricula_id" },
+      );
+      if (erroMat) console.error("falha ao criar matrícula:", erroMat);
+
+      await notificar("concluida", {
+        ...base,
+        descontoPercentual: desconto,
+        linkMatricula: `${SITE_URL}/matricula?t=${token}`,
+      });
       return json({ ok: true, status: "entrevista_concluida" });
     }
 
