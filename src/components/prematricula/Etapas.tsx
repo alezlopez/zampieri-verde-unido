@@ -28,6 +28,18 @@ const ACEITOS = ".pdf,.jpg,.jpeg,.png";
 export const EtapaResponsavel = ({ form, erros, set }: Props) => (
   <div className="space-y-5">
     <SecaoTitulo>Informações do Responsável</SecaoTitulo>
+    <Campo label="O responsável é" erro={erros.resp_tipo}>
+      <Select value={form.resp_tipo} onValueChange={(v) => set("resp_tipo", v)}>
+        <SelectTrigger>
+          <SelectValue placeholder="Selecione" />
+        </SelectTrigger>
+        <SelectContent>
+          <SelectItem value="mae">Mãe</SelectItem>
+          <SelectItem value="pai">Pai</SelectItem>
+          <SelectItem value="outro">Outro</SelectItem>
+        </SelectContent>
+      </Select>
+    </Campo>
     <Campo label="Nome completo do responsável" erro={erros.resp_nome}>
       <Input
         placeholder="Digite o nome completo"
