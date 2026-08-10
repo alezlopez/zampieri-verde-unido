@@ -1,6 +1,6 @@
 import { createClient } from "npm:@supabase/supabase-js@2";
 import { corsHeaders } from "../_shared/cors.ts";
-import { DOCUMENTOS, TIPOS_VALIDOS, labelDoc } from "../_shared/matricula-docs.ts";
+import { DOCUMENTOS, TIPOS_VALIDOS, labelDoc, docObrigatorio } from "../_shared/matricula-docs.ts";
 import { SITE_URL, notificar } from "../_shared/prematricula-mensagens.ts";
 import { valoresProntos, verificarAssinatura } from "../_shared/matricula-contrato.ts";
 
@@ -130,6 +130,20 @@ Deno.serve(async (req) => {
       return json({ ok: true });
     }
 
+    /** Documentos obrigatórios já conferidos (aprovados ou aguardando a escola anterior). */
+    const documentosOk = async () => {
+      const { data: docs } = await admin
+        .from("matricula_documentos")
+        .select("tipo, status")
+        .eq("matricula_id", id);
+      const pendentes = DOCUMENTOS.filter((d) => {
+        if (!docObrigatorio(d.tipo, pm?.resp_tipo)) return false;
+        const st = (docs ?? []).find((x) => x.tipo === d.tipo)?.status;
+        return st !== "aprovado" && st !== "aguardando_escola";
+      }).map((d) => d.label);
+      return { ok: pendentes.length === 0, pendentes };
+    };
+
     if (acao === "solicitar_reenvio") {
       const { data: docs } = await admin
         .from("matricula_documentos")
@@ -137,6 +151,12 @@ Deno.serve(async (req) => {
         .eq("matricula_id", id);
       const rejeitados = (docs ?? []).filter((d) => d.status === "rejeitado").map((d) => labelDoc(d.tipo));
       const faltando = DOCUMENTOS.filter((d) => !(docs ?? []).some((x) => x.tipo === d.tipo)).map((d) => d.label);
+      // Libera o reenvio dos itens que não foram aprovados.
+      await admin
+        .from("matricula_documentos")
+        .update({ status: "rejeitado", updated_at: new Date().toISOString() })
+        .eq("matricula_id", id)
+        .in("status", ["enviado", "em_analise"]);
       await admin
         .from("matriculas")
         .update({ status: "documentos_pendentes", updated_at: new Date().toISOString() })
@@ -149,12 +169,22 @@ Deno.serve(async (req) => {
     }
 
     if (acao === "aprovar_documentos") {
-      if (!valoresProntos(mat)) return json({ error: "valores_pendentes" }, 400);
       await admin
         .from("matricula_documentos")
         .update({ status: "aprovado", motivo: null, updated_at: new Date().toISOString() })
         .eq("matricula_id", id)
         .not("status", "in", "(aprovado,aguardando_escola)");
+      await admin
+        .from("matriculas")
+        .update({ updated_at: new Date().toISOString() })
+        .eq("id", id);
+      return json({ ok: true });
+    }
+
+    if (acao === "liberar_dados") {
+      const docs = await documentosOk();
+      if (!docs.ok) return json({ error: "documentos_pendentes", faltando: docs.pendentes }, 400);
+      if (!valoresProntos(mat)) return json({ error: "valores_pendentes" }, 400);
       await admin
         .from("matriculas")
         .update({

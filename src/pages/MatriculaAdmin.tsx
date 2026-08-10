@@ -149,6 +149,11 @@ const MatriculaAdmin = () => {
     carregar();
   }, []);
 
+  // Mantém o registro aberto em sincronia com a lista recarregada após cada ação.
+  useEffect(() => {
+    setAberta((atual) => (atual ? lista.find((m) => m.id === atual.id) ?? atual : atual));
+  }, [lista]);
+
   const abrir = (m: Matricula) => {
     setAberta(m);
     const f: Record<string, string> = {};
@@ -187,6 +192,13 @@ const MatriculaAdmin = () => {
     );
   }, [aberta]);
 
+  /** Todos os documentos obrigatórios já conferidos (aprovados ou aguardando escola). */
+  const docsConferidos = useMemo(() => {
+    if (!aberta) return false;
+    return (aberta.documentos ?? []).every(
+      (d) => d.status === "aprovado" || d.status === "aguardando_escola",
+    );
+  }, [aberta]);
 
   const executar = async (acao: string, extra: Record<string, unknown> = {}, fechar = false) => {
     if (!aberta) return;
@@ -378,10 +390,17 @@ const MatriculaAdmin = () => {
                   <div className="flex flex-wrap gap-2 pt-1">
                     <Button
                       className="bg-zampieri-green-dark hover:bg-zampieri-green"
-                      disabled={acaoEmCurso || !valoresProntos}
+                      disabled={acaoEmCurso}
                       onClick={() => executar("aprovar_documentos")}
                     >
                       Aprovar toda a documentação
+                    </Button>
+                    <Button
+                      variant="secondary"
+                      disabled={acaoEmCurso || !docsConferidos || !valoresProntos}
+                      onClick={() => executar("liberar_dados")}
+                    >
+                      Liberar preenchimento dos dados
                     </Button>
                     <Button
                       variant="outline"
@@ -391,10 +410,16 @@ const MatriculaAdmin = () => {
                       Solicitar reenvio
                     </Button>
                   </div>
-                  {!valoresProntos && (
+                  {!docsConferidos && (
+                    <p className="text-xs text-amber-700">
+                      Aprove todos os documentos obrigatórios antes de liberar o preenchimento dos
+                      dados.
+                    </p>
+                  )}
+                  {docsConferidos && !valoresProntos && (
                     <p className="text-xs text-amber-700">
                       Preencha e salve os valores (anuidade, mensalidade com desconto, dia de
-                      vencimento e valor da matrícula) antes de aprovar a documentação.
+                      vencimento e valor da matrícula) para liberar o preenchimento dos dados.
                     </p>
                   )}
 

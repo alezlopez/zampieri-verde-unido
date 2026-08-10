@@ -1,7 +1,7 @@
 import { createClient } from "npm:@supabase/supabase-js@2";
 import { corsHeaders } from "../_shared/cors.ts";
 import { getOrCreateCustomer, createCheckout } from "../_shared/asaas.ts";
-import { DOCUMENTOS, TIPOS_VALIDOS, PERMITE_AGUARDANDO, docObrigatorio, labelDoc } from "../_shared/matricula-docs.ts";
+import { DOCUMENTOS, TIPOS_VALIDOS, PERMITE_AGUARDANDO, docObrigatorio, labelDoc, podeReenviar } from "../_shared/matricula-docs.ts";
 import { notificar } from "../_shared/prematricula-mensagens.ts";
 import { gerarContrato, valoresProntos, verificarAssinatura } from "../_shared/matricula-contrato.ts";
 
@@ -177,6 +177,14 @@ Deno.serve(async (req) => {
       if (["contrato_assinado", "concluida"].includes(String(mat.status))) {
         return json({ error: "etapa_encerrada" }, 400);
       }
+      const { data: atual } = await admin
+        .from("matricula_documentos")
+        .select("status")
+        .eq("matricula_id", mat.id)
+        .eq("tipo", tipo)
+        .maybeSingle();
+      if (!podeReenviar(atual?.status)) return json({ error: "documento_bloqueado" }, 409);
+
       const nomeArquivo = String(body?.nome_arquivo || "documento").slice(0, 120);
       const base64 = String(body?.arquivo_base64 || "").split(",").pop() || "";
       if (!base64) return json({ error: "arquivo_ausente" }, 400);
