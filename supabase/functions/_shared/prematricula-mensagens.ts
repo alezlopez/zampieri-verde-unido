@@ -92,6 +92,7 @@ const HEADER_IMAGE_PADRAO = `${SITE_URL}/lovable-uploads/bd571e68-1908-4859-81a4
 type DefTemplate = {
   headerFormat: "IMAGE" | "VIDEO" | "DOCUMENT" | "TEXT" | null;
   headerVars: number;
+  headerExemplo: string | null;
   bodyVars: number;
   urlButtonIndex: number | null;
 };
@@ -133,6 +134,7 @@ async function definicaoTemplate(nome: string, lang: string): Promise<DefTemplat
     const def: DefTemplate = {
       headerFormat: header?.format ?? null,
       headerVars: header?.format === "TEXT" ? contarVars(header?.text) : 0,
+      headerExemplo: header?.example?.header_handle?.[0] ?? header?.example?.header_url?.[0] ?? null,
       bodyVars: contarVars(body?.text),
       urlButtonIndex: (() => {
         const i = botoes.findIndex((b: any) => b.type === "URL" && /\{\{\d+\}\}/.test(b.url || ""));
@@ -153,18 +155,25 @@ function montarComponentes(
   evento: EventoMensagem,
   d: DadosMensagem,
   textos: string[],
-  opcoes: { headerImagem: boolean; botaoUrl: boolean; botaoIndex: number; maxBody?: number },
+  opcoes: {
+    headerImagem: boolean;
+    headerImagemUrl?: string | null;
+    botaoUrl: boolean;
+    botaoIndex: number;
+    maxBody?: number;
+  },
 ) {
   const components: unknown[] = [];
   if (opcoes.headerImagem) {
+    // Prioridade: imagem do próprio template aprovado na Meta > override por
+    // secret > imagem padrão do site.
+    const link =
+      opcoes.headerImagemUrl ||
+      Deno.env.get("WHATSAPP_HEADER_IMAGE_URL") ||
+      HEADER_IMAGE_PADRAO;
     components.push({
       type: "header",
-      parameters: [
-        {
-          type: "image",
-          image: { link: Deno.env.get("WHATSAPP_HEADER_IMAGE_URL") || HEADER_IMAGE_PADRAO },
-        },
-      ],
+      parameters: [{ type: "image", image: { link } }],
     });
   }
   const corpo = typeof opcoes.maxBody === "number" ? textos.slice(0, opcoes.maxBody) : textos;
@@ -213,18 +222,34 @@ async function enviarWhatsapp(evento: EventoMensagem, d: DadosMensagem) {
     (evento === "aprovada" && Deno.env.get("WHATSAPP_TPL_PREMATRICULA_APROVADA_BOTAO") !== "0") ||
     (evento === "concluida" && Deno.env.get("WHATSAPP_TPL_PREMATRICULA_CONCLUIDA_BOTAO") !== "0");
 
-  const tentativas: { headerImagem: boolean; botaoUrl: boolean; botaoIndex: number; maxBody?: number }[] = [];
+  const imagemTemplate = def?.headerFormat === "IMAGE" ? def.headerExemplo : null;
+
+  const tentativas: {
+    headerImagem: boolean;
+    headerImagemUrl?: string | null;
+    botaoUrl: boolean;
+    botaoIndex: number;
+    maxBody?: number;
+  }[] = [];
   if (def) {
     tentativas.push({
       headerImagem: def.headerFormat === "IMAGE",
+      headerImagemUrl: imagemTemplate,
       botaoUrl: def.urlButtonIndex !== null,
       botaoIndex: def.urlButtonIndex ?? 0,
       maxBody: def.bodyVars,
     });
   }
-  const padrao = { headerImagem: false, botaoUrl: usaBotaoPadrao, botaoIndex: 0, maxBody: usaBotaoPadrao && evento === "aprovada" ? 2 : undefined };
+  const padrao = {
+    headerImagem: false,
+    headerImagemUrl: imagemTemplate,
+    botaoUrl: usaBotaoPadrao,
+    botaoIndex: 0,
+    maxBody: usaBotaoPadrao && evento === "aprovada" ? 2 : undefined,
+  };
   tentativas.push(
     { ...padrao, headerImagem: true },
+    { ...padrao, headerImagem: true, headerImagemUrl: null },
     padrao,
     { ...padrao, headerImagem: true, botaoUrl: false },
     { ...padrao, botaoUrl: false },
