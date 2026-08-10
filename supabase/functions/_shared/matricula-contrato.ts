@@ -48,6 +48,7 @@ export const gerarContrato = async (
   admin: any,
   mat: Record<string, any>,
   pm: Record<string, any> | null,
+  redirectUrl?: string,
 ): Promise<Resultado> => {
   if (mat.contrato_gerado && mat.link_contrato) {
     return { ok: true, reutilizado: true, sign_url: mat.link_contrato };
@@ -124,6 +125,7 @@ export const gerarContrato = async (
     external_id: `mat:${mat.id}`,
     folder_path: "/matriculas/",
     send_automatic_email: false,
+    redirect_link: redirectUrl || undefined,
     data: Object.entries(vars).map(([de, para]) => ({ de: `{{${de}}}`, para })),
   };
 
@@ -157,4 +159,53 @@ export const gerarContrato = async (
   await assinarEmLote(zapToken, signers).catch((e) => console.error("assinarEmLote", e));
 
   return { ok: true, sign_url: signUrl };
+};
+
+/**
+ * Consulta ativamente o documento na ZapSign e sincroniza contrato_assinado.
+ * Fallback para quando o webhook doc_signed não chega.
+ */
+export const verificarAssinatura = async (admin: any, mat: Record<string, any>) => {
+  if (mat.contrato_assinado) return { assinado: true, fonte: "banco" };
+  const apiToken = Deno.env.get("ZAPSIGN_API_TOKEN");
+  if (!apiToken) return { assinado: false, motivo: "zapsign_nao_configurado" };
+
+  const docToken =
+    mat.zapsign_token ||
+    (String(mat.link_contrato ?? "").match(/([0-9a-f-]{36})/i)?.[1] ?? null);
+  if (!docToken) return { assinado: false, motivo: "sem_token" };
+
+  const resp = await fetch(`https://api.zapsign.com.br/api/v1/docs/${docToken}/`, {
+    headers: { Authorization: `Bearer ${apiToken}` },
+  });
+  const raw = await resp.text();
+  if (!resp.ok) {
+    console.error("ZapSign consulta doc (matrícula)", resp.status, raw.slice(0, 500));
+    return { assinado: false, motivo: "consulta_falhou" };
+  }
+  let doc: any = null;
+  try { doc = JSON.parse(raw); } catch { doc = null; }
+
+  const signers: any[] = Array.isArray(doc?.signers) ? doc.signers : [];
+  const statusDoc = String(doc?.status ?? "").toLowerCase();
+  const respAssinou = String(signers?.[0]?.status ?? "").toLowerCase() === "signed";
+  const todosAssinaram =
+    signers.length > 0 && signers.every((s) => String(s?.status ?? "").toLowerCase() === "signed");
+  const assinado = respAssinou || statusDoc === "signed" || todosAssinaram;
+
+  if (respAssinou && !todosAssinaram) {
+    await assinarEmLote(apiToken, signers).catch((e) => console.error("assinarEmLote", e));
+  }
+
+  if (assinado) {
+    await admin.from("matriculas").update({
+      contrato_assinado: true,
+      contrato_assinado_em: new Date().toISOString(),
+      status: "contrato_assinado",
+      updated_at: new Date().toISOString(),
+    }).eq("id", mat.id);
+    mat.contrato_assinado = true;
+    mat.status = "contrato_assinado";
+  }
+  return { assinado, status_documento: statusDoc };
 };

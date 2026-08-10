@@ -21,6 +21,7 @@ interface DocEstado {
   tipo: string;
   label: string;
   obrigatorio: boolean;
+  permite_aguardando?: boolean;
   status: string;
   nome_arquivo: string | null;
   motivo: string | null;
@@ -67,6 +68,7 @@ const CORES: Record<string, string> = {
   enviado: "bg-blue-100 text-blue-800",
   aprovado: "bg-emerald-100 text-emerald-800",
   rejeitado: "bg-red-100 text-red-700",
+  aguardando_escola: "bg-amber-100 text-amber-800",
 };
 
 const ROTULO: Record<string, string> = {
@@ -74,6 +76,7 @@ const ROTULO: Record<string, string> = {
   enviado: "Em análise",
   aprovado: "Aprovado",
   rejeitado: "Reenviar",
+  aguardando_escola: "Aguardando escola",
 };
 
 const brl = (v: number) => v.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
@@ -187,9 +190,38 @@ const Matricula = () => {
     window.location.href = data.checkout_url as string;
   };
 
+  const marcarAguardandoEscola = async (tipo: string, marcar: boolean) => {
+    setEnviando(tipo);
+    const { erro: e, data } = await chamar("aguardando_escola", { tipo, marcar });
+    setEnviando(null);
+    if (e) {
+      toast({ title: "Não foi possível atualizar", variant: "destructive" });
+      return;
+    }
+    setEstado(data as Estado);
+  };
+
+  const verificarAssinatura = useCallback(
+    async (silencioso = false) => {
+      if (!silencioso) setAcaoEmCurso(true);
+      const { erro: e, data } = await chamar("verificar_assinatura");
+      if (!silencioso) setAcaoEmCurso(false);
+      if (e) return;
+      setEstado(data as Estado);
+      const assinado = (data as Estado)?.matricula?.contrato_assinado;
+      if (!silencioso) {
+        toast({
+          title: assinado ? "Contrato assinado!" : "Assinatura ainda não identificada",
+          description: assinado ? "Você já pode seguir para o pagamento." : "Tente novamente em instantes.",
+        });
+      }
+    },
+    [chamar, toast],
+  );
+
   const salvarDados = async (dados: Record<string, string>) => {
     setAcaoEmCurso(true);
-    const { erro: e, data } = await chamar("salvar_dados", { dados });
+    const { erro: e, data } = await chamar("salvar_dados", { dados, origin: window.location.origin });
     setAcaoEmCurso(false);
     if (e) {
       toast({
@@ -211,6 +243,17 @@ const Matricula = () => {
         : "Dados salvos! Contrato liberado para assinatura.",
     });
   };
+
+  // Ao voltar da ZapSign (ou enquanto o contrato aguarda assinatura), confirma o status.
+  useEffect(() => {
+    const m = estado?.matricula;
+    if (!m?.contrato_gerado || m.contrato_assinado) return;
+    verificarAssinatura(true);
+    const id = window.setInterval(() => verificarAssinatura(true), 20000);
+    return () => window.clearInterval(id);
+  }, [estado?.matricula?.contrato_gerado, estado?.matricula?.contrato_assinado, verificarAssinatura]);
+
+
 
 
   if (carregando) {
@@ -329,6 +372,18 @@ const Matricula = () => {
                         <p className="text-xs text-muted-foreground truncate">{d.nome_arquivo}</p>
                       )}
                       {d.motivo && <p className="text-xs text-destructive">{d.motivo}</p>}
+                      {podeEditarDocs && d.permite_aguardando && (
+                        <label className="mt-2 flex items-start gap-2 text-xs text-muted-foreground">
+                          <input
+                            type="checkbox"
+                            className="mt-0.5 h-3.5 w-3.5 accent-[hsl(var(--primary))]"
+                            checked={d.status === "aguardando_escola"}
+                            disabled={enviando === d.tipo}
+                            onChange={(e) => marcarAguardandoEscola(d.tipo, e.target.checked)}
+                          />
+                          Já solicitei o documento na escola anterior, aguardando prazo de entrega
+                        </label>
+                      )}
                     </div>
                     <div className="flex items-center gap-2">
                       <span
@@ -408,10 +463,38 @@ const Matricula = () => {
                   </p>
                 </div>
 
-                {!estado.valores.prontos && (
+                {!estado.valores.prontos ? (
                   <div className="rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm text-amber-800">
                     A secretaria ainda está finalizando os valores. Você já pode preencher e salvar
                     os dados — avisaremos por e-mail quando o contrato estiver disponível.
+                  </div>
+                ) : (
+                  <div className="rounded-lg border border-border bg-muted/40 p-4 space-y-1 text-sm">
+                    <p className="text-xs font-semibold uppercase text-muted-foreground">
+                      Valores definidos pela secretaria (somente leitura)
+                    </p>
+                    <p>
+                      <span className="text-muted-foreground">Anuidade: </span>
+                      {estado.valores.anuidade_total || "—"}
+                    </p>
+                    <p>
+                      <span className="text-muted-foreground">Desconto: </span>
+                      {estado.valores.percentual_desconto ?? 0}%
+                    </p>
+                    <p>
+                      <span className="text-muted-foreground">Mensalidade com desconto: </span>
+                      {estado.valores.valor_com_desconto != null
+                        ? brl(Number(estado.valores.valor_com_desconto))
+                        : "—"}
+                    </p>
+                    <p>
+                      <span className="text-muted-foreground">1ª parcela: </span>
+                      {estado.valores.valor_pri_parcela || "—"}
+                    </p>
+                    <p>
+                      <span className="text-muted-foreground">Dia de vencimento: </span>
+                      {estado.valores.dia_vencimento ?? "—"}
+                    </p>
                   </div>
                 )}
 
@@ -439,17 +522,38 @@ const Matricula = () => {
                   <CheckCircle2 className="w-4 h-4" /> Contrato assinado.
                 </p>
               ) : m.contrato_gerado && m.link_contrato ? (
-                <Button asChild className="bg-zampieri-green-dark hover:bg-zampieri-green">
-                  <a href={m.link_contrato} target="_blank" rel="noopener noreferrer">
-                    <FileText className="w-4 h-4 mr-2" /> Assinar contrato
-                  </a>
-                </Button>
+                <div className="space-y-3">
+                  <Button asChild className="bg-zampieri-green-dark hover:bg-zampieri-green">
+                    <a href={m.link_contrato} target="_blank" rel="noopener noreferrer">
+                      <FileText className="w-4 h-4 mr-2" /> Assinar contrato
+                    </a>
+                  </Button>
+                  <div>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      disabled={acaoEmCurso}
+                      onClick={() => verificarAssinatura()}
+                    >
+                      {acaoEmCurso ? (
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                      ) : (
+                        "Já assinei — verificar agora"
+                      )}
+                    </Button>
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    Após assinar, esta página confirma a assinatura automaticamente e libera o
+                    pagamento.
+                  </p>
+                </div>
               ) : (
                 <p className="text-sm text-muted-foreground">
                   O contrato é liberado assim que você preencher os dados acima.
                 </p>
               )}
             </section>
+
 
 
             <section className="rounded-xl border border-border bg-white p-6 space-y-4">

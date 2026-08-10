@@ -1,9 +1,9 @@
 import { createClient } from "npm:@supabase/supabase-js@2";
 import { corsHeaders } from "../_shared/cors.ts";
 import { getOrCreateCustomer, createCheckout } from "../_shared/asaas.ts";
-import { DOCUMENTOS, TIPOS_VALIDOS, labelDoc } from "../_shared/matricula-docs.ts";
+import { DOCUMENTOS, TIPOS_VALIDOS, PERMITE_AGUARDANDO, docObrigatorio, labelDoc } from "../_shared/matricula-docs.ts";
 import { notificar } from "../_shared/prematricula-mensagens.ts";
-import { gerarContrato, valoresProntos } from "../_shared/matricula-contrato.ts";
+import { gerarContrato, valoresProntos, verificarAssinatura } from "../_shared/matricula-contrato.ts";
 
 /** Campos que a família preenche no portal antes da geração do contrato. */
 const CAMPOS_FAMILIA = [
@@ -121,7 +121,8 @@ Deno.serve(async (req) => {
         return {
           tipo: d.tipo,
           label: d.label,
-          obrigatorio: d.obrigatorio,
+          obrigatorio: docObrigatorio(d.tipo, pm.resp_tipo),
+          permite_aguardando: d.permite_aguardando,
           status: enviado?.status ?? "pendente",
           nome_arquivo: enviado?.nome_arquivo ?? null,
           motivo: enviado?.motivo ?? null,
@@ -221,9 +222,44 @@ Deno.serve(async (req) => {
       return json(await estado());
     }
 
+    if (acao === "aguardando_escola") {
+      const tipo = String(body?.tipo || "");
+      if (!PERMITE_AGUARDANDO.includes(tipo)) return json({ error: "tipo_invalido" }, 400);
+      const marcar = body?.marcar !== false;
+      if (marcar) {
+        const { error } = await admin.from("matricula_documentos").upsert(
+          {
+            matricula_id: mat.id,
+            tipo,
+            storage_path: "",
+            nome_arquivo: null,
+            status: "aguardando_escola",
+            motivo: "Documento solicitado na escola anterior, aguardando prazo de entrega.",
+            updated_at: new Date().toISOString(),
+          },
+          { onConflict: "matricula_id,tipo" },
+        );
+        if (error) throw error;
+      } else {
+        await admin
+          .from("matricula_documentos")
+          .delete()
+          .eq("matricula_id", mat.id)
+          .eq("tipo", tipo)
+          .eq("status", "aguardando_escola");
+      }
+      return json(await estado());
+    }
+
+    if (acao === "verificar_assinatura") {
+      const r = await verificarAssinatura(admin, mat);
+      return json({ ...(await estado()), verificacao: r });
+    }
+
     if (acao === "enviar_analise") {
       const docs = await carregarDocs();
-      const faltando = docs.filter((d) => d.obrigatorio && d.status !== "enviado" && d.status !== "aprovado");
+      const ok = ["enviado", "aprovado", "aguardando_escola"];
+      const faltando = docs.filter((d) => d.obrigatorio && !ok.includes(d.status));
       if (faltando.length) {
         return json({ error: "documentos_faltando", faltando: faltando.map((d) => d.label) }, 400);
       }
@@ -360,7 +396,12 @@ Deno.serve(async (req) => {
         return json({ ...(await estado()), aviso: "valores_pendentes" });
       }
 
-      const r = await gerarContrato(admin, mat, pm);
+      const r = await gerarContrato(
+        admin,
+        mat,
+        pm,
+        `${safeOrigin(req, body?.origin)}/matricula?t=${token}&assinatura=concluida`,
+      );
       if (!r.ok) return json({ error: r.error, detalhe: r.detalhe }, r.status);
       if (!r.reutilizado) {
         await notificar("contrato_pronto", {

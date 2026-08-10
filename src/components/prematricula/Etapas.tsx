@@ -36,7 +36,7 @@ export const EtapaResponsavel = ({ form, erros, set }: Props) => (
         <SelectContent>
           <SelectItem value="mae">Mãe</SelectItem>
           <SelectItem value="pai">Pai</SelectItem>
-          <SelectItem value="outro">Outro</SelectItem>
+          
         </SelectContent>
       </Select>
     </Campo>
@@ -118,21 +118,27 @@ export const EtapaAluno = ({ form, erros, set }: Props) => (
       onChange={(v) => set("turno_preferencia", v)}
       erro={erros.turno_preferencia}
     />
-    <Campo label="Nome da escola atual" erro={erros.escola_atual}>
-      <Input
-        placeholder="Digite o nome da escola atual"
-        value={form.escola_atual}
-        onChange={(e) => set("escola_atual", e.target.value)}
-      />
-    </Campo>
     <RadioGrupo
       label="Tipo de escola"
       nome="tipo_escola"
-      opcoes={["Pública", "Privada"]}
+      opcoes={["Pública", "Privada", "Nunca estudou"]}
       valor={form.tipo_escola}
-      onChange={(v) => set("tipo_escola", v)}
+      onChange={(v) => {
+        set("tipo_escola", v);
+        if (v === "Nunca estudou") set("escola_atual", "");
+      }}
       erro={erros.tipo_escola}
     />
+    {form.tipo_escola !== "Nunca estudou" && (
+      <Campo label="Nome da escola atual" erro={erros.escola_atual}>
+        <Input
+          placeholder="Digite o nome da escola atual"
+          value={form.escola_atual}
+          onChange={(e) => set("escola_atual", e.target.value)}
+        />
+      </Campo>
+    )}
+
   </div>
 );
 

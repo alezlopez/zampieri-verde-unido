@@ -132,12 +132,13 @@ const PreMatricula = () => {
             Pré-matrícula enviada!
           </h1>
           <p className="text-sm text-muted-foreground">
-            Recebemos os dados de <strong>{form.aluno_nome}</strong>. Nossa equipe fará a conferência
-            e você receberá o retorno por WhatsApp e e-mail.
+            Recebemos os dados de <strong>{form.aluno_nome}</strong>. Nossa equipe vai analisar as
+            informações e retornar pelo <strong>WhatsApp e e-mail em até 24 horas úteis</strong>.
           </p>
           <p className="text-sm">
             Protocolo: <strong>{protocolo}</strong>
           </p>
+
           <Button asChild variant="outline" className="w-full">
             <a href="/">Voltar ao site</a>
           </Button>

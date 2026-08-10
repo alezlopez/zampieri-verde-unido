@@ -93,9 +93,9 @@ async function enviarWhatsapp(evento: EventoMensagem, d: DadosMensagem) {
     console.warn("WhatsApp não configurado; mensagem não enviada:", evento);
     return;
   }
-  // Template de conclusão só é enviado quando aprovado na Meta.
-  if (evento === "concluida" && Deno.env.get("WHATSAPP_TPL_PREMATRICULA_CONCLUIDA_ATIVO") !== "1") {
-    console.log("WhatsApp prematricula[concluida] desativado (template pendente)");
+  // Template de conclusão pode ser desligado com WHATSAPP_TPL_PREMATRICULA_CONCLUIDA_ATIVO=0.
+  if (evento === "concluida" && Deno.env.get("WHATSAPP_TPL_PREMATRICULA_CONCLUIDA_ATIVO") === "0") {
+    console.log("WhatsApp prematricula[concluida] desativado por configuração");
     return;
   }
   const cfg = TEMPLATES[evento];
@@ -148,7 +148,13 @@ async function enviarWhatsapp(evento: EventoMensagem, d: DadosMensagem) {
     }),
   });
   const texto = await res.text();
-  console.log(`WhatsApp prematricula[${evento}] status=${res.status} body=${texto}`);
+  if (!res.ok) {
+    console.error(
+      `WhatsApp prematricula[${evento}] FALHOU status=${res.status} template=${nomeTemplate} to=${telefoneE164(d.respWhatsapp)} body=${texto}`,
+    );
+    return;
+  }
+  console.log(`WhatsApp prematricula[${evento}] enviado template=${nomeTemplate} body=${texto}`);
 }
 
 const wrapper = (titulo: string, corpo: string) => `
