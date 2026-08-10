@@ -184,6 +184,32 @@ const Matricula = () => {
     window.location.href = data.checkout_url as string;
   };
 
+  const salvarDados = async (dados: Record<string, string>) => {
+    setAcaoEmCurso(true);
+    const { erro: e, data } = await chamar("salvar_dados", { dados });
+    setAcaoEmCurso(false);
+    if (e) {
+      toast({
+        title: "Não foi possível salvar",
+        description:
+          e === "campos_obrigatorios"
+            ? "Confira os campos obrigatórios."
+            : e === "valores_pendentes"
+              ? "A secretaria ainda não liberou os valores."
+              : "Tente novamente.",
+        variant: "destructive",
+      });
+      return;
+    }
+    setEstado(data as Estado);
+    toast({
+      title: (data as { aviso?: string })?.aviso === "valores_pendentes"
+        ? "Dados salvos! Aguardando os valores da secretaria."
+        : "Dados salvos! Contrato liberado para assinatura.",
+    });
+  };
+
+
   if (carregando) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-zampieri-cream/30">
