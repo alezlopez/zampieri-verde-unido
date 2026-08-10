@@ -152,7 +152,7 @@ const MatriculaAdmin = () => {
   const abrir = (m: Matricula) => {
     setAberta(m);
     const f: Record<string, string> = {};
-    [...CAMPOS_TEXTO, ...CAMPOS_VALORES].forEach(({ campo }) => {
+    CAMPOS_VALORES.forEach(({ campo }) => {
       const v = m[campo];
       f[campo] = v == null ? "" : String(v);
     });
