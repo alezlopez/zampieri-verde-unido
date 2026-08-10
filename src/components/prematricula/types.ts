@@ -29,6 +29,7 @@ export const ETAPAS = [
 ];
 
 export interface PreMatriculaForm {
+  resp_tipo: string;
   resp_nome: string;
   resp_email: string;
   resp_cpf: string;
