@@ -17,7 +17,7 @@ import { ETAPAS, PreMatriculaForm, formVazio } from "@/components/prematricula/t
 type Erros = Partial<Record<keyof PreMatriculaForm, string>>;
 
 const obrigatoriosPorEtapa: Record<number, (keyof PreMatriculaForm)[]> = {
-  0: ["resp_nome", "resp_email", "resp_cpf", "resp_whatsapp"],
+  0: ["resp_tipo", "resp_nome", "resp_email", "resp_cpf", "resp_whatsapp"],
   1: ["aluno_nome", "aluno_nascimento", "serie_pretendida", "turno_preferencia", "tipo_escola"],
   2: ["repetiu_ano", "dificuldade_aprendizagem", "atendimento_complementar"],
   3: ["dificuldade_atencao", "diagnostico", "dificuldade_socializacao"],

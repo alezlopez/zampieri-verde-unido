@@ -1013,7 +1013,10 @@ export type Database = {
           cpf_pai: string | null
           created_at: string
           curso: string | null
+          dados_preenchidos_em: string | null
           data_nascimento_aluno: string | null
+          data_nascimento_mae: string | null
+          data_nascimento_pai: string | null
           data_pagamento: string | null
           dia_vencimento: number | null
           documentos_aprovados_em: string | null
@@ -1021,11 +1024,17 @@ export type Database = {
           email_mae: string | null
           email_pai: string | null
           estado: string | null
+          estado_civil_mae: string | null
+          estado_civil_pai: string | null
           forma_pagamento: string | null
           id: string
           link_contrato: string | null
           logradouro: string | null
           max_parcelas: number
+          nacionalidade_mae: string | null
+          nacionalidade_pai: string | null
+          naturalidade_mae: string | null
+          naturalidade_pai: string | null
           nome_aluno: string | null
           nome_mae: string | null
           nome_pai: string | null
@@ -1036,6 +1045,8 @@ export type Database = {
           permite_avista: boolean
           permite_parcelado: boolean
           prematricula_id: string
+          profissao_mae: string | null
+          profissao_pai: string | null
           resp_fin_celular: string | null
           resp_fin_cpf: string | null
           resp_fin_data_nascimento: string | null
@@ -1047,6 +1058,8 @@ export type Database = {
           resp_fin_profissao: string | null
           resp_fin_quem: string | null
           resp_fin_rg: string | null
+          rg_mae: string | null
+          rg_pai: string | null
           status: string
           turno: string | null
           updated_at: string
@@ -1081,7 +1094,10 @@ export type Database = {
           cpf_pai?: string | null
           created_at?: string
           curso?: string | null
+          dados_preenchidos_em?: string | null
           data_nascimento_aluno?: string | null
+          data_nascimento_mae?: string | null
+          data_nascimento_pai?: string | null
           data_pagamento?: string | null
           dia_vencimento?: number | null
           documentos_aprovados_em?: string | null
@@ -1089,11 +1105,17 @@ export type Database = {
           email_mae?: string | null
           email_pai?: string | null
           estado?: string | null
+          estado_civil_mae?: string | null
+          estado_civil_pai?: string | null
           forma_pagamento?: string | null
           id?: string
           link_contrato?: string | null
           logradouro?: string | null
           max_parcelas?: number
+          nacionalidade_mae?: string | null
+          nacionalidade_pai?: string | null
+          naturalidade_mae?: string | null
+          naturalidade_pai?: string | null
           nome_aluno?: string | null
           nome_mae?: string | null
           nome_pai?: string | null
@@ -1104,6 +1126,8 @@ export type Database = {
           permite_avista?: boolean
           permite_parcelado?: boolean
           prematricula_id: string
+          profissao_mae?: string | null
+          profissao_pai?: string | null
           resp_fin_celular?: string | null
           resp_fin_cpf?: string | null
           resp_fin_data_nascimento?: string | null
@@ -1115,6 +1139,8 @@ export type Database = {
           resp_fin_profissao?: string | null
           resp_fin_quem?: string | null
           resp_fin_rg?: string | null
+          rg_mae?: string | null
+          rg_pai?: string | null
           status?: string
           turno?: string | null
           updated_at?: string
@@ -1149,7 +1175,10 @@ export type Database = {
           cpf_pai?: string | null
           created_at?: string
           curso?: string | null
+          dados_preenchidos_em?: string | null
           data_nascimento_aluno?: string | null
+          data_nascimento_mae?: string | null
+          data_nascimento_pai?: string | null
           data_pagamento?: string | null
           dia_vencimento?: number | null
           documentos_aprovados_em?: string | null
@@ -1157,11 +1186,17 @@ export type Database = {
           email_mae?: string | null
           email_pai?: string | null
           estado?: string | null
+          estado_civil_mae?: string | null
+          estado_civil_pai?: string | null
           forma_pagamento?: string | null
           id?: string
           link_contrato?: string | null
           logradouro?: string | null
           max_parcelas?: number
+          nacionalidade_mae?: string | null
+          nacionalidade_pai?: string | null
+          naturalidade_mae?: string | null
+          naturalidade_pai?: string | null
           nome_aluno?: string | null
           nome_mae?: string | null
           nome_pai?: string | null
@@ -1172,6 +1207,8 @@ export type Database = {
           permite_avista?: boolean
           permite_parcelado?: boolean
           prematricula_id?: string
+          profissao_mae?: string | null
+          profissao_pai?: string | null
           resp_fin_celular?: string | null
           resp_fin_cpf?: string | null
           resp_fin_data_nascimento?: string | null
@@ -1183,6 +1220,8 @@ export type Database = {
           resp_fin_profissao?: string | null
           resp_fin_quem?: string | null
           resp_fin_rg?: string | null
+          rg_mae?: string | null
+          rg_pai?: string | null
           status?: string
           turno?: string | null
           updated_at?: string
@@ -1536,6 +1575,7 @@ export type Database = {
           resp_cpf: string
           resp_email: string
           resp_nome: string
+          resp_tipo: string | null
           resp_whatsapp: string
           serie_pretendida: string
           status: string
@@ -1577,6 +1617,7 @@ export type Database = {
           resp_cpf: string
           resp_email: string
           resp_nome: string
+          resp_tipo?: string | null
           resp_whatsapp: string
           serie_pretendida: string
           status?: string
@@ -1618,6 +1659,7 @@ export type Database = {
           resp_cpf?: string
           resp_email?: string
           resp_nome?: string
+          resp_tipo?: string | null
           resp_whatsapp?: string
           serie_pretendida?: string
           status?: string

@@ -29,6 +29,7 @@ export const ETAPAS = [
 ];
 
 export interface PreMatriculaForm {
+  resp_tipo: string;
   resp_nome: string;
   resp_email: string;
   resp_cpf: string;
@@ -55,6 +56,7 @@ export interface PreMatriculaForm {
 }
 
 export const formVazio = (): PreMatriculaForm => ({
+  resp_tipo: "",
   resp_nome: "",
   resp_email: "",
   resp_cpf: "",

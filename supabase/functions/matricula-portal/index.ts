@@ -3,6 +3,26 @@ import { corsHeaders } from "../_shared/cors.ts";
 import { getOrCreateCustomer, createCheckout } from "../_shared/asaas.ts";
 import { DOCUMENTOS, TIPOS_VALIDOS, labelDoc } from "../_shared/matricula-docs.ts";
 import { notificar } from "../_shared/prematricula-mensagens.ts";
+import { gerarContrato, valoresProntos } from "../_shared/matricula-contrato.ts";
+
+/** Campos que a família preenche no portal antes da geração do contrato. */
+const CAMPOS_FAMILIA = [
+  "resp_fin_quem", "resp_fin_nome", "resp_fin_cpf", "resp_fin_rg", "resp_fin_estado_civil",
+  "resp_fin_naturalidade", "resp_fin_nacionalidade", "resp_fin_profissao",
+  "resp_fin_data_nascimento", "resp_fin_celular", "resp_fin_email",
+  "cep", "logradouro", "numero", "complemento", "bairro", "cidade", "estado",
+  "nome_pai", "cpf_pai", "rg_pai", "estado_civil_pai", "naturalidade_pai", "nacionalidade_pai",
+  "profissao_pai", "data_nascimento_pai", "celular_pai", "email_pai",
+  "nome_mae", "cpf_mae", "rg_mae", "estado_civil_mae", "naturalidade_mae", "nacionalidade_mae",
+  "profissao_mae", "data_nascimento_mae", "celular_mae", "email_mae",
+];
+const CAMPOS_DATA = ["resp_fin_data_nascimento", "data_nascimento_pai", "data_nascimento_mae"];
+const OBRIGATORIOS_FAMILIA = [
+  "resp_fin_quem", "resp_fin_nome", "resp_fin_cpf", "resp_fin_rg", "resp_fin_estado_civil",
+  "resp_fin_naturalidade", "resp_fin_nacionalidade", "resp_fin_profissao",
+  "resp_fin_data_nascimento", "resp_fin_celular", "resp_fin_email",
+  "cep", "logradouro", "numero", "bairro", "cidade", "estado",
+];
 
 const FALLBACK_ORIGIN = "https://colegiozampieri.com.br";
 const MAX_BYTES = 10 * 1024 * 1024;
@@ -60,6 +80,8 @@ Deno.serve(async (req) => {
       .eq("prematricula_id", pm.id)
       .maybeSingle();
     if (!mat) {
+      const ehPai = pm.resp_tipo === "pai";
+      const ehMae = pm.resp_tipo === "mae";
       const { data: nova, error } = await admin
         .from("matriculas")
         .insert({
@@ -69,10 +91,19 @@ Deno.serve(async (req) => {
           curso: pm.serie_pretendida,
           turno: pm.turno_preferencia,
           percentual_desconto: pm.desconto_percentual,
+          resp_fin_quem: pm.resp_tipo ?? null,
           resp_fin_nome: pm.resp_nome,
           resp_fin_cpf: pm.resp_cpf,
           resp_fin_celular: pm.resp_whatsapp,
           resp_fin_email: pm.resp_email,
+          nome_pai: ehPai ? pm.resp_nome : null,
+          cpf_pai: ehPai ? pm.resp_cpf : null,
+          celular_pai: ehPai ? pm.resp_whatsapp : null,
+          email_pai: ehPai ? pm.resp_email : null,
+          nome_mae: ehMae ? pm.resp_nome : null,
+          cpf_mae: ehMae ? pm.resp_cpf : null,
+          celular_mae: ehMae ? pm.resp_whatsapp : null,
+          email_mae: ehMae ? pm.resp_email : null,
         })
         .select("*")
         .single();
@@ -106,6 +137,18 @@ Deno.serve(async (req) => {
       serie: pm.serie_pretendida,
       turno: pm.turno_preferencia,
       desconto: pm.desconto_percentual,
+      resp_tipo: pm.resp_tipo ?? null,
+      dados: Object.fromEntries(CAMPOS_FAMILIA.map((c) => [c, mat![c] ?? ""])),
+      valores: {
+        anuidade_total: mat!.anuidade_total,
+        anuidade_total_ext: mat!.anuidade_total_ext,
+        percentual_desconto: mat!.percentual_desconto,
+        valor_com_desconto: mat!.valor_com_desconto,
+        valor_com_desconto_ext: mat!.valor_com_desconto_ext,
+        valor_pri_parcela: mat!.valor_pri_parcela,
+        dia_vencimento: mat!.dia_vencimento,
+        prontos: valoresProntos(mat!),
+      },
       matricula: {
         id: mat!.id,
         status: mat!.status,
@@ -120,6 +163,7 @@ Deno.serve(async (req) => {
         forma_pagamento: mat!.forma_pagamento,
         parcelas: mat!.parcelas,
         data_pagamento: mat!.data_pagamento,
+        dados_preenchidos_em: mat!.dados_preenchidos_em,
       },
       documentos: await carregarDocs(),
     });
@@ -272,6 +316,62 @@ Deno.serve(async (req) => {
 
       if (!checkoutUrl) return json({ error: "checkout_sem_link" }, 502);
       return json({ ok: true, checkout_url: checkoutUrl });
+    }
+
+    if (acao === "salvar_dados" || acao === "gerar_contrato") {
+      if (mat.contrato_assinado || mat.status === "concluida") {
+        return json({ error: "etapa_encerrada" }, 400);
+      }
+      if (!["documentos_aprovados", "contrato_gerado"].includes(String(mat.status))) {
+        return json({ error: "documentos_nao_aprovados" }, 403);
+      }
+
+      if (acao === "salvar_dados") {
+        const dados = (body?.dados ?? {}) as Record<string, unknown>;
+        const update: Record<string, unknown> = {
+          updated_at: new Date().toISOString(),
+          dados_preenchidos_em: new Date().toISOString(),
+        };
+        for (const campo of CAMPOS_FAMILIA) {
+          if (!(campo in dados)) continue;
+          const bruto = dados[campo];
+          const valor = bruto == null ? "" : String(bruto).trim().slice(0, 200);
+          if (CAMPOS_DATA.includes(campo)) {
+            const iso = valor.slice(0, 10);
+            update[campo] = /^\d{4}-\d{2}-\d{2}$/.test(iso) ? iso : null;
+          } else if (campo.startsWith("cpf") || campo.endsWith("_cpf")) {
+            update[campo] = digits(valor) || null;
+          } else {
+            update[campo] = valor || null;
+          }
+        }
+        const faltando = OBRIGATORIOS_FAMILIA.filter((c) => !update[c] && !mat[c]);
+        if (faltando.length) return json({ error: "campos_obrigatorios", faltando }, 400);
+        if (digits(update.resp_fin_cpf ?? mat.resp_fin_cpf).length !== 11) {
+          return json({ error: "cpf_invalido" }, 400);
+        }
+
+        const { error } = await admin.from("matriculas").update(update).eq("id", mat.id);
+        if (error) throw error;
+        Object.assign(mat, update);
+      }
+
+      if (!valoresProntos(mat)) {
+        return json({ ...(await estado()), aviso: "valores_pendentes" });
+      }
+
+      const r = await gerarContrato(admin, mat, pm);
+      if (!r.ok) return json({ error: r.error, detalhe: r.detalhe }, r.status);
+      if (!r.reutilizado) {
+        await notificar("contrato_pronto", {
+          respNome: mat.resp_fin_nome || pm.resp_nome,
+          respEmail: mat.resp_fin_email || pm.resp_email,
+          respWhatsapp: mat.resp_fin_celular || pm.resp_whatsapp,
+          alunoNome: mat.nome_aluno || pm.aluno_nome,
+          protocolo: pm.protocolo,
+        }).catch((e) => console.error("email contrato_pronto:", e));
+      }
+      return json(await estado());
     }
 
     return json({ error: "acao_invalida" }, 400);

@@ -75,38 +75,26 @@ const CORES_DOC: Record<string, string> = {
   rejeitado: "bg-red-100 text-red-700",
 };
 
-const CAMPOS_TEXTO: { campo: string; label: string }[] = [
-  { campo: "resp_fin_quem", label: "Responsável financeiro é (mãe/pai/outro)" },
-  { campo: "resp_fin_nome", label: "Nome do responsável financeiro" },
-  { campo: "resp_fin_cpf", label: "CPF do responsável" },
-  { campo: "resp_fin_rg", label: "RG do responsável" },
+/** Dados preenchidos pela família — exibidos apenas para conferência. */
+const CAMPOS_LEITURA: { campo: string; label: string }[] = [
+  { campo: "resp_fin_quem", label: "Responsável financeiro" },
+  { campo: "resp_fin_nome", label: "Nome" },
+  { campo: "resp_fin_cpf", label: "CPF" },
+  { campo: "resp_fin_rg", label: "RG" },
   { campo: "resp_fin_estado_civil", label: "Estado civil" },
-  { campo: "resp_fin_naturalidade", label: "Naturalidade" },
-  { campo: "resp_fin_nacionalidade", label: "Nacionalidade" },
   { campo: "resp_fin_profissao", label: "Profissão" },
-  { campo: "resp_fin_data_nascimento", label: "Nascimento do responsável (AAAA-MM-DD)" },
-  { campo: "resp_fin_celular", label: "Celular do responsável" },
-  { campo: "resp_fin_email", label: "E-mail do responsável" },
+  { campo: "resp_fin_celular", label: "Celular" },
+  { campo: "resp_fin_email", label: "E-mail" },
   { campo: "cep", label: "CEP" },
   { campo: "logradouro", label: "Logradouro" },
   { campo: "numero", label: "Número" },
-  { campo: "complemento", label: "Complemento" },
   { campo: "bairro", label: "Bairro" },
   { campo: "cidade", label: "Cidade" },
-  { campo: "estado", label: "Estado (UF)" },
-  { campo: "nome_pai", label: "Nome do pai" },
-  { campo: "cpf_pai", label: "CPF do pai" },
-  { campo: "celular_pai", label: "Celular do pai" },
-  { campo: "email_pai", label: "E-mail do pai" },
-  { campo: "nome_mae", label: "Nome da mãe" },
-  { campo: "cpf_mae", label: "CPF da mãe" },
-  { campo: "celular_mae", label: "Celular da mãe" },
-  { campo: "email_mae", label: "E-mail da mãe" },
-  { campo: "nome_aluno", label: "Nome do aluno" },
-  { campo: "data_nascimento_aluno", label: "Nascimento do aluno (AAAA-MM-DD)" },
-  { campo: "curso", label: "Curso / série" },
-  { campo: "turno", label: "Turno" },
+  { campo: "estado", label: "UF" },
+  { campo: "nome_pai", label: "Pai" },
+  { campo: "nome_mae", label: "Mãe" },
 ];
+
 
 const CAMPOS_VALORES: { campo: string; label: string }[] = [
   { campo: "anuidade_total", label: "Anuidade total" },
@@ -164,7 +152,7 @@ const MatriculaAdmin = () => {
   const abrir = (m: Matricula) => {
     setAberta(m);
     const f: Record<string, string> = {};
-    [...CAMPOS_TEXTO, ...CAMPOS_VALORES].forEach(({ campo }) => {
+    CAMPOS_VALORES.forEach(({ campo }) => {
       const v = m[campo];
       f[campo] = v == null ? "" : String(v);
     });
@@ -394,20 +382,24 @@ const MatriculaAdmin = () => {
 
                 <section className="space-y-3">
                   <p className="text-xs font-semibold uppercase text-muted-foreground">
-                    Dados do contrato
+                    Dados enviados pela família
                   </p>
-                  <div className="grid sm:grid-cols-2 gap-3">
-                    {CAMPOS_TEXTO.map(({ campo, label }) => (
-                      <div key={campo} className="space-y-1">
-                        <Label className="text-xs">{label}</Label>
-                        <Input
-                          value={form[campo] ?? ""}
-                          onChange={(e) => setForm((f) => ({ ...f, [campo]: e.target.value }))}
-                        />
-                      </div>
-                    ))}
-                  </div>
+                  {aberta.dados_preenchidos_em ? (
+                    <div className="grid sm:grid-cols-2 gap-x-4 gap-y-1 rounded-lg border border-border p-3 text-sm">
+                      {CAMPOS_LEITURA.map(({ campo, label }) => (
+                        <p key={campo} className="truncate">
+                          <span className="text-muted-foreground">{label}: </span>
+                          {String(aberta[campo] ?? "") || "—"}
+                        </p>
+                      ))}
+                    </div>
+                  ) : (
+                    <p className="text-sm text-muted-foreground">
+                      A família ainda não preencheu os dados do contrato.
+                    </p>
+                  )}
                 </section>
+
 
                 <section className="space-y-3">
                   <p className="text-xs font-semibold uppercase text-muted-foreground">

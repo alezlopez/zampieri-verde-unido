@@ -13,6 +13,7 @@ import {
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import GuiaEnvio from "@/components/matricula/GuiaEnvio";
+import FormDadosContrato from "@/components/matricula/FormDadosContrato";
 
 interface DocEstado {
   tipo: string;
@@ -30,6 +31,16 @@ interface Estado {
   serie: string;
   turno: string;
   desconto: number | null;
+  resp_tipo: string | null;
+  dados: Record<string, string>;
+  valores: {
+    anuidade_total: string | null;
+    valor_com_desconto: number | null;
+    valor_pri_parcela: string | null;
+    dia_vencimento: number | null;
+    percentual_desconto: number | null;
+    prontos: boolean;
+  };
   matricula: {
     id: string;
     status: string;
@@ -44,6 +55,7 @@ interface Estado {
     forma_pagamento: string | null;
     parcelas: number | null;
     data_pagamento: string | null;
+    dados_preenchidos_em: string | null;
   };
   documentos: DocEstado[];
 }
@@ -173,6 +185,32 @@ const Matricula = () => {
     window.location.href = data.checkout_url as string;
   };
 
+  const salvarDados = async (dados: Record<string, string>) => {
+    setAcaoEmCurso(true);
+    const { erro: e, data } = await chamar("salvar_dados", { dados });
+    setAcaoEmCurso(false);
+    if (e) {
+      toast({
+        title: "Não foi possível salvar",
+        description:
+          e === "campos_obrigatorios"
+            ? "Confira os campos obrigatórios."
+            : e === "valores_pendentes"
+              ? "A secretaria ainda não liberou os valores."
+              : "Tente novamente.",
+        variant: "destructive",
+      });
+      return;
+    }
+    setEstado(data as Estado);
+    toast({
+      title: (data as { aviso?: string })?.aviso === "valores_pendentes"
+        ? "Dados salvos! Aguardando os valores da secretaria."
+        : "Dados salvos! Contrato liberado para assinatura.",
+    });
+  };
+
+
   if (carregando) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-zampieri-cream/30">
@@ -203,7 +241,22 @@ const Matricula = () => {
 
   const m = estado.matricula;
   const concluida = m.status === "concluida";
-  const podeEditarDocs = !concluida && !m.contrato_assinado;
+  const docsAprovados =
+    ["documentos_aprovados", "contrato_gerado", "contrato_assinado", "concluida"].includes(m.status) ||
+    m.contrato_gerado;
+  const podeEditarDocs = !concluida && !m.contrato_assinado && !docsAprovados;
+
+  const etapaAtual = concluida
+    ? 4
+    : m.contrato_assinado
+      ? 3
+      : m.contrato_gerado
+        ? 2
+        : docsAprovados
+          ? 1
+          : 0;
+  const ETAPAS = ["Documentos", "Dados do contrato", "Assinatura", "Pagamento"];
+
 
   return (
     <div className="min-h-screen bg-zampieri-cream/30 py-8 px-4">
@@ -220,6 +273,23 @@ const Matricula = () => {
             </p>
           )}
         </header>
+
+        <ol className="flex flex-wrap gap-2">
+          {ETAPAS.map((nome, i) => (
+            <li
+              key={nome}
+              className={`flex-1 min-w-[7rem] rounded-lg border p-2 text-center text-xs font-medium ${
+                i < etapaAtual
+                  ? "border-emerald-200 bg-emerald-50 text-emerald-800"
+                  : i === etapaAtual
+                    ? "border-zampieri-green-dark bg-white text-zampieri-green-dark"
+                    : "border-border bg-white text-muted-foreground"
+              }`}
+            >
+              {i + 1}. {nome}
+            </li>
+          ))}
+        </ol>
 
         {pagamento === "sucesso" && (
           <div className="rounded-lg border border-emerald-200 bg-emerald-50 p-4 text-sm text-emerald-800">
@@ -245,13 +315,20 @@ const Matricula = () => {
                   1. Documentação
                 </h2>
                 <p className="text-sm text-muted-foreground">
-                  Envie os documentos abaixo em PDF, JPG ou PNG (até 10 MB cada).
+                  {docsAprovados
+                    ? "Documentação conferida e aprovada pela secretaria."
+                    : "Envie os documentos abaixo em PDF, JPG ou PNG (até 10 MB cada)."}
                 </p>
               </div>
 
               {podeEditarDocs && <GuiaEnvio />}
 
-
+              {docsAprovados ? (
+                <p className="text-sm text-emerald-700 flex items-center gap-2">
+                  <CheckCircle2 className="w-4 h-4" /> Documentação aprovada.
+                </p>
+              ) : (
+                <>
               <div className="space-y-3">
                 {estado.documentos.map((d) => (
                   <div
@@ -326,16 +403,48 @@ const Matricula = () => {
                   </p>
                 </div>
               )}
-              {m.status === "documentos_aprovados" && (
-                <p className="text-sm text-emerald-700">
-                  Documentação aprovada. Estamos preparando o seu contrato.
-                </p>
+                </>
               )}
             </section>
 
+
+            {!concluida && docsAprovados && (
+              <section className="rounded-xl border border-border bg-white p-6 space-y-4">
+                <div>
+                  <h2 className="font-serif text-lg font-bold text-zampieri-green-dark">
+                    2. Dados do contrato
+                  </h2>
+                  <p className="text-sm text-muted-foreground">
+                    Preencha os dados de pai, mãe, responsável financeiro e endereço. Assim que
+                    salvar, o contrato é gerado para assinatura.
+                  </p>
+                </div>
+
+                {!estado.valores.prontos && (
+                  <div className="rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm text-amber-800">
+                    A secretaria ainda está finalizando os valores. Você já pode preencher e salvar
+                    os dados — avisaremos por e-mail quando o contrato estiver disponível.
+                  </div>
+                )}
+
+                {m.contrato_gerado ? (
+                  <p className="text-sm text-emerald-700 flex items-center gap-2">
+                    <CheckCircle2 className="w-4 h-4" /> Dados enviados e contrato gerado.
+                  </p>
+                ) : (
+                  <FormDadosContrato
+                    dados={estado.dados}
+                    respTipo={estado.resp_tipo}
+                    salvando={acaoEmCurso}
+                    onSalvar={salvarDados}
+                  />
+                )}
+              </section>
+            )}
+
             <section className="rounded-xl border border-border bg-white p-6 space-y-3">
               <h2 className="font-serif text-lg font-bold text-zampieri-green-dark">
-                2. Contrato
+                3. Contrato
               </h2>
               {m.contrato_assinado ? (
                 <p className="text-sm text-emerald-700 flex items-center gap-2">
@@ -349,14 +458,15 @@ const Matricula = () => {
                 </Button>
               ) : (
                 <p className="text-sm text-muted-foreground">
-                  O contrato é liberado após a conferência da documentação.
+                  O contrato é liberado assim que você preencher os dados acima.
                 </p>
               )}
             </section>
 
+
             <section className="rounded-xl border border-border bg-white p-6 space-y-4">
               <h2 className="font-serif text-lg font-bold text-zampieri-green-dark">
-                3. Pagamento da matrícula
+                4. Pagamento da matrícula
               </h2>
               {!m.contrato_assinado ? (
                 <p className="text-sm text-muted-foreground">

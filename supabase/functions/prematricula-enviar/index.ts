@@ -74,6 +74,7 @@ Deno.serve(async (req) => {
       .from("prematriculas")
       .insert({
         token_hash,
+        resp_tipo: txt(d.resp_tipo, 10) || null,
         resp_nome: respNome,
         resp_email: respEmail,
         resp_cpf: respCpf,
