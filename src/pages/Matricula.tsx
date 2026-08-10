@@ -391,7 +391,7 @@ const Matricula = () => {
                       >
                         {ROTULO[d.status] ?? d.status}
                       </span>
-                      {podeEditarDocs && d.status !== "aprovado" && (
+                      {podeEditarDocs && (d.status === "pendente" || d.status === "rejeitado") && (
                         <>
                           <input
                             ref={(el) => (inputs.current[d.tipo] = el)}
