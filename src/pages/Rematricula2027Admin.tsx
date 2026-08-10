@@ -140,7 +140,7 @@ const ListaAlteracoes = ({ itens }: { itens: Alteracao[] }) => (
 );
 
 const Rematricula2027Admin = () => {
-  const { , loading: authLoading , podeAcessar } = useAuth();
+  const { loading: authLoading , podeAcessar } = useAuth();
   const [linhas, setLinhas] = useState<LinhaAdmin[]>([]);
   const [loading, setLoading] = useState(true);
   const [busca, setBusca] = useState("");

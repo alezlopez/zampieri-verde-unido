@@ -74,7 +74,7 @@ const CATEGORIAS_MEIA = [
 ];
 
 const EventosAdmin = () => {
-  const { user, , loading: authLoading , podeAcessar } = useAuth();
+  const { user, loading: authLoading , podeAcessar } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
 

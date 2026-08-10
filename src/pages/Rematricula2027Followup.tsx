@@ -122,7 +122,7 @@ const Contato = ({
 };
 
 const Rematricula2027Followup = () => {
-  const { , loading: authLoading , podeAcessar } = useAuth();
+  const { loading: authLoading , podeAcessar } = useAuth();
   const [linhas, setLinhas] = useState<LinhaFollowup[]>([]);
   const [loading, setLoading] = useState(true);
   const [busca, setBusca] = useState("");

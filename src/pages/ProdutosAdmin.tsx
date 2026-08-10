@@ -48,7 +48,7 @@ const emptyVariacao = (produto_id: string): Partial<Variacao> => ({
 });
 
 const ProdutosAdmin = () => {
-  const { user, , loading: authLoading , podeAcessar } = useAuth();
+  const { user, loading: authLoading , podeAcessar } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
 

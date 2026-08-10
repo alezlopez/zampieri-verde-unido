@@ -76,7 +76,7 @@ const formaLabel = (f: string) => {
 };
 
 const ProdutosRelatorio = () => {
-  const { user, , loading: authLoading , podeAcessar } = useAuth();
+  const { user, loading: authLoading , podeAcessar } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
 
