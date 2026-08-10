@@ -75,6 +75,16 @@ const TEMPLATES: Partial<
     padrao: "prematricula_agendada",
     params: (d) => [primeiroNome(d.respNome), d.alunoNome, d.dataEntrevista || "-"],
   },
+  documentos_reenvio: {
+    envVar: "WHATSAPP_TPL_MATRICULA_REENVIO",
+    padrao: "matricula_documentos_reenvio",
+    params: (d) => [
+      primeiroNome(d.respNome),
+      d.alunoNome,
+      (d.documentosPendentes ?? []).join(", ") || "documentos pendentes",
+      d.linkMatricula || SITE_URL,
+    ],
+  },
   concluida: {
     envVar: "WHATSAPP_TPL_PREMATRICULA_CONCLUIDA",
     padrao: "prematricula_entrevista_concluida",

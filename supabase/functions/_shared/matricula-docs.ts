@@ -8,12 +8,16 @@ export const DOCUMENTOS = [
   { tipo: "rg_cpf_pai", label: "RG e CPF do pai", obrigatorio: false, permite_aguardando: false },
   { tipo: "rg_cpf_mae", label: "RG e CPF da mãe", obrigatorio: false, permite_aguardando: false },
   { tipo: "historico_escolar", label: "Histórico escolar", obrigatorio: true, permite_aguardando: true },
-  { tipo: "declaracao_transferencia", label: "Declaração de transferência", obrigatorio: true, permite_aguardando: true },
+  { tipo: "declaracao_transferencia", label: "Declaração de transferência", obrigatorio: true, permite_aguardando: false },
 ] as const;
 
 export const TIPOS_VALIDOS = DOCUMENTOS.map((d) => d.tipo) as string[];
 
 export const PERMITE_AGUARDANDO = DOCUMENTOS.filter((d) => d.permite_aguardando).map((d) => d.tipo) as string[];
+
+/** Só pode enviar/reenviar arquivo quando nada foi aceito ainda ou a escola pediu reenvio. */
+export const podeReenviar = (status?: string | null) =>
+  !status || status === "pendente" || status === "rejeitado";
 
 export const labelDoc = (tipo: string) =>
   DOCUMENTOS.find((d) => d.tipo === tipo)?.label ?? tipo;
