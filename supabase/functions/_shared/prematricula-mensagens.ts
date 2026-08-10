@@ -155,18 +155,25 @@ function montarComponentes(
   evento: EventoMensagem,
   d: DadosMensagem,
   textos: string[],
-  opcoes: { headerImagem: boolean; botaoUrl: boolean; botaoIndex: number; maxBody?: number },
+  opcoes: {
+    headerImagem: boolean;
+    headerImagemUrl?: string | null;
+    botaoUrl: boolean;
+    botaoIndex: number;
+    maxBody?: number;
+  },
 ) {
   const components: unknown[] = [];
   if (opcoes.headerImagem) {
+    // Prioridade: imagem do próprio template aprovado na Meta > override por
+    // secret > imagem padrão do site.
+    const link =
+      opcoes.headerImagemUrl ||
+      Deno.env.get("WHATSAPP_HEADER_IMAGE_URL") ||
+      HEADER_IMAGE_PADRAO;
     components.push({
       type: "header",
-      parameters: [
-        {
-          type: "image",
-          image: { link: Deno.env.get("WHATSAPP_HEADER_IMAGE_URL") || HEADER_IMAGE_PADRAO },
-        },
-      ],
+      parameters: [{ type: "image", image: { link } }],
     });
   }
   const corpo = typeof opcoes.maxBody === "number" ? textos.slice(0, opcoes.maxBody) : textos;
