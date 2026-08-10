@@ -134,6 +134,7 @@ async function definicaoTemplate(nome: string, lang: string): Promise<DefTemplat
     const def: DefTemplate = {
       headerFormat: header?.format ?? null,
       headerVars: header?.format === "TEXT" ? contarVars(header?.text) : 0,
+      headerExemplo: header?.example?.header_handle?.[0] ?? header?.example?.header_url?.[0] ?? null,
       bodyVars: contarVars(body?.text),
       urlButtonIndex: (() => {
         const i = botoes.findIndex((b: any) => b.type === "URL" && /\{\{\d+\}\}/.test(b.url || ""));
