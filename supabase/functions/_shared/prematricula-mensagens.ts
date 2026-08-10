@@ -232,7 +232,8 @@ async function enviarWhatsapp(evento: EventoMensagem, d: DadosMensagem) {
   // se falhar por formato, variações com/sem cabeçalho de imagem e botão.
   const usaBotaoPadrao =
     (evento === "aprovada" && Deno.env.get("WHATSAPP_TPL_PREMATRICULA_APROVADA_BOTAO") !== "0") ||
-    (evento === "concluida" && Deno.env.get("WHATSAPP_TPL_PREMATRICULA_CONCLUIDA_BOTAO") !== "0");
+    (evento === "concluida" && Deno.env.get("WHATSAPP_TPL_PREMATRICULA_CONCLUIDA_BOTAO") !== "0") ||
+    evento === "documentos_reenvio";
 
   const imagemTemplate = def?.headerFormat === "IMAGE" ? def.headerExemplo : null;
 
