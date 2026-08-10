@@ -30,6 +30,16 @@ interface Estado {
   serie: string;
   turno: string;
   desconto: number | null;
+  resp_tipo: string | null;
+  dados: Record<string, string>;
+  valores: {
+    anuidade_total: string | null;
+    valor_com_desconto: number | null;
+    valor_pri_parcela: string | null;
+    dia_vencimento: number | null;
+    percentual_desconto: number | null;
+    prontos: boolean;
+  };
   matricula: {
     id: string;
     status: string;
@@ -44,6 +54,7 @@ interface Estado {
     forma_pagamento: string | null;
     parcelas: number | null;
     data_pagamento: string | null;
+    dados_preenchidos_em: string | null;
   };
   documentos: DocEstado[];
 }
