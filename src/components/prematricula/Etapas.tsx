@@ -1,3 +1,6 @@
+import { useEffect, useState } from "react";
+import { CheckCircle2, Loader2 } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
   Select,
@@ -7,7 +10,9 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import { maskCpf, maskDataBr, maskTelefone } from "@/components/rematricula/utils";
+import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/hooks/use-toast";
+import { maskCpf, maskDataBr, maskTelefone, onlyDigits } from "@/components/rematricula/utils";
 import { Campo, RadioGrupo, SecaoTitulo } from "./Campos";
 import { PreMatriculaForm, SERIES } from "./types";
 
@@ -21,11 +26,148 @@ interface Props {
   laudo: File | null;
   setBoletim: (f: File | null) => void;
   setLaudo: (f: File | null) => void;
+  telefoneVerificado?: string | null;
+  setTelefoneVerificado?: (t: string | null) => void;
 }
 
 const ACEITOS = ".pdf,.jpg,.jpeg,.png";
 
-export const EtapaResponsavel = ({ form, erros, set }: Props) => (
+const ERROS_OTP: Record<string, string> = {
+  telefone_invalido: "Número de WhatsApp inválido.",
+  muitas_tentativas: "Muitas tentativas. Aguarde alguns minutos e tente de novo.",
+  envio_falhou: "Não conseguimos enviar o código para este número.",
+  codigo_expirado: "O código expirou. Peça um novo.",
+  codigo_invalido: "Código incorreto.",
+  codigo_nao_encontrado: "Nenhum código ativo. Envie um novo código.",
+};
+
+const VerificacaoWhatsapp = ({
+  telefone,
+  verificado,
+  onVerificado,
+}: {
+  telefone: string;
+  verificado: boolean;
+  onVerificado: (tel: string) => void;
+}) => {
+  const { toast } = useToast();
+  const [enviado, setEnviado] = useState(false);
+  const [codigo, setCodigo] = useState("");
+  const [carregando, setCarregando] = useState(false);
+  const [espera, setEspera] = useState(0);
+
+  useEffect(() => {
+    if (espera <= 0) return;
+    const t = setTimeout(() => setEspera((s) => s - 1), 1000);
+    return () => clearTimeout(t);
+  }, [espera]);
+
+  const digitos = onlyDigits(telefone);
+  const podeEnviar = digitos.length >= 10;
+
+  const falhar = (code?: string) =>
+    toast({
+      title: ERROS_OTP[code || ""] || "Não foi possível continuar",
+      variant: "destructive",
+    });
+
+  const enviarCodigo = async () => {
+    setCarregando(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("prematricula-otp", {
+        body: { acao: "enviar", telefone: digitos },
+      });
+      if (error || !data?.ok) return falhar(data?.error);
+      setEnviado(true);
+      setEspera(60);
+      toast({ title: "Código enviado no WhatsApp" });
+    } finally {
+      setCarregando(false);
+    }
+  };
+
+  const validarCodigo = async () => {
+    setCarregando(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("prematricula-otp", {
+        body: { acao: "validar", telefone: digitos, codigo: onlyDigits(codigo) },
+      });
+      if (error || !data?.ok) return falhar(data?.error);
+      onVerificado(digitos);
+      toast({ title: "WhatsApp confirmado!" });
+    } finally {
+      setCarregando(false);
+    }
+  };
+
+  if (verificado) {
+    return (
+      <div className="flex items-center gap-2 rounded-lg bg-zampieri-cream/60 border border-border p-3 text-sm text-zampieri-green-dark">
+        <CheckCircle2 className="w-4 h-4" />
+        Número de WhatsApp confirmado.
+      </div>
+    );
+  }
+
+  return (
+    <div className="rounded-lg border border-border p-4 space-y-3">
+      <p className="text-sm text-muted-foreground">
+        Precisamos confirmar seu WhatsApp. Enviaremos um código de 6 dígitos para o número acima.
+      </p>
+      {!enviado ? (
+        <Button
+          type="button"
+          variant="outline"
+          className="w-full"
+          disabled={!podeEnviar || carregando}
+          onClick={enviarCodigo}
+        >
+          {carregando && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
+          Enviar código
+        </Button>
+      ) : (
+        <div className="space-y-3">
+          <Input
+            inputMode="numeric"
+            maxLength={6}
+            placeholder="000000"
+            className="text-center tracking-[0.4em] text-lg"
+            value={codigo}
+            onChange={(e) => setCodigo(onlyDigits(e.target.value).slice(0, 6))}
+          />
+          <div className="flex gap-2">
+            <Button
+              type="button"
+              variant="outline"
+              className="flex-1"
+              disabled={espera > 0 || carregando}
+              onClick={enviarCodigo}
+            >
+              {espera > 0 ? `Reenviar (${espera}s)` : "Reenviar código"}
+            </Button>
+            <Button
+              type="button"
+              className="flex-1 bg-zampieri-green-dark hover:bg-zampieri-green"
+              disabled={codigo.length !== 6 || carregando}
+              onClick={validarCodigo}
+            >
+              {carregando && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
+              Confirmar
+            </Button>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
+
+export const EtapaResponsavel = ({
+  form,
+  erros,
+  set,
+  telefoneVerificado,
+  setTelefoneVerificado,
+}: Props) => (
   <div className="space-y-5">
     <SecaoTitulo>Informações do Responsável</SecaoTitulo>
     <Campo label="O responsável é" erro={erros.resp_tipo}>
@@ -72,8 +214,16 @@ export const EtapaResponsavel = ({ form, erros, set }: Props) => (
         onChange={(e) => set("resp_whatsapp", maskTelefone(e.target.value))}
       />
     </Campo>
+    <VerificacaoWhatsapp
+      telefone={form.resp_whatsapp}
+      verificado={
+        !!telefoneVerificado && telefoneVerificado === onlyDigits(form.resp_whatsapp)
+      }
+      onVerificado={(tel) => setTelefoneVerificado?.(tel)}
+    />
   </div>
 );
+
 
 export const EtapaAluno = ({ form, erros, set }: Props) => (
   <div className="space-y-5">
