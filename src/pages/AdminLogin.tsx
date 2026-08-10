@@ -54,11 +54,13 @@ const AdminLogin = () => {
         toast({ title: "Erro no login", description: "Sessão não iniciada.", variant: "destructive" });
         return;
       }
-      const [{ data: adminRole }, { data: confRole }] = await Promise.all([
+      const [{ data: adminRole }, { data: confRole }, ...setoresRes] = await Promise.all([
         supabase.rpc("has_role", { _user_id: authed.id, _role: "admin" }),
         supabase.rpc("has_role", { _user_id: authed.id, _role: "conferente" as never }),
+        ...SETORES.map((s) => supabase.rpc("has_setor" as never, { _user_id: authed.id, _setor: s } as never)),
       ]);
-      if (!adminRole && !confRole) {
+      const temSetor = setoresRes.some((r) => !!r.data);
+      if (!adminRole && !confRole && !temSetor) {
         await supabase.auth.signOut();
         toast({
           title: "Acesso negado",
@@ -69,8 +71,8 @@ const AdminLogin = () => {
       }
       toast({ title: "Login realizado com sucesso!" });
       if (redirectTo) navigate(redirectTo, { replace: true });
-      else if (adminRole) navigate("/admin", { replace: true });
-      else navigate("/eventos/admin/scanner", { replace: true });
+      else navigate("/admin", { replace: true });
+
     } catch {
       toast({ title: "Erro", description: "Ocorreu um erro inesperado.", variant: "destructive" });
     } finally {
