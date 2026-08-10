@@ -222,18 +222,34 @@ async function enviarWhatsapp(evento: EventoMensagem, d: DadosMensagem) {
     (evento === "aprovada" && Deno.env.get("WHATSAPP_TPL_PREMATRICULA_APROVADA_BOTAO") !== "0") ||
     (evento === "concluida" && Deno.env.get("WHATSAPP_TPL_PREMATRICULA_CONCLUIDA_BOTAO") !== "0");
 
-  const tentativas: { headerImagem: boolean; botaoUrl: boolean; botaoIndex: number; maxBody?: number }[] = [];
+  const imagemTemplate = def?.headerFormat === "IMAGE" ? def.headerExemplo : null;
+
+  const tentativas: {
+    headerImagem: boolean;
+    headerImagemUrl?: string | null;
+    botaoUrl: boolean;
+    botaoIndex: number;
+    maxBody?: number;
+  }[] = [];
   if (def) {
     tentativas.push({
       headerImagem: def.headerFormat === "IMAGE",
+      headerImagemUrl: imagemTemplate,
       botaoUrl: def.urlButtonIndex !== null,
       botaoIndex: def.urlButtonIndex ?? 0,
       maxBody: def.bodyVars,
     });
   }
-  const padrao = { headerImagem: false, botaoUrl: usaBotaoPadrao, botaoIndex: 0, maxBody: usaBotaoPadrao && evento === "aprovada" ? 2 : undefined };
+  const padrao = {
+    headerImagem: false,
+    headerImagemUrl: imagemTemplate,
+    botaoUrl: usaBotaoPadrao,
+    botaoIndex: 0,
+    maxBody: usaBotaoPadrao && evento === "aprovada" ? 2 : undefined,
+  };
   tentativas.push(
     { ...padrao, headerImagem: true },
+    { ...padrao, headerImagem: true, headerImagemUrl: null },
     padrao,
     { ...padrao, headerImagem: true, botaoUrl: false },
     { ...padrao, botaoUrl: false },
