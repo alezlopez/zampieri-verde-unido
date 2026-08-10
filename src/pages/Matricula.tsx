@@ -274,6 +274,23 @@ const Matricula = () => {
           )}
         </header>
 
+        <ol className="flex flex-wrap gap-2">
+          {ETAPAS.map((nome, i) => (
+            <li
+              key={nome}
+              className={`flex-1 min-w-[7rem] rounded-lg border p-2 text-center text-xs font-medium ${
+                i < etapaAtual
+                  ? "border-emerald-200 bg-emerald-50 text-emerald-800"
+                  : i === etapaAtual
+                    ? "border-zampieri-green-dark bg-white text-zampieri-green-dark"
+                    : "border-border bg-white text-muted-foreground"
+              }`}
+            >
+              {i + 1}. {nome}
+            </li>
+          ))}
+        </ol>
+
         {pagamento === "sucesso" && (
           <div className="rounded-lg border border-emerald-200 bg-emerald-50 p-4 text-sm text-emerald-800">
             Pagamento recebido! Assim que o Asaas confirmar, sua matrícula será concluída.
