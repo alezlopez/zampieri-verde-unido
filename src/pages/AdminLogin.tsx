@@ -16,7 +16,7 @@ const maskEmail = (email: string): string => {
 };
 
 const AdminLogin = () => {
-  const { signIn, isAdmin, canScan, loading: authLoading } = useAuth();
+  const { signIn, isAdmin, canScan, setores, loading: authLoading } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
   const { toast } = useToast();
