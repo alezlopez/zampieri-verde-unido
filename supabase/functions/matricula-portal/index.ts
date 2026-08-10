@@ -126,6 +126,18 @@ Deno.serve(async (req) => {
       serie: pm.serie_pretendida,
       turno: pm.turno_preferencia,
       desconto: pm.desconto_percentual,
+      resp_tipo: pm.resp_tipo ?? null,
+      dados: Object.fromEntries(CAMPOS_FAMILIA.map((c) => [c, mat![c] ?? ""])),
+      valores: {
+        anuidade_total: mat!.anuidade_total,
+        anuidade_total_ext: mat!.anuidade_total_ext,
+        percentual_desconto: mat!.percentual_desconto,
+        valor_com_desconto: mat!.valor_com_desconto,
+        valor_com_desconto_ext: mat!.valor_com_desconto_ext,
+        valor_pri_parcela: mat!.valor_pri_parcela,
+        dia_vencimento: mat!.dia_vencimento,
+        prontos: valoresProntos(mat!),
+      },
       matricula: {
         id: mat!.id,
         status: mat!.status,
@@ -140,6 +152,7 @@ Deno.serve(async (req) => {
         forma_pagamento: mat!.forma_pagamento,
         parcelas: mat!.parcelas,
         data_pagamento: mat!.data_pagamento,
+        dados_preenchidos_em: mat!.dados_preenchidos_em,
       },
       documentos: await carregarDocs(),
     });
