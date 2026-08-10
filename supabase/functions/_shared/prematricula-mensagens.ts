@@ -86,6 +86,104 @@ const TEMPLATES: Partial<
   },
 };
 
+/** Imagem usada quando o template aprovado tem cabeçalho de IMAGEM. */
+const HEADER_IMAGE_PADRAO = `${SITE_URL}/lovable-uploads/bd571e68-1908-4859-81a4-bc2c0c51fa6a.png`;
+
+type DefTemplate = {
+  headerFormat: "IMAGE" | "VIDEO" | "DOCUMENT" | "TEXT" | null;
+  headerVars: number;
+  bodyVars: number;
+  urlButtonIndex: number | null;
+};
+
+const cacheDefs = new Map<string, DefTemplate | null>();
+
+/** Lê a definição real do template na Meta para montar os componentes certos. */
+async function definicaoTemplate(nome: string, lang: string): Promise<DefTemplate | null> {
+  const chave = `${nome}:${lang}`;
+  if (cacheDefs.has(chave)) return cacheDefs.get(chave)!;
+  const token = Deno.env.get("WHATSAPP_TOKEN");
+  const waba = Deno.env.get("WHATSAPP_WABA_ID") || Deno.env.get("WHATSAPP_BUSINESS_ACCOUNT_ID");
+  if (!token || !waba) {
+    cacheDefs.set(chave, null);
+    return null;
+  }
+  try {
+    const res = await fetch(
+      `https://graph.facebook.com/v23.0/${waba}/message_templates?name=${encodeURIComponent(nome)}&limit=20`,
+      { headers: { Authorization: `Bearer ${token}` } },
+    );
+    const json = await res.json();
+    if (!res.ok) {
+      console.error(`Meta message_templates falhou status=${res.status} body=${JSON.stringify(json).slice(0, 300)}`);
+      cacheDefs.set(chave, null);
+      return null;
+    }
+    const lista: any[] = json?.data ?? [];
+    const tpl = lista.find((t) => t.name === nome && t.language === lang) ?? lista.find((t) => t.name === nome);
+    if (!tpl) {
+      cacheDefs.set(chave, null);
+      return null;
+    }
+    const comps: any[] = tpl.components ?? [];
+    const header = comps.find((c) => c.type === "HEADER");
+    const body = comps.find((c) => c.type === "BODY");
+    const botoes = comps.find((c) => c.type === "BUTTONS")?.buttons ?? [];
+    const contarVars = (txt: string) => new Set((txt || "").match(/\{\{\d+\}\}/g) ?? []).size;
+    const def: DefTemplate = {
+      headerFormat: header?.format ?? null,
+      headerVars: header?.format === "TEXT" ? contarVars(header?.text) : 0,
+      bodyVars: contarVars(body?.text),
+      urlButtonIndex: (() => {
+        const i = botoes.findIndex((b: any) => b.type === "URL" && /\{\{\d+\}\}/.test(b.url || ""));
+        return i >= 0 ? i : null;
+      })(),
+    };
+    cacheDefs.set(chave, def);
+    console.log(`Template ${nome} (${lang}) definição=${JSON.stringify(def)}`);
+    return def;
+  } catch (e) {
+    console.error("Erro ao ler definição do template:", e);
+    cacheDefs.set(chave, null);
+    return null;
+  }
+}
+
+function montarComponentes(
+  evento: EventoMensagem,
+  d: DadosMensagem,
+  textos: string[],
+  opcoes: { headerImagem: boolean; botaoUrl: boolean; botaoIndex: number; maxBody?: number },
+) {
+  const components: unknown[] = [];
+  if (opcoes.headerImagem) {
+    components.push({
+      type: "header",
+      parameters: [
+        {
+          type: "image",
+          image: { link: Deno.env.get("WHATSAPP_HEADER_IMAGE_URL") || HEADER_IMAGE_PADRAO },
+        },
+      ],
+    });
+  }
+  const corpo = typeof opcoes.maxBody === "number" ? textos.slice(0, opcoes.maxBody) : textos;
+  if (corpo.length) {
+    components.push({ type: "body", parameters: corpo.map((text) => ({ type: "text", text })) });
+  }
+  if (opcoes.botaoUrl) {
+    const link = (evento === "concluida" ? d.linkMatricula : d.linkAgendamento) || "";
+    const tokenLink = link.match(/[?&]t=([^&#]+)/)?.[1] || "";
+    components.push({
+      type: "button",
+      sub_type: "url",
+      index: String(opcoes.botaoIndex),
+      parameters: [{ type: "text", text: `?t=${tokenLink}` }],
+    });
+  }
+  return components;
+}
+
 async function enviarWhatsapp(evento: EventoMensagem, d: DadosMensagem) {
   const token = Deno.env.get("WHATSAPP_TOKEN");
   const phoneId = Deno.env.get("WHATSAPP_PHONE_NUMBER_ID");
@@ -105,57 +203,73 @@ async function enviarWhatsapp(evento: EventoMensagem, d: DadosMensagem) {
   }
   const nomeTemplate = Deno.env.get(cfg.envVar) || cfg.padrao;
   const lang = Deno.env.get("WHATSAPP_TEMPLATE_LANG") || "pt_BR";
-
-  // Templates "aprovada" e "concluida" usam botão de URL dinâmica na Meta.
-  // Como a URL-base aprovada termina no caminho da página, o parâmetro
-  // dinâmico precisa levar o sufixo completo: ?t=<token>.
-  const usaBotao =
-    (evento === "aprovada" &&
-      Deno.env.get("WHATSAPP_TPL_PREMATRICULA_APROVADA_BOTAO") !== "0") ||
-    (evento === "concluida" &&
-      Deno.env.get("WHATSAPP_TPL_PREMATRICULA_CONCLUIDA_BOTAO") !== "0");
-
   const textos = cfg.params(d);
-  const corpo = usaBotao && evento === "aprovada" ? textos.slice(0, 2) : textos;
-  const parameters = corpo.map((text) => ({ type: "text", text }));
 
-  const components: unknown[] = parameters.length ? [{ type: "body", parameters }] : [];
-  if (usaBotao) {
-    const link = (evento === "concluida" ? d.linkMatricula : d.linkAgendamento) || "";
-    const tokenLink = link.match(/[?&]t=([^&#]+)/)?.[1] || "";
-    components.push({
-      type: "button",
-      sub_type: "url",
-      index: "0",
-      parameters: [{ type: "text", text: `?t=${tokenLink}` }],
+  const def = await definicaoTemplate(nomeTemplate, lang);
+
+  // Tentativas em ordem: definição real da Meta (quando disponível) e,
+  // se falhar por formato, variações com/sem cabeçalho de imagem e botão.
+  const usaBotaoPadrao =
+    (evento === "aprovada" && Deno.env.get("WHATSAPP_TPL_PREMATRICULA_APROVADA_BOTAO") !== "0") ||
+    (evento === "concluida" && Deno.env.get("WHATSAPP_TPL_PREMATRICULA_CONCLUIDA_BOTAO") !== "0");
+
+  const tentativas: { headerImagem: boolean; botaoUrl: boolean; botaoIndex: number; maxBody?: number }[] = [];
+  if (def) {
+    tentativas.push({
+      headerImagem: def.headerFormat === "IMAGE",
+      botaoUrl: def.urlButtonIndex !== null,
+      botaoIndex: def.urlButtonIndex ?? 0,
+      maxBody: def.bodyVars,
     });
   }
+  const padrao = { headerImagem: false, botaoUrl: usaBotaoPadrao, botaoIndex: 0, maxBody: usaBotaoPadrao && evento === "aprovada" ? 2 : undefined };
+  tentativas.push(
+    { ...padrao, headerImagem: true },
+    padrao,
+    { ...padrao, headerImagem: true, botaoUrl: false },
+    { ...padrao, botaoUrl: false },
+  );
 
-
-  const res = await fetch(`https://graph.facebook.com/v23.0/${phoneId}/messages`, {
-    method: "POST",
-    headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
-    body: JSON.stringify({
-      messaging_product: "whatsapp",
-      recipient_type: "individual",
-      to: telefoneE164(d.respWhatsapp),
-      type: "template",
-      template: {
-        name: nomeTemplate,
-        language: { code: lang },
-        components,
-      },
-    }),
-  });
-  const texto = await res.text();
-  if (!res.ok) {
+  let ultimoErro = "";
+  for (const opcoes of tentativas) {
+    const components = montarComponentes(evento, d, textos, opcoes);
+    const res = await fetch(`https://graph.facebook.com/v23.0/${phoneId}/messages`, {
+      method: "POST",
+      headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+      body: JSON.stringify({
+        messaging_product: "whatsapp",
+        recipient_type: "individual",
+        to: telefoneE164(d.respWhatsapp),
+        type: "template",
+        template: { name: nomeTemplate, language: { code: lang }, components },
+      }),
+    });
+    const texto = await res.text();
+    if (res.ok) {
+      console.log(
+        `WhatsApp prematricula[${evento}] enviado template=${nomeTemplate} opcoes=${JSON.stringify(opcoes)} body=${texto}`,
+      );
+      return;
+    }
+    ultimoErro = texto;
+    const codigo = (() => {
+      try {
+        return JSON.parse(texto)?.error?.code;
+      } catch {
+        return null;
+      }
+    })();
     console.error(
-      `WhatsApp prematricula[${evento}] FALHOU status=${res.status} template=${nomeTemplate} to=${telefoneE164(d.respWhatsapp)} body=${texto}`,
+      `WhatsApp prematricula[${evento}] tentativa falhou status=${res.status} template=${nomeTemplate} opcoes=${JSON.stringify(opcoes)} body=${texto}`,
     );
-    return;
+    // Só vale reenviar quando o erro é de formato/parâmetros do template.
+    if (![132000, 132001, 132005, 132012, 131008, 100].includes(codigo)) break;
   }
-  console.log(`WhatsApp prematricula[${evento}] enviado template=${nomeTemplate} body=${texto}`);
+  console.error(
+    `WhatsApp prematricula[${evento}] FALHOU template=${nomeTemplate} to=${telefoneE164(d.respWhatsapp)} erro=${ultimoErro}`,
+  );
 }
+
 
 const wrapper = (titulo: string, corpo: string) => `
   <div style="font-family:Arial,Helvetica,sans-serif;max-width:560px;margin:0 auto;padding:24px">
