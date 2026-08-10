@@ -463,10 +463,38 @@ const Matricula = () => {
                   </p>
                 </div>
 
-                {!estado.valores.prontos && (
+                {!estado.valores.prontos ? (
                   <div className="rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm text-amber-800">
                     A secretaria ainda está finalizando os valores. Você já pode preencher e salvar
                     os dados — avisaremos por e-mail quando o contrato estiver disponível.
+                  </div>
+                ) : (
+                  <div className="rounded-lg border border-border bg-muted/40 p-4 space-y-1 text-sm">
+                    <p className="text-xs font-semibold uppercase text-muted-foreground">
+                      Valores definidos pela secretaria (somente leitura)
+                    </p>
+                    <p>
+                      <span className="text-muted-foreground">Anuidade: </span>
+                      {estado.valores.anuidade_total || "—"}
+                    </p>
+                    <p>
+                      <span className="text-muted-foreground">Desconto: </span>
+                      {estado.valores.percentual_desconto ?? 0}%
+                    </p>
+                    <p>
+                      <span className="text-muted-foreground">Mensalidade com desconto: </span>
+                      {estado.valores.valor_com_desconto != null
+                        ? brl(Number(estado.valores.valor_com_desconto))
+                        : "—"}
+                    </p>
+                    <p>
+                      <span className="text-muted-foreground">1ª parcela: </span>
+                      {estado.valores.valor_pri_parcela || "—"}
+                    </p>
+                    <p>
+                      <span className="text-muted-foreground">Dia de vencimento: </span>
+                      {estado.valores.dia_vencimento ?? "—"}
+                    </p>
                   </div>
                 )}
 
@@ -494,17 +522,38 @@ const Matricula = () => {
                   <CheckCircle2 className="w-4 h-4" /> Contrato assinado.
                 </p>
               ) : m.contrato_gerado && m.link_contrato ? (
-                <Button asChild className="bg-zampieri-green-dark hover:bg-zampieri-green">
-                  <a href={m.link_contrato} target="_blank" rel="noopener noreferrer">
-                    <FileText className="w-4 h-4 mr-2" /> Assinar contrato
-                  </a>
-                </Button>
+                <div className="space-y-3">
+                  <Button asChild className="bg-zampieri-green-dark hover:bg-zampieri-green">
+                    <a href={m.link_contrato} target="_blank" rel="noopener noreferrer">
+                      <FileText className="w-4 h-4 mr-2" /> Assinar contrato
+                    </a>
+                  </Button>
+                  <div>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      disabled={acaoEmCurso}
+                      onClick={() => verificarAssinatura()}
+                    >
+                      {acaoEmCurso ? (
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                      ) : (
+                        "Já assinei — verificar agora"
+                      )}
+                    </Button>
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    Após assinar, esta página confirma a assinatura automaticamente e libera o
+                    pagamento.
+                  </p>
+                </div>
               ) : (
                 <p className="text-sm text-muted-foreground">
                   O contrato é liberado assim que você preencher os dados acima.
                 </p>
               )}
             </section>
+
 
 
             <section className="rounded-xl border border-border bg-white p-6 space-y-4">
