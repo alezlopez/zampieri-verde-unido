@@ -13,6 +13,7 @@ import {
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import GuiaEnvio from "@/components/matricula/GuiaEnvio";
+import FormDadosContrato from "@/components/matricula/FormDadosContrato";
 
 interface DocEstado {
   tipo: string;
