@@ -54,12 +54,17 @@ const AdminLogin = () => {
         toast({ title: "Erro no login", description: "Sessão não iniciada.", variant: "destructive" });
         return;
       }
-      const [{ data: adminRole }, { data: confRole }, ...setoresRes] = await Promise.all([
+      const [{ data: adminRole }, { data: confRole }] = await Promise.all([
         supabase.rpc("has_role", { _user_id: authed.id, _role: "admin" }),
         supabase.rpc("has_role", { _user_id: authed.id, _role: "conferente" as never }),
-        ...SETORES.map((s) => supabase.rpc("has_setor" as never, { _user_id: authed.id, _setor: s } as never)),
       ]);
-      const temSetor = setoresRes.some((r) => !!r.data);
+      const setoresRes = await Promise.all(
+        SETORES.map((s) =>
+          (supabase.rpc as any)("has_setor", { _user_id: authed.id, _setor: s })
+        )
+      );
+      const temSetor = setoresRes.some((r: any) => !!r?.data);
+
       if (!adminRole && !confRole && !temSetor) {
         await supabase.auth.signOut();
         toast({
