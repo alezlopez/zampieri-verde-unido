@@ -382,20 +382,24 @@ const MatriculaAdmin = () => {
 
                 <section className="space-y-3">
                   <p className="text-xs font-semibold uppercase text-muted-foreground">
-                    Dados do contrato
+                    Dados enviados pela família
                   </p>
-                  <div className="grid sm:grid-cols-2 gap-3">
-                    {CAMPOS_TEXTO.map(({ campo, label }) => (
-                      <div key={campo} className="space-y-1">
-                        <Label className="text-xs">{label}</Label>
-                        <Input
-                          value={form[campo] ?? ""}
-                          onChange={(e) => setForm((f) => ({ ...f, [campo]: e.target.value }))}
-                        />
-                      </div>
-                    ))}
-                  </div>
+                  {aberta.dados_preenchidos_em ? (
+                    <div className="grid sm:grid-cols-2 gap-x-4 gap-y-1 rounded-lg border border-border p-3 text-sm">
+                      {CAMPOS_LEITURA.map(({ campo, label }) => (
+                        <p key={campo} className="truncate">
+                          <span className="text-muted-foreground">{label}: </span>
+                          {String(aberta[campo] ?? "") || "—"}
+                        </p>
+                      ))}
+                    </div>
+                  ) : (
+                    <p className="text-sm text-muted-foreground">
+                      A família ainda não preencheu os dados do contrato.
+                    </p>
+                  )}
                 </section>
+
 
                 <section className="space-y-3">
                   <p className="text-xs font-semibold uppercase text-muted-foreground">
