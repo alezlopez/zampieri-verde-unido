@@ -74,7 +74,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           supabase.auth.signOut();
           setSession(null);
           setUser(null);
-          setIsAdmin(false); setIsConferente(false);
+          limparPerfis();
           setLoading(false);
           return;
         }
@@ -83,7 +83,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         if (session?.user) {
           setTimeout(() => checkRoles(session.user.id), 0);
         } else {
-          setIsAdmin(false); setIsConferente(false);
+          limparPerfis();
         }
         setLoading(false);
       }
@@ -119,7 +119,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     await supabase.auth.signOut();
     setUser(null);
     setSession(null);
-    setIsAdmin(false); setIsConferente(false);
+    limparPerfis();
   };
 
   const cleanCpf = (cpf: string) => cpf.replace(/\D/g, "");
