@@ -184,8 +184,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return { error: null, needsConfirmation: true, email };
   };
 
+  const podeAcessar = (setor: Setor) => isAdmin || setores.includes(setor);
+
   return (
-    <AuthContext.Provider value={{ user, session, loading, isAdmin, isConferente, canScan: isAdmin || isConferente, signIn, signUp, signOut, loginWithCpf, registerWithCpf }}>
+    <AuthContext.Provider value={{ user, session, loading, isAdmin, isConferente, canScan: isAdmin || isConferente || setores.includes("portaria"), setores, podeAcessar, signIn, signUp, signOut, loginWithCpf, registerWithCpf }}>
+
       {children}
     </AuthContext.Provider>
   );
