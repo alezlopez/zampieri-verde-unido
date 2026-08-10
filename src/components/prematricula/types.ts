@@ -1,10 +1,5 @@
 export const SERIES = [
-  "Berçário",
-  "Infantil 1",
-  "Infantil 2",
-  "Infantil 3",
-  "Infantil 4",
-  "Infantil 5",
+  "Infantil 5 (Pré-Escola)",
   "1º ano",
   "2º ano",
   "3º ano",
@@ -18,6 +13,7 @@ export const SERIES = [
   "2ª série do Ensino Médio",
   "3ª série do Ensino Médio",
 ];
+
 
 export const ETAPAS = [
   "Dados do Responsável",

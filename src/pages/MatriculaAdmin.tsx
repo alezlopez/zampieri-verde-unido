@@ -175,6 +175,19 @@ const MatriculaAdmin = () => {
     });
   }, [lista, busca, filtro]);
 
+  /** Espelha a validação do backend: valores mínimos salvos para gerar o contrato. */
+  const valoresProntos = useMemo(() => {
+    if (!aberta) return false;
+    const txt = (v: unknown) => String(v ?? "").trim().length > 0;
+    return (
+      txt(aberta.anuidade_total) &&
+      txt(aberta.valor_com_desconto) &&
+      Number(aberta.valor_matricula) > 0 &&
+      Number(aberta.dia_vencimento) > 0
+    );
+  }, [aberta]);
+
+
   const executar = async (acao: string, extra: Record<string, unknown> = {}, fechar = false) => {
     if (!aberta) return;
     setAcaoEmCurso(true);
@@ -365,7 +378,7 @@ const MatriculaAdmin = () => {
                   <div className="flex flex-wrap gap-2 pt-1">
                     <Button
                       className="bg-zampieri-green-dark hover:bg-zampieri-green"
-                      disabled={acaoEmCurso}
+                      disabled={acaoEmCurso || !valoresProntos}
                       onClick={() => executar("aprovar_documentos")}
                     >
                       Aprovar toda a documentação
@@ -378,6 +391,13 @@ const MatriculaAdmin = () => {
                       Solicitar reenvio
                     </Button>
                   </div>
+                  {!valoresProntos && (
+                    <p className="text-xs text-amber-700">
+                      Preencha e salve os valores (anuidade, mensalidade com desconto, dia de
+                      vencimento e valor da matrícula) antes de aprovar a documentação.
+                    </p>
+                  )}
+
                 </section>
 
                 <section className="space-y-3">
@@ -450,22 +470,31 @@ const MatriculaAdmin = () => {
                   {aberta.contrato_assinado ? (
                     <p className="text-sm text-emerald-700">Contrato assinado pelo responsável.</p>
                   ) : aberta.contrato_gerado && aberta.link_contrato ? (
-                    <a
-                      href={aberta.link_contrato}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-sm text-zampieri-green-dark underline inline-flex items-center gap-1"
-                    >
-                      <ExternalLink className="w-4 h-4" /> Link de assinatura
-                    </a>
+                    <div className="space-y-2">
+                      <a
+                        href={aberta.link_contrato}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-sm text-zampieri-green-dark underline inline-flex items-center gap-1"
+                      >
+                        <ExternalLink className="w-4 h-4" /> Link de assinatura
+                      </a>
+                      <div>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          disabled={acaoEmCurso}
+                          onClick={() => executar("verificar_assinatura")}
+                        >
+                          <FileText className="w-4 h-4 mr-2" /> Verificar assinatura
+                        </Button>
+                      </div>
+                    </div>
                   ) : (
-                    <Button
-                      className="bg-zampieri-green-dark hover:bg-zampieri-green"
-                      disabled={acaoEmCurso}
-                      onClick={() => executar("gerar_contrato")}
-                    >
-                      <FileText className="w-4 h-4 mr-2" /> Gerar contrato e liberar assinatura
-                    </Button>
+                    <p className="text-sm text-muted-foreground">
+                      O contrato é gerado automaticamente quando a família preenche os dados no
+                      portal.
+                    </p>
                   )}
                   {aberta.data_pagamento && (
                     <p className="text-sm text-emerald-700">
@@ -474,6 +503,7 @@ const MatriculaAdmin = () => {
                     </p>
                   )}
                 </section>
+
               </div>
             </>
           )}

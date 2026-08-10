@@ -2,7 +2,7 @@ import { createClient } from "npm:@supabase/supabase-js@2";
 import { corsHeaders } from "../_shared/cors.ts";
 import { DOCUMENTOS, TIPOS_VALIDOS, labelDoc } from "../_shared/matricula-docs.ts";
 import { SITE_URL, notificar } from "../_shared/prematricula-mensagens.ts";
-import { gerarContrato } from "../_shared/matricula-contrato.ts";
+import { valoresProntos, verificarAssinatura } from "../_shared/matricula-contrato.ts";
 
 const json = (body: unknown, status = 200) =>
   new Response(JSON.stringify(body), {
@@ -149,11 +149,12 @@ Deno.serve(async (req) => {
     }
 
     if (acao === "aprovar_documentos") {
+      if (!valoresProntos(mat)) return json({ error: "valores_pendentes" }, 400);
       await admin
         .from("matricula_documentos")
         .update({ status: "aprovado", motivo: null, updated_at: new Date().toISOString() })
         .eq("matricula_id", id)
-        .neq("status", "aprovado");
+        .not("status", "in", "(aprovado,aguardando_escola)");
       await admin
         .from("matriculas")
         .update({
@@ -182,19 +183,11 @@ Deno.serve(async (req) => {
       return json({ ok: true });
     }
 
-    if (acao === "gerar_contrato") {
-      // Garante que a documentação fique consistente com a etapa do contrato.
-      await admin
-        .from("matricula_documentos")
-        .update({ status: "aprovado", motivo: null, updated_at: new Date().toISOString() })
-        .eq("matricula_id", id)
-        .neq("status", "aprovado");
-
-      const r = await gerarContrato(admin, mat, pm);
-      if (!r.ok) return json({ error: r.error, detalhe: r.detalhe }, r.status);
-      if (!r.reutilizado) await notificar("contrato_pronto", base);
-      return json({ ok: true, sign_url: r.sign_url });
+    if (acao === "verificar_assinatura") {
+      const r = await verificarAssinatura(admin, mat);
+      return json({ ok: true, ...r });
     }
+
 
     return json({ error: "acao_invalida" }, 400);
   } catch (e) {

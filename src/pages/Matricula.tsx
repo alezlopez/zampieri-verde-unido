@@ -21,6 +21,7 @@ interface DocEstado {
   tipo: string;
   label: string;
   obrigatorio: boolean;
+  permite_aguardando?: boolean;
   status: string;
   nome_arquivo: string | null;
   motivo: string | null;
@@ -67,6 +68,7 @@ const CORES: Record<string, string> = {
   enviado: "bg-blue-100 text-blue-800",
   aprovado: "bg-emerald-100 text-emerald-800",
   rejeitado: "bg-red-100 text-red-700",
+  aguardando_escola: "bg-amber-100 text-amber-800",
 };
 
 const ROTULO: Record<string, string> = {
@@ -74,6 +76,7 @@ const ROTULO: Record<string, string> = {
   enviado: "Em análise",
   aprovado: "Aprovado",
   rejeitado: "Reenviar",
+  aguardando_escola: "Aguardando escola",
 };
 
 const brl = (v: number) => v.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
@@ -187,9 +190,38 @@ const Matricula = () => {
     window.location.href = data.checkout_url as string;
   };
 
+  const marcarAguardandoEscola = async (tipo: string, marcar: boolean) => {
+    setEnviando(tipo);
+    const { erro: e, data } = await chamar("aguardando_escola", { tipo, marcar });
+    setEnviando(null);
+    if (e) {
+      toast({ title: "Não foi possível atualizar", variant: "destructive" });
+      return;
+    }
+    setEstado(data as Estado);
+  };
+
+  const verificarAssinatura = useCallback(
+    async (silencioso = false) => {
+      if (!silencioso) setAcaoEmCurso(true);
+      const { erro: e, data } = await chamar("verificar_assinatura");
+      if (!silencioso) setAcaoEmCurso(false);
+      if (e) return;
+      setEstado(data as Estado);
+      const assinado = (data as Estado)?.matricula?.contrato_assinado;
+      if (!silencioso) {
+        toast({
+          title: assinado ? "Contrato assinado!" : "Assinatura ainda não identificada",
+          description: assinado ? "Você já pode seguir para o pagamento." : "Tente novamente em instantes.",
+        });
+      }
+    },
+    [chamar, toast],
+  );
+
   const salvarDados = async (dados: Record<string, string>) => {
     setAcaoEmCurso(true);
-    const { erro: e, data } = await chamar("salvar_dados", { dados });
+    const { erro: e, data } = await chamar("salvar_dados", { dados, origin: window.location.origin });
     setAcaoEmCurso(false);
     if (e) {
       toast({
@@ -211,6 +243,17 @@ const Matricula = () => {
         : "Dados salvos! Contrato liberado para assinatura.",
     });
   };
+
+  // Ao voltar da ZapSign (ou enquanto o contrato aguarda assinatura), confirma o status.
+  useEffect(() => {
+    const m = estado?.matricula;
+    if (!m?.contrato_gerado || m.contrato_assinado) return;
+    verificarAssinatura(true);
+    const id = window.setInterval(() => verificarAssinatura(true), 20000);
+    return () => window.clearInterval(id);
+  }, [estado?.matricula?.contrato_gerado, estado?.matricula?.contrato_assinado, verificarAssinatura]);
+
+
 
 
   if (carregando) {
@@ -329,6 +372,18 @@ const Matricula = () => {
                         <p className="text-xs text-muted-foreground truncate">{d.nome_arquivo}</p>
                       )}
                       {d.motivo && <p className="text-xs text-destructive">{d.motivo}</p>}
+                      {podeEditarDocs && d.permite_aguardando && (
+                        <label className="mt-2 flex items-start gap-2 text-xs text-muted-foreground">
+                          <input
+                            type="checkbox"
+                            className="mt-0.5 h-3.5 w-3.5 accent-[hsl(var(--primary))]"
+                            checked={d.status === "aguardando_escola"}
+                            disabled={enviando === d.tipo}
+                            onChange={(e) => marcarAguardandoEscola(d.tipo, e.target.checked)}
+                          />
+                          Já solicitei o documento na escola anterior, aguardando prazo de entrega
+                        </label>
+                      )}
                     </div>
                     <div className="flex items-center gap-2">
                       <span
