@@ -80,6 +80,8 @@ Deno.serve(async (req) => {
       .eq("prematricula_id", pm.id)
       .maybeSingle();
     if (!mat) {
+      const ehPai = pm.resp_tipo === "pai";
+      const ehMae = pm.resp_tipo === "mae";
       const { data: nova, error } = await admin
         .from("matriculas")
         .insert({
@@ -89,10 +91,19 @@ Deno.serve(async (req) => {
           curso: pm.serie_pretendida,
           turno: pm.turno_preferencia,
           percentual_desconto: pm.desconto_percentual,
+          resp_fin_quem: pm.resp_tipo ?? null,
           resp_fin_nome: pm.resp_nome,
           resp_fin_cpf: pm.resp_cpf,
           resp_fin_celular: pm.resp_whatsapp,
           resp_fin_email: pm.resp_email,
+          nome_pai: ehPai ? pm.resp_nome : null,
+          cpf_pai: ehPai ? pm.resp_cpf : null,
+          celular_pai: ehPai ? pm.resp_whatsapp : null,
+          email_pai: ehPai ? pm.resp_email : null,
+          nome_mae: ehMae ? pm.resp_nome : null,
+          cpf_mae: ehMae ? pm.resp_cpf : null,
+          celular_mae: ehMae ? pm.resp_whatsapp : null,
+          email_mae: ehMae ? pm.resp_email : null,
         })
         .select("*")
         .single();
