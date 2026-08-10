@@ -466,7 +466,7 @@ const Matricula = () => {
 
             <section className="rounded-xl border border-border bg-white p-6 space-y-4">
               <h2 className="font-serif text-lg font-bold text-zampieri-green-dark">
-                3. Pagamento da matrícula
+                4. Pagamento da matrícula
               </h2>
               {!m.contrato_assinado ? (
                 <p className="text-sm text-muted-foreground">
