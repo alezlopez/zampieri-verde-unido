@@ -3,6 +3,26 @@ import { corsHeaders } from "../_shared/cors.ts";
 import { getOrCreateCustomer, createCheckout } from "../_shared/asaas.ts";
 import { DOCUMENTOS, TIPOS_VALIDOS, labelDoc } from "../_shared/matricula-docs.ts";
 import { notificar } from "../_shared/prematricula-mensagens.ts";
+import { gerarContrato, valoresProntos } from "../_shared/matricula-contrato.ts";
+
+/** Campos que a família preenche no portal antes da geração do contrato. */
+const CAMPOS_FAMILIA = [
+  "resp_fin_quem", "resp_fin_nome", "resp_fin_cpf", "resp_fin_rg", "resp_fin_estado_civil",
+  "resp_fin_naturalidade", "resp_fin_nacionalidade", "resp_fin_profissao",
+  "resp_fin_data_nascimento", "resp_fin_celular", "resp_fin_email",
+  "cep", "logradouro", "numero", "complemento", "bairro", "cidade", "estado",
+  "nome_pai", "cpf_pai", "rg_pai", "estado_civil_pai", "naturalidade_pai", "nacionalidade_pai",
+  "profissao_pai", "data_nascimento_pai", "celular_pai", "email_pai",
+  "nome_mae", "cpf_mae", "rg_mae", "estado_civil_mae", "naturalidade_mae", "nacionalidade_mae",
+  "profissao_mae", "data_nascimento_mae", "celular_mae", "email_mae",
+];
+const CAMPOS_DATA = ["resp_fin_data_nascimento", "data_nascimento_pai", "data_nascimento_mae"];
+const OBRIGATORIOS_FAMILIA = [
+  "resp_fin_quem", "resp_fin_nome", "resp_fin_cpf", "resp_fin_rg", "resp_fin_estado_civil",
+  "resp_fin_naturalidade", "resp_fin_nacionalidade", "resp_fin_profissao",
+  "resp_fin_data_nascimento", "resp_fin_celular", "resp_fin_email",
+  "cep", "logradouro", "numero", "bairro", "cidade", "estado",
+];
 
 const FALLBACK_ORIGIN = "https://colegiozampieri.com.br";
 const MAX_BYTES = 10 * 1024 * 1024;
