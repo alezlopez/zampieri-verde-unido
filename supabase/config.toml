@@ -4,7 +4,6 @@ project_id = "lzdhrtcugqnqmyapgmbs"
 verify_jwt = false
 
 [functions.comprador-externo-signup]
-[functions.comprador-externo-signup]
 verify_jwt = false
 
 [functions.resumo-diario-vendas]
