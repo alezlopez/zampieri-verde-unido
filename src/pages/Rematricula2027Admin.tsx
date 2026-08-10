@@ -140,7 +140,7 @@ const ListaAlteracoes = ({ itens }: { itens: Alteracao[] }) => (
 );
 
 const Rematricula2027Admin = () => {
-  const { isAdmin, loading: authLoading } = useAuth();
+  const { , loading: authLoading , podeAcessar } = useAuth();
   const [linhas, setLinhas] = useState<LinhaAdmin[]>([]);
   const [loading, setLoading] = useState(true);
   const [busca, setBusca] = useState("");
@@ -211,8 +211,8 @@ const Rematricula2027Admin = () => {
   };
 
   useEffect(() => {
-    if (isAdmin) carregar();
-  }, [isAdmin]);
+    if (podeAcessar("rematricula")) carregar();
+  }, [podeAcessar("rematricula")]);
 
   const conferir = async (id_aluno: number, conferida: boolean) => {
     setSalvando(true);
@@ -264,7 +264,7 @@ const Rematricula2027Admin = () => {
     [linhas],
   );
 
-  if (authLoading || !isAdmin) {
+  if (authLoading || !podeAcessar("rematricula")) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <Loader2 className="w-6 h-6 animate-spin text-zampieri-green-dark" />
