@@ -385,9 +385,43 @@ const Matricula = () => {
               )}
             </section>
 
+            {!concluida && docsAprovados && (
+              <section className="rounded-xl border border-border bg-white p-6 space-y-4">
+                <div>
+                  <h2 className="font-serif text-lg font-bold text-zampieri-green-dark">
+                    2. Dados do contrato
+                  </h2>
+                  <p className="text-sm text-muted-foreground">
+                    Preencha os dados de pai, mãe, responsável financeiro e endereço. Assim que
+                    salvar, o contrato é gerado para assinatura.
+                  </p>
+                </div>
+
+                {!estado.valores.prontos && (
+                  <div className="rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm text-amber-800">
+                    A secretaria ainda está finalizando os valores. Você já pode preencher e salvar
+                    os dados — avisaremos por e-mail quando o contrato estiver disponível.
+                  </div>
+                )}
+
+                {m.contrato_gerado ? (
+                  <p className="text-sm text-emerald-700 flex items-center gap-2">
+                    <CheckCircle2 className="w-4 h-4" /> Dados enviados e contrato gerado.
+                  </p>
+                ) : (
+                  <FormDadosContrato
+                    dados={estado.dados}
+                    respTipo={estado.resp_tipo}
+                    salvando={acaoEmCurso}
+                    onSalvar={salvarDados}
+                  />
+                )}
+              </section>
+            )}
+
             <section className="rounded-xl border border-border bg-white p-6 space-y-3">
               <h2 className="font-serif text-lg font-bold text-zampieri-green-dark">
-                2. Contrato
+                3. Contrato
               </h2>
               {m.contrato_assinado ? (
                 <p className="text-sm text-emerald-700 flex items-center gap-2">
@@ -401,10 +435,11 @@ const Matricula = () => {
                 </Button>
               ) : (
                 <p className="text-sm text-muted-foreground">
-                  O contrato é liberado após a conferência da documentação.
+                  O contrato é liberado assim que você preencher os dados acima.
                 </p>
               )}
             </section>
+
 
             <section className="rounded-xl border border-border bg-white p-6 space-y-4">
               <h2 className="font-serif text-lg font-bold text-zampieri-green-dark">
