@@ -92,6 +92,7 @@ const HEADER_IMAGE_PADRAO = `${SITE_URL}/lovable-uploads/bd571e68-1908-4859-81a4
 type DefTemplate = {
   headerFormat: "IMAGE" | "VIDEO" | "DOCUMENT" | "TEXT" | null;
   headerVars: number;
+  headerExemplo: string | null;
   bodyVars: number;
   urlButtonIndex: number | null;
 };
