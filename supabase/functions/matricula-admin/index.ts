@@ -1,6 +1,6 @@
 import { createClient } from "npm:@supabase/supabase-js@2";
 import { corsHeaders } from "../_shared/cors.ts";
-import { DOCUMENTOS, TIPOS_VALIDOS, labelDoc } from "../_shared/matricula-docs.ts";
+import { DOCUMENTOS, TIPOS_VALIDOS, labelDoc, docObrigatorio } from "../_shared/matricula-docs.ts";
 import { SITE_URL, notificar } from "../_shared/prematricula-mensagens.ts";
 import { valoresProntos, verificarAssinatura } from "../_shared/matricula-contrato.ts";
 
@@ -176,7 +176,7 @@ Deno.serve(async (req) => {
         .not("status", "in", "(aprovado,aguardando_escola)");
       await admin
         .from("matriculas")
-        .update({ status: "documentos_conferidos", updated_at: new Date().toISOString() })
+        .update({ updated_at: new Date().toISOString() })
         .eq("id", id);
       return json({ ok: true });
     }
