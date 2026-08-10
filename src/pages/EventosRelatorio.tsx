@@ -78,7 +78,7 @@ const formaLabel = (f: string) => {
 };
 
 const EventosRelatorio = () => {
-  const { user, isAdmin, loading: authLoading } = useAuth();
+  const { user, loading: authLoading , podeAcessar } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
 
@@ -124,9 +124,9 @@ const EventosRelatorio = () => {
   };
 
   useEffect(() => {
-    if (user && isAdmin) fetchRelatorio();
+    if (user && podeAcessar("eventos")) fetchRelatorio();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [user, isAdmin]);
+  }, [user, podeAcessar("eventos")]);
 
   const sincronizarLiquidos = async (force = false) => {
     if (force && !confirm("Recalcular bruto/líquido/taxa de TODOS os checkouts pagos (inclusive os já preenchidos)? Use após mudanças na lógica de rateio.")) return;

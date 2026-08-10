@@ -76,7 +76,7 @@ const formaLabel = (f: string) => {
 };
 
 const ProdutosRelatorio = () => {
-  const { user, isAdmin, loading: authLoading } = useAuth();
+  const { user, loading: authLoading , podeAcessar } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
 
@@ -130,9 +130,9 @@ const ProdutosRelatorio = () => {
   };
 
   useEffect(() => {
-    if (user && isAdmin) fetchRelatorio();
+    if (user && podeAcessar("produtos")) fetchRelatorio();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [user, isAdmin]);
+  }, [user, podeAcessar("produtos")]);
 
   const sincronizarLiquidos = async (force = false) => {
     if (force && !confirm("Recalcular líquido de TODOS os pedidos pagos?")) return;

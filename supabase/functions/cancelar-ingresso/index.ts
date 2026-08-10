@@ -36,9 +36,7 @@ Deno.serve(async (req) => {
     if (!userData?.user) return json({ error: "unauthorized" }, 401);
 
     const admin = createClient(supaUrl, service);
-    const { data: isAdmin } = await admin.rpc("has_role", {
-      _user_id: userData.user.id, _role: "admin",
-    });
+    const { data: isAdmin } = await admin.rpc("has_setor", { _user_id: userData.user.id, _setor: "eventos" });
     if (!isAdmin) return json({ error: "forbidden" }, 403);
 
     const body = await req.json().catch(() => ({}));

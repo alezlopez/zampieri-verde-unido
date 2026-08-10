@@ -28,10 +28,7 @@ Deno.serve(async (req) => {
     const user = userRes?.user;
     if (erroUser || !user) return json({ error: "nao_autenticado" }, 401);
 
-    const { data: ehAdmin } = await admin.rpc("has_role", {
-      _user_id: user.id,
-      _role: "admin",
-    });
+    const { data: ehAdmin } = await admin.rpc("has_setor", { _user_id: user.id, _setor: "matricula" });
     if (!ehAdmin) return json({ error: "sem_permissao" }, 403);
 
     const body = await req.json().catch(() => ({}));

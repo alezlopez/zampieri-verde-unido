@@ -74,7 +74,7 @@ const CATEGORIAS_MEIA = [
 ];
 
 const EventosAdmin = () => {
-  const { user, isAdmin, loading: authLoading } = useAuth();
+  const { user, loading: authLoading , podeAcessar } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
 
@@ -226,12 +226,12 @@ const EventosAdmin = () => {
   };
 
   useEffect(() => {
-    if (isAdmin) {
+    if (podeAcessar("eventos")) {
       fetchEventos();
       fetchResumoFinanceiro();
       fetchProdutos();
     }
-  }, [isAdmin]);
+  }, [podeAcessar("eventos")]);
 
   // Carrega variações ativas dos produtos vinculados (com preço) para o dropdown de upsell em destaque
   useEffect(() => {

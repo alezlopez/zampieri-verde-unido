@@ -43,7 +43,7 @@ Deno.serve(async (req) => {
     }
 
     // Admin only
-    const { data: isAdmin } = await admin.rpc("has_role", { _user_id: userData.user.id, _role: "admin" });
+    const { data: isAdmin } = await admin.rpc("has_setor", { _user_id: userData.user.id, _setor: "eventos" });
     if (!isAdmin) {
       return new Response(JSON.stringify({ error: "Apenas admin" }), {
         status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" },

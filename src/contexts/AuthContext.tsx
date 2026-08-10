@@ -2,6 +2,10 @@ import React, { createContext, useContext, useEffect, useState } from "react";
 import { User, Session } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
 
+export type Setor = "eventos" | "produtos" | "portaria" | "matricula" | "rematricula";
+
+export const SETORES: Setor[] = ["eventos", "produtos", "portaria", "matricula", "rematricula"];
+
 interface AuthContextType {
   user: User | null;
   session: Session | null;
@@ -9,6 +13,8 @@ interface AuthContextType {
   isAdmin: boolean;
   isConferente: boolean;
   canScan: boolean;
+  setores: Setor[];
+  podeAcessar: (setor: Setor) => boolean;
   signIn: (email: string, password: string) => Promise<{ error: any }>;
   signUp: (email: string, password: string) => Promise<{ error: any }>;
   signOut: () => Promise<void>;
@@ -32,20 +38,31 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [loading, setLoading] = useState(true);
   const [isAdmin, setIsAdmin] = useState(false);
   const [isConferente, setIsConferente] = useState(false);
+  const [setores, setSetores] = useState<Setor[]>([]);
+
+  const limparPerfis = () => {
+    setIsAdmin(false);
+    setIsConferente(false);
+    setSetores([]);
+  };
 
   const checkRoles = async (userId: string) => {
     try {
-      const [adminRes, confRes] = await Promise.all([
+      const [adminRes, confRes, ...setorRes] = await Promise.all([
         supabase.rpc("has_role", { _user_id: userId, _role: "admin" }),
         supabase.rpc("has_role", { _user_id: userId, _role: "conferente" as any }),
+        ...SETORES.map((s) =>
+          supabase.rpc("has_setor" as any, { _user_id: userId, _setor: s })
+        ),
       ]);
       setIsAdmin(!!adminRes.data);
       setIsConferente(!!confRes.data);
+      setSetores(SETORES.filter((_, i) => !!setorRes[i]?.data));
     } catch {
-      setIsAdmin(false); setIsConferente(false);
-      setIsConferente(false);
+      limparPerfis();
     }
   };
+
 
 
 
@@ -57,7 +74,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           supabase.auth.signOut();
           setSession(null);
           setUser(null);
-          setIsAdmin(false); setIsConferente(false);
+          limparPerfis();
           setLoading(false);
           return;
         }
@@ -66,7 +83,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         if (session?.user) {
           setTimeout(() => checkRoles(session.user.id), 0);
         } else {
-          setIsAdmin(false); setIsConferente(false);
+          limparPerfis();
         }
         setLoading(false);
       }
@@ -102,7 +119,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     await supabase.auth.signOut();
     setUser(null);
     setSession(null);
-    setIsAdmin(false); setIsConferente(false);
+    limparPerfis();
   };
 
   const cleanCpf = (cpf: string) => cpf.replace(/\D/g, "");
@@ -167,8 +184,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return { error: null, needsConfirmation: true, email };
   };
 
+  const podeAcessar = (setor: Setor) => isAdmin || setores.includes(setor);
+
   return (
-    <AuthContext.Provider value={{ user, session, loading, isAdmin, isConferente, canScan: isAdmin || isConferente, signIn, signUp, signOut, loginWithCpf, registerWithCpf }}>
+    <AuthContext.Provider value={{ user, session, loading, isAdmin, isConferente, canScan: isAdmin || isConferente || setores.includes("portaria"), setores, podeAcessar, signIn, signUp, signOut, loginWithCpf, registerWithCpf }}>
+
       {children}
     </AuthContext.Provider>
   );

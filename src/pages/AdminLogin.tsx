@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useLocation, Link } from "react-router-dom";
 import { Eye, EyeOff, ArrowLeft, Lock } from "lucide-react";
-import { useAuth } from "@/contexts/AuthContext";
+import { useAuth, SETORES } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -16,7 +16,7 @@ const maskEmail = (email: string): string => {
 };
 
 const AdminLogin = () => {
-  const { signIn, isAdmin, canScan, loading: authLoading } = useAuth();
+  const { signIn, isAdmin, canScan, setores, loading: authLoading } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
   const { toast } = useToast();
@@ -36,9 +36,11 @@ const AdminLogin = () => {
   // Se já estiver autenticado com permissão, entra direto
   useEffect(() => {
     if (authLoading) return;
-    if (isAdmin) navigate(redirectTo || "/admin", { replace: true });
-    else if (canScan) navigate(redirectTo || "/eventos/admin/scanner", { replace: true });
-  }, [authLoading, isAdmin, canScan, navigate, redirectTo]);
+    if (isAdmin || setores.length > 0 || canScan) {
+      navigate(redirectTo || "/admin", { replace: true });
+    }
+  }, [authLoading, isAdmin, canScan, setores, navigate, redirectTo]);
+
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -58,7 +60,14 @@ const AdminLogin = () => {
         supabase.rpc("has_role", { _user_id: authed.id, _role: "admin" }),
         supabase.rpc("has_role", { _user_id: authed.id, _role: "conferente" as never }),
       ]);
-      if (!adminRole && !confRole) {
+      const setoresRes = await Promise.all(
+        SETORES.map((s) =>
+          (supabase.rpc as any)("has_setor", { _user_id: authed.id, _setor: s })
+        )
+      );
+      const temSetor = setoresRes.some((r: any) => !!r?.data);
+
+      if (!adminRole && !confRole && !temSetor) {
         await supabase.auth.signOut();
         toast({
           title: "Acesso negado",
@@ -69,8 +78,8 @@ const AdminLogin = () => {
       }
       toast({ title: "Login realizado com sucesso!" });
       if (redirectTo) navigate(redirectTo, { replace: true });
-      else if (adminRole) navigate("/admin", { replace: true });
-      else navigate("/eventos/admin/scanner", { replace: true });
+      else navigate("/admin", { replace: true });
+
     } catch {
       toast({ title: "Erro", description: "Ocorreu um erro inesperado.", variant: "destructive" });
     } finally {

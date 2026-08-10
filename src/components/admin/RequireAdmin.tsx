@@ -1,17 +1,19 @@
 import { ReactNode } from "react";
 import { Link, Navigate, useLocation } from "react-router-dom";
 import { LayoutDashboard, Loader2 } from "lucide-react";
-import { useAuth } from "@/contexts/AuthContext";
+import { useAuth, Setor } from "@/contexts/AuthContext";
 
 
 interface Props {
   children: ReactNode;
-  /** "admin" exige perfil admin; "scan" aceita admin ou conferente */
+  /** "admin" exige perfil admin; "scan" aceita admin, conferente ou portaria */
   allow?: "admin" | "scan";
+  /** Setor exigido — admin sempre passa */
+  setor?: Setor;
 }
 
-export const RequireAdmin = ({ children, allow = "admin" }: Props) => {
-  const { isAdmin, canScan, loading } = useAuth();
+export const RequireAdmin = ({ children, allow = "admin", setor }: Props) => {
+  const { isAdmin, canScan, setores, loading } = useAuth();
   const location = useLocation();
 
   if (loading) {
@@ -22,7 +24,12 @@ export const RequireAdmin = ({ children, allow = "admin" }: Props) => {
     );
   }
 
-  const permitido = allow === "scan" ? canScan : isAdmin;
+  const permitido = setor
+    ? isAdmin || setores.includes(setor)
+    : allow === "scan"
+      ? canScan || setores.length > 0
+      : isAdmin;
+
 
   if (!permitido) {
     return (

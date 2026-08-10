@@ -48,7 +48,7 @@ const emptyVariacao = (produto_id: string): Partial<Variacao> => ({
 });
 
 const ProdutosAdmin = () => {
-  const { user, isAdmin, loading: authLoading } = useAuth();
+  const { user, loading: authLoading , podeAcessar } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
 
@@ -79,7 +79,7 @@ const ProdutosAdmin = () => {
     setLoading(false);
   };
 
-  useEffect(() => { if (isAdmin) loadAll(); }, [isAdmin]);
+  useEffect(() => { if (podeAcessar("produtos")) loadAll(); }, [podeAcessar("produtos")]);
 
   const saveProduto = async () => {
     if (!editing?.nome?.trim()) { toast({ title: "Nome obrigatório", variant: "destructive" }); return; }

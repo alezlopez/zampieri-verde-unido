@@ -122,7 +122,7 @@ const Contato = ({
 };
 
 const Rematricula2027Followup = () => {
-  const { isAdmin, loading: authLoading } = useAuth();
+  const { loading: authLoading , podeAcessar } = useAuth();
   const [linhas, setLinhas] = useState<LinhaFollowup[]>([]);
   const [loading, setLoading] = useState(true);
   const [busca, setBusca] = useState("");
@@ -140,8 +140,8 @@ const Rematricula2027Followup = () => {
   };
 
   useEffect(() => {
-    if (isAdmin) carregar();
-  }, [isAdmin]);
+    if (podeAcessar("rematricula")) carregar();
+  }, [podeAcessar("rematricula")]);
 
   const porEtapa = useMemo(() => {
     const mapa: Record<Etapa, LinhaFollowup[]> = {
@@ -169,7 +169,7 @@ const Rematricula2027Followup = () => {
       .sort((a, b) => (b.updated_at || "").localeCompare(a.updated_at || ""));
   }, [porEtapa, etapa, busca]);
 
-  if (authLoading || !isAdmin) {
+  if (authLoading || !podeAcessar("rematricula")) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <Loader2 className="w-6 h-6 animate-spin text-zampieri-green-dark" />

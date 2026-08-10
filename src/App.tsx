@@ -58,14 +58,14 @@ const App = () => (
             <Route path="/eventos/login" element={<EventosLogin />} />
             <Route path="/eventos/comprar/:id" element={<EventoCompra />} />
             <Route path="/eventos/:id" element={<EventoDetalhe />} />
-            <Route path="/eventos/admin" element={<RequireAdmin><EventosAdmin /></RequireAdmin>} />
+            <Route path="/eventos/admin" element={<RequireAdmin setor="eventos"><EventosAdmin /></RequireAdmin>} />
             <Route path="/eventos/meus-ingressos" element={<MeusIngressos />} />
             <Route path="/eventos/ingresso/:id" element={<IngressoDetalhe />} />
-            <Route path="/eventos/admin/scanner" element={<RequireAdmin allow="scan"><ScannerIngressos /></RequireAdmin>} />
-            <Route path="/eventos/admin/relatorio" element={<RequireAdmin><EventosRelatorio /></RequireAdmin>} />
+            <Route path="/eventos/admin/scanner" element={<RequireAdmin setor="portaria"><ScannerIngressos /></RequireAdmin>} />
+            <Route path="/eventos/admin/relatorio" element={<RequireAdmin setor="eventos"><EventosRelatorio /></RequireAdmin>} />
             <Route path="/reset-password" element={<ResetPassword />} />
-            <Route path="/eventos/admin/produtos" element={<RequireAdmin><ProdutosAdmin /></RequireAdmin>} />
-            <Route path="/eventos/admin/produtos/relatorio" element={<RequireAdmin><ProdutosRelatorio /></RequireAdmin>} />
+            <Route path="/eventos/admin/produtos" element={<RequireAdmin setor="produtos"><ProdutosAdmin /></RequireAdmin>} />
+            <Route path="/eventos/admin/produtos/relatorio" element={<RequireAdmin setor="produtos"><ProdutosRelatorio /></RequireAdmin>} />
             <Route path="/produtos" element={<Produtos />} />
             <Route path="/eventos/:eventoId/produtos" element={<Produtos />} />
             <Route path="/comprovante/:token" element={<ComprovanteProduto />} />
@@ -76,14 +76,14 @@ const App = () => (
             <Route path="/admin/login" element={<AdminLogin />} />
             <Route path="/admin" element={<RequireAdmin allow="scan"><AdminHome /></RequireAdmin>} />
             <Route path="/numerosdasorte" element={<NumerosDaSorte />} />
-            <Route path="/rematricula2027/admin" element={<RequireAdmin><Rematricula2027Admin /></RequireAdmin>} />
-            <Route path="/rematricula2027/followup" element={<RequireAdmin><Rematricula2027Followup /></RequireAdmin>} />
+            <Route path="/rematricula2027/admin" element={<RequireAdmin setor="rematricula"><Rematricula2027Admin /></RequireAdmin>} />
+            <Route path="/rematricula2027/followup" element={<RequireAdmin setor="rematricula"><Rematricula2027Followup /></RequireAdmin>} />
             <Route path="/prematricula" element={<PreMatricula />} />
             <Route path="/prematricula/agendar" element={<PreMatriculaAgendar />} />
-            <Route path="/prematricula/admin" element={<RequireAdmin><PreMatriculaAdmin /></RequireAdmin>} />
-            <Route path="/prematricula/agenda" element={<RequireAdmin><PreMatriculaAgenda /></RequireAdmin>} />
+            <Route path="/prematricula/admin" element={<RequireAdmin setor="matricula"><PreMatriculaAdmin /></RequireAdmin>} />
+            <Route path="/prematricula/agenda" element={<RequireAdmin setor="matricula"><PreMatriculaAgenda /></RequireAdmin>} />
             <Route path="/matricula" element={<Matricula />} />
-            <Route path="/matricula/admin" element={<RequireAdmin><MatriculaAdmin /></RequireAdmin>} />
+            <Route path="/matricula/admin" element={<RequireAdmin setor="matricula"><MatriculaAdmin /></RequireAdmin>} />
 
 
 
