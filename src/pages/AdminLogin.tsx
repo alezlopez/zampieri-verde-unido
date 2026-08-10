@@ -36,9 +36,11 @@ const AdminLogin = () => {
   // Se já estiver autenticado com permissão, entra direto
   useEffect(() => {
     if (authLoading) return;
-    if (isAdmin) navigate(redirectTo || "/admin", { replace: true });
-    else if (canScan) navigate(redirectTo || "/eventos/admin/scanner", { replace: true });
-  }, [authLoading, isAdmin, canScan, navigate, redirectTo]);
+    if (isAdmin || setores.length > 0 || canScan) {
+      navigate(redirectTo || "/admin", { replace: true });
+    }
+  }, [authLoading, isAdmin, canScan, setores, navigate, redirectTo]);
+
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
