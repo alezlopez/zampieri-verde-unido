@@ -240,7 +240,22 @@ const Matricula = () => {
 
   const m = estado.matricula;
   const concluida = m.status === "concluida";
-  const podeEditarDocs = !concluida && !m.contrato_assinado;
+  const docsAprovados =
+    ["documentos_aprovados", "contrato_gerado", "contrato_assinado", "concluida"].includes(m.status) ||
+    m.contrato_gerado;
+  const podeEditarDocs = !concluida && !m.contrato_assinado && !docsAprovados;
+
+  const etapaAtual = concluida
+    ? 4
+    : m.contrato_assinado
+      ? 3
+      : m.contrato_gerado
+        ? 2
+        : docsAprovados
+          ? 1
+          : 0;
+  const ETAPAS = ["Documentos", "Dados do contrato", "Assinatura", "Pagamento"];
+
 
   return (
     <div className="min-h-screen bg-zampieri-cream/30 py-8 px-4">
