@@ -1543,10 +1543,47 @@ export type Database = {
           },
         ]
       }
+      prematricula_otp: {
+        Row: {
+          codigo_hash: string
+          consumido_em: string | null
+          created_at: string
+          expira_em: string
+          id: string
+          ip: string | null
+          telefone: string
+          tentativas: number
+          verificado_em: string | null
+        }
+        Insert: {
+          codigo_hash: string
+          consumido_em?: string | null
+          created_at?: string
+          expira_em: string
+          id?: string
+          ip?: string | null
+          telefone: string
+          tentativas?: number
+          verificado_em?: string | null
+        }
+        Update: {
+          codigo_hash?: string
+          consumido_em?: string | null
+          created_at?: string
+          expira_em?: string
+          id?: string
+          ip?: string | null
+          telefone?: string
+          tentativas?: number
+          verificado_em?: string | null
+        }
+        Relationships: []
+      }
       prematriculas: {
         Row: {
           agendado_em: string | null
           alergias: string | null
+          aluno_chave: string | null
           aluno_nascimento: string
           aluno_nome: string
           aprovado_em: string | null
@@ -1589,6 +1626,7 @@ export type Database = {
         Insert: {
           agendado_em?: string | null
           alergias?: string | null
+          aluno_chave?: string | null
           aluno_nascimento: string
           aluno_nome: string
           aprovado_em?: string | null
@@ -1631,6 +1669,7 @@ export type Database = {
         Update: {
           agendado_em?: string | null
           alergias?: string | null
+          aluno_chave?: string | null
           aluno_nascimento?: string
           aluno_nome?: string
           aprovado_em?: string | null
@@ -2431,6 +2470,7 @@ export type Database = {
           similarity: number
         }[]
       }
+      prematricula_norm_nome: { Args: { p_nome: string }; Returns: string }
       purgar_asaas_webhook_events: { Args: never; Returns: undefined }
       rematricula_2027_abrir: {
         Args: { p_data_nascimento: string; p_id_aluno: number }

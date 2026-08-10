@@ -1,6 +1,7 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
 import { corsHeaders } from "../_shared/cors.ts";
 import { notificar } from "../_shared/prematricula-mensagens.ts";
+import { telefoneE164 } from "../_shared/otp.ts";
 
 const json = (body: unknown, status = 200) =>
   new Response(JSON.stringify(body), {
@@ -25,6 +26,15 @@ const cpfValido = (cpf: string) => {
 
 const TIPOS_OK = ["application/pdf", "image/jpeg", "image/jpg", "image/png"];
 const MAX_BYTES = 10 * 1024 * 1024;
+
+/** Mesma normalização do índice único no banco */
+const normNome = (nome: string) =>
+  nome
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .trim()
+    .replace(/\s+/g, " ")
+    .toLowerCase();
 
 async function sha256(v: string) {
   const buf = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(v));
@@ -67,6 +77,41 @@ Deno.serve(async (req) => {
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
     );
 
+    // 1) Um aluno, uma pré-matrícula
+    const { data: existente, error: erroDup } = await admin
+      .from("prematriculas")
+      .select("protocolo, created_at")
+      .eq("aluno_chave", normNome(alunoNome))
+      .eq("aluno_nascimento", alunoNasc)
+      .maybeSingle();
+    if (erroDup) throw erroDup;
+    if (existente) {
+      return json(
+        {
+          error: "aluno_duplicado",
+          protocolo: existente.protocolo,
+          criado_em: existente.created_at,
+        },
+        409,
+      );
+    }
+
+    // 2) WhatsApp confirmado por código nos últimos 30 minutos
+    const telefone = telefoneE164(respWhats);
+    const desde = new Date(Date.now() - 30 * 60 * 1000).toISOString();
+    const { data: otp, error: erroOtp } = await admin
+      .from("prematricula_otp")
+      .select("id")
+      .eq("telefone", telefone)
+      .not("verificado_em", "is", null)
+      .is("consumido_em", null)
+      .gte("verificado_em", desde)
+      .order("verificado_em", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+    if (erroOtp) throw erroOtp;
+    if (!otp) return json({ error: "otp_nao_verificado" }, 400);
+
     const token = crypto.randomUUID().replace(/-/g, "") + crypto.randomUUID().replace(/-/g, "");
     const token_hash = await sha256(token);
 
@@ -102,7 +147,17 @@ Deno.serve(async (req) => {
       .select("id, protocolo")
       .single();
 
-    if (erroInsert) throw erroInsert;
+    if (erroInsert) {
+      if ((erroInsert as { code?: string }).code === "23505") {
+        return json({ error: "aluno_duplicado" }, 409);
+      }
+      throw erroInsert;
+    }
+
+    await admin
+      .from("prematricula_otp")
+      .update({ consumido_em: new Date().toISOString() })
+      .eq("id", otp.id);
 
     // Uploads opcionais (boletim e laudo) em bucket privado
     const paths: Record<string, string> = {};

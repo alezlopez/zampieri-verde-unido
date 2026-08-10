@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { CheckCircle2, Loader2 } from "lucide-react";
+import { AlertCircle, CheckCircle2, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -34,6 +34,9 @@ const PreMatricula = () => {
   const [laudo, setLaudo] = useState<File | null>(null);
   const [enviando, setEnviando] = useState(false);
   const [protocolo, setProtocolo] = useState<string | null>(null);
+  const [telefoneVerificado, setTelefoneVerificado] = useState<string | null>(null);
+  const [duplicado, setDuplicado] = useState<{ protocolo: string | null } | null>(null);
+  const [checando, setChecando] = useState(false);
 
   useEffect(() => {
     document.title = "Pré-matrícula — Colégio Zampieri";
@@ -65,6 +68,8 @@ const PreMatricula = () => {
       if (!e.resp_cpf && !isValidCpf(form.resp_cpf)) e.resp_cpf = "CPF inválido";
       if (!e.resp_whatsapp && onlyDigits(form.resp_whatsapp).length < 10)
         e.resp_whatsapp = "Telefone incompleto";
+      if (!e.resp_whatsapp && telefoneVerificado !== onlyDigits(form.resp_whatsapp))
+        e.resp_whatsapp = "Confirme o código enviado no WhatsApp";
     }
     if (etapa === 1 && !e.aluno_nascimento && !brToIso(form.aluno_nascimento))
       e.aluno_nascimento = "Data inválida";
@@ -83,8 +88,29 @@ const PreMatricula = () => {
     return Object.keys(e).length === 0;
   };
 
-  const avancar = () => {
+  const checarAluno = async () => {
+    const nasc = brToIso(form.aluno_nascimento);
+    if (!nasc) return true;
+    setChecando(true);
+    try {
+      const { data } = await supabase.functions.invoke("prematricula-otp", {
+        body: { acao: "checar_aluno", aluno_nome: form.aluno_nome, aluno_nascimento: nasc },
+      });
+      if (data?.existe) {
+        setDuplicado({ protocolo: data.protocolo ?? null });
+        return false;
+      }
+      return true;
+    } catch {
+      return true;
+    } finally {
+      setChecando(false);
+    }
+  };
+
+  const avancar = async () => {
     if (!validarEtapa()) return;
+    if (etapa === 1 && !(await checarAluno())) return;
     if (etapa < ETAPAS.length - 1) setEtapa(etapa + 1);
     else enviar();
   };
@@ -106,6 +132,20 @@ const PreMatricula = () => {
       if (laudo) fd.append("laudo", laudo);
 
       const { data, error } = await supabase.functions.invoke("prematricula-enviar", { body: fd });
+      if (data?.error === "aluno_duplicado") {
+        setDuplicado({ protocolo: data.protocolo ?? null });
+        return;
+      }
+      if (data?.error === "otp_nao_verificado") {
+        setTelefoneVerificado(null);
+        setEtapa(0);
+        toast({
+          title: "Confirme seu WhatsApp",
+          description: "Precisamos validar o código enviado para o seu número antes de enviar.",
+          variant: "destructive",
+        });
+        return;
+      }
       if (error) throw error;
       if (!data?.ok) throw new Error(data?.error || "falha");
       setProtocolo(data.protocolo as string);
@@ -121,7 +161,46 @@ const PreMatricula = () => {
     }
   };
 
-  const props = { form, erros, set, boletim, laudo, setBoletim, setLaudo };
+  const props = {
+    form,
+    erros,
+    set,
+    boletim,
+    laudo,
+    setBoletim,
+    setLaudo,
+    telefoneVerificado,
+    setTelefoneVerificado,
+  };
+
+  if (duplicado) {
+    return (
+      <main className="min-h-screen bg-zampieri-cream/30 flex items-center justify-center px-4 py-16">
+        <div className="max-w-md w-full rounded-2xl bg-white border border-border p-8 text-center space-y-4">
+          <AlertCircle className="w-12 h-12 mx-auto text-zampieri-green-dark" />
+          <h1 className="font-serif text-2xl font-bold text-zampieri-green-dark">
+            Já existe uma pré-matrícula
+          </h1>
+          <p className="text-sm text-muted-foreground">
+            Encontramos uma pré-matrícula já registrada para <strong>{form.aluno_nome}</strong>. Para
+            evitar cadastros duplicados, não é possível enviar o formulário novamente.
+          </p>
+          {duplicado.protocolo && (
+            <p className="text-sm">
+              Protocolo: <strong>{duplicado.protocolo}</strong>
+            </p>
+          )}
+          <p className="text-sm text-muted-foreground">
+            Precisa corrigir alguma informação? Fale com a secretaria pelo WhatsApp{" "}
+            <strong>(11) 93934-1503</strong>.
+          </p>
+          <Button asChild variant="outline" className="w-full">
+            <a href="/">Voltar ao site</a>
+          </Button>
+        </div>
+      </main>
+    );
+  }
 
   if (protocolo) {
     return (
@@ -192,9 +271,9 @@ const PreMatricula = () => {
             <Button
               className="flex-1 bg-zampieri-green-dark hover:bg-zampieri-green"
               onClick={avancar}
-              disabled={enviando}
+              disabled={enviando || checando}
             >
-              {enviando && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
+              {(enviando || checando) && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
               {etapa === ETAPAS.length - 1 ? "Enviar pré-matrícula" : "Continuar"}
             </Button>
           </div>
