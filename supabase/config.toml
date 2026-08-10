@@ -34,3 +34,7 @@ verify_jwt = false
 
 [functions.prematricula-admin-acao]
 verify_jwt = false
+
+[functions.prematricula-otp]
+verify_jwt = false
+
