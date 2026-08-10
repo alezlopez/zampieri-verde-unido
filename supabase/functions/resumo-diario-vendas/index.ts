@@ -43,6 +43,26 @@ Deno.serve(async (req) => {
     if (!RESEND_API_KEY) throw new Error("RESEND_API_KEY nao configurada");
 
     const admin = createClient(SUPABASE_URL, SERVICE);
+
+    // Autorizacao: cron/servico (service role) ou usuario admin autenticado
+    const authHeader = req.headers.get("Authorization") || "";
+    const token = authHeader.replace(/^Bearer\s+/i, "").trim();
+    let autorizado = token === SERVICE;
+    if (!autorizado && token) {
+      const { data: userData } = await admin.auth.getUser(token);
+      const uid = userData?.user?.id;
+      if (uid) {
+        const { data: ehAdmin } = await admin.rpc("has_role", { _user_id: uid, _role: "admin" });
+        autorizado = ehAdmin === true;
+      }
+    }
+    if (!autorizado) {
+      return new Response(JSON.stringify({ error: "nao_autorizado" }), {
+        status: 401,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
     const { ymd: hoje, label } = hojeBRTymd();
 
     const { data: eventos, error: evErr } = await admin
