@@ -318,6 +318,62 @@ Deno.serve(async (req) => {
       return json({ ok: true, checkout_url: checkoutUrl });
     }
 
+    if (acao === "salvar_dados" || acao === "gerar_contrato") {
+      if (mat.contrato_assinado || mat.status === "concluida") {
+        return json({ error: "etapa_encerrada" }, 400);
+      }
+      if (!["documentos_aprovados", "contrato_gerado"].includes(String(mat.status))) {
+        return json({ error: "documentos_nao_aprovados" }, 403);
+      }
+
+      if (acao === "salvar_dados") {
+        const dados = (body?.dados ?? {}) as Record<string, unknown>;
+        const update: Record<string, unknown> = {
+          updated_at: new Date().toISOString(),
+          dados_preenchidos_em: new Date().toISOString(),
+        };
+        for (const campo of CAMPOS_FAMILIA) {
+          if (!(campo in dados)) continue;
+          const bruto = dados[campo];
+          const valor = bruto == null ? "" : String(bruto).trim().slice(0, 200);
+          if (CAMPOS_DATA.includes(campo)) {
+            const iso = valor.slice(0, 10);
+            update[campo] = /^\d{4}-\d{2}-\d{2}$/.test(iso) ? iso : null;
+          } else if (campo.startsWith("cpf") || campo.endsWith("_cpf")) {
+            update[campo] = digits(valor) || null;
+          } else {
+            update[campo] = valor || null;
+          }
+        }
+        const faltando = OBRIGATORIOS_FAMILIA.filter((c) => !update[c] && !mat[c]);
+        if (faltando.length) return json({ error: "campos_obrigatorios", faltando }, 400);
+        if (digits(update.resp_fin_cpf ?? mat.resp_fin_cpf).length !== 11) {
+          return json({ error: "cpf_invalido" }, 400);
+        }
+
+        const { error } = await admin.from("matriculas").update(update).eq("id", mat.id);
+        if (error) throw error;
+        Object.assign(mat, update);
+      }
+
+      if (!valoresProntos(mat)) {
+        return json({ ...(await estado()), aviso: "valores_pendentes" });
+      }
+
+      const r = await gerarContrato(admin, mat, pm);
+      if (!r.ok) return json({ error: r.error, detalhe: r.detalhe }, r.status);
+      if (!r.reutilizado) {
+        await notificar("contrato_pronto", {
+          respNome: mat.resp_fin_nome || pm.resp_nome,
+          respEmail: mat.resp_fin_email || pm.resp_email,
+          respWhatsapp: mat.resp_fin_celular || pm.resp_whatsapp,
+          alunoNome: mat.nome_aluno || pm.aluno_nome,
+          protocolo: pm.protocolo,
+        }).catch((e) => console.error("email contrato_pronto:", e));
+      }
+      return json(await estado());
+    }
+
     return json({ error: "acao_invalida" }, 400);
   } catch (e) {
     console.error("matricula-portal erro:", e);
