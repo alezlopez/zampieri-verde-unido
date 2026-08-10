@@ -2435,6 +2435,10 @@ export type Database = {
         }
         Returns: boolean
       }
+      has_setor: {
+        Args: { _setor: string; _user_id: string }
+        Returns: boolean
+      }
       increment_message_count: { Args: { count: number }; Returns: undefined }
       marcar_ingresso_utilizado: {
         Args: { p_id: string }
@@ -2801,7 +2805,15 @@ export type Database = {
       }
     }
     Enums: {
-      app_role: "admin" | "user" | "conferente"
+      app_role:
+        | "admin"
+        | "user"
+        | "conferente"
+        | "rematricula"
+        | "matricula"
+        | "eventos"
+        | "portaria"
+        | "produtos"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -2929,7 +2941,16 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
-      app_role: ["admin", "user", "conferente"],
+      app_role: [
+        "admin",
+        "user",
+        "conferente",
+        "rematricula",
+        "matricula",
+        "eventos",
+        "portaria",
+        "produtos",
+      ],
     },
   },
 } as const
