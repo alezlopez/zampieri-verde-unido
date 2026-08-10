@@ -315,13 +315,20 @@ const Matricula = () => {
                   1. Documentação
                 </h2>
                 <p className="text-sm text-muted-foreground">
-                  Envie os documentos abaixo em PDF, JPG ou PNG (até 10 MB cada).
+                  {docsAprovados
+                    ? "Documentação conferida e aprovada pela secretaria."
+                    : "Envie os documentos abaixo em PDF, JPG ou PNG (até 10 MB cada)."}
                 </p>
               </div>
 
               {podeEditarDocs && <GuiaEnvio />}
 
-
+              {docsAprovados ? (
+                <p className="text-sm text-emerald-700 flex items-center gap-2">
+                  <CheckCircle2 className="w-4 h-4" /> Documentação aprovada.
+                </p>
+              ) : (
+                <>
               <div className="space-y-3">
                 {estado.documentos.map((d) => (
                   <div
