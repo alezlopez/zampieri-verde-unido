@@ -403,12 +403,10 @@ const Matricula = () => {
                   </p>
                 </div>
               )}
-              {m.status === "documentos_aprovados" && (
-                <p className="text-sm text-emerald-700">
-                  Documentação aprovada. Estamos preparando o seu contrato.
-                </p>
+                </>
               )}
             </section>
+
 
             {!concluida && docsAprovados && (
               <section className="rounded-xl border border-border bg-white p-6 space-y-4">
