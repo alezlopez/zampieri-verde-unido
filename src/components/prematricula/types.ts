@@ -56,6 +56,7 @@ export interface PreMatriculaForm {
 }
 
 export const formVazio = (): PreMatriculaForm => ({
+  resp_tipo: "",
   resp_nome: "",
   resp_email: "",
   resp_cpf: "",
