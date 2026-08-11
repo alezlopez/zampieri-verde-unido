@@ -312,6 +312,14 @@ const MatriculaAdmin = () => {
       .every((d) => d.status === "aprovado" || d.status === "aguardando_escola");
   }, [aberta]);
 
+  /** Depois da assinatura não faz mais sentido mexer na documentação. */
+  const documentosTravados = aberta?.contrato_assinado === true;
+
+  /** Etapa de dados já liberada para a família. */
+  const dadosLiberados =
+    !!aberta &&
+    (aberta.status !== "documentos_pendentes" || !!aberta.documentos_aprovados_em);
+
 
   const executar = async (acao: string, extra: Record<string, unknown> = {}, fechar = false) => {
     if (!aberta) return;
