@@ -13,6 +13,7 @@ import {
   CalendarClock,
   FileSignature,
   ShoppingBag,
+  ShieldCheck,
 } from "lucide-react";
 import { useAuth, Setor } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
@@ -227,8 +228,45 @@ const AdminHome = () => {
             </section>
           );
         })}
+        {isAdmin && (
+          <section className="space-y-4">
+            <div className="flex items-center gap-3 border-b border-border pb-2">
+              <span className="rounded-lg bg-zampieri-green-dark p-2 text-white">
+                <ShieldCheck className="w-5 h-5" />
+              </span>
+              <div>
+                <h2 className="font-serif text-lg font-bold text-zampieri-green-dark leading-tight">
+                  Configurações
+                </h2>
+                <p className="text-xs text-muted-foreground">Exclusivo para administradores</p>
+              </div>
+            </div>
+            <div className="grid gap-3 sm:grid-cols-2">
+              <Link
+                to="/admin/usuarios"
+                className="group rounded-lg border border-border bg-white p-4 transition-colors hover:border-zampieri-green-dark"
+              >
+                <div className="flex items-start gap-3">
+                  <span className="rounded-md bg-zampieri-cream p-2 text-zampieri-green-dark">
+                    <ShieldCheck className="w-5 h-5" />
+                  </span>
+                  <div className="min-w-0">
+                    <p className="font-semibold text-zampieri-green-dark flex items-center gap-1">
+                      Usuários e Permissões
+                      <ArrowRight className="w-3.5 h-3.5 opacity-0 transition-opacity group-hover:opacity-100" />
+                    </p>
+                    <p className="text-sm text-muted-foreground">
+                      Criar contas administrativas e definir os setores de acesso.
+                    </p>
+                  </div>
+                </div>
+              </Link>
+            </div>
+          </section>
+        )}
       </main>
     </div>
+
   );
 };
 
