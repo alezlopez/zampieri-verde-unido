@@ -403,8 +403,9 @@ const MatriculaAdmin = () => {
                       disabled={acaoEmCurso || !docsConferidos || !valoresProntos}
                       onClick={() => executar("liberar_dados")}
                     >
-                      Liberar preenchimento dos dados
+                      Liberar contrato (preenchimento dos dados)
                     </Button>
+
                     <Button
                       variant="outline"
                       disabled={acaoEmCurso}
