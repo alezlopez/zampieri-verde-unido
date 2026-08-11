@@ -48,35 +48,49 @@ export const telefoneE164 = (tel: string) => {
 
 const primeiroNome = (nome: string) => (nome || "").trim().split(/\s+/)[0] || "";
 
-/** Nome do template aprovado na Meta + parâmetros do corpo, por evento. */
+/**
+ * Nome do template aprovado na Meta + parâmetros do corpo, por evento.
+ * `utility` é a versão UTILITY (sempre entregue, mesmo para quem optou por
+ * não receber marketing) e é tentada primeiro; `padrao` é o legado MARKETING.
+ */
 const TEMPLATES: Partial<
   Record<
     EventoMensagem,
-    { envVar: string; padrao: string; params: (d: DadosMensagem) => string[] }
+    {
+      envVar: string;
+      utility?: string;
+      padrao: string;
+      params: (d: DadosMensagem) => string[];
+    }
   >
 > = {
   recebida: {
     envVar: "WHATSAPP_TPL_PREMATRICULA_RECEBIDA",
+    utility: "prematricula_recebida_u",
     padrao: "prematricula_recebida",
     params: (d) => [primeiroNome(d.respNome), d.alunoNome, d.protocolo],
   },
   aprovada: {
     envVar: "WHATSAPP_TPL_PREMATRICULA_APROVADA",
+    utility: "prematricula_aprovada_u",
     padrao: "prematricula_aprovadav2",
     params: (d) => [primeiroNome(d.respNome), d.alunoNome, d.linkAgendamento || SITE_URL],
   },
   reprovada: {
     envVar: "WHATSAPP_TPL_PREMATRICULA_REPROVADA",
+    utility: "prematricula_reprovada_u",
     padrao: "prematricula_reprovada",
     params: (d) => [primeiroNome(d.respNome), d.alunoNome],
   },
   agendada: {
     envVar: "WHATSAPP_TPL_PREMATRICULA_AGENDADA",
+    utility: "prematricula_agendada_u",
     padrao: "prematricula_agendada",
     params: (d) => [primeiroNome(d.respNome), d.alunoNome, d.dataEntrevista || "-"],
   },
   documentos_reenvio: {
     envVar: "WHATSAPP_TPL_MATRICULA_REENVIO",
+    utility: "matricula_documentos_reenvio_u",
     padrao: "matricula_documentos_reenvio",
     params: (d) => [
       primeiroNome(d.respNome),
@@ -86,6 +100,7 @@ const TEMPLATES: Partial<
   },
   documentos_aprovados: {
     envVar: "WHATSAPP_TPL_MATRICULA_DADOS",
+    utility: "matricula_dados_liberados_u",
     padrao: "matricula_dados_liberados",
     params: (d) => [primeiroNome(d.respNome), d.alunoNome],
   },
