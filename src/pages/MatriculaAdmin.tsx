@@ -191,10 +191,11 @@ const MatriculaAdmin = () => {
     return (
       txt(aberta.anuidade_total) &&
       txt(aberta.valor_com_desconto) &&
-      Number(aberta.valor_matricula) > 0 &&
+      (aberta.matricula_gratuita === true || Number(aberta.valor_matricula) > 0) &&
       Number(aberta.dia_vencimento) > 0
     );
   }, [aberta]);
+
 
   /** Só os documentos obrigatórios precisam estar aprovados (ou aguardando escola). */
   const docsConferidos = useMemo(() => {
