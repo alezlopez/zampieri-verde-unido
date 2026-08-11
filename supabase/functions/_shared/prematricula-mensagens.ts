@@ -6,6 +6,8 @@
  * (nome do template Meta + parâmetros) e o HTML dos e-mails.
  */
 
+import { enviarTemplateWebhook } from "./whatsapp-webhook.ts";
+
 export const SITE_URL = "https://colegiozampieri.com.br";
 export const FROM_EMAIL = "Colégio Zampieri <noreply@colegiozampieri.com.br>";
 export const WHATSAPP_SUPORTE = "5511939341503";
@@ -115,6 +117,17 @@ const TEMPLATES: Partial<
   },
 };
 
+/** Nomes descritivos de cada parâmetro do corpo, por evento (ajuda no n8n). */
+const PARAM_NOMES: Partial<Record<EventoMensagem, string[]>> = {
+  recebida: ["primeiro_nome_responsavel", "nome_aluno", "protocolo"],
+  aprovada: ["primeiro_nome_responsavel", "nome_aluno", "link_agendamento"],
+  reprovada: ["primeiro_nome_responsavel", "nome_aluno"],
+  agendada: ["primeiro_nome_responsavel", "nome_aluno", "data_entrevista"],
+  documentos_reenvio: ["primeiro_nome_responsavel", "nome_aluno", "documentos_pendentes"],
+  documentos_aprovados: ["primeiro_nome_responsavel", "nome_aluno"],
+  concluida: ["primeiro_nome_responsavel", "nome_aluno", "desconto_percentual"],
+};
+
 /** Imagem usada quando o template aprovado tem cabeçalho de IMAGEM. */
 const HEADER_IMAGE_PADRAO = `${SITE_URL}/lovable-uploads/bd571e68-1908-4859-81a4-bc2c0c51fa6a.png`;
 
@@ -122,142 +135,17 @@ const HEADER_IMAGE_PADRAO = `${SITE_URL}/lovable-uploads/bd571e68-1908-4859-81a4
 const imagemPorEvento = (evento: EventoMensagem) =>
   Deno.env.get(`WHATSAPP_IMG_${evento.toUpperCase()}`) || null;
 
-type DefTemplate = {
-  nome: string;
-  lang: string;
-  status: string;
-  category: string;
-  headerFormat: "IMAGE" | "VIDEO" | "DOCUMENT" | "TEXT" | null;
-  headerVars: number;
-  headerExemplo: string | null;
-  bodyVars: number;
-  urlButtonIndex: number | null;
-};
-
-const cacheDefs = new Map<string, DefTemplate | null>();
-
-/** Lê a definição real do template na Meta para montar os componentes certos. */
-async function definicaoTemplate(nome: string, lang: string): Promise<DefTemplate | null> {
-  const chave = `${nome}:${lang}`;
-  if (cacheDefs.has(chave)) return cacheDefs.get(chave)!;
-  const token = Deno.env.get("WHATSAPP_TOKEN");
-  const waba = Deno.env.get("WHATSAPP_WABA_ID") || Deno.env.get("WHATSAPP_BUSINESS_ACCOUNT_ID");
-  if (!token || !waba) {
-    console.warn("WHATSAPP_WABA_ID ausente: não é possível ler a definição dos templates na Meta.");
-    cacheDefs.set(chave, null);
-    return null;
-  }
-  try {
-    const res = await fetch(
-      `https://graph.facebook.com/v23.0/${waba}/message_templates?name=${encodeURIComponent(nome)}&limit=20`,
-      { headers: { Authorization: `Bearer ${token}` } },
-    );
-    const json = await res.json();
-    if (!res.ok) {
-      console.error(
-        `Meta message_templates falhou status=${res.status} waba=${waba} body=${JSON.stringify(json).slice(0, 400)}`,
-      );
-      cacheDefs.set(chave, null);
-      return null;
-    }
-    const lista: any[] = json?.data ?? [];
-    const tpl =
-      lista.find((t) => t.name === nome && t.language === lang) ?? lista.find((t) => t.name === nome);
-    if (!tpl) {
-      console.error(`Template ${nome} não encontrado na WABA ${waba}.`);
-      cacheDefs.set(chave, null);
-      return null;
-    }
-    const comps: any[] = tpl.components ?? [];
-    const header = comps.find((c) => c.type === "HEADER");
-    const body = comps.find((c) => c.type === "BODY");
-    const botoes = comps.find((c) => c.type === "BUTTONS")?.buttons ?? [];
-    const contarVars = (txt: string) => new Set((txt || "").match(/\{\{\d+\}\}/g) ?? []).size;
-    const def: DefTemplate = {
-      nome: tpl.name,
-      lang: tpl.language,
-      status: tpl.status ?? "UNKNOWN",
-      category: tpl.category ?? "UNKNOWN",
-      headerFormat: header?.format ?? null,
-      headerVars: header?.format === "TEXT" ? contarVars(header?.text) : 0,
-      headerExemplo: header?.example?.header_handle?.[0] ?? header?.example?.header_url?.[0] ?? null,
-      bodyVars: contarVars(body?.text),
-      urlButtonIndex: (() => {
-        const i = botoes.findIndex((b: any) => b.type === "URL" && /\{\{\d+\}\}/.test(b.url || ""));
-        return i >= 0 ? i : null;
-      })(),
-    };
-    cacheDefs.set(chave, def);
-    console.log(`Template ${nome} (${lang}) definição=${JSON.stringify(def)}`);
-    return def;
-  } catch (e) {
-    console.error("Erro ao ler definição do template:", e);
-    cacheDefs.set(chave, null);
-    return null;
-  }
-}
-
-type Opcoes = {
-  headerImagem: boolean;
-  headerImagemUrl?: string | null;
-  botaoUrl: boolean;
-  botaoIndex: number;
-  maxBody?: number;
-};
-
 /** Link (com token) usado no botão dinâmico do template. */
 const linkDoEvento = (evento: EventoMensagem, d: DadosMensagem) =>
   (evento === "aprovada" || evento === "agendada"
     ? d.linkAgendamento || d.linkMatricula
     : d.linkMatricula || d.linkAgendamento) || "";
 
-function montarComponentes(
-  evento: EventoMensagem,
-  d: DadosMensagem,
-  textos: string[],
-  opcoes: Opcoes,
-) {
-  const components: unknown[] = [];
-  if (opcoes.headerImagem) {
-    // Prioridade: imagem configurada para o evento > imagem do template aprovado
-    // na Meta > override global > imagem padrão do site.
-    const link =
-      imagemPorEvento(evento) ||
-      opcoes.headerImagemUrl ||
-      Deno.env.get("WHATSAPP_HEADER_IMAGE_URL") ||
-      HEADER_IMAGE_PADRAO;
-    components.push({
-      type: "header",
-      parameters: [{ type: "image", image: { link } }],
-    });
-  }
-  const corpo = typeof opcoes.maxBody === "number" ? textos.slice(0, opcoes.maxBody) : textos;
-  if (corpo.length) {
-    components.push({ type: "body", parameters: corpo.map((text) => ({ type: "text", text })) });
-  }
-  if (opcoes.botaoUrl) {
-    const link = linkDoEvento(evento, d);
-    const tokenLink = link.match(/[?&]t=([^&#]+)/)?.[1] || "";
-    components.push({
-      type: "button",
-      sub_type: "url",
-      index: String(opcoes.botaoIndex),
-      parameters: [{ type: "text", text: `?t=${tokenLink}` }],
-    });
-  }
-  return components;
-}
-
-/** Erros em que não adianta tentar outra combinação de componentes. */
-const ERRO_FATAL = [190, 131026, 131047, 131031, 133010, 132001, 131009];
-
+/**
+ * Em vez de chamar a Meta, envia para o webhook do n8n tudo que é necessário
+ * para o disparo do template (nome do template, parâmetros, link e imagem).
+ */
 async function enviarWhatsapp(evento: EventoMensagem, d: DadosMensagem) {
-  const token = Deno.env.get("WHATSAPP_TOKEN");
-  const phoneId = Deno.env.get("WHATSAPP_PHONE_NUMBER_ID");
-  if (!token || !phoneId) {
-    console.warn("WhatsApp não configurado; mensagem não enviada:", evento);
-    return;
-  }
   // Template de conclusão pode ser desligado com WHATSAPP_TPL_PREMATRICULA_CONCLUIDA_ATIVO=0.
   if (evento === "concluida" && Deno.env.get("WHATSAPP_TPL_PREMATRICULA_CONCLUIDA_ATIVO") === "0") {
     console.log("WhatsApp prematricula[concluida] desativado por configuração");
@@ -270,99 +158,57 @@ async function enviarWhatsapp(evento: EventoMensagem, d: DadosMensagem) {
   }
   const lang = Deno.env.get("WHATSAPP_TEMPLATE_LANG") || "pt_BR";
   const textos = cfg.params(d);
+  const nomes = PARAM_NOMES[evento] ?? [];
+  const preferido = Deno.env.get(cfg.envVar) || cfg.utility || cfg.padrao;
 
-  // Preferência: secret manual > versão UTILITY aprovada > template legado.
-  const candidatos = [Deno.env.get(cfg.envVar), cfg.utility, cfg.padrao].filter(
-    (x): x is string => !!x,
-  );
-  let nomeTemplate = candidatos[candidatos.length - 1];
-  let def: DefTemplate | null = null;
-  for (const nome of candidatos) {
-    const d0 = await definicaoTemplate(nome, lang);
-    if (d0 && d0.status === "APPROVED") {
-      nomeTemplate = nome;
-      def = d0;
-      break;
-    }
-    console.log(`Template ${nome} indisponível (status=${d0?.status ?? "nao_encontrado"}).`);
-  }
+  const link = linkDoEvento(evento, d);
+  const tokenLink = link.match(/[?&]t=([^&#]+)/)?.[1] || "";
 
-  const langEnvio = def?.lang || lang;
-  const imagemTemplate = def?.headerFormat === "IMAGE" ? def.headerExemplo : null;
-  const temImagemConfigurada = !!imagemPorEvento(evento);
-
-  // 1) Combinação exata da definição da Meta (quando conseguimos ler).
-  // 2) Matriz de combinações (com/sem imagem, com/sem botão, corpo cheio ou reduzido).
-  const tentativas: Opcoes[] = [];
-  if (def) {
-    tentativas.push({
-      headerImagem: def.headerFormat === "IMAGE",
-      headerImagemUrl: imagemTemplate,
-      botaoUrl: def.urlButtonIndex !== null,
-      botaoIndex: def.urlButtonIndex ?? 0,
-      maxBody: def.bodyVars,
-    });
-  }
-  for (const headerImagem of [true, false]) {
-    for (const botaoUrl of [true, false]) {
-      for (const maxBody of [textos.length, Math.max(textos.length - 1, 0)]) {
-        tentativas.push({
-          headerImagem,
-          headerImagemUrl: imagemTemplate,
-          botaoUrl,
-          botaoIndex: 0,
-          maxBody,
-        });
-      }
-    }
-  }
-  // Sem duplicatas.
-  const vistos = new Set<string>();
-  const fila = tentativas.filter((o) => {
-    const k = JSON.stringify(o);
-    if (vistos.has(k)) return false;
-    vistos.add(k);
-    return true;
+  const body_params: Record<string, string> = {};
+  const dados_params: Record<string, string> = {};
+  textos.forEach((t, i) => {
+    body_params[String(i + 1)] = t;
+    if (nomes[i]) dados_params[nomes[i]] = t;
   });
 
-  let ultimoErro = "";
-  for (const opcoes of fila) {
-    const components = montarComponentes(evento, d, textos, opcoes);
-    const res = await fetch(`https://graph.facebook.com/v23.0/${phoneId}/messages`, {
-      method: "POST",
-      headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
-      body: JSON.stringify({
-        messaging_product: "whatsapp",
-        recipient_type: "individual",
-        to: telefoneE164(d.respWhatsapp),
-        type: "template",
-        template: { name: nomeTemplate, language: { code: langEnvio }, components },
-      }),
-    });
-    const texto = await res.text();
-    if (res.ok) {
-      console.log(
-        `WhatsApp prematricula[${evento}] enviado template=${nomeTemplate} lang=${langEnvio} imagemConfigurada=${temImagemConfigurada} opcoes=${JSON.stringify(opcoes)} body=${texto}`,
-      );
-      return;
-    }
-    ultimoErro = texto;
-    const codigo = (() => {
-      try {
-        return JSON.parse(texto)?.error?.code;
-      } catch {
-        return null;
-      }
-    })();
-    console.error(
-      `WhatsApp prematricula[${evento}] tentativa falhou status=${res.status} codigo=${codigo} template=${nomeTemplate} opcoes=${JSON.stringify(opcoes)} body=${texto}`,
-    );
-    if (ERRO_FATAL.includes(codigo)) break;
-  }
-  console.error(
-    `WhatsApp prematricula[${evento}] FALHOU template=${nomeTemplate} to=${telefoneE164(d.respWhatsapp)} erro=${ultimoErro}`,
-  );
+  await enviarTemplateWebhook({
+    evento,
+    origem: "prematricula",
+    template: preferido,
+    template_utility: cfg.utility ?? null,
+    template_fallback: cfg.padrao,
+    language: lang,
+    to: telefoneE164(d.respWhatsapp),
+    telefone_original: d.respWhatsapp,
+    params: textos,
+    body_params,
+    button_url_param: tokenLink ? `?t=${tokenLink}` : null,
+    link: link || null,
+    header_image_url:
+      imagemPorEvento(evento) ||
+      Deno.env.get("WHATSAPP_HEADER_IMAGE_URL") ||
+      HEADER_IMAGE_PADRAO,
+    dados: {
+      ...dados_params,
+      resp_nome: d.respNome,
+      resp_email: d.respEmail,
+      resp_whatsapp: d.respWhatsapp,
+      aluno_nome: d.alunoNome,
+      protocolo: d.protocolo,
+      link_agendamento: d.linkAgendamento ?? null,
+      link_matricula: d.linkMatricula ?? null,
+      link_contrato: d.linkContrato ?? null,
+      documentos_pendentes: d.documentosPendentes ?? null,
+      motivo_reprovacao: d.motivoReprovacao ?? null,
+      data_entrevista: d.dataEntrevista ?? null,
+      desconto_percentual: d.descontoPercentual ?? null,
+      site_url: SITE_URL,
+      whatsapp_suporte: WHATSAPP_SUPORTE,
+    },
+    enviado_em: new Date().toISOString(),
+  });
 }
+
 
 
 

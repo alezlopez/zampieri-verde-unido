@@ -1,3 +1,5 @@
+import { enviarTemplateWebhook } from "./whatsapp-webhook.ts";
+
 export const corsHeadersOtp = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
@@ -36,44 +38,37 @@ export const telefoneE164 = (tel: string) => {
   return d;
 };
 
+/**
+ * Envia o código OTP via webhook do n8n (que dispara o template na Meta).
+ * Lança erro se o webhook não confirmar o recebimento.
+ */
 export async function enviarWhatsappOtp(telefone: string, codigo: string) {
-  const token = Deno.env.get("WHATSAPP_TOKEN");
-  const phoneId = Deno.env.get("WHATSAPP_PHONE_NUMBER_ID");
   const template = Deno.env.get("WHATSAPP_TEMPLATE_OTP") || "codigo_verificacao";
   const lang = Deno.env.get("WHATSAPP_TEMPLATE_LANG") || "pt_BR";
-  if (!token || !phoneId) throw new Error("WhatsApp Cloud API não configurada");
 
-  const body = { type: "body", parameters: [{ type: "text", text: codigo }] };
-  // A Meta armazena o botão OTP "Copiar código" como URL e exige este payload no envio.
-  const components = [
-    body,
+  await enviarTemplateWebhook(
     {
-      type: "button",
-      sub_type: "url",
-      index: "0",
-      parameters: [{ type: "text", text: codigo }],
-    },
-  ];
-  const res = await fetch(`https://graph.facebook.com/v23.0/${phoneId}/messages`, {
-    method: "POST",
-    headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
-    body: JSON.stringify({
-      messaging_product: "whatsapp",
-      recipient_type: "individual",
+      evento: "otp",
+      origem: "otp",
+      template,
+      template_utility: null,
+      template_fallback: template,
+      language: lang,
       to: telefoneE164(telefone),
-      type: "template",
-      template: { name: template, language: { code: lang }, components },
-    }),
-  });
-  const texto = await res.text();
-  console.log(
-    `WhatsApp OTP -> to=${telefoneE164(telefone)} template=${template} lang=${lang} status=${res.status} body=${texto}`,
+      telefone_original: telefone,
+      params: [codigo],
+      body_params: { "1": codigo },
+      // Template de autenticação da Meta: botão "Copiar código" recebe o código.
+      button_url_param: codigo,
+      link: null,
+      header_image_url: null,
+      dados: { codigo, tipo: "autenticacao", validade_minutos: 10 },
+      enviado_em: new Date().toISOString(),
+    },
+    { lancarErro: true },
   );
-  if (res.ok) return;
-
-  console.error(`WhatsApp OTP falhou: ${res.status}:${texto}`);
-  throw new Error(`whatsapp_falhou:${res.status}:${texto.slice(0, 80)}`);
 }
+
 
 
 export async function enviarEmailOtp(email: string, codigo: string, nomeAluno: string) {
