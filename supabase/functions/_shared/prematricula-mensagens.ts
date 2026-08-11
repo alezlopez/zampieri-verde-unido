@@ -6,6 +6,8 @@
  * (nome do template Meta + parâmetros) e o HTML dos e-mails.
  */
 
+import { enviarTemplateWebhook } from "./whatsapp-webhook.ts";
+
 export const SITE_URL = "https://colegiozampieri.com.br";
 export const FROM_EMAIL = "Colégio Zampieri <noreply@colegiozampieri.com.br>";
 export const WHATSAPP_SUPORTE = "5511939341503";
