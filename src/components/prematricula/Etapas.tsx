@@ -67,8 +67,10 @@ const VerificacaoContato = ({
     return () => clearTimeout(t);
   }, [espera]);
 
-  const digitos = onlyDigits(telefone);
-  const podeEnviar = digitos.length >= 10;
+  const isEmail = canal === "email";
+  const valor = isEmail ? destino.trim().toLowerCase() : onlyDigits(destino);
+  const podeEnviar = isEmail ? isValidEmail(valor) : valor.length >= 10;
+  const rotulo = isEmail ? "e-mail" : "WhatsApp";
 
   const falhar = (code?: string) =>
     toast({
@@ -76,16 +78,19 @@ const VerificacaoContato = ({
       variant: "destructive",
     });
 
+  const corpo = (extra: Record<string, unknown>) =>
+    isEmail ? { canal: "email", email: valor, ...extra } : { telefone: valor, ...extra };
+
   const enviarCodigo = async () => {
     setCarregando(true);
     try {
       const { data, error } = await supabase.functions.invoke("prematricula-otp", {
-        body: { acao: "enviar", telefone: digitos },
+        body: corpo({ acao: "enviar" }),
       });
       if (error || !data?.ok) return falhar(data?.error);
       setEnviado(true);
       setEspera(60);
-      toast({ title: "Código enviado no WhatsApp" });
+      toast({ title: `Código enviado por ${rotulo}` });
     } finally {
       setCarregando(false);
     }
@@ -95,11 +100,11 @@ const VerificacaoContato = ({
     setCarregando(true);
     try {
       const { data, error } = await supabase.functions.invoke("prematricula-otp", {
-        body: { acao: "validar", telefone: digitos, codigo: onlyDigits(codigo) },
+        body: corpo({ acao: "validar", codigo: onlyDigits(codigo) }),
       });
       if (error || !data?.ok) return falhar(data?.error);
-      onVerificado(digitos);
-      toast({ title: "WhatsApp confirmado!" });
+      onVerificado(valor);
+      toast({ title: isEmail ? "E-mail confirmado!" : "WhatsApp confirmado!" });
     } finally {
       setCarregando(false);
     }
@@ -109,7 +114,7 @@ const VerificacaoContato = ({
     return (
       <div className="flex items-center gap-2 rounded-lg bg-zampieri-cream/60 border border-border p-3 text-sm text-zampieri-green-dark">
         <CheckCircle2 className="w-4 h-4" />
-        Número de WhatsApp confirmado.
+        {isEmail ? "E-mail confirmado." : "Número de WhatsApp confirmado."}
       </div>
     );
   }
@@ -117,7 +122,8 @@ const VerificacaoContato = ({
   return (
     <div className="rounded-lg border border-border p-4 space-y-3">
       <p className="text-sm text-muted-foreground">
-        Precisamos confirmar seu WhatsApp. Enviaremos um código de 6 dígitos para o número acima.
+        Precisamos confirmar seu {rotulo}. Enviaremos um código de 6 dígitos para o{" "}
+        {isEmail ? "e-mail" : "número"} acima.
       </p>
       {!enviado ? (
         <Button
