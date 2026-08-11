@@ -320,7 +320,7 @@ const Matricula = () => {
           )}
         </header>
 
-        <RoadmapEtapas etapaAtual={etapaAtual} status={m.status} />
+        <RoadmapEtapas etapaAtual={etapaAtual} status={m.status} gratuita={m.matricula_gratuita} />
 
 
         {pagamento === "sucesso" && (
