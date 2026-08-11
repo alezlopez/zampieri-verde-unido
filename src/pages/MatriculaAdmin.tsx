@@ -38,6 +38,7 @@ interface Matricula {
   contrato_assinado: boolean;
   link_contrato: string | null;
   valor_matricula: number | null;
+  matricula_gratuita?: boolean;
   data_pagamento: string | null;
   documentos: Doc[];
   prematricula: {
