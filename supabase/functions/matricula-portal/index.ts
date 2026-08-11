@@ -157,6 +157,7 @@ Deno.serve(async (req) => {
         contrato_assinado: mat!.contrato_assinado,
         link_contrato: mat!.link_contrato,
         valor_matricula: mat!.valor_matricula,
+        matricula_gratuita: mat!.matricula_gratuita,
         permite_avista: mat!.permite_avista,
         permite_parcelado: mat!.permite_parcelado,
         max_parcelas: mat!.max_parcelas,
