@@ -62,7 +62,7 @@ const TEMPLATES: Partial<
   },
   aprovada: {
     envVar: "WHATSAPP_TPL_PREMATRICULA_APROVADA",
-    padrao: "prematricula_aprovada",
+    padrao: "prematricula_aprovadav2",
     params: (d) => [primeiroNome(d.respNome), d.alunoNome, d.linkAgendamento || SITE_URL],
   },
   reprovada: {
@@ -84,6 +84,11 @@ const TEMPLATES: Partial<
       (d.documentosPendentes ?? []).join(", ") || "documentos pendentes",
     ],
   },
+  documentos_aprovados: {
+    envVar: "WHATSAPP_TPL_MATRICULA_DADOS",
+    padrao: "matricula_dados_liberados",
+    params: (d) => [primeiroNome(d.respNome), d.alunoNome],
+  },
   concluida: {
     envVar: "WHATSAPP_TPL_PREMATRICULA_CONCLUIDA",
     padrao: "prematricula_entrevista_concluida",
@@ -98,7 +103,13 @@ const TEMPLATES: Partial<
 /** Imagem usada quando o template aprovado tem cabeçalho de IMAGEM. */
 const HEADER_IMAGE_PADRAO = `${SITE_URL}/lovable-uploads/bd571e68-1908-4859-81a4-bc2c0c51fa6a.png`;
 
+/** Override de imagem por evento (secret opcional), ex.: WHATSAPP_IMG_RECEBIDA. */
+const imagemPorEvento = (evento: EventoMensagem) =>
+  Deno.env.get(`WHATSAPP_IMG_${evento.toUpperCase()}`) || null;
+
 type DefTemplate = {
+  nome: string;
+  lang: string;
   headerFormat: "IMAGE" | "VIDEO" | "DOCUMENT" | "TEXT" | null;
   headerVars: number;
   headerExemplo: string | null;
@@ -115,6 +126,7 @@ async function definicaoTemplate(nome: string, lang: string): Promise<DefTemplat
   const token = Deno.env.get("WHATSAPP_TOKEN");
   const waba = Deno.env.get("WHATSAPP_WABA_ID") || Deno.env.get("WHATSAPP_BUSINESS_ACCOUNT_ID");
   if (!token || !waba) {
+    console.warn("WHATSAPP_WABA_ID ausente: não é possível ler a definição dos templates na Meta.");
     cacheDefs.set(chave, null);
     return null;
   }
@@ -125,13 +137,17 @@ async function definicaoTemplate(nome: string, lang: string): Promise<DefTemplat
     );
     const json = await res.json();
     if (!res.ok) {
-      console.error(`Meta message_templates falhou status=${res.status} body=${JSON.stringify(json).slice(0, 300)}`);
+      console.error(
+        `Meta message_templates falhou status=${res.status} waba=${waba} body=${JSON.stringify(json).slice(0, 400)}`,
+      );
       cacheDefs.set(chave, null);
       return null;
     }
     const lista: any[] = json?.data ?? [];
-    const tpl = lista.find((t) => t.name === nome && t.language === lang) ?? lista.find((t) => t.name === nome);
+    const tpl =
+      lista.find((t) => t.name === nome && t.language === lang) ?? lista.find((t) => t.name === nome);
     if (!tpl) {
+      console.error(`Template ${nome} não encontrado na WABA ${waba}.`);
       cacheDefs.set(chave, null);
       return null;
     }
@@ -141,6 +157,8 @@ async function definicaoTemplate(nome: string, lang: string): Promise<DefTemplat
     const botoes = comps.find((c) => c.type === "BUTTONS")?.buttons ?? [];
     const contarVars = (txt: string) => new Set((txt || "").match(/\{\{\d+\}\}/g) ?? []).size;
     const def: DefTemplate = {
+      nome: tpl.name,
+      lang: tpl.language,
       headerFormat: header?.format ?? null,
       headerVars: header?.format === "TEXT" ? contarVars(header?.text) : 0,
       headerExemplo: header?.example?.header_handle?.[0] ?? header?.example?.header_url?.[0] ?? null,
@@ -160,23 +178,32 @@ async function definicaoTemplate(nome: string, lang: string): Promise<DefTemplat
   }
 }
 
+type Opcoes = {
+  headerImagem: boolean;
+  headerImagemUrl?: string | null;
+  botaoUrl: boolean;
+  botaoIndex: number;
+  maxBody?: number;
+};
+
+/** Link (com token) usado no botão dinâmico do template. */
+const linkDoEvento = (evento: EventoMensagem, d: DadosMensagem) =>
+  (evento === "aprovada" || evento === "agendada"
+    ? d.linkAgendamento || d.linkMatricula
+    : d.linkMatricula || d.linkAgendamento) || "";
+
 function montarComponentes(
   evento: EventoMensagem,
   d: DadosMensagem,
   textos: string[],
-  opcoes: {
-    headerImagem: boolean;
-    headerImagemUrl?: string | null;
-    botaoUrl: boolean;
-    botaoIndex: number;
-    maxBody?: number;
-  },
+  opcoes: Opcoes,
 ) {
   const components: unknown[] = [];
   if (opcoes.headerImagem) {
-    // Prioridade: imagem do próprio template aprovado na Meta > override por
-    // secret > imagem padrão do site.
+    // Prioridade: imagem configurada para o evento > imagem do template aprovado
+    // na Meta > override global > imagem padrão do site.
     const link =
+      imagemPorEvento(evento) ||
       opcoes.headerImagemUrl ||
       Deno.env.get("WHATSAPP_HEADER_IMAGE_URL") ||
       HEADER_IMAGE_PADRAO;
@@ -190,10 +217,7 @@ function montarComponentes(
     components.push({ type: "body", parameters: corpo.map((text) => ({ type: "text", text })) });
   }
   if (opcoes.botaoUrl) {
-    const link =
-      (evento === "concluida" || evento === "documentos_reenvio"
-        ? d.linkMatricula
-        : d.linkAgendamento) || "";
+    const link = linkDoEvento(evento, d);
     const tokenLink = link.match(/[?&]t=([^&#]+)/)?.[1] || "";
     components.push({
       type: "button",
@@ -204,6 +228,9 @@ function montarComponentes(
   }
   return components;
 }
+
+/** Erros em que não adianta tentar outra combinação de componentes. */
+const ERRO_FATAL = [190, 131026, 131047, 131031, 133010, 132001, 131009];
 
 async function enviarWhatsapp(evento: EventoMensagem, d: DadosMensagem) {
   const token = Deno.env.get("WHATSAPP_TOKEN");
@@ -227,23 +254,13 @@ async function enviarWhatsapp(evento: EventoMensagem, d: DadosMensagem) {
   const textos = cfg.params(d);
 
   const def = await definicaoTemplate(nomeTemplate, lang);
-
-  // Tentativas em ordem: definição real da Meta (quando disponível) e,
-  // se falhar por formato, variações com/sem cabeçalho de imagem e botão.
-  const usaBotaoPadrao =
-    (evento === "aprovada" && Deno.env.get("WHATSAPP_TPL_PREMATRICULA_APROVADA_BOTAO") !== "0") ||
-    (evento === "concluida" && Deno.env.get("WHATSAPP_TPL_PREMATRICULA_CONCLUIDA_BOTAO") !== "0") ||
-    evento === "documentos_reenvio";
-
+  const langEnvio = def?.lang || lang;
   const imagemTemplate = def?.headerFormat === "IMAGE" ? def.headerExemplo : null;
+  const temImagemConfigurada = !!imagemPorEvento(evento);
 
-  const tentativas: {
-    headerImagem: boolean;
-    headerImagemUrl?: string | null;
-    botaoUrl: boolean;
-    botaoIndex: number;
-    maxBody?: number;
-  }[] = [];
+  // 1) Combinação exata da definição da Meta (quando conseguimos ler).
+  // 2) Matriz de combinações (com/sem imagem, com/sem botão, corpo cheio ou reduzido).
+  const tentativas: Opcoes[] = [];
   if (def) {
     tentativas.push({
       headerImagem: def.headerFormat === "IMAGE",
@@ -253,23 +270,30 @@ async function enviarWhatsapp(evento: EventoMensagem, d: DadosMensagem) {
       maxBody: def.bodyVars,
     });
   }
-  const padrao = {
-    headerImagem: false,
-    headerImagemUrl: imagemTemplate,
-    botaoUrl: usaBotaoPadrao,
-    botaoIndex: 0,
-    maxBody: usaBotaoPadrao && evento === "aprovada" ? 2 : undefined,
-  };
-  tentativas.push(
-    { ...padrao, headerImagem: true },
-    { ...padrao, headerImagem: true, headerImagemUrl: null },
-    padrao,
-    { ...padrao, headerImagem: true, botaoUrl: false },
-    { ...padrao, botaoUrl: false },
-  );
+  for (const headerImagem of [true, false]) {
+    for (const botaoUrl of [true, false]) {
+      for (const maxBody of [textos.length, Math.max(textos.length - 1, 0)]) {
+        tentativas.push({
+          headerImagem,
+          headerImagemUrl: imagemTemplate,
+          botaoUrl,
+          botaoIndex: 0,
+          maxBody,
+        });
+      }
+    }
+  }
+  // Sem duplicatas.
+  const vistos = new Set<string>();
+  const fila = tentativas.filter((o) => {
+    const k = JSON.stringify(o);
+    if (vistos.has(k)) return false;
+    vistos.add(k);
+    return true;
+  });
 
   let ultimoErro = "";
-  for (const opcoes of tentativas) {
+  for (const opcoes of fila) {
     const components = montarComponentes(evento, d, textos, opcoes);
     const res = await fetch(`https://graph.facebook.com/v23.0/${phoneId}/messages`, {
       method: "POST",
@@ -279,13 +303,13 @@ async function enviarWhatsapp(evento: EventoMensagem, d: DadosMensagem) {
         recipient_type: "individual",
         to: telefoneE164(d.respWhatsapp),
         type: "template",
-        template: { name: nomeTemplate, language: { code: lang }, components },
+        template: { name: nomeTemplate, language: { code: langEnvio }, components },
       }),
     });
     const texto = await res.text();
     if (res.ok) {
       console.log(
-        `WhatsApp prematricula[${evento}] enviado template=${nomeTemplate} opcoes=${JSON.stringify(opcoes)} body=${texto}`,
+        `WhatsApp prematricula[${evento}] enviado template=${nomeTemplate} lang=${langEnvio} imagemConfigurada=${temImagemConfigurada} opcoes=${JSON.stringify(opcoes)} body=${texto}`,
       );
       return;
     }
@@ -298,15 +322,16 @@ async function enviarWhatsapp(evento: EventoMensagem, d: DadosMensagem) {
       }
     })();
     console.error(
-      `WhatsApp prematricula[${evento}] tentativa falhou status=${res.status} template=${nomeTemplate} opcoes=${JSON.stringify(opcoes)} body=${texto}`,
+      `WhatsApp prematricula[${evento}] tentativa falhou status=${res.status} codigo=${codigo} template=${nomeTemplate} opcoes=${JSON.stringify(opcoes)} body=${texto}`,
     );
-    // Só vale reenviar quando o erro é de formato/parâmetros do template.
-    if (![132000, 132001, 132005, 132012, 131008, 100].includes(codigo)) break;
+    if (ERRO_FATAL.includes(codigo)) break;
   }
   console.error(
     `WhatsApp prematricula[${evento}] FALHOU template=${nomeTemplate} to=${telefoneE164(d.respWhatsapp)} erro=${ultimoErro}`,
   );
 }
+
+
 
 
 const wrapper = (titulo: string, corpo: string) => `

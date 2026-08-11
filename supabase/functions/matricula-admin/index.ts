@@ -57,20 +57,25 @@ Deno.serve(async (req) => {
         .from("matricula_documentos")
         .select("matricula_id, tipo, nome_arquivo, status, motivo");
 
-      const lista = (mats ?? []).map((m) => ({
-        ...m,
-        prematricula: (pms ?? []).find((p) => p.id === m.prematricula_id) ?? null,
-        documentos: DOCUMENTOS.map((d) => {
-          const found = (docs ?? []).find((x) => x.matricula_id === m.id && x.tipo === d.tipo);
-          return {
-            tipo: d.tipo,
-            label: d.label,
-            status: found?.status ?? "pendente",
-            nome_arquivo: found?.nome_arquivo ?? null,
-            motivo: found?.motivo ?? null,
-          };
-        }),
-      }));
+      const lista = (mats ?? []).map((m) => {
+        const pmDoAluno = (pms ?? []).find((p) => p.id === m.prematricula_id) ?? null;
+        return {
+          ...m,
+          prematricula: pmDoAluno,
+          documentos: DOCUMENTOS.map((d) => {
+            const found = (docs ?? []).find((x) => x.matricula_id === m.id && x.tipo === d.tipo);
+            return {
+              tipo: d.tipo,
+              label: d.label,
+              obrigatorio: docObrigatorio(d.tipo, pmDoAluno?.resp_tipo),
+              status: found?.status ?? "pendente",
+              nome_arquivo: found?.nome_arquivo ?? null,
+              motivo: found?.motivo ?? null,
+            };
+          }),
+        };
+      });
+
       return json({ ok: true, lista });
     }
 

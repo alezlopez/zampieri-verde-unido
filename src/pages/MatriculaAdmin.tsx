@@ -24,9 +24,11 @@ interface Doc {
   tipo: string;
   label: string;
   status: string;
+  obrigatorio?: boolean;
   nome_arquivo: string | null;
   motivo: string | null;
 }
+
 
 interface Matricula {
   id: string;
@@ -192,13 +194,14 @@ const MatriculaAdmin = () => {
     );
   }, [aberta]);
 
-  /** Todos os documentos obrigatórios já conferidos (aprovados ou aguardando escola). */
+  /** Só os documentos obrigatórios precisam estar aprovados (ou aguardando escola). */
   const docsConferidos = useMemo(() => {
     if (!aberta) return false;
-    return (aberta.documentos ?? []).every(
-      (d) => d.status === "aprovado" || d.status === "aguardando_escola",
-    );
+    return (aberta.documentos ?? [])
+      .filter((d) => d.obrigatorio !== false)
+      .every((d) => d.status === "aprovado" || d.status === "aguardando_escola");
   }, [aberta]);
+
 
   const executar = async (acao: string, extra: Record<string, unknown> = {}, fechar = false) => {
     if (!aberta) return;
@@ -400,8 +403,9 @@ const MatriculaAdmin = () => {
                       disabled={acaoEmCurso || !docsConferidos || !valoresProntos}
                       onClick={() => executar("liberar_dados")}
                     >
-                      Liberar preenchimento dos dados
+                      Liberar contrato (preenchimento dos dados)
                     </Button>
+
                     <Button
                       variant="outline"
                       disabled={acaoEmCurso}
