@@ -37,6 +37,9 @@ export interface DadosMensagem {
   motivoReprovacao?: string;
   dataEntrevista?: string;
   descontoPercentual?: number | null;
+  curso?: string | null;
+  turno?: string | null;
+  contratoAssinado?: boolean | null;
 }
 
 const onlyDigits = (v: string) => (v || "").replace(/\D/g, "");
