@@ -66,6 +66,8 @@ const PreMatricula = () => {
     });
     if (etapa === 0) {
       if (!e.resp_email && !isValidEmail(form.resp_email)) e.resp_email = "E-mail inválido";
+      if (!e.resp_email && emailVerificado !== form.resp_email.trim().toLowerCase())
+        e.resp_email = "Confirme o código enviado no e-mail";
       if (!e.resp_cpf && !isValidCpf(form.resp_cpf)) e.resp_cpf = "CPF inválido";
       if (!e.resp_whatsapp && onlyDigits(form.resp_whatsapp).length < 10)
         e.resp_whatsapp = "Telefone incompleto";
@@ -137,12 +139,16 @@ const PreMatricula = () => {
         setDuplicado({ protocolo: data.protocolo ?? null });
         return;
       }
-      if (data?.error === "otp_nao_verificado") {
-        setTelefoneVerificado(null);
+      if (data?.error === "otp_nao_verificado" || data?.error === "otp_email_nao_verificado") {
+        const ehEmail = data.error === "otp_email_nao_verificado";
+        if (ehEmail) setEmailVerificado(null);
+        else setTelefoneVerificado(null);
         setEtapa(0);
         toast({
-          title: "Confirme seu WhatsApp",
-          description: "Precisamos validar o código enviado para o seu número antes de enviar.",
+          title: ehEmail ? "Confirme seu e-mail" : "Confirme seu WhatsApp",
+          description: `Precisamos validar o código enviado para o seu ${
+            ehEmail ? "e-mail" : "número"
+          } antes de enviar.`,
           variant: "destructive",
         });
         return;
