@@ -622,11 +622,56 @@ const MatriculaAdmin = () => {
                       automaticamente.
                     </p>
                   )}
+                  <div className="space-y-1">
+                    <Label className="text-xs">Anuidade total</Label>
+                    <Select
+                      value={
+                        anuidadeOutro
+                          ? "outro"
+                          : ANUIDADES.find((a) => a.valor === (form.anuidade_total ?? ""))?.curso ??
+                            ""
+                      }
+                      onValueChange={(v) => {
+                        if (v === "outro") {
+                          setAnuidadeOutro(true);
+                          return;
+                        }
+                        const op = ANUIDADES.find((a) => a.curso === v);
+                        if (!op) return;
+                        setAnuidadeOutro(false);
+                        setForm((f) => ({
+                          ...f,
+                          anuidade_total: op.valor,
+                          anuidade_total_ext: op.ext,
+                        }));
+                      }}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Selecione o segmento" />
+                      </SelectTrigger>
+                      <SelectContent className="bg-background z-50">
+                        {ANUIDADES.map((a) => (
+                          <SelectItem key={a.curso} value={a.curso}>
+                            {a.curso} — R$ {a.valor}
+                          </SelectItem>
+                        ))}
+                        <SelectItem value="outro">Outro (digitar)</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    {!anuidadeOutro && form.anuidade_total_ext && (
+                      <p className="text-xs text-muted-foreground">{form.anuidade_total_ext}</p>
+                    )}
+                  </div>
+
                   <div className="grid sm:grid-cols-2 gap-3">
-                    {CAMPOS_VALORES.filter(
-                      ({ campo }) =>
-                        !gratuita || !["valor_matricula", "max_parcelas"].includes(campo),
-                    ).map(({ campo, label }) => (
+                    {CAMPOS_VALORES.filter(({ campo }) => {
+                      if (
+                        !anuidadeOutro &&
+                        ["anuidade_total", "anuidade_total_ext"].includes(campo)
+                      )
+                        return false;
+                      return !gratuita || !["valor_matricula", "max_parcelas"].includes(campo);
+                    }).map(({ campo, label }) => (
                       <div key={campo} className="space-y-1">
                         <Label className="text-xs">{label}</Label>
                         <Input
@@ -636,6 +681,7 @@ const MatriculaAdmin = () => {
                       </div>
                     ))}
                   </div>
+
                   {!gratuita && (
                     <div className="flex flex-wrap gap-4 text-sm">
                       <label className="flex items-center gap-2">
