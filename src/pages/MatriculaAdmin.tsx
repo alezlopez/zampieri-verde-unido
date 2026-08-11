@@ -454,8 +454,26 @@ const MatriculaAdmin = () => {
                   <p className="text-xs font-semibold uppercase text-muted-foreground">
                     Valores e pagamento
                   </p>
+                  <label className="flex items-center gap-2 rounded-lg border border-border bg-zampieri-cream/40 p-3 text-sm font-medium">
+                    <input
+                      type="checkbox"
+                      checked={gratuita}
+                      onChange={(e) => setGratuita(e.target.checked)}
+                      className="h-4 w-4 accent-[hsl(var(--primary))]"
+                    />
+                    Matrícula gratuita (isenta de cobrança)
+                  </label>
+                  {gratuita && (
+                    <p className="text-xs text-muted-foreground">
+                      Sem cobrança: assim que o contrato for assinado, a matrícula é concluída
+                      automaticamente.
+                    </p>
+                  )}
                   <div className="grid sm:grid-cols-2 gap-3">
-                    {CAMPOS_VALORES.map(({ campo, label }) => (
+                    {CAMPOS_VALORES.filter(
+                      ({ campo }) =>
+                        !gratuita || !["valor_matricula", "max_parcelas"].includes(campo),
+                    ).map(({ campo, label }) => (
                       <div key={campo} className="space-y-1">
                         <Label className="text-xs">{label}</Label>
                         <Input
@@ -465,26 +483,28 @@ const MatriculaAdmin = () => {
                       </div>
                     ))}
                   </div>
-                  <div className="flex flex-wrap gap-4 text-sm">
-                    <label className="flex items-center gap-2">
-                      <input
-                        type="checkbox"
-                        checked={avista}
-                        onChange={(e) => setAvista(e.target.checked)}
-                        className="h-4 w-4 accent-[hsl(var(--primary))]"
-                      />
-                      Permitir à vista (PIX)
-                    </label>
-                    <label className="flex items-center gap-2">
-                      <input
-                        type="checkbox"
-                        checked={parcelado}
-                        onChange={(e) => setParcelado(e.target.checked)}
-                        className="h-4 w-4 accent-[hsl(var(--primary))]"
-                      />
-                      Permitir parcelado (cartão)
-                    </label>
-                  </div>
+                  {!gratuita && (
+                    <div className="flex flex-wrap gap-4 text-sm">
+                      <label className="flex items-center gap-2">
+                        <input
+                          type="checkbox"
+                          checked={avista}
+                          onChange={(e) => setAvista(e.target.checked)}
+                          className="h-4 w-4 accent-[hsl(var(--primary))]"
+                        />
+                        Permitir à vista (PIX)
+                      </label>
+                      <label className="flex items-center gap-2">
+                        <input
+                          type="checkbox"
+                          checked={parcelado}
+                          onChange={(e) => setParcelado(e.target.checked)}
+                          className="h-4 w-4 accent-[hsl(var(--primary))]"
+                        />
+                        Permitir parcelado (cartão)
+                      </label>
+                    </div>
+                  )}
                   <Button
                     className="bg-zampieri-green-dark hover:bg-zampieri-green"
                     disabled={acaoEmCurso}
