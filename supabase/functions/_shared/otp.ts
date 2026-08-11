@@ -1,3 +1,5 @@
+import { enviarTemplateWebhook } from "./whatsapp-webhook.ts";
+
 export const corsHeadersOtp = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
