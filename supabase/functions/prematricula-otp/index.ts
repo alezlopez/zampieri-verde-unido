@@ -1,6 +1,7 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
 import { corsHeaders } from "../_shared/cors.ts";
 import { enviarWhatsappOtp, gerarCodigo, onlyDigits, telefoneE164 } from "../_shared/otp.ts";
+import { FROM_EMAIL } from "../_shared/prematricula-mensagens.ts";
 
 const json = (body: unknown, status = 200) =>
   new Response(JSON.stringify(body), {
@@ -10,9 +11,12 @@ const json = (body: unknown, status = 200) =>
 
 const txt = (v: unknown, max = 200) => String(v ?? "").trim().slice(0, max);
 
-async function hashCodigo(codigo: string, telefone: string) {
+const emailValido = (email: string) =>
+  !/\.\./.test(email) && /^[a-z0-9._%+-]+@[a-z0-9-]+(\.[a-z0-9-]+)*\.[a-z]{2,}$/.test(email);
+
+async function hashCodigo(codigo: string, destino: string) {
   const pepper = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "sem-pepper";
-  const data = new TextEncoder().encode(`${telefone}:${codigo}:${pepper}`);
+  const data = new TextEncoder().encode(`${destino}:${codigo}:${pepper}`);
   const buf = await crypto.subtle.digest("SHA-256", data);
   return Array.from(new Uint8Array(buf)).map((b) => b.toString(16).padStart(2, "0")).join("");
 }
@@ -25,6 +29,44 @@ const normNome = (nome: string) =>
     .trim()
     .replace(/\s+/g, " ")
     .toLowerCase();
+
+/** Canal + destino normalizado a partir do corpo da requisição. */
+function alvo(body: Record<string, unknown>) {
+  const canal = txt(body?.canal, 10) === "email" ? "email" : "whatsapp";
+  if (canal === "email") {
+    const email = txt(body?.email, 160).toLowerCase();
+    return { canal, destino: email, valido: emailValido(email) };
+  }
+  const telefone = telefoneE164(onlyDigits(txt(body?.telefone, 20)));
+  return { canal, destino: telefone, valido: telefone.length >= 12 };
+}
+
+async function enviarEmailOtp(email: string, codigo: string) {
+  const key = Deno.env.get("RESEND_API_KEY");
+  if (!key) throw new Error("RESEND_API_KEY ausente");
+  const html = `
+  <div style="font-family:Arial,Helvetica,sans-serif;max-width:520px;margin:0 auto;padding:24px">
+    <h2 style="color:#0F3D24;margin:0 0 12px">Confirmação de e-mail</h2>
+    <p style="color:#444;font-size:14px;line-height:1.6">
+      Use o código abaixo para confirmar seu e-mail na pré-matrícula do Colégio Zampieri:
+    </p>
+    <p style="font-size:32px;letter-spacing:10px;font-weight:bold;color:#0F3D24;margin:20px 0">${codigo}</p>
+    <p style="color:#777;font-size:12px">O código vale por 10 minutos. Se não foi você, ignore este e-mail.</p>
+  </div>`;
+  const res = await fetch("https://api.resend.com/emails", {
+    method: "POST",
+    headers: { Authorization: `Bearer ${key}`, "Content-Type": "application/json" },
+    body: JSON.stringify({
+      from: FROM_EMAIL,
+      to: [email],
+      subject: `${codigo} é o seu código de confirmação`,
+      html,
+    }),
+  });
+  const texto = await res.text();
+  console.log(`OTP e-mail status=${res.status} body=${texto.slice(0, 200)}`);
+  if (!res.ok) throw new Error(`resend_${res.status}`);
+}
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
@@ -63,29 +105,32 @@ Deno.serve(async (req) => {
 
     // ---- Envio do código ----
     if (acao === "enviar") {
-      const telefone = telefoneE164(onlyDigits(txt(body?.telefone, 20)));
-      if (telefone.length < 12) return json({ error: "telefone_invalido" }, 400);
+      const { canal, destino, valido } = alvo(body);
+      if (!valido) return json({ error: canal === "email" ? "email_invalido" : "telefone_invalido" }, 400);
 
       const { data: liberado } = await admin.rpc("rematricula_2027_rate_hit", {
         p_bucket: "prematricula_otp",
-        p_limite: 10,
+        p_limite: 20,
         p_janela_seg: 600,
       });
       if (liberado === false) return json({ error: "muitas_tentativas" }, 429);
 
-      // limite por número: 5 envios em 30 minutos
+      // limite por destino: 5 envios em 30 minutos
       const desde = new Date(Date.now() - 30 * 60 * 1000).toISOString();
       const { count } = await admin
         .from("prematricula_otp")
         .select("id", { count: "exact", head: true })
-        .eq("telefone", telefone)
+        .eq("canal", canal)
+        .eq("destino", destino)
         .gte("created_at", desde);
       if ((count ?? 0) >= 5) return json({ error: "muitas_tentativas" }, 429);
 
       const codigo = gerarCodigo();
-      const codigo_hash = await hashCodigo(codigo, telefone);
+      const codigo_hash = await hashCodigo(codigo, destino);
       const { error: erroIns } = await admin.from("prematricula_otp").insert({
-        telefone,
+        canal,
+        destino,
+        telefone: canal === "whatsapp" ? destino : null,
         codigo_hash,
         expira_em: new Date(Date.now() + 10 * 60 * 1000).toISOString(),
         ip,
@@ -93,9 +138,10 @@ Deno.serve(async (req) => {
       if (erroIns) throw erroIns;
 
       try {
-        await enviarWhatsappOtp(telefone, codigo);
+        if (canal === "email") await enviarEmailOtp(destino, codigo);
+        else await enviarWhatsappOtp(destino, codigo);
       } catch (e) {
-        console.error("prematricula-otp envio falhou:", e);
+        console.error(`prematricula-otp envio ${canal} falhou:`, e);
         return json({ error: "envio_falhou" }, 502);
       }
       return json({ ok: true });
@@ -103,16 +149,15 @@ Deno.serve(async (req) => {
 
     // ---- Validação do código ----
     if (acao === "validar") {
-      const telefone = telefoneE164(onlyDigits(txt(body?.telefone, 20)));
+      const { canal, destino, valido } = alvo(body);
       const codigo = onlyDigits(txt(body?.codigo, 10));
-      if (telefone.length < 12 || codigo.length !== 6) {
-        return json({ error: "dados_invalidos" }, 400);
-      }
+      if (!valido || codigo.length !== 6) return json({ error: "dados_invalidos" }, 400);
 
       const { data: reg, error } = await admin
         .from("prematricula_otp")
         .select("id, codigo_hash, expira_em, tentativas, consumido_em")
-        .eq("telefone", telefone)
+        .eq("canal", canal)
+        .eq("destino", destino)
         .is("consumido_em", null)
         .order("created_at", { ascending: false })
         .limit(1)
@@ -124,7 +169,7 @@ Deno.serve(async (req) => {
       }
       if ((reg.tentativas ?? 0) >= 5) return json({ error: "muitas_tentativas" }, 429);
 
-      const esperado = await hashCodigo(codigo, telefone);
+      const esperado = await hashCodigo(codigo, destino);
       if (esperado !== reg.codigo_hash) {
         await admin
           .from("prematricula_otp")

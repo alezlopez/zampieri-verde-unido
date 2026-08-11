@@ -12,7 +12,13 @@ import {
 import { Textarea } from "@/components/ui/textarea";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import { maskCpf, maskDataBr, maskTelefone, onlyDigits } from "@/components/rematricula/utils";
+import {
+  isValidEmail,
+  maskCpf,
+  maskDataBr,
+  maskTelefone,
+  onlyDigits,
+} from "@/components/rematricula/utils";
 import { Campo, RadioGrupo, SecaoTitulo } from "./Campos";
 import { PreMatriculaForm, SERIES } from "./types";
 
@@ -28,27 +34,32 @@ interface Props {
   setLaudo: (f: File | null) => void;
   telefoneVerificado?: string | null;
   setTelefoneVerificado?: (t: string | null) => void;
+  emailVerificado?: string | null;
+  setEmailVerificado?: (e: string | null) => void;
 }
 
 const ACEITOS = ".pdf,.jpg,.jpeg,.png";
 
 const ERROS_OTP: Record<string, string> = {
   telefone_invalido: "Número de WhatsApp inválido.",
+  email_invalido: "E-mail inválido.",
   muitas_tentativas: "Muitas tentativas. Aguarde alguns minutos e tente de novo.",
-  envio_falhou: "Não conseguimos enviar o código para este número.",
+  envio_falhou: "Não conseguimos enviar o código para este contato.",
   codigo_expirado: "O código expirou. Peça um novo.",
   codigo_invalido: "Código incorreto.",
   codigo_nao_encontrado: "Nenhum código ativo. Envie um novo código.",
 };
 
-const VerificacaoWhatsapp = ({
-  telefone,
+const VerificacaoContato = ({
+  canal,
+  destino,
   verificado,
   onVerificado,
 }: {
-  telefone: string;
+  canal: "whatsapp" | "email";
+  destino: string;
   verificado: boolean;
-  onVerificado: (tel: string) => void;
+  onVerificado: (destino: string) => void;
 }) => {
   const { toast } = useToast();
   const [enviado, setEnviado] = useState(false);
@@ -62,8 +73,10 @@ const VerificacaoWhatsapp = ({
     return () => clearTimeout(t);
   }, [espera]);
 
-  const digitos = onlyDigits(telefone);
-  const podeEnviar = digitos.length >= 10;
+  const isEmail = canal === "email";
+  const valor = isEmail ? destino.trim().toLowerCase() : onlyDigits(destino);
+  const podeEnviar = isEmail ? isValidEmail(valor) : valor.length >= 10;
+  const rotulo = isEmail ? "e-mail" : "WhatsApp";
 
   const falhar = (code?: string) =>
     toast({
@@ -71,16 +84,19 @@ const VerificacaoWhatsapp = ({
       variant: "destructive",
     });
 
+  const corpo = (extra: Record<string, unknown>) =>
+    isEmail ? { canal: "email", email: valor, ...extra } : { telefone: valor, ...extra };
+
   const enviarCodigo = async () => {
     setCarregando(true);
     try {
       const { data, error } = await supabase.functions.invoke("prematricula-otp", {
-        body: { acao: "enviar", telefone: digitos },
+        body: corpo({ acao: "enviar" }),
       });
       if (error || !data?.ok) return falhar(data?.error);
       setEnviado(true);
       setEspera(60);
-      toast({ title: "Código enviado no WhatsApp" });
+      toast({ title: `Código enviado por ${rotulo}` });
     } finally {
       setCarregando(false);
     }
@@ -90,11 +106,11 @@ const VerificacaoWhatsapp = ({
     setCarregando(true);
     try {
       const { data, error } = await supabase.functions.invoke("prematricula-otp", {
-        body: { acao: "validar", telefone: digitos, codigo: onlyDigits(codigo) },
+        body: corpo({ acao: "validar", codigo: onlyDigits(codigo) }),
       });
       if (error || !data?.ok) return falhar(data?.error);
-      onVerificado(digitos);
-      toast({ title: "WhatsApp confirmado!" });
+      onVerificado(valor);
+      toast({ title: isEmail ? "E-mail confirmado!" : "WhatsApp confirmado!" });
     } finally {
       setCarregando(false);
     }
@@ -104,7 +120,7 @@ const VerificacaoWhatsapp = ({
     return (
       <div className="flex items-center gap-2 rounded-lg bg-zampieri-cream/60 border border-border p-3 text-sm text-zampieri-green-dark">
         <CheckCircle2 className="w-4 h-4" />
-        Número de WhatsApp confirmado.
+        {isEmail ? "E-mail confirmado." : "Número de WhatsApp confirmado."}
       </div>
     );
   }
@@ -112,7 +128,8 @@ const VerificacaoWhatsapp = ({
   return (
     <div className="rounded-lg border border-border p-4 space-y-3">
       <p className="text-sm text-muted-foreground">
-        Precisamos confirmar seu WhatsApp. Enviaremos um código de 6 dígitos para o número acima.
+        Precisamos confirmar seu {rotulo}. Enviaremos um código de 6 dígitos para o{" "}
+        {isEmail ? "e-mail" : "número"} acima.
       </p>
       {!enviado ? (
         <Button
@@ -167,6 +184,8 @@ export const EtapaResponsavel = ({
   set,
   telefoneVerificado,
   setTelefoneVerificado,
+  emailVerificado,
+  setEmailVerificado,
 }: Props) => (
   <div className="space-y-5">
     <SecaoTitulo>Informações do Responsável</SecaoTitulo>
@@ -198,6 +217,14 @@ export const EtapaResponsavel = ({
         onChange={(e) => set("resp_email", e.target.value)}
       />
     </Campo>
+    <VerificacaoContato
+      canal="email"
+      destino={form.resp_email}
+      verificado={
+        !!emailVerificado && emailVerificado === form.resp_email.trim().toLowerCase()
+      }
+      onVerificado={(email) => setEmailVerificado?.(email)}
+    />
     <Campo label="CPF" erro={erros.resp_cpf}>
       <Input
         inputMode="numeric"
@@ -214,8 +241,9 @@ export const EtapaResponsavel = ({
         onChange={(e) => set("resp_whatsapp", maskTelefone(e.target.value))}
       />
     </Campo>
-    <VerificacaoWhatsapp
-      telefone={form.resp_whatsapp}
+    <VerificacaoContato
+      canal="whatsapp"
+      destino={form.resp_whatsapp}
       verificado={
         !!telefoneVerificado && telefoneVerificado === onlyDigits(form.resp_whatsapp)
       }
