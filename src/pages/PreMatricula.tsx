@@ -178,6 +178,8 @@ const PreMatricula = () => {
     setLaudo,
     telefoneVerificado,
     setTelefoneVerificado,
+    emailVerificado,
+    setEmailVerificado,
   };
 
   if (duplicado) {
