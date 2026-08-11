@@ -3,16 +3,19 @@ import { Check } from "lucide-react";
 interface Props {
   etapaAtual: number;
   status: string;
+  /** Matrícula isenta: a última etapa é apenas a conclusão, sem pagamento. */
+  gratuita?: boolean;
 }
 
-const ETAPAS = [
-  { nome: "Documentos", acao: "Envie os documentos solicitados." },
-  { nome: "Dados do contrato", acao: "Preencha os dados para o contrato." },
-  { nome: "Assinatura", acao: "Assine o contrato digitalmente." },
-  { nome: "Pagamento", acao: "Faça o pagamento da matrícula." },
-];
-
-const RoadmapEtapas = ({ etapaAtual, status }: Props) => {
+const RoadmapEtapas = ({ etapaAtual, status, gratuita }: Props) => {
+  const ETAPAS = [
+    { nome: "Documentos", acao: "Envie os documentos solicitados." },
+    { nome: "Dados do contrato", acao: "Preencha os dados para o contrato." },
+    { nome: "Assinatura", acao: "Assine o contrato digitalmente." },
+    gratuita
+      ? { nome: "Conclusão", acao: "Matrícula isenta de taxa — nada a pagar." }
+      : { nome: "Pagamento", acao: "Faça o pagamento da matrícula." },
+  ];
   const total = ETAPAS.length;
   const concluido = Math.min(etapaAtual, total);
   const percentual = Math.round((concluido / total) * 100);
