@@ -133,6 +133,7 @@ const PARAM_NOMES: Partial<Record<EventoMensagem, string[]>> = {
   documentos_reenvio: ["primeiro_nome_responsavel", "nome_aluno", "documentos_pendentes"],
   documentos_aprovados: ["primeiro_nome_responsavel", "nome_aluno"],
   concluida: ["primeiro_nome_responsavel", "nome_aluno", "desconto_percentual"],
+  matricula_concluida: ["primeiro_nome_responsavel", "nome_aluno"],
 };
 
 /** Imagem usada quando o template aprovado tem cabeçalho de IMAGEM. */
