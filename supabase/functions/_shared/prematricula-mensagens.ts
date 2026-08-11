@@ -176,6 +176,8 @@ async function definicaoTemplate(nome: string, lang: string): Promise<DefTemplat
     const def: DefTemplate = {
       nome: tpl.name,
       lang: tpl.language,
+      status: tpl.status ?? "UNKNOWN",
+      category: tpl.category ?? "UNKNOWN",
       headerFormat: header?.format ?? null,
       headerVars: header?.format === "TEXT" ? contarVars(header?.text) : 0,
       headerExemplo: header?.example?.header_handle?.[0] ?? header?.example?.header_url?.[0] ?? null,
