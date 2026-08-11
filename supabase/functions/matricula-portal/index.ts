@@ -111,6 +111,39 @@ Deno.serve(async (req) => {
       mat = nova;
     }
 
+    // Backfill idempotente: preenche apenas o que está vazio com os dados da pré-matrícula.
+    {
+      const lado = pm.resp_tipo === "pai" ? "pai" : pm.resp_tipo === "mae" ? "mae" : null;
+      const vazio = (v: unknown) => !String(v ?? "").trim();
+      const patch: Record<string, unknown> = {};
+      const por = (campo: string, valor: unknown) => {
+        if (vazio(mat![campo]) && String(valor ?? "").trim()) patch[campo] = valor;
+      };
+      if (lado) {
+        por(`nome_${lado}`, pm.resp_nome);
+        por(`cpf_${lado}`, pm.resp_cpf);
+        por(`celular_${lado}`, pm.resp_whatsapp);
+        por(`email_${lado}`, pm.resp_email);
+        por("resp_fin_quem", lado);
+      }
+      por("resp_fin_nome", pm.resp_nome);
+      por("resp_fin_cpf", pm.resp_cpf);
+      por("resp_fin_celular", pm.resp_whatsapp);
+      por("resp_fin_email", pm.resp_email);
+      if (Object.keys(patch).length) {
+        patch.updated_at = new Date().toISOString();
+        const { data: atualizada } = await admin
+          .from("matriculas")
+          .update(patch)
+          .eq("id", mat!.id)
+          .select("*")
+          .maybeSingle();
+        if (atualizada) mat = atualizada;
+      }
+    }
+
+
+
     const carregarDocs = async () => {
       const { data } = await admin
         .from("matricula_documentos")

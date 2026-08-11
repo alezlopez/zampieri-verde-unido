@@ -87,23 +87,28 @@ const FormDadosContrato = ({ dados, respTipo, salvando, onSalvar }: Props) => {
   const quem = f.resp_fin_quem as "pai" | "mae" | "";
 
   // Replica os dados do pai ou da mãe no bloco do responsável financeiro.
+  // Campos de origem vazios não apagam o que já estiver preenchido.
   useEffect(() => {
     if (quem !== "pai" && quem !== "mae") return;
     const c = camposPessoa(quem);
-    setF((p) => ({
-      ...p,
-      resp_fin_nome: p[c.nome] || "",
-      resp_fin_cpf: p[c.cpf] || "",
-      resp_fin_rg: p[c.rg] || "",
-      resp_fin_estado_civil: p[c.estadoCivil] || "",
-      resp_fin_naturalidade: p[c.naturalidade] || "",
-      resp_fin_nacionalidade: p[c.nacionalidade] || "",
-      resp_fin_profissao: p[c.profissao] || "",
-      resp_fin_data_nascimento: p[c.nascimento] || "",
-      resp_fin_celular: p[c.celular] || "",
-      resp_fin_email: p[c.email] || "",
-    }));
+    setF((p) => {
+      const m = (origem: string, destino: string) => (p[origem] || p[destino] || "");
+      return {
+        ...p,
+        resp_fin_nome: m(c.nome, "resp_fin_nome"),
+        resp_fin_cpf: m(c.cpf, "resp_fin_cpf"),
+        resp_fin_rg: m(c.rg, "resp_fin_rg"),
+        resp_fin_estado_civil: m(c.estadoCivil, "resp_fin_estado_civil"),
+        resp_fin_naturalidade: m(c.naturalidade, "resp_fin_naturalidade"),
+        resp_fin_nacionalidade: m(c.nacionalidade, "resp_fin_nacionalidade"),
+        resp_fin_profissao: m(c.profissao, "resp_fin_profissao"),
+        resp_fin_data_nascimento: m(c.nascimento, "resp_fin_data_nascimento"),
+        resp_fin_celular: m(c.celular, "resp_fin_celular"),
+        resp_fin_email: m(c.email, "resp_fin_email"),
+      };
+    });
   }, [
+
     quem,
     f.nome_pai, f.cpf_pai, f.rg_pai, f.estado_civil_pai, f.naturalidade_pai,
     f.nacionalidade_pai, f.profissao_pai, f.data_nascimento_pai, f.celular_pai, f.email_pai,
@@ -228,7 +233,11 @@ const FormDadosContrato = ({ dados, respTipo, salvando, onSalvar }: Props) => {
         <p className="text-xs font-semibold uppercase text-muted-foreground">
           Responsável financeiro
         </p>
+        <p className="text-xs text-muted-foreground">
+          Dados trazidos da sua pré-matrícula — confira e ajuste se precisar.
+        </p>
         <div className="space-y-1.5">
+
           <Label className="text-xs">Quem será o responsável financeiro?</Label>
           <Select value={f.resp_fin_quem || ""} onValueChange={(v) => set("resp_fin_quem", v)}>
             <SelectTrigger>
