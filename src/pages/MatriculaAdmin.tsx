@@ -306,11 +306,18 @@ const MatriculaAdmin = () => {
                       {m.prematricula?.serie_pretendida} · resp. {m.prematricula?.resp_nome}
                     </p>
                   </div>
-                  <span
-                    className={`rounded-full px-2.5 py-0.5 text-xs font-medium ${CORES[m.status] ?? "bg-muted"}`}
-                  >
-                    {STATUS_LABEL[m.status] ?? m.status}
-                  </span>
+                  <div className="flex items-center gap-2">
+                    {m.matricula_gratuita && (
+                      <span className="rounded-full bg-emerald-100 text-emerald-800 px-2.5 py-0.5 text-xs font-medium">
+                        Isenta
+                      </span>
+                    )}
+                    <span
+                      className={`rounded-full px-2.5 py-0.5 text-xs font-medium ${CORES[m.status] ?? "bg-muted"}`}
+                    >
+                      {STATUS_LABEL[m.status] ?? m.status}
+                    </span>
+                  </div>
                 </div>
                 <p className="text-xs text-muted-foreground mt-2">
                   Protocolo {m.prematricula?.protocolo} ·{" "}
