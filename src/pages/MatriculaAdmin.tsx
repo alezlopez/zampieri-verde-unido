@@ -24,9 +24,11 @@ interface Doc {
   tipo: string;
   label: string;
   status: string;
+  obrigatorio?: boolean;
   nome_arquivo: string | null;
   motivo: string | null;
 }
+
 
 interface Matricula {
   id: string;
