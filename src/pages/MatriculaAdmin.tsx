@@ -98,6 +98,112 @@ const CAMPOS_LEITURA: { campo: string; label: string }[] = [
   { campo: "nome_mae", label: "Mãe" },
 ];
 
+/** Ficha completa — todos os dados preenchidos pela família, agrupados. */
+const FICHA_COMPLETA: { titulo: string; campos: { campo: string; label: string; tipo?: "data" | "moeda" }[] }[] = [
+  {
+    titulo: "Aluno",
+    campos: [
+      { campo: "nome_aluno", label: "Nome do aluno" },
+      { campo: "data_nascimento_aluno", label: "Data de nascimento", tipo: "data" },
+      { campo: "curso", label: "Curso" },
+      { campo: "turno", label: "Turno" },
+    ],
+  },
+  {
+    titulo: "Responsável financeiro",
+    campos: [
+      { campo: "resp_fin_quem", label: "Quem é" },
+      { campo: "resp_fin_nome", label: "Nome" },
+      { campo: "resp_fin_cpf", label: "CPF" },
+      { campo: "resp_fin_rg", label: "RG" },
+      { campo: "resp_fin_estado_civil", label: "Estado civil" },
+      { campo: "resp_fin_naturalidade", label: "Naturalidade" },
+      { campo: "resp_fin_nacionalidade", label: "Nacionalidade" },
+      { campo: "resp_fin_profissao", label: "Profissão" },
+      { campo: "resp_fin_data_nascimento", label: "Data de nascimento", tipo: "data" },
+      { campo: "resp_fin_celular", label: "Celular" },
+      { campo: "resp_fin_email", label: "E-mail" },
+    ],
+  },
+  {
+    titulo: "Endereço",
+    campos: [
+      { campo: "cep", label: "CEP" },
+      { campo: "logradouro", label: "Logradouro" },
+      { campo: "numero", label: "Número" },
+      { campo: "complemento", label: "Complemento" },
+      { campo: "bairro", label: "Bairro" },
+      { campo: "cidade", label: "Cidade" },
+      { campo: "estado", label: "UF" },
+    ],
+  },
+  {
+    titulo: "Pai",
+    campos: [
+      { campo: "nome_pai", label: "Nome" },
+      { campo: "cpf_pai", label: "CPF" },
+      { campo: "rg_pai", label: "RG" },
+      { campo: "estado_civil_pai", label: "Estado civil" },
+      { campo: "naturalidade_pai", label: "Naturalidade" },
+      { campo: "nacionalidade_pai", label: "Nacionalidade" },
+      { campo: "profissao_pai", label: "Profissão" },
+      { campo: "data_nascimento_pai", label: "Data de nascimento", tipo: "data" },
+      { campo: "celular_pai", label: "Celular" },
+      { campo: "email_pai", label: "E-mail" },
+    ],
+  },
+  {
+    titulo: "Mãe",
+    campos: [
+      { campo: "nome_mae", label: "Nome" },
+      { campo: "cpf_mae", label: "CPF" },
+      { campo: "rg_mae", label: "RG" },
+      { campo: "estado_civil_mae", label: "Estado civil" },
+      { campo: "naturalidade_mae", label: "Naturalidade" },
+      { campo: "nacionalidade_mae", label: "Nacionalidade" },
+      { campo: "profissao_mae", label: "Profissão" },
+      { campo: "data_nascimento_mae", label: "Data de nascimento", tipo: "data" },
+      { campo: "celular_mae", label: "Celular" },
+      { campo: "email_mae", label: "E-mail" },
+    ],
+  },
+  {
+    titulo: "Financeiro e contrato",
+    campos: [
+      { campo: "anuidade_total", label: "Anuidade total" },
+      { campo: "percentual_desconto", label: "Desconto (%)" },
+      { campo: "valor_com_desconto", label: "Mensalidade com desconto", tipo: "moeda" },
+      { campo: "valor_pri_parcela", label: "1ª parcela" },
+      { campo: "dia_vencimento", label: "Dia de vencimento" },
+      { campo: "valor_matricula", label: "Valor da matrícula", tipo: "moeda" },
+      { campo: "forma_pagamento", label: "Forma de pagamento" },
+      { campo: "parcelas", label: "Parcelas" },
+      { campo: "valor_pago", label: "Valor pago", tipo: "moeda" },
+      { campo: "data_pagamento", label: "Pagamento em", tipo: "data" },
+      { campo: "contrato_assinado_em", label: "Contrato assinado em", tipo: "data" },
+      { campo: "concluida_em", label: "Matrícula concluída em", tipo: "data" },
+    ],
+  },
+];
+
+const formatarValor = (valor: unknown, tipo?: "data" | "moeda") => {
+  if (valor === null || valor === undefined || valor === "") return "—";
+  if (typeof valor === "boolean") return valor ? "Sim" : "Não";
+  if (tipo === "data") {
+    const d = new Date(String(valor).length <= 10 ? `${valor}T12:00:00` : String(valor));
+    return isNaN(d.getTime()) ? String(valor) : d.toLocaleString("pt-BR");
+  }
+  if (tipo === "moeda") {
+    const n = Number(valor);
+    return isFinite(n)
+      ? n.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })
+      : String(valor);
+  }
+  return String(valor);
+};
+
+
+
 
 const CAMPOS_VALORES: { campo: string; label: string }[] = [
   { campo: "anuidade_total", label: "Anuidade total" },
@@ -448,9 +554,29 @@ const MatriculaAdmin = () => {
 
                 <section className="space-y-3">
                   <p className="text-xs font-semibold uppercase text-muted-foreground">
-                    Dados enviados pela família
+                    {aberta.status === "concluida"
+                      ? "Ficha completa da matrícula"
+                      : "Dados enviados pela família"}
                   </p>
-                  {aberta.dados_preenchidos_em ? (
+                  {aberta.status === "concluida" ? (
+                    <div className="space-y-4">
+                      {FICHA_COMPLETA.map((grupo) => (
+                        <div key={grupo.titulo} className="rounded-lg border border-border p-3">
+                          <p className="mb-2 text-xs font-semibold uppercase text-zampieri-green-dark">
+                            {grupo.titulo}
+                          </p>
+                          <div className="grid sm:grid-cols-2 gap-x-4 gap-y-1 text-sm">
+                            {grupo.campos.map(({ campo, label, tipo }) => (
+                              <p key={campo} className="break-words">
+                                <span className="text-muted-foreground">{label}: </span>
+                                {formatarValor(aberta[campo], tipo)}
+                              </p>
+                            ))}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  ) : aberta.dados_preenchidos_em ? (
                     <div className="grid sm:grid-cols-2 gap-x-4 gap-y-1 rounded-lg border border-border p-3 text-sm">
                       {CAMPOS_LEITURA.map(({ campo, label }) => (
                         <p key={campo} className="truncate">
@@ -460,6 +586,7 @@ const MatriculaAdmin = () => {
                       ))}
                     </div>
                   ) : (
+
                     <p className="text-sm text-muted-foreground">
                       A família ainda não preencheu os dados do contrato.
                     </p>
