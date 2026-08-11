@@ -100,21 +100,31 @@ Deno.serve(async (req) => {
       );
     }
 
-    // 2) WhatsApp confirmado por código nos últimos 30 minutos
+    // 2) WhatsApp e e-mail confirmados por código nos últimos 30 minutos
     const telefone = telefoneE164(respWhats);
     const desde = new Date(Date.now() - 30 * 60 * 1000).toISOString();
-    const { data: otp, error: erroOtp } = await admin
-      .from("prematricula_otp")
-      .select("id")
-      .eq("telefone", telefone)
-      .not("verificado_em", "is", null)
-      .is("consumido_em", null)
-      .gte("verificado_em", desde)
-      .order("verificado_em", { ascending: false })
-      .limit(1)
-      .maybeSingle();
-    if (erroOtp) throw erroOtp;
+
+    const buscarOtp = async (canal: "whatsapp" | "email", destino: string) => {
+      const { data, error } = await admin
+        .from("prematricula_otp")
+        .select("id")
+        .eq("canal", canal)
+        .eq("destino", destino)
+        .not("verificado_em", "is", null)
+        .is("consumido_em", null)
+        .gte("verificado_em", desde)
+        .order("verificado_em", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      if (error) throw error;
+      return data;
+    };
+
+    const otp = await buscarOtp("whatsapp", telefone);
     if (!otp) return json({ error: "otp_nao_verificado" }, 400);
+
+    const otpEmail = await buscarOtp("email", respEmail);
+    if (!otpEmail) return json({ error: "otp_email_nao_verificado" }, 400);
 
     const token = crypto.randomUUID().replace(/-/g, "") + crypto.randomUUID().replace(/-/g, "");
     const token_hash = await sha256(token);
