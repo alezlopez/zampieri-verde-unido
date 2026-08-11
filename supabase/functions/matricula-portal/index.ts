@@ -297,6 +297,7 @@ Deno.serve(async (req) => {
     }
 
     if (acao === "checkout") {
+      if (mat.matricula_gratuita) return json({ error: "matricula_isenta" }, 409);
       if (!mat.contrato_assinado) return json({ error: "contrato_nao_assinado" }, 403);
       if (mat.status === "concluida") return json({ error: "ja_pago" }, 409);
 
