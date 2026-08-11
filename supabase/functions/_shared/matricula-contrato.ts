@@ -78,6 +78,10 @@ export const concluirMatriculaGratuita = async (
         respWhatsapp: mat.resp_fin_celular || pm?.resp_whatsapp || "",
         alunoNome: mat.nome_aluno || pm?.aluno_nome || "",
         protocolo: pm?.protocolo || "",
+        curso: mat.curso || pm?.serie_pretendida || null,
+        turno: mat.turno || pm?.turno_preferencia || null,
+        linkContrato: mat.link_contrato || null,
+        contratoAssinado: !!mat.contrato_assinado,
       });
     } catch (e) {
       console.error("notificar matricula_concluida (isenta)", e);
