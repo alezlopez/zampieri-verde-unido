@@ -51,6 +51,7 @@ interface Estado {
     contrato_assinado: boolean;
     link_contrato: string | null;
     valor_matricula: number | null;
+    matricula_gratuita?: boolean;
     permite_avista: boolean;
     permite_parcelado: boolean;
     max_parcelas: number;
