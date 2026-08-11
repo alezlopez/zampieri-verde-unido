@@ -48,35 +48,49 @@ export const telefoneE164 = (tel: string) => {
 
 const primeiroNome = (nome: string) => (nome || "").trim().split(/\s+/)[0] || "";
 
-/** Nome do template aprovado na Meta + parâmetros do corpo, por evento. */
+/**
+ * Nome do template aprovado na Meta + parâmetros do corpo, por evento.
+ * `utility` é a versão UTILITY (sempre entregue, mesmo para quem optou por
+ * não receber marketing) e é tentada primeiro; `padrao` é o legado MARKETING.
+ */
 const TEMPLATES: Partial<
   Record<
     EventoMensagem,
-    { envVar: string; padrao: string; params: (d: DadosMensagem) => string[] }
+    {
+      envVar: string;
+      utility?: string;
+      padrao: string;
+      params: (d: DadosMensagem) => string[];
+    }
   >
 > = {
   recebida: {
     envVar: "WHATSAPP_TPL_PREMATRICULA_RECEBIDA",
+    utility: "prematricula_recebida_u",
     padrao: "prematricula_recebida",
     params: (d) => [primeiroNome(d.respNome), d.alunoNome, d.protocolo],
   },
   aprovada: {
     envVar: "WHATSAPP_TPL_PREMATRICULA_APROVADA",
+    utility: "prematricula_aprovada_u",
     padrao: "prematricula_aprovadav2",
     params: (d) => [primeiroNome(d.respNome), d.alunoNome, d.linkAgendamento || SITE_URL],
   },
   reprovada: {
     envVar: "WHATSAPP_TPL_PREMATRICULA_REPROVADA",
+    utility: "prematricula_reprovada_u",
     padrao: "prematricula_reprovada",
     params: (d) => [primeiroNome(d.respNome), d.alunoNome],
   },
   agendada: {
     envVar: "WHATSAPP_TPL_PREMATRICULA_AGENDADA",
+    utility: "prematricula_agendada_u",
     padrao: "prematricula_agendada",
     params: (d) => [primeiroNome(d.respNome), d.alunoNome, d.dataEntrevista || "-"],
   },
   documentos_reenvio: {
     envVar: "WHATSAPP_TPL_MATRICULA_REENVIO",
+    utility: "matricula_documentos_reenvio_u",
     padrao: "matricula_documentos_reenvio",
     params: (d) => [
       primeiroNome(d.respNome),
@@ -86,6 +100,7 @@ const TEMPLATES: Partial<
   },
   documentos_aprovados: {
     envVar: "WHATSAPP_TPL_MATRICULA_DADOS",
+    utility: "matricula_dados_liberados_u",
     padrao: "matricula_dados_liberados",
     params: (d) => [primeiroNome(d.respNome), d.alunoNome],
   },
@@ -110,6 +125,8 @@ const imagemPorEvento = (evento: EventoMensagem) =>
 type DefTemplate = {
   nome: string;
   lang: string;
+  status: string;
+  category: string;
   headerFormat: "IMAGE" | "VIDEO" | "DOCUMENT" | "TEXT" | null;
   headerVars: number;
   headerExemplo: string | null;
@@ -159,6 +176,8 @@ async function definicaoTemplate(nome: string, lang: string): Promise<DefTemplat
     const def: DefTemplate = {
       nome: tpl.name,
       lang: tpl.language,
+      status: tpl.status ?? "UNKNOWN",
+      category: tpl.category ?? "UNKNOWN",
       headerFormat: header?.format ?? null,
       headerVars: header?.format === "TEXT" ? contarVars(header?.text) : 0,
       headerExemplo: header?.example?.header_handle?.[0] ?? header?.example?.header_url?.[0] ?? null,
@@ -249,11 +268,25 @@ async function enviarWhatsapp(evento: EventoMensagem, d: DadosMensagem) {
     console.log(`WhatsApp sem template para evento ${evento}; apenas e-mail.`);
     return;
   }
-  const nomeTemplate = Deno.env.get(cfg.envVar) || cfg.padrao;
   const lang = Deno.env.get("WHATSAPP_TEMPLATE_LANG") || "pt_BR";
   const textos = cfg.params(d);
 
-  const def = await definicaoTemplate(nomeTemplate, lang);
+  // Preferência: secret manual > versão UTILITY aprovada > template legado.
+  const candidatos = [Deno.env.get(cfg.envVar), cfg.utility, cfg.padrao].filter(
+    (x): x is string => !!x,
+  );
+  let nomeTemplate = candidatos[candidatos.length - 1];
+  let def: DefTemplate | null = null;
+  for (const nome of candidatos) {
+    const d0 = await definicaoTemplate(nome, lang);
+    if (d0 && d0.status === "APPROVED") {
+      nomeTemplate = nome;
+      def = d0;
+      break;
+    }
+    console.log(`Template ${nome} indisponível (status=${d0?.status ?? "nao_encontrado"}).`);
+  }
+
   const langEnvio = def?.lang || lang;
   const imagemTemplate = def?.headerFormat === "IMAGE" ? def.headerExemplo : null;
   const temImagemConfigurada = !!imagemPorEvento(evento);

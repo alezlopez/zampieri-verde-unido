@@ -52,7 +52,9 @@ export const isValidCpf = (value: string) => {
   return resto === Number(cpf[10]);
 };
 
-export const isValidEmail = (v: string) => /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test((v || "").trim());
+export const isValidEmail = (v: string) =>
+  /^[A-Za-z0-9._%+-]+@[A-Za-z0-9-]+(\.[A-Za-z0-9-]+)*\.[A-Za-z]{2,}$/.test((v || "").trim()) &&
+  !/\.\./.test((v || "").trim());
 
 export const formatBRL = (v?: number | string | null) =>
   new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(Number(v ?? 0));

@@ -61,7 +61,11 @@ Deno.serve(async (req) => {
     const turno = txt(d.turno_preferencia, 20);
 
     if (respNome.length < 3) erros.push("resp_nome");
-    if (!respEmail.includes("@")) erros.push("resp_email");
+    if (
+      /\.\./.test(respEmail) ||
+      !/^[a-z0-9._%+-]+@[a-z0-9-]+(\.[a-z0-9-]+)*\.[a-z]{2,}$/.test(respEmail)
+    )
+      erros.push("resp_email");
     if (!cpfValido(respCpf)) erros.push("resp_cpf");
     if (respWhats.length < 10) erros.push("resp_whatsapp");
     if (alunoNome.length < 3) erros.push("aluno_nome");
