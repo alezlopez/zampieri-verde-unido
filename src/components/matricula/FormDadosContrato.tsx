@@ -233,7 +233,11 @@ const FormDadosContrato = ({ dados, respTipo, salvando, onSalvar }: Props) => {
         <p className="text-xs font-semibold uppercase text-muted-foreground">
           Responsável financeiro
         </p>
+        <p className="text-xs text-muted-foreground">
+          Dados trazidos da sua pré-matrícula — confira e ajuste se precisar.
+        </p>
         <div className="space-y-1.5">
+
           <Label className="text-xs">Quem será o responsável financeiro?</Label>
           <Select value={f.resp_fin_quem || ""} onValueChange={(v) => set("resp_fin_quem", v)}>
             <SelectTrigger>
