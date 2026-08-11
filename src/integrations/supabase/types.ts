@@ -1030,6 +1030,7 @@ export type Database = {
           id: string
           link_contrato: string | null
           logradouro: string | null
+          matricula_gratuita: boolean
           max_parcelas: number
           nacionalidade_mae: string | null
           nacionalidade_pai: string | null
@@ -1111,6 +1112,7 @@ export type Database = {
           id?: string
           link_contrato?: string | null
           logradouro?: string | null
+          matricula_gratuita?: boolean
           max_parcelas?: number
           nacionalidade_mae?: string | null
           nacionalidade_pai?: string | null
@@ -1192,6 +1194,7 @@ export type Database = {
           id?: string
           link_contrato?: string | null
           logradouro?: string | null
+          matricula_gratuita?: boolean
           max_parcelas?: number
           nacionalidade_mae?: string | null
           nacionalidade_pai?: string | null

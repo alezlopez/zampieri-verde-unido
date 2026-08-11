@@ -38,6 +38,7 @@ interface Matricula {
   contrato_assinado: boolean;
   link_contrato: string | null;
   valor_matricula: number | null;
+  matricula_gratuita?: boolean;
   data_pagamento: string | null;
   documentos: Doc[];
   prematricula: {
@@ -122,6 +123,7 @@ const MatriculaAdmin = () => {
   const [form, setForm] = useState<Record<string, string>>({});
   const [avista, setAvista] = useState(true);
   const [parcelado, setParcelado] = useState(true);
+  const [gratuita, setGratuita] = useState(false);
   const [acaoEmCurso, setAcaoEmCurso] = useState(false);
 
   useEffect(() => {
@@ -166,6 +168,7 @@ const MatriculaAdmin = () => {
     setForm(f);
     setAvista(m.permite_avista !== false);
     setParcelado(m.permite_parcelado !== false);
+    setGratuita(m.matricula_gratuita === true);
   };
 
   const filtradas = useMemo(() => {
@@ -189,10 +192,11 @@ const MatriculaAdmin = () => {
     return (
       txt(aberta.anuidade_total) &&
       txt(aberta.valor_com_desconto) &&
-      Number(aberta.valor_matricula) > 0 &&
+      (aberta.matricula_gratuita === true || Number(aberta.valor_matricula) > 0) &&
       Number(aberta.dia_vencimento) > 0
     );
   }, [aberta]);
+
 
   /** Só os documentos obrigatórios precisam estar aprovados (ou aguardando escola). */
   const docsConferidos = useMemo(() => {
@@ -229,7 +233,13 @@ const MatriculaAdmin = () => {
 
   const salvar = async () => {
     await executar("salvar", {
-      dados: { ...form, permite_avista: avista, permite_parcelado: parcelado },
+      dados: {
+        ...form,
+        ...(gratuita ? { valor_matricula: "0" } : {}),
+        permite_avista: gratuita ? false : avista,
+        permite_parcelado: gratuita ? false : parcelado,
+        matricula_gratuita: gratuita,
+      },
     });
   };
 
@@ -296,11 +306,18 @@ const MatriculaAdmin = () => {
                       {m.prematricula?.serie_pretendida} · resp. {m.prematricula?.resp_nome}
                     </p>
                   </div>
-                  <span
-                    className={`rounded-full px-2.5 py-0.5 text-xs font-medium ${CORES[m.status] ?? "bg-muted"}`}
-                  >
-                    {STATUS_LABEL[m.status] ?? m.status}
-                  </span>
+                  <div className="flex items-center gap-2">
+                    {m.matricula_gratuita && (
+                      <span className="rounded-full bg-emerald-100 text-emerald-800 px-2.5 py-0.5 text-xs font-medium">
+                        Isenta
+                      </span>
+                    )}
+                    <span
+                      className={`rounded-full px-2.5 py-0.5 text-xs font-medium ${CORES[m.status] ?? "bg-muted"}`}
+                    >
+                      {STATUS_LABEL[m.status] ?? m.status}
+                    </span>
+                  </div>
                 </div>
                 <p className="text-xs text-muted-foreground mt-2">
                   Protocolo {m.prematricula?.protocolo} ·{" "}
@@ -454,8 +471,26 @@ const MatriculaAdmin = () => {
                   <p className="text-xs font-semibold uppercase text-muted-foreground">
                     Valores e pagamento
                   </p>
+                  <label className="flex items-center gap-2 rounded-lg border border-border bg-zampieri-cream/40 p-3 text-sm font-medium">
+                    <input
+                      type="checkbox"
+                      checked={gratuita}
+                      onChange={(e) => setGratuita(e.target.checked)}
+                      className="h-4 w-4 accent-[hsl(var(--primary))]"
+                    />
+                    Matrícula gratuita (isenta de cobrança)
+                  </label>
+                  {gratuita && (
+                    <p className="text-xs text-muted-foreground">
+                      Sem cobrança: assim que o contrato for assinado, a matrícula é concluída
+                      automaticamente.
+                    </p>
+                  )}
                   <div className="grid sm:grid-cols-2 gap-3">
-                    {CAMPOS_VALORES.map(({ campo, label }) => (
+                    {CAMPOS_VALORES.filter(
+                      ({ campo }) =>
+                        !gratuita || !["valor_matricula", "max_parcelas"].includes(campo),
+                    ).map(({ campo, label }) => (
                       <div key={campo} className="space-y-1">
                         <Label className="text-xs">{label}</Label>
                         <Input
@@ -465,26 +500,28 @@ const MatriculaAdmin = () => {
                       </div>
                     ))}
                   </div>
-                  <div className="flex flex-wrap gap-4 text-sm">
-                    <label className="flex items-center gap-2">
-                      <input
-                        type="checkbox"
-                        checked={avista}
-                        onChange={(e) => setAvista(e.target.checked)}
-                        className="h-4 w-4 accent-[hsl(var(--primary))]"
-                      />
-                      Permitir à vista (PIX)
-                    </label>
-                    <label className="flex items-center gap-2">
-                      <input
-                        type="checkbox"
-                        checked={parcelado}
-                        onChange={(e) => setParcelado(e.target.checked)}
-                        className="h-4 w-4 accent-[hsl(var(--primary))]"
-                      />
-                      Permitir parcelado (cartão)
-                    </label>
-                  </div>
+                  {!gratuita && (
+                    <div className="flex flex-wrap gap-4 text-sm">
+                      <label className="flex items-center gap-2">
+                        <input
+                          type="checkbox"
+                          checked={avista}
+                          onChange={(e) => setAvista(e.target.checked)}
+                          className="h-4 w-4 accent-[hsl(var(--primary))]"
+                        />
+                        Permitir à vista (PIX)
+                      </label>
+                      <label className="flex items-center gap-2">
+                        <input
+                          type="checkbox"
+                          checked={parcelado}
+                          onChange={(e) => setParcelado(e.target.checked)}
+                          className="h-4 w-4 accent-[hsl(var(--primary))]"
+                        />
+                        Permitir parcelado (cartão)
+                      </label>
+                    </div>
+                  )}
                   <Button
                     className="bg-zampieri-green-dark hover:bg-zampieri-green"
                     disabled={acaoEmCurso}

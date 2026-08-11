@@ -2,7 +2,7 @@ import { createClient } from "npm:@supabase/supabase-js@2";
 import { corsHeaders } from "../_shared/cors.ts";
 import { DOCUMENTOS, TIPOS_VALIDOS, labelDoc, docObrigatorio } from "../_shared/matricula-docs.ts";
 import { SITE_URL, notificar } from "../_shared/prematricula-mensagens.ts";
-import { valoresProntos, verificarAssinatura } from "../_shared/matricula-contrato.ts";
+import { valoresProntos, verificarAssinatura, concluirMatriculaGratuita } from "../_shared/matricula-contrato.ts";
 
 const json = (body: unknown, status = 200) =>
   new Response(JSON.stringify(body), {
@@ -15,11 +15,12 @@ const CAMPOS_EDITAVEIS = [
   "anuidade_total", "anuidade_total_ext", "percentual_desconto", "percentual_desconto_ext",
   "valor_com_desconto", "valor_com_desconto_ext", "valor_pri_parcela", "valor_pri_parcela_ext",
   "dia_vencimento", "valor_matricula", "permite_avista", "permite_parcelado", "max_parcelas",
+  "matricula_gratuita",
 ];
 
 const NUMERICOS = ["percentual_desconto", "valor_com_desconto", "valor_matricula"];
 const INTEIROS = ["dia_vencimento", "max_parcelas"];
-const BOOLEANOS = ["permite_avista", "permite_parcelado"];
+const BOOLEANOS = ["permite_avista", "permite_parcelado", "matricula_gratuita"];
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
@@ -213,6 +214,12 @@ Deno.serve(async (req) => {
         else if (INTEIROS.includes(campo)) update[campo] = valor === "" || valor == null ? null : parseInt(String(valor), 10);
         else update[campo] = valor === "" ? null : String(valor);
       }
+      // Matrícula isenta não tem cobrança: valor zerado e sem formas de pagamento.
+      if (update.matricula_gratuita === true) {
+        update.valor_matricula = 0;
+        update.permite_avista = false;
+        update.permite_parcelado = false;
+      }
       const { error } = await admin.from("matriculas").update(update).eq("id", id);
       if (error) throw error;
       return json({ ok: true });
@@ -220,6 +227,9 @@ Deno.serve(async (req) => {
 
     if (acao === "verificar_assinatura") {
       const r = await verificarAssinatura(admin, mat);
+      if (mat.contrato_assinado && mat.matricula_gratuita) {
+        await concluirMatriculaGratuita(admin, mat, notificar);
+      }
       return json({ ok: true, ...r });
     }
 

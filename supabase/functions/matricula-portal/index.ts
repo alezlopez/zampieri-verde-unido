@@ -3,7 +3,7 @@ import { corsHeaders } from "../_shared/cors.ts";
 import { getOrCreateCustomer, createCheckout } from "../_shared/asaas.ts";
 import { DOCUMENTOS, TIPOS_VALIDOS, PERMITE_AGUARDANDO, docObrigatorio, labelDoc, podeReenviar } from "../_shared/matricula-docs.ts";
 import { notificar } from "../_shared/prematricula-mensagens.ts";
-import { gerarContrato, valoresProntos, verificarAssinatura } from "../_shared/matricula-contrato.ts";
+import { gerarContrato, valoresProntos, verificarAssinatura, concluirMatriculaGratuita } from "../_shared/matricula-contrato.ts";
 
 /** Campos que a família preenche no portal antes da geração do contrato. */
 const CAMPOS_FAMILIA = [
@@ -157,6 +157,7 @@ Deno.serve(async (req) => {
         contrato_assinado: mat!.contrato_assinado,
         link_contrato: mat!.link_contrato,
         valor_matricula: mat!.valor_matricula,
+        matricula_gratuita: mat!.matricula_gratuita,
         permite_avista: mat!.permite_avista,
         permite_parcelado: mat!.permite_parcelado,
         max_parcelas: mat!.max_parcelas,
@@ -261,6 +262,11 @@ Deno.serve(async (req) => {
 
     if (acao === "verificar_assinatura") {
       const r = await verificarAssinatura(admin, mat);
+      if (mat.contrato_assinado && mat.matricula_gratuita) {
+        await concluirMatriculaGratuita(admin, mat, notificar);
+        const { data: atual } = await admin.from("matriculas").select("*").eq("id", mat.id).maybeSingle();
+        if (atual) Object.assign(mat, atual);
+      }
       return json({ ...(await estado()), verificacao: r });
     }
 
@@ -291,6 +297,7 @@ Deno.serve(async (req) => {
     }
 
     if (acao === "checkout") {
+      if (mat.matricula_gratuita) return json({ error: "matricula_isenta" }, 409);
       if (!mat.contrato_assinado) return json({ error: "contrato_nao_assinado" }, 403);
       if (mat.status === "concluida") return json({ error: "ja_pago" }, 409);
 

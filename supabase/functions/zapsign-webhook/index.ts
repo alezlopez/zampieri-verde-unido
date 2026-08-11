@@ -1,5 +1,7 @@
 import { createClient } from "npm:@supabase/supabase-js@2";
 import { corsHeaders } from "npm:@supabase/supabase-js@2/cors";
+import { concluirMatriculaGratuita } from "../_shared/matricula-contrato.ts";
+import { notificar } from "../_shared/prematricula-mensagens.ts";
 
 const json = (body: unknown, status = 200) =>
   new Response(JSON.stringify(body), {
@@ -87,7 +89,7 @@ Deno.serve(async (req) => {
       );
       const { data: mat } = await supabaseMat
         .from("matriculas")
-        .select("id, zapsign_token")
+        .select("*")
         .eq("id", matId)
         .maybeSingle();
       if (!mat) return json({ ok: true, warning: "matricula nao encontrada" });
@@ -103,6 +105,12 @@ Deno.serve(async (req) => {
           updated_at: new Date().toISOString(),
         })
         .eq("id", matId);
+      // Matrícula isenta: conclui na hora, sem cobrança.
+      if (mat.matricula_gratuita) {
+        mat.contrato_assinado = true;
+        mat.status = "contrato_assinado";
+        await concluirMatriculaGratuita(supabaseMat, mat, notificar);
+      }
       return json({ ok: true, matricula_id: matId });
     }
 

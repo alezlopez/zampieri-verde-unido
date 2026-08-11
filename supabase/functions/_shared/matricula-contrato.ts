@@ -36,8 +36,55 @@ export const maskTel = (v: unknown) => {
 export const valoresProntos = (mat: Record<string, unknown>) =>
   !!String(mat.anuidade_total ?? "").trim() &&
   !!String(mat.valor_com_desconto ?? "").trim() &&
-  Number(mat.valor_matricula) > 0 &&
+  (!!mat.matricula_gratuita || Number(mat.valor_matricula) > 0) &&
   !!Number(mat.dia_vencimento);
+
+/**
+ * Matrícula isenta: conclui automaticamente assim que o contrato é assinado.
+ * Idempotente — não repete a notificação se já estiver concluída.
+ */
+export const concluirMatriculaGratuita = async (
+  admin: any,
+  mat: Record<string, any>,
+  notificar?: (evento: string, dados: Record<string, unknown>) => Promise<unknown>,
+) => {
+  if (!mat?.matricula_gratuita) return { concluida: false, motivo: "nao_gratuita" };
+  if (!mat.contrato_assinado) return { concluida: false, motivo: "contrato_nao_assinado" };
+  if (mat.status === "concluida" || mat.concluida_em) return { concluida: true, ja_estava: true };
+
+  const agora = new Date().toISOString();
+  await admin.from("matriculas").update({
+    status: "concluida",
+    concluida_em: agora,
+    data_pagamento: agora,
+    valor_pago: 0,
+    forma_pagamento: "isento",
+    updated_at: agora,
+  }).eq("id", mat.id);
+
+  mat.status = "concluida";
+  mat.concluida_em = agora;
+
+  if (notificar) {
+    try {
+      const { data: pm } = await admin
+        .from("prematriculas")
+        .select("protocolo, resp_nome, resp_email, resp_whatsapp, aluno_nome")
+        .eq("id", mat.prematricula_id)
+        .maybeSingle();
+      await notificar("matricula_concluida", {
+        respNome: mat.resp_fin_nome || pm?.resp_nome || "",
+        respEmail: mat.resp_fin_email || pm?.resp_email || "",
+        respWhatsapp: mat.resp_fin_celular || pm?.resp_whatsapp || "",
+        alunoNome: mat.nome_aluno || pm?.aluno_nome || "",
+        protocolo: pm?.protocolo || "",
+      });
+    } catch (e) {
+      console.error("notificar matricula_concluida (isenta)", e);
+    }
+  }
+  return { concluida: true };
+};
 
 type Resultado =
   | { ok: true; sign_url: string | null; reutilizado?: boolean }
