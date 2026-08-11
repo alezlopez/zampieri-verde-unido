@@ -122,6 +122,7 @@ const MatriculaAdmin = () => {
   const [form, setForm] = useState<Record<string, string>>({});
   const [avista, setAvista] = useState(true);
   const [parcelado, setParcelado] = useState(true);
+  const [gratuita, setGratuita] = useState(false);
   const [acaoEmCurso, setAcaoEmCurso] = useState(false);
 
   useEffect(() => {
