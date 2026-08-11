@@ -115,7 +115,14 @@ const TEMPLATES: Partial<
       `${d.descontoPercentual ?? 0}%`,
     ],
   },
+  matricula_concluida: {
+    envVar: "WHATSAPP_TPL_MATRICULA_CONCLUIDA",
+    utility: "matricula_concluida_u",
+    padrao: "matricula_concluida",
+    params: (d) => [primeiroNome(d.respNome), d.alunoNome],
+  },
 };
+
 
 /** Nomes descritivos de cada parâmetro do corpo, por evento (ajuda no n8n). */
 const PARAM_NOMES: Partial<Record<EventoMensagem, string[]>> = {
@@ -126,6 +133,7 @@ const PARAM_NOMES: Partial<Record<EventoMensagem, string[]>> = {
   documentos_reenvio: ["primeiro_nome_responsavel", "nome_aluno", "documentos_pendentes"],
   documentos_aprovados: ["primeiro_nome_responsavel", "nome_aluno"],
   concluida: ["primeiro_nome_responsavel", "nome_aluno", "desconto_percentual"],
+  matricula_concluida: ["primeiro_nome_responsavel", "nome_aluno"],
 };
 
 /** Imagem usada quando o template aprovado tem cabeçalho de IMAGEM. */
