@@ -316,9 +316,7 @@ const MatriculaAdmin = () => {
   const documentosTravados = aberta?.contrato_assinado === true;
 
   /** Etapa de dados já liberada para a família. */
-  const dadosLiberados =
-    !!aberta &&
-    (aberta.status !== "documentos_pendentes" || !!aberta.documentos_aprovados_em);
+  const dadosLiberados = !!aberta?.documentos_aprovados_em;
 
 
   const executar = async (acao: string, extra: Record<string, unknown> = {}, fechar = false) => {
