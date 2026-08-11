@@ -115,7 +115,14 @@ const TEMPLATES: Partial<
       `${d.descontoPercentual ?? 0}%`,
     ],
   },
+  matricula_concluida: {
+    envVar: "WHATSAPP_TPL_MATRICULA_CONCLUIDA",
+    utility: "matricula_concluida_u",
+    padrao: "matricula_concluida",
+    params: (d) => [primeiroNome(d.respNome), d.alunoNome],
+  },
 };
+
 
 /** Nomes descritivos de cada parâmetro do corpo, por evento (ajuda no n8n). */
 const PARAM_NOMES: Partial<Record<EventoMensagem, string[]>> = {
