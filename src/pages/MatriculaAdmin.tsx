@@ -232,7 +232,13 @@ const MatriculaAdmin = () => {
 
   const salvar = async () => {
     await executar("salvar", {
-      dados: { ...form, permite_avista: avista, permite_parcelado: parcelado },
+      dados: {
+        ...form,
+        ...(gratuita ? { valor_matricula: "0" } : {}),
+        permite_avista: gratuita ? false : avista,
+        permite_parcelado: gratuita ? false : parcelado,
+        matricula_gratuita: gratuita,
+      },
     });
   };
 
