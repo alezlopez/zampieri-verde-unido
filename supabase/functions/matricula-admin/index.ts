@@ -15,11 +15,12 @@ const CAMPOS_EDITAVEIS = [
   "anuidade_total", "anuidade_total_ext", "percentual_desconto", "percentual_desconto_ext",
   "valor_com_desconto", "valor_com_desconto_ext", "valor_pri_parcela", "valor_pri_parcela_ext",
   "dia_vencimento", "valor_matricula", "permite_avista", "permite_parcelado", "max_parcelas",
+  "matricula_gratuita",
 ];
 
 const NUMERICOS = ["percentual_desconto", "valor_com_desconto", "valor_matricula"];
 const INTEIROS = ["dia_vencimento", "max_parcelas"];
-const BOOLEANOS = ["permite_avista", "permite_parcelado"];
+const BOOLEANOS = ["permite_avista", "permite_parcelado", "matricula_gratuita"];
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
