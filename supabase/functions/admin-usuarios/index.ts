@@ -119,12 +119,31 @@ Deno.serve(async (req) => {
 
       if (error || !criado?.user) {
         const msg = String(error?.message || "").toLowerCase();
-        if (msg.includes("already")) return json({ error: "email_em_uso" }, 400);
+        // Conta já existe (ex.: cadastro de responsável): reaproveita e aplica papéis
+        if (msg.includes("already") || msg.includes("registered") || msg.includes("exists")) {
+          let existente: { id: string } | null = null;
+          for (let page = 1; page <= 20 && !existente; page++) {
+            const { data, error: errList } = await admin.auth.admin.listUsers({ page, perPage: 200 });
+            if (errList) break;
+            const achou = data.users.find((u) => (u.email ?? "").toLowerCase() === email);
+            if (achou) existente = { id: achou.id };
+            if (data.users.length < 200) break;
+          }
+          if (!existente) return json({ error: "email_em_uso" }, 400);
+
+          await admin.auth.admin.updateUserById(existente.id, {
+            password: senha,
+            email_confirm: true,
+          });
+          await salvarPapeis(existente.id, papeis);
+          return json({ ok: true, user_id: existente.id, reaproveitado: true });
+        }
         return json({ error: "falha_criar", detalhe: error?.message }, 400);
       }
 
       await salvarPapeis(criado.user.id, papeis);
       return json({ ok: true, user_id: criado.user.id });
+
     }
 
     if (acao === "atualizar_papeis") {
