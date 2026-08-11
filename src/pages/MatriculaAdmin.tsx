@@ -285,6 +285,8 @@ const MatriculaAdmin = () => {
     setAvista(m.permite_avista !== false);
     setParcelado(m.permite_parcelado !== false);
     setGratuita(m.matricula_gratuita === true);
+    const anu = String(m.anuidade_total ?? "").trim();
+    setAnuidadeOutro(!!anu && !ANUIDADES.some((a) => a.valor === anu));
   };
 
   const filtradas = useMemo(() => {
