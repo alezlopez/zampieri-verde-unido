@@ -26,6 +26,16 @@ Deno.serve(async (req) => {
   const phone = await get(`${phoneId}?fields=id,display_phone_number,verified_name,quality_rating`);
   const owner = await get(`${phoneId}?fields=id,name_status`);
   const me = await get(`me?fields=id,name`);
+  const probes: Record<string, unknown> = {};
+  for (const path of [
+    "me?fields=assigned_whatsapp_business_accounts{id,name}",
+    "me/assigned_whatsapp_business_accounts",
+    "me/businesses",
+    `${phoneId}?fields=account_mode,is_official_business_account,messaging_limit_tier,platform_type,status`,
+  ]) {
+    const r = await get(path);
+    probes[path] = r.body?.error ? r.body.error.message : r.body;
+  }
   const debug = await get(`debug_token?input_token=${token}`);
 
   let waba = wabaParam || owner.body?.whatsapp_business_account?.id || wabaEnv;
@@ -48,6 +58,7 @@ Deno.serve(async (req) => {
     phone: phone.body,
     owner: owner.body,
     me: me.body,
+    probes,
     debugRaw: debug.body,
     granular: debug.body?.data?.granular_scopes ?? null,
     templatesStatus: templates.status,
