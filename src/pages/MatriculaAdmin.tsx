@@ -239,6 +239,7 @@ const MatriculaAdmin = () => {
   const [avista, setAvista] = useState(true);
   const [parcelado, setParcelado] = useState(true);
   const [gratuita, setGratuita] = useState(false);
+  const [anuidadeOutro, setAnuidadeOutro] = useState(false);
   const [acaoEmCurso, setAcaoEmCurso] = useState(false);
 
   useEffect(() => {
