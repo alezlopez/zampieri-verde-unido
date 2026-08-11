@@ -28,6 +28,7 @@ import Rematricula2027 from "./pages/Rematricula2027";
 import ManualDaFamilia from "./pages/ManualDaFamilia";
 import AdminLogin from "./pages/AdminLogin";
 import AdminHome from "./pages/AdminHome";
+import AdminUsuarios from "./pages/AdminUsuarios";
 import RequireAdmin from "./components/admin/RequireAdmin";
 import NumerosDaSorte from "./pages/NumerosDaSorte";
 import Rematricula2027Admin from "./pages/Rematricula2027Admin";
@@ -75,6 +76,7 @@ const App = () => (
             <Route path="/manualdafamilia" element={<ManualDaFamilia />} />
             <Route path="/admin/login" element={<AdminLogin />} />
             <Route path="/admin" element={<RequireAdmin allow="scan"><AdminHome /></RequireAdmin>} />
+            <Route path="/admin/usuarios" element={<RequireAdmin><AdminUsuarios /></RequireAdmin>} />
             <Route path="/numerosdasorte" element={<NumerosDaSorte />} />
             <Route path="/rematricula2027/admin" element={<RequireAdmin setor="rematricula"><Rematricula2027Admin /></RequireAdmin>} />
             <Route path="/rematricula2027/followup" element={<RequireAdmin setor="rematricula"><Rematricula2027Followup /></RequireAdmin>} />
