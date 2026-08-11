@@ -69,7 +69,7 @@ export const concluirMatriculaGratuita = async (
     try {
       const { data: pm } = await admin
         .from("prematriculas")
-        .select("protocolo, resp_nome, resp_email, resp_whatsapp, aluno_nome")
+        .select("protocolo, resp_nome, resp_email, resp_whatsapp, aluno_nome, serie_pretendida, turno_preferencia")
         .eq("id", mat.prematricula_id)
         .maybeSingle();
       await notificar("matricula_concluida", {
