@@ -178,6 +178,8 @@ export const EtapaResponsavel = ({
   set,
   telefoneVerificado,
   setTelefoneVerificado,
+  emailVerificado,
+  setEmailVerificado,
 }: Props) => (
   <div className="space-y-5">
     <SecaoTitulo>Informações do Responsável</SecaoTitulo>
@@ -209,6 +211,14 @@ export const EtapaResponsavel = ({
         onChange={(e) => set("resp_email", e.target.value)}
       />
     </Campo>
+    <VerificacaoContato
+      canal="email"
+      destino={form.resp_email}
+      verificado={
+        !!emailVerificado && emailVerificado === form.resp_email.trim().toLowerCase()
+      }
+      onVerificado={(email) => setEmailVerificado?.(email)}
+    />
     <Campo label="CPF" erro={erros.resp_cpf}>
       <Input
         inputMode="numeric"
@@ -225,8 +235,9 @@ export const EtapaResponsavel = ({
         onChange={(e) => set("resp_whatsapp", maskTelefone(e.target.value))}
       />
     </Campo>
-    <VerificacaoWhatsapp
-      telefone={form.resp_whatsapp}
+    <VerificacaoContato
+      canal="whatsapp"
+      destino={form.resp_whatsapp}
       verificado={
         !!telefoneVerificado && telefoneVerificado === onlyDigits(form.resp_whatsapp)
       }
