@@ -558,9 +558,20 @@ const Matricula = () => {
 
             <section className="rounded-xl border border-border bg-white p-6 space-y-4">
               <h2 className="font-serif text-lg font-bold text-zampieri-green-dark">
-                4. Pagamento da matrícula
+                4. {m.matricula_gratuita ? "Conclusão" : "Pagamento da matrícula"}
               </h2>
-              {!m.contrato_assinado ? (
+              {m.matricula_gratuita ? (
+                m.status === "concluida" ? (
+                  <p className="text-sm text-emerald-700">
+                    Matrícula concluída! A taxa de matrícula foi isenta pela escola.
+                  </p>
+                ) : (
+                  <p className="text-sm text-muted-foreground">
+                    Matrícula isenta de taxa — nada a pagar. Assim que o contrato for assinado, sua
+                    matrícula é concluída automaticamente.
+                  </p>
+                )
+              ) : !m.contrato_assinado ? (
                 <p className="text-sm text-muted-foreground">
                   O pagamento é liberado assim que o contrato for assinado.
                 </p>
