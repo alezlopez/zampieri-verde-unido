@@ -1,28 +1,55 @@
 import { corsHeaders } from "../_shared/cors.ts";
 
-/**
- * Diagnóstico dos templates de WhatsApp aprovados na Meta.
- * Protegido por um segredo simples: header x-diag-key === ZAPSIGN_WEBHOOK_SECRET.
- */
+/** Diagnóstico temporário dos templates de WhatsApp na Meta. */
+const j = (b: unknown, s = 200) =>
+  new Response(JSON.stringify(b, null, 2), {
+    status: s,
+    headers: { ...corsHeaders, "Content-Type": "application/json" },
+  });
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
 
-  const token = Deno.env.get("WHATSAPP_TOKEN");
-  const waba = Deno.env.get("WHATSAPP_WABA_ID");
-  const res = await fetch(
-    `https://graph.facebook.com/v23.0/${waba}/message_templates?limit=100&fields=name,language,status,category,components`,
-    { headers: { Authorization: `Bearer ${token}` } },
-  );
-  const json = await res.json();
-  const resumo = (json?.data ?? []).map((t: any) => ({
+  const token = Deno.env.get("WHATSAPP_TOKEN")!;
+  const phoneId = Deno.env.get("WHATSAPP_PHONE_NUMBER_ID")!;
+  const wabaEnv = Deno.env.get("WHATSAPP_WABA_ID") || "";
+  const url = new URL(req.url);
+  const wabaParam = url.searchParams.get("waba") || "";
+
+  const get = async (path: string) => {
+    const res = await fetch(`https://graph.facebook.com/v23.0/${path}`, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    return { status: res.status, body: await res.json() };
+  };
+
+  const phone = await get(`${phoneId}?fields=id,display_phone_number,verified_name,quality_rating`);
+  const owner = await get(`${phoneId}?fields=whatsapp_business_account{id,name}`);
+  const debug = await get(`debug_token?input_token=${token}`);
+
+  let waba = wabaParam || owner.body?.whatsapp_business_account?.id || wabaEnv;
+  const templates = waba
+    ? await get(`${waba}/message_templates?limit=100&fields=name,language,status,components`)
+    : { status: 0, body: null };
+
+  const resumo = (templates.body?.data ?? []).map((t: any) => ({
     name: t.name,
     language: t.language,
     status: t.status,
     header: (t.components ?? []).find((c: any) => c.type === "HEADER") ?? null,
-    body: (t.components ?? []).find((c: any) => c.type === "BODY")?.text ?? null,
+    bodyVars: ((t.components ?? []).find((c: any) => c.type === "BODY")?.text || "").match(/\{\{\d+\}\}/g) ?? [],
     buttons: (t.components ?? []).find((c: any) => c.type === "BUTTONS")?.buttons ?? null,
   }));
-  return new Response(JSON.stringify({ status: res.status, erro: json?.error ?? null, resumo }, null, 2), {
-    headers: { ...corsHeaders, "Content-Type": "application/json" },
+
+  return j({
+    wabaEnv,
+    wabaUsada: waba,
+    phone: phone.body,
+    owner: owner.body,
+    scopes: debug.body?.data?.scopes ?? debug.body,
+    granular: debug.body?.data?.granular_scopes ?? null,
+    templatesStatus: templates.status,
+    templatesErro: templates.body?.error ?? null,
+    resumo,
   });
 });
