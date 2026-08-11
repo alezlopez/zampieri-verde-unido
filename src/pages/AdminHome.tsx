@@ -151,8 +151,8 @@ const AdminHome = () => {
 
   const visiveis = blocos.filter((b) => isAdmin || setores.includes(b.setor));
 
-  // Operador com um único setor vai direto para a tela principal dele
-  if (!isAdmin && visiveis.length === 1) {
+  // Operador com um único setor E uma única tela vai direto para ela
+  if (!isAdmin && visiveis.length === 1 && visiveis[0].itens.length === 1) {
     return <Navigate to={visiveis[0].itens[0].href} replace />;
   }
 
