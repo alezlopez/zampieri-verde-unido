@@ -1545,35 +1545,41 @@ export type Database = {
       }
       prematricula_otp: {
         Row: {
+          canal: string
           codigo_hash: string
           consumido_em: string | null
           created_at: string
+          destino: string | null
           expira_em: string
           id: string
           ip: string | null
-          telefone: string
+          telefone: string | null
           tentativas: number
           verificado_em: string | null
         }
         Insert: {
+          canal?: string
           codigo_hash: string
           consumido_em?: string | null
           created_at?: string
+          destino?: string | null
           expira_em: string
           id?: string
           ip?: string | null
-          telefone: string
+          telefone?: string | null
           tentativas?: number
           verificado_em?: string | null
         }
         Update: {
+          canal?: string
           codigo_hash?: string
           consumido_em?: string | null
           created_at?: string
+          destino?: string | null
           expira_em?: string
           id?: string
           ip?: string | null
-          telefone?: string
+          telefone?: string | null
           tentativas?: number
           verificado_em?: string | null
         }
