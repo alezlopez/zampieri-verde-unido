@@ -155,13 +155,13 @@ Deno.serve(async (req) => {
             updated_at: new Date().toISOString(),
           })
           .eq("id", matId)
-          .select("prematricula_id, nome_aluno, resp_fin_nome, resp_fin_email, resp_fin_celular")
+          .select("prematricula_id, nome_aluno, curso, turno, link_contrato, contrato_assinado, resp_fin_nome, resp_fin_email, resp_fin_celular")
           .maybeSingle();
 
         try {
           const { data: pm } = await admin
             .from("prematriculas")
-            .select("protocolo, resp_nome, resp_email, resp_whatsapp, aluno_nome")
+            .select("protocolo, resp_nome, resp_email, resp_whatsapp, aluno_nome, serie_pretendida, turno_preferencia")
             .eq("id", mat?.prematricula_id)
             .maybeSingle();
           await notificar("matricula_concluida", {
@@ -170,6 +170,10 @@ Deno.serve(async (req) => {
             respWhatsapp: mat?.resp_fin_celular || pm?.resp_whatsapp || "",
             alunoNome: mat?.nome_aluno || pm?.aluno_nome || "",
             protocolo: pm?.protocolo || "",
+            curso: mat?.curso || pm?.serie_pretendida || null,
+            turno: mat?.turno || pm?.turno_preferencia || null,
+            linkContrato: mat?.link_contrato || null,
+            contratoAssinado: !!mat?.contrato_assinado,
           });
         } catch (e) {
           console.error("[asaas-webhook] falha ao notificar matrícula concluída", e);

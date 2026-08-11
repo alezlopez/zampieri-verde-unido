@@ -37,6 +37,9 @@ export interface DadosMensagem {
   motivoReprovacao?: string;
   dataEntrevista?: string;
   descontoPercentual?: number | null;
+  curso?: string | null;
+  turno?: string | null;
+  contratoAssinado?: boolean | null;
 }
 
 const onlyDigits = (v: string) => (v || "").replace(/\D/g, "");
@@ -210,6 +213,10 @@ async function enviarWhatsapp(evento: EventoMensagem, d: DadosMensagem) {
       motivo_reprovacao: d.motivoReprovacao ?? null,
       data_entrevista: d.dataEntrevista ?? null,
       desconto_percentual: d.descontoPercentual ?? null,
+      curso: d.curso ?? null,
+      turno: d.turno ?? null,
+      contrato_assinado: d.contratoAssinado ?? null,
+      link_contrato_assinado: d.contratoAssinado ? (d.linkContrato ?? null) : null,
       site_url: SITE_URL,
       whatsapp_suporte: WHATSAPP_SUPORTE,
     },

@@ -69,7 +69,7 @@ export const concluirMatriculaGratuita = async (
     try {
       const { data: pm } = await admin
         .from("prematriculas")
-        .select("protocolo, resp_nome, resp_email, resp_whatsapp, aluno_nome")
+        .select("protocolo, resp_nome, resp_email, resp_whatsapp, aluno_nome, serie_pretendida, turno_preferencia")
         .eq("id", mat.prematricula_id)
         .maybeSingle();
       await notificar("matricula_concluida", {
@@ -78,6 +78,10 @@ export const concluirMatriculaGratuita = async (
         respWhatsapp: mat.resp_fin_celular || pm?.resp_whatsapp || "",
         alunoNome: mat.nome_aluno || pm?.aluno_nome || "",
         protocolo: pm?.protocolo || "",
+        curso: mat.curso || pm?.serie_pretendida || null,
+        turno: mat.turno || pm?.turno_preferencia || null,
+        linkContrato: mat.link_contrato || null,
+        contratoAssinado: !!mat.contrato_assinado,
       });
     } catch (e) {
       console.error("notificar matricula_concluida (isenta)", e);
