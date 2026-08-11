@@ -39,35 +39,45 @@ export const telefoneE164 = (tel: string) => {
 };
 
 /**
- * Envia o código OTP via webhook do n8n (que dispara o template na Meta).
- * Lança erro se o webhook não confirmar o recebimento.
+ * Envia o código OTP direto pela WhatsApp Cloud API (template de autenticação).
+ * Lança erro se a Meta não aceitar o envio.
  */
 export async function enviarWhatsappOtp(telefone: string, codigo: string) {
   const template = Deno.env.get("WHATSAPP_TEMPLATE_OTP") || "codigo_verificacao";
   const lang = Deno.env.get("WHATSAPP_TEMPLATE_LANG") || "pt_BR";
+  const token = Deno.env.get("WHATSAPP_TOKEN");
+  const phoneId = Deno.env.get("WHATSAPP_PHONE_NUMBER_ID");
+  if (!token || !phoneId) throw new Error("whatsapp_config_ausente");
 
-  await enviarTemplateWebhook(
-    {
-      evento: "otp",
-      origem: "otp",
-      template,
-      template_utility: null,
-      template_fallback: template,
-      language: lang,
-      to: telefoneE164(telefone),
-      telefone_original: telefone,
-      params: [codigo],
-      body_params: { "1": codigo },
-      // Template de autenticação da Meta: botão "Copiar código" recebe o código.
-      button_url_param: codigo,
-      link: null,
-      header_image_url: null,
-      dados: { codigo, tipo: "autenticacao", validade_minutos: 10 },
-      enviado_em: new Date().toISOString(),
+  const payload = {
+    messaging_product: "whatsapp",
+    to: telefoneE164(telefone),
+    type: "template",
+    template: {
+      name: template,
+      language: { code: lang },
+      components: [
+        { type: "body", parameters: [{ type: "text", text: codigo }] },
+        {
+          type: "button",
+          sub_type: "url",
+          index: "0",
+          parameters: [{ type: "text", text: codigo }],
+        },
+      ],
     },
-    { lancarErro: true },
-  );
+  };
+
+  const res = await fetch(`https://graph.facebook.com/v21.0/${phoneId}/messages`, {
+    method: "POST",
+    headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  });
+  const texto = await res.text();
+  console.log(`OTP whatsapp direto status=${res.status} body=${texto.slice(0, 300)}`);
+  if (!res.ok) throw new Error(`whatsapp_${res.status}`);
 }
+
 
 
 
