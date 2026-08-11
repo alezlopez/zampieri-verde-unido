@@ -1,5 +1,7 @@
 import { createClient } from "npm:@supabase/supabase-js@2";
 import { corsHeaders } from "npm:@supabase/supabase-js@2/cors";
+import { concluirMatriculaGratuita } from "../_shared/matricula-contrato.ts";
+import { notificar } from "../_shared/prematricula-mensagens.ts";
 
 const json = (body: unknown, status = 200) =>
   new Response(JSON.stringify(body), {
