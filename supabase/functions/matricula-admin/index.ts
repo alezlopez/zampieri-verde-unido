@@ -214,6 +214,12 @@ Deno.serve(async (req) => {
         else if (INTEIROS.includes(campo)) update[campo] = valor === "" || valor == null ? null : parseInt(String(valor), 10);
         else update[campo] = valor === "" ? null : String(valor);
       }
+      // Matrícula isenta não tem cobrança: valor zerado e sem formas de pagamento.
+      if (update.matricula_gratuita === true) {
+        update.valor_matricula = 0;
+        update.permite_avista = false;
+        update.permite_parcelado = false;
+      }
       const { error } = await admin.from("matriculas").update(update).eq("id", id);
       if (error) throw error;
       return json({ ok: true });
