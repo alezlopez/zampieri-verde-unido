@@ -3,7 +3,7 @@ import { corsHeaders } from "../_shared/cors.ts";
 import { getOrCreateCustomer, createCheckout } from "../_shared/asaas.ts";
 import { DOCUMENTOS, TIPOS_VALIDOS, PERMITE_AGUARDANDO, docObrigatorio, labelDoc, podeReenviar } from "../_shared/matricula-docs.ts";
 import { notificar } from "../_shared/prematricula-mensagens.ts";
-import { gerarContrato, valoresProntos, verificarAssinatura } from "../_shared/matricula-contrato.ts";
+import { gerarContrato, valoresProntos, verificarAssinatura, concluirMatriculaGratuita } from "../_shared/matricula-contrato.ts";
 
 /** Campos que a família preenche no portal antes da geração do contrato. */
 const CAMPOS_FAMILIA = [
