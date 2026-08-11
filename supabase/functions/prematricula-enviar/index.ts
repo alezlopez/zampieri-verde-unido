@@ -171,7 +171,7 @@ Deno.serve(async (req) => {
     await admin
       .from("prematricula_otp")
       .update({ consumido_em: new Date().toISOString() })
-      .eq("id", otp.id);
+      .in("id", [otp.id, otpEmail.id]);
 
     // Uploads opcionais (boletim e laudo) em bucket privado
     const paths: Record<string, string> = {};
