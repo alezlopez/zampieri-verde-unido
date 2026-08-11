@@ -4,19 +4,60 @@ import { corsHeaders } from "../_shared/cors.ts";
  * Diagnóstico + manutenção dos templates do WhatsApp.
  *
  * GET  -> lista templates (nome, status, categoria) e a saúde do número.
- * POST { acao: "recategorizar" } -> pede à Meta para mover os templates
- * transacionais da matrícula de MARKETING para UTILITY (mensagens de
- * MARKETING não são entregues a quem optou por não receber promoções).
+ * POST { acao: "criar_utility" } -> cria versões UTILITY dos templates
+ * transacionais (mensagens MARKETING não são entregues a quem optou por
+ * não receber promoções; UTILITY sempre é entregue).
  */
 
-const TRANSACIONAIS = [
-  "prematricula_recebida",
-  "prematricula_aprovadav2",
-  "prematricula_reprovada",
-  "prematricula_agendada",
-  "prematricula_entrevista_concluida",
-  "matricula_documentos_reenvio",
-  "matricula_dados_liberados",
+const SITE = "https://colegiozampieri.com.br";
+
+type Novo = {
+  name: string;
+  body: string;
+  exemplos: string[];
+  botao?: { texto: string; base: string };
+};
+
+const NOVOS: Novo[] = [
+  {
+    name: "prematricula_recebida_u",
+    body:
+      "Olá, {{1}}! Recebemos a pré-matrícula de {{2}}. Protocolo {{3}}.\n\nNossa equipe vai conferir os dados e você receberá um retorno em breve para agendar a Entrevista Familiar.",
+    exemplos: ["Ana", "João Silva", "A1B2C3D4"],
+  },
+  {
+    name: "prematricula_aprovada_u",
+    body:
+      "Olá, {{1}}! A pré-matrícula de {{2}} foi aprovada.\n\nO próximo passo é escolher o melhor horário para a Entrevista Familiar no link abaixo.",
+    exemplos: ["Ana", "João Silva"],
+    botao: { texto: "Escolher horário", base: `${SITE}/prematricula/agendar` },
+  },
+  {
+    name: "prematricula_agendada_u",
+    body:
+      "Olá, {{1}}! A Entrevista Familiar de {{2}} está confirmada para {{3}}.\n\nSe precisar remarcar, é só falar com a nossa equipe.",
+    exemplos: ["Ana", "João Silva", "12/08/2026 às 10h"],
+  },
+  {
+    name: "prematricula_reprovada_u",
+    body:
+      "Olá, {{1}}. Não foi possível seguir com a pré-matrícula de {{2}} neste momento.\n\nSe acredita que houve algum engano, fale com a nossa equipe.",
+    exemplos: ["Ana", "João Silva"],
+  },
+  {
+    name: "matricula_documentos_reenvio_u",
+    body:
+      "Olá, {{1}}! Precisamos que você reenvie alguns documentos da matrícula de {{2}}: {{3}}.\n\nAcesse o link abaixo para reenviar.",
+    exemplos: ["Ana", "João Silva", "RG do responsável, comprovante de endereço"],
+    botao: { texto: "Reenviar documentos", base: `${SITE}/matricula` },
+  },
+  {
+    name: "matricula_dados_liberados_u",
+    body:
+      "Olá, {{1}}! A documentação de {{2}} foi aprovada e o preenchimento dos dados do contrato já está liberado.\n\nAcesse o link abaixo para continuar.",
+    exemplos: ["Ana", "João Silva"],
+    botao: { texto: "Continuar matrícula", base: `${SITE}/matricula` },
+  },
 ];
 
 const graph = (path: string, token: string, init?: RequestInit) =>
@@ -34,14 +75,13 @@ Deno.serve(async (req) => {
   const out: Record<string, unknown> = { waba, phoneId, temToken: !!token };
 
   const listaRes = await graph(
-    `${waba}/message_templates?limit=100&fields=id,name,language,status,category`,
+    `${waba}/message_templates?limit=200&fields=id,name,language,status,category`,
     token,
   );
   const lista = await listaRes.json();
   const templates: any[] = lista?.data ?? [];
   out.templatesErro = lista?.error ?? null;
   out.templates = templates.map((t) => ({
-    id: t.id,
     name: t.name,
     lang: t.language,
     status: t.status,
@@ -56,20 +96,44 @@ Deno.serve(async (req) => {
 
   if (req.method === "POST") {
     const body = await req.json().catch(() => ({}));
-    if (body?.acao === "recategorizar") {
+    if (body?.acao === "criar_utility") {
       const resultados: unknown[] = [];
-      for (const t of templates) {
-        if (!TRANSACIONAIS.includes(t.name) || t.category === "UTILITY") continue;
-        const r = await graph(`${t.id}`, token, {
+      for (const n of NOVOS) {
+        if (templates.some((t) => t.name === n.name)) {
+          resultados.push({ name: n.name, ja_existe: true });
+          continue;
+        }
+        const components: unknown[] = [
+          { type: "BODY", text: n.body, example: { body_text: [n.exemplos] } },
+        ];
+        if (n.botao) {
+          components.push({
+            type: "BUTTONS",
+            buttons: [
+              {
+                type: "URL",
+                text: n.botao.texto,
+                url: `${n.botao.base}{{1}}`,
+                example: [`${n.botao.base}?t=exemplo123`],
+              },
+            ],
+          });
+        }
+        const r = await graph(`${waba}/message_templates`, token, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ category: "UTILITY" }),
+          body: JSON.stringify({
+            name: n.name,
+            language: "pt_BR",
+            category: "UTILITY",
+            components,
+          }),
         });
         const j = await r.json();
-        resultados.push({ name: t.name, status: r.status, resposta: j });
-        console.log(`Recategorizar ${t.name} -> UTILITY status=${r.status} ${JSON.stringify(j)}`);
+        resultados.push({ name: n.name, status: r.status, resposta: j });
+        console.log(`Criar ${n.name} status=${r.status} ${JSON.stringify(j)}`);
       }
-      out.recategorizacao = resultados;
+      out.criacao = resultados;
     }
   }
 
