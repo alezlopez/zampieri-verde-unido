@@ -554,9 +554,29 @@ const MatriculaAdmin = () => {
 
                 <section className="space-y-3">
                   <p className="text-xs font-semibold uppercase text-muted-foreground">
-                    Dados enviados pela família
+                    {aberta.status === "concluida"
+                      ? "Ficha completa da matrícula"
+                      : "Dados enviados pela família"}
                   </p>
-                  {aberta.dados_preenchidos_em ? (
+                  {aberta.status === "concluida" ? (
+                    <div className="space-y-4">
+                      {FICHA_COMPLETA.map((grupo) => (
+                        <div key={grupo.titulo} className="rounded-lg border border-border p-3">
+                          <p className="mb-2 text-xs font-semibold uppercase text-zampieri-green-dark">
+                            {grupo.titulo}
+                          </p>
+                          <div className="grid sm:grid-cols-2 gap-x-4 gap-y-1 text-sm">
+                            {grupo.campos.map(({ campo, label, tipo }) => (
+                              <p key={campo} className="break-words">
+                                <span className="text-muted-foreground">{label}: </span>
+                                {formatarValor(aberta[campo], tipo)}
+                              </p>
+                            ))}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  ) : aberta.dados_preenchidos_em ? (
                     <div className="grid sm:grid-cols-2 gap-x-4 gap-y-1 rounded-lg border border-border p-3 text-sm">
                       {CAMPOS_LEITURA.map(({ campo, label }) => (
                         <p key={campo} className="truncate">
@@ -566,6 +586,7 @@ const MatriculaAdmin = () => {
                       ))}
                     </div>
                   ) : (
+
                     <p className="text-sm text-muted-foreground">
                       A família ainda não preencheu os dados do contrato.
                     </p>
