@@ -28,6 +28,8 @@ interface Props {
   setLaudo: (f: File | null) => void;
   telefoneVerificado?: string | null;
   setTelefoneVerificado?: (t: string | null) => void;
+  emailVerificado?: string | null;
+  setEmailVerificado?: (e: string | null) => void;
 }
 
 const ACEITOS = ".pdf,.jpg,.jpeg,.png";
