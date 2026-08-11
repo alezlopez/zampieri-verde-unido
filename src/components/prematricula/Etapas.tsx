@@ -36,21 +36,24 @@ const ACEITOS = ".pdf,.jpg,.jpeg,.png";
 
 const ERROS_OTP: Record<string, string> = {
   telefone_invalido: "Número de WhatsApp inválido.",
+  email_invalido: "E-mail inválido.",
   muitas_tentativas: "Muitas tentativas. Aguarde alguns minutos e tente de novo.",
-  envio_falhou: "Não conseguimos enviar o código para este número.",
+  envio_falhou: "Não conseguimos enviar o código para este contato.",
   codigo_expirado: "O código expirou. Peça um novo.",
   codigo_invalido: "Código incorreto.",
   codigo_nao_encontrado: "Nenhum código ativo. Envie um novo código.",
 };
 
-const VerificacaoWhatsapp = ({
-  telefone,
+const VerificacaoContato = ({
+  canal,
+  destino,
   verificado,
   onVerificado,
 }: {
-  telefone: string;
+  canal: "whatsapp" | "email";
+  destino: string;
   verificado: boolean;
-  onVerificado: (tel: string) => void;
+  onVerificado: (destino: string) => void;
 }) => {
   const { toast } = useToast();
   const [enviado, setEnviado] = useState(false);
