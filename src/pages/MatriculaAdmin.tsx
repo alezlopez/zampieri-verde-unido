@@ -484,73 +484,64 @@ const MatriculaAdmin = () => {
                             <Button size="sm" variant="outline" onClick={() => verDoc(d.tipo)}>
                               Ver
                             </Button>
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              disabled={acaoEmCurso}
-                              onClick={() =>
-                                executar("doc_status", { tipo: d.tipo, status: "aprovado" })
-                              }
-                            >
-                              Aprovar
-                            </Button>
-                            <Button
-                              size="sm"
-                              variant="destructive"
-                              disabled={acaoEmCurso}
-                              onClick={() =>
-                                executar("doc_status", {
-                                  tipo: d.tipo,
-                                  status: "rejeitado",
-                                  motivo: "Documento ilegível ou incorreto. Reenvie, por favor.",
-                                })
-                              }
-                            >
-                              Rejeitar
-                            </Button>
+                            {!documentosTravados && (
+                              <>
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  disabled={acaoEmCurso}
+                                  onClick={() =>
+                                    executar("doc_status", { tipo: d.tipo, status: "aprovado" })
+                                  }
+                                >
+                                  Aprovar
+                                </Button>
+                                <Button
+                                  size="sm"
+                                  variant="destructive"
+                                  disabled={acaoEmCurso}
+                                  onClick={() =>
+                                    executar("doc_status", {
+                                      tipo: d.tipo,
+                                      status: "rejeitado",
+                                      motivo:
+                                        "Documento ilegível ou incorreto. Reenvie, por favor.",
+                                    })
+                                  }
+                                >
+                                  Rejeitar
+                                </Button>
+                              </>
+                            )}
                           </>
                         )}
                       </div>
                     </div>
                   ))}
-                  <div className="flex flex-wrap gap-2 pt-1">
-                    <Button
-                      className="bg-zampieri-green-dark hover:bg-zampieri-green"
-                      disabled={acaoEmCurso}
-                      onClick={() => executar("aprovar_documentos")}
-                    >
-                      Aprovar toda a documentação
-                    </Button>
-                    <Button
-                      variant="secondary"
-                      disabled={acaoEmCurso || !docsConferidos || !valoresProntos}
-                      onClick={() => executar("liberar_dados")}
-                    >
-                      Liberar contrato (preenchimento dos dados)
-                    </Button>
-
-                    <Button
-                      variant="outline"
-                      disabled={acaoEmCurso}
-                      onClick={() => executar("solicitar_reenvio")}
-                    >
-                      Solicitar reenvio
-                    </Button>
-                  </div>
-                  {!docsConferidos && (
-                    <p className="text-xs text-amber-700">
-                      Aprove todos os documentos obrigatórios antes de liberar o preenchimento dos
-                      dados.
+                  {documentosTravados ? (
+                    <p className="text-xs text-muted-foreground">
+                      Contrato já assinado — documentação encerrada.
                     </p>
+                  ) : (
+                    <div className="flex flex-wrap gap-2 pt-1">
+                      <Button
+                        className="bg-zampieri-green-dark hover:bg-zampieri-green"
+                        disabled={acaoEmCurso}
+                        onClick={() => executar("aprovar_documentos")}
+                      >
+                        Aprovar toda a documentação
+                      </Button>
+                      <Button
+                        variant="outline"
+                        disabled={acaoEmCurso}
+                        onClick={() => executar("solicitar_reenvio")}
+                      >
+                        Solicitar reenvio
+                      </Button>
+                    </div>
                   )}
-                  {docsConferidos && !valoresProntos && (
-                    <p className="text-xs text-amber-700">
-                      Preencha e salve os valores (anuidade, mensalidade com desconto, dia de
-                      vencimento e valor da matrícula) para liberar o preenchimento dos dados.
-                    </p>
-                  )}
-
                 </section>
+
 
                 <section className="space-y-3">
                   <p className="text-xs font-semibold uppercase text-muted-foreground">
