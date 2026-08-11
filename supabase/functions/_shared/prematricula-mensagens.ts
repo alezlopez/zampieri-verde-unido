@@ -125,6 +125,8 @@ const imagemPorEvento = (evento: EventoMensagem) =>
 type DefTemplate = {
   nome: string;
   lang: string;
+  status: string;
+  category: string;
   headerFormat: "IMAGE" | "VIDEO" | "DOCUMENT" | "TEXT" | null;
   headerVars: number;
   headerExemplo: string | null;
