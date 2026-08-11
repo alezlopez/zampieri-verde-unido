@@ -1,4 +1,4 @@
-import { enviarTemplateWebhook } from "./whatsapp-webhook.ts";
+// OTP de WhatsApp é enviado DIRETO pela Cloud API da Meta (sem webhook n8n).
 
 export const corsHeadersOtp = {
   "Access-Control-Allow-Origin": "*",
