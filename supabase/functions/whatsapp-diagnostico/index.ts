@@ -24,7 +24,8 @@ Deno.serve(async (req) => {
   };
 
   const phone = await get(`${phoneId}?fields=id,display_phone_number,verified_name,quality_rating`);
-  const owner = await get(`${phoneId}?fields=whatsapp_business_account{id,name}`);
+  const owner = await get(`${phoneId}?fields=id,name_status`);
+  const me = await get(`me?fields=id,name`);
   const debug = await get(`debug_token?input_token=${token}`);
 
   let waba = wabaParam || owner.body?.whatsapp_business_account?.id || wabaEnv;
@@ -46,7 +47,8 @@ Deno.serve(async (req) => {
     wabaUsada: waba,
     phone: phone.body,
     owner: owner.body,
-    scopes: debug.body?.data?.scopes ?? debug.body,
+    me: me.body,
+    debugRaw: debug.body,
     granular: debug.body?.data?.granular_scopes ?? null,
     templatesStatus: templates.status,
     templatesErro: templates.body?.error ?? null,
