@@ -1,0 +1,1 @@
+ALTER TABLE public.matriculas ADD COLUMN IF NOT EXISTS matricula_gratuita boolean NOT NULL DEFAULT false;
