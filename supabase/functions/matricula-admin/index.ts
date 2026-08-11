@@ -227,6 +227,9 @@ Deno.serve(async (req) => {
 
     if (acao === "verificar_assinatura") {
       const r = await verificarAssinatura(admin, mat);
+      if (mat.contrato_assinado && mat.matricula_gratuita) {
+        await concluirMatriculaGratuita(admin, mat, notificar);
+      }
       return json({ ok: true, ...r });
     }
 
