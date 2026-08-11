@@ -35,6 +35,7 @@ const PreMatricula = () => {
   const [enviando, setEnviando] = useState(false);
   const [protocolo, setProtocolo] = useState<string | null>(null);
   const [telefoneVerificado, setTelefoneVerificado] = useState<string | null>(null);
+  const [emailVerificado, setEmailVerificado] = useState<string | null>(null);
   const [duplicado, setDuplicado] = useState<{ protocolo: string | null } | null>(null);
   const [checando, setChecando] = useState(false);
 
