@@ -219,6 +219,15 @@ const CAMPOS_VALORES: { campo: string; label: string }[] = [
   { campo: "max_parcelas", label: "Máximo de parcelas no cartão" },
 ];
 
+/** Tabela oficial de anuidades por segmento. */
+const ANUIDADES = [
+  { curso: "Pré", valor: "19.500,00", ext: "Dezenove mil e quinhentos reais" },
+  { curso: "1º Ano", valor: "11.570,00", ext: "Onze mil quinhentos e setenta reais" },
+  { curso: "2º ao 5º Ano", valor: "13.000,00", ext: "Treze mil reais" },
+  { curso: "6º ao 9º Ano", valor: "14.430,00", ext: "Quatorze mil quatrocentos e trinta reais" },
+  { curso: "Ensino Médio", valor: "14.950,00", ext: "Quatorze mil novecentos e cinquenta reais" },
+];
+
 const MatriculaAdmin = () => {
   const { toast } = useToast();
   const [lista, setLista] = useState<Matricula[]>([]);
