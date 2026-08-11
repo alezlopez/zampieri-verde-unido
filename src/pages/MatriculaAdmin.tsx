@@ -167,6 +167,7 @@ const MatriculaAdmin = () => {
     setForm(f);
     setAvista(m.permite_avista !== false);
     setParcelado(m.permite_parcelado !== false);
+    setGratuita(m.matricula_gratuita === true);
   };
 
   const filtradas = useMemo(() => {
