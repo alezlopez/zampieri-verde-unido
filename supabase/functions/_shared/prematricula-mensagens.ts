@@ -268,11 +268,25 @@ async function enviarWhatsapp(evento: EventoMensagem, d: DadosMensagem) {
     console.log(`WhatsApp sem template para evento ${evento}; apenas e-mail.`);
     return;
   }
-  const nomeTemplate = Deno.env.get(cfg.envVar) || cfg.padrao;
   const lang = Deno.env.get("WHATSAPP_TEMPLATE_LANG") || "pt_BR";
   const textos = cfg.params(d);
 
-  const def = await definicaoTemplate(nomeTemplate, lang);
+  // Preferência: secret manual > versão UTILITY aprovada > template legado.
+  const candidatos = [Deno.env.get(cfg.envVar), cfg.utility, cfg.padrao].filter(
+    (x): x is string => !!x,
+  );
+  let nomeTemplate = candidatos[candidatos.length - 1];
+  let def: DefTemplate | null = null;
+  for (const nome of candidatos) {
+    const d0 = await definicaoTemplate(nome, lang);
+    if (d0 && d0.status === "APPROVED") {
+      nomeTemplate = nome;
+      def = d0;
+      break;
+    }
+    console.log(`Template ${nome} indisponível (status=${d0?.status ?? "nao_encontrado"}).`);
+  }
+
   const langEnvio = def?.lang || lang;
   const imagemTemplate = def?.headerFormat === "IMAGE" ? def.headerExemplo : null;
   const temImagemConfigurada = !!imagemPorEvento(evento);
