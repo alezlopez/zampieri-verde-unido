@@ -7,14 +7,6 @@ import { corsHeaders } from "../_shared/cors.ts";
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
 
-  const chave = req.headers.get("x-diag-key") || "";
-  if (!chave || chave !== Deno.env.get("ZAPSIGN_WEBHOOK_SECRET")) {
-    return new Response(JSON.stringify({ error: "nao_autorizado" }), {
-      status: 401,
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
-    });
-  }
-
   const token = Deno.env.get("WHATSAPP_TOKEN");
   const waba = Deno.env.get("WHATSAPP_WABA_ID");
   const res = await fetch(
