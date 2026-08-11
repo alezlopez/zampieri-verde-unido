@@ -118,6 +118,11 @@ Deno.serve(async (req) => {
       return json({ ok: true, url: data.signedUrl });
     }
 
+    // Depois da assinatura a documentação fica encerrada.
+    if (["doc_status", "aprovar_documentos", "solicitar_reenvio"].includes(acao) && mat.contrato_assinado) {
+      return json({ error: "contrato_assinado" }, 400);
+    }
+
     if (acao === "doc_status") {
       const tipo = String(body?.tipo || "");
       const novo = String(body?.status || "");

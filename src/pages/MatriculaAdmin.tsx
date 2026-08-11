@@ -219,6 +219,15 @@ const CAMPOS_VALORES: { campo: string; label: string }[] = [
   { campo: "max_parcelas", label: "Máximo de parcelas no cartão" },
 ];
 
+/** Tabela oficial de anuidades por segmento. */
+const ANUIDADES = [
+  { curso: "Pré", valor: "19.500,00", ext: "Dezenove mil e quinhentos reais" },
+  { curso: "1º Ano", valor: "11.570,00", ext: "Onze mil quinhentos e setenta reais" },
+  { curso: "2º ao 5º Ano", valor: "13.000,00", ext: "Treze mil reais" },
+  { curso: "6º ao 9º Ano", valor: "14.430,00", ext: "Quatorze mil quatrocentos e trinta reais" },
+  { curso: "Ensino Médio", valor: "14.950,00", ext: "Quatorze mil novecentos e cinquenta reais" },
+];
+
 const MatriculaAdmin = () => {
   const { toast } = useToast();
   const [lista, setLista] = useState<Matricula[]>([]);
@@ -230,6 +239,7 @@ const MatriculaAdmin = () => {
   const [avista, setAvista] = useState(true);
   const [parcelado, setParcelado] = useState(true);
   const [gratuita, setGratuita] = useState(false);
+  const [anuidadeOutro, setAnuidadeOutro] = useState(false);
   const [acaoEmCurso, setAcaoEmCurso] = useState(false);
 
   useEffect(() => {
@@ -275,6 +285,8 @@ const MatriculaAdmin = () => {
     setAvista(m.permite_avista !== false);
     setParcelado(m.permite_parcelado !== false);
     setGratuita(m.matricula_gratuita === true);
+    const anu = String(m.anuidade_total ?? "").trim();
+    setAnuidadeOutro(!!anu && !ANUIDADES.some((a) => a.valor === anu));
   };
 
   const filtradas = useMemo(() => {
@@ -311,6 +323,12 @@ const MatriculaAdmin = () => {
       .filter((d) => d.obrigatorio !== false)
       .every((d) => d.status === "aprovado" || d.status === "aguardando_escola");
   }, [aberta]);
+
+  /** Depois da assinatura não faz mais sentido mexer na documentação. */
+  const documentosTravados = aberta?.contrato_assinado === true;
+
+  /** Etapa de dados já liberada para a família. */
+  const dadosLiberados = !!aberta?.documentos_aprovados_em;
 
 
   const executar = async (acao: string, extra: Record<string, unknown> = {}, fechar = false) => {
@@ -484,73 +502,64 @@ const MatriculaAdmin = () => {
                             <Button size="sm" variant="outline" onClick={() => verDoc(d.tipo)}>
                               Ver
                             </Button>
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              disabled={acaoEmCurso}
-                              onClick={() =>
-                                executar("doc_status", { tipo: d.tipo, status: "aprovado" })
-                              }
-                            >
-                              Aprovar
-                            </Button>
-                            <Button
-                              size="sm"
-                              variant="destructive"
-                              disabled={acaoEmCurso}
-                              onClick={() =>
-                                executar("doc_status", {
-                                  tipo: d.tipo,
-                                  status: "rejeitado",
-                                  motivo: "Documento ilegível ou incorreto. Reenvie, por favor.",
-                                })
-                              }
-                            >
-                              Rejeitar
-                            </Button>
+                            {!documentosTravados && (
+                              <>
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  disabled={acaoEmCurso}
+                                  onClick={() =>
+                                    executar("doc_status", { tipo: d.tipo, status: "aprovado" })
+                                  }
+                                >
+                                  Aprovar
+                                </Button>
+                                <Button
+                                  size="sm"
+                                  variant="destructive"
+                                  disabled={acaoEmCurso}
+                                  onClick={() =>
+                                    executar("doc_status", {
+                                      tipo: d.tipo,
+                                      status: "rejeitado",
+                                      motivo:
+                                        "Documento ilegível ou incorreto. Reenvie, por favor.",
+                                    })
+                                  }
+                                >
+                                  Rejeitar
+                                </Button>
+                              </>
+                            )}
                           </>
                         )}
                       </div>
                     </div>
                   ))}
-                  <div className="flex flex-wrap gap-2 pt-1">
-                    <Button
-                      className="bg-zampieri-green-dark hover:bg-zampieri-green"
-                      disabled={acaoEmCurso}
-                      onClick={() => executar("aprovar_documentos")}
-                    >
-                      Aprovar toda a documentação
-                    </Button>
-                    <Button
-                      variant="secondary"
-                      disabled={acaoEmCurso || !docsConferidos || !valoresProntos}
-                      onClick={() => executar("liberar_dados")}
-                    >
-                      Liberar contrato (preenchimento dos dados)
-                    </Button>
-
-                    <Button
-                      variant="outline"
-                      disabled={acaoEmCurso}
-                      onClick={() => executar("solicitar_reenvio")}
-                    >
-                      Solicitar reenvio
-                    </Button>
-                  </div>
-                  {!docsConferidos && (
-                    <p className="text-xs text-amber-700">
-                      Aprove todos os documentos obrigatórios antes de liberar o preenchimento dos
-                      dados.
+                  {documentosTravados ? (
+                    <p className="text-xs text-muted-foreground">
+                      Contrato já assinado — documentação encerrada.
                     </p>
+                  ) : (
+                    <div className="flex flex-wrap gap-2 pt-1">
+                      <Button
+                        className="bg-zampieri-green-dark hover:bg-zampieri-green"
+                        disabled={acaoEmCurso}
+                        onClick={() => executar("aprovar_documentos")}
+                      >
+                        Aprovar toda a documentação
+                      </Button>
+                      <Button
+                        variant="outline"
+                        disabled={acaoEmCurso}
+                        onClick={() => executar("solicitar_reenvio")}
+                      >
+                        Solicitar reenvio
+                      </Button>
+                    </div>
                   )}
-                  {docsConferidos && !valoresProntos && (
-                    <p className="text-xs text-amber-700">
-                      Preencha e salve os valores (anuidade, mensalidade com desconto, dia de
-                      vencimento e valor da matrícula) para liberar o preenchimento dos dados.
-                    </p>
-                  )}
-
                 </section>
+
 
                 <section className="space-y-3">
                   <p className="text-xs font-semibold uppercase text-muted-foreground">
@@ -613,11 +622,56 @@ const MatriculaAdmin = () => {
                       automaticamente.
                     </p>
                   )}
+                  <div className="space-y-1">
+                    <Label className="text-xs">Anuidade total</Label>
+                    <Select
+                      value={
+                        anuidadeOutro
+                          ? "outro"
+                          : ANUIDADES.find((a) => a.valor === (form.anuidade_total ?? ""))?.curso ??
+                            ""
+                      }
+                      onValueChange={(v) => {
+                        if (v === "outro") {
+                          setAnuidadeOutro(true);
+                          return;
+                        }
+                        const op = ANUIDADES.find((a) => a.curso === v);
+                        if (!op) return;
+                        setAnuidadeOutro(false);
+                        setForm((f) => ({
+                          ...f,
+                          anuidade_total: op.valor,
+                          anuidade_total_ext: op.ext,
+                        }));
+                      }}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Selecione o segmento" />
+                      </SelectTrigger>
+                      <SelectContent className="bg-background z-50">
+                        {ANUIDADES.map((a) => (
+                          <SelectItem key={a.curso} value={a.curso}>
+                            {a.curso} — R$ {a.valor}
+                          </SelectItem>
+                        ))}
+                        <SelectItem value="outro">Outro (digitar)</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    {!anuidadeOutro && form.anuidade_total_ext && (
+                      <p className="text-xs text-muted-foreground">{form.anuidade_total_ext}</p>
+                    )}
+                  </div>
+
                   <div className="grid sm:grid-cols-2 gap-3">
-                    {CAMPOS_VALORES.filter(
-                      ({ campo }) =>
-                        !gratuita || !["valor_matricula", "max_parcelas"].includes(campo),
-                    ).map(({ campo, label }) => (
+                    {CAMPOS_VALORES.filter(({ campo }) => {
+                      if (
+                        !anuidadeOutro &&
+                        ["anuidade_total", "anuidade_total_ext"].includes(campo)
+                      )
+                        return false;
+                      return !gratuita || !["valor_matricula", "max_parcelas"].includes(campo);
+                    }).map(({ campo, label }) => (
                       <div key={campo} className="space-y-1">
                         <Label className="text-xs">{label}</Label>
                         <Input
@@ -627,6 +681,7 @@ const MatriculaAdmin = () => {
                       </div>
                     ))}
                   </div>
+
                   {!gratuita && (
                     <div className="flex flex-wrap gap-4 text-sm">
                       <label className="flex items-center gap-2">
@@ -696,6 +751,42 @@ const MatriculaAdmin = () => {
                     </p>
                   )}
                 </section>
+
+                <section className="space-y-2 rounded-lg border border-border bg-zampieri-cream/40 p-4">
+                  {dadosLiberados ? (
+                    <p className="text-sm text-emerald-700">
+                      Contrato liberado — a família já pode preencher os dados no portal.
+                    </p>
+                  ) : (
+                    <>
+                      <Button
+                        className={`w-full ${
+                          docsConferidos && valoresProntos
+                            ? "bg-zampieri-green-dark hover:bg-zampieri-green text-white"
+                            : ""
+                        }`}
+                        variant={docsConferidos && valoresProntos ? "default" : "secondary"}
+                        disabled={acaoEmCurso || !docsConferidos || !valoresProntos}
+                        onClick={() => executar("liberar_dados")}
+                      >
+                        Liberar contrato para a família preencher
+                      </Button>
+                      {!docsConferidos && (
+                        <p className="text-xs text-amber-700">
+                          Aprove todos os documentos obrigatórios para liberar.
+                        </p>
+                      )}
+                      {docsConferidos && !valoresProntos && (
+                        <p className="text-xs text-amber-700">
+                          Preencha e salve os valores (anuidade, mensalidade com desconto, dia de
+                          vencimento e valor da matrícula) para liberar.
+                        </p>
+                      )}
+                    </>
+                  )}
+                </section>
+
+
 
               </div>
             </>
