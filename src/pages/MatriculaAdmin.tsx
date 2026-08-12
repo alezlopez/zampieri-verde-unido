@@ -674,10 +674,37 @@ const MatriculaAdmin = () => {
                     }).map(({ campo, label }) => (
                       <div key={campo} className="space-y-1">
                         <Label className="text-xs">{label}</Label>
-                        <Input
-                          value={form[campo] ?? ""}
-                          onChange={(e) => setForm((f) => ({ ...f, [campo]: e.target.value }))}
-                        />
+                        {campo === "percentual_desconto" ? (
+                          <Select
+                            value={form[campo] ?? ""}
+                            onValueChange={(v) =>
+                              setForm((f) => ({
+                                ...f,
+                                [campo]: v,
+                                percentual_desconto_ext:
+                                  v && !isNaN(Number(v))
+                                    ? `${v}%${Number(v) > 1 ? "s" : ""} de desconto`
+                                    : f.percentual_desconto_ext,
+                              }))
+                            }
+                          >
+                            <SelectTrigger>
+                              <SelectValue placeholder="Selecione %" />
+                            </SelectTrigger>
+                            <SelectContent className="bg-background z-50">
+                              {Array.from({ length: 12 }, (_, i) => (i + 1) * 5).map((n) => (
+                                <SelectItem key={n} value={String(n)}>
+                                  {n}%
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        ) : (
+                          <Input
+                            value={form[campo] ?? ""}
+                            onChange={(e) => setForm((f) => ({ ...f, [campo]: e.target.value }))}
+                          />
+                        )}
                       </div>
                     ))}
                   </div>
