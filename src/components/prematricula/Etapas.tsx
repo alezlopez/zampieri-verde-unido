@@ -253,7 +253,21 @@ export const EtapaResponsavel = ({
 );
 
 
-export const EtapaAluno = ({ form, erros, set }: Props) => (
+export const EtapaAluno = ({ form, erros, set }: Props) => {
+  const nascIso = brToIso(form.aluno_nascimento) || "";
+  const idade = idadeEm31Marco(nascIso);
+  const permitidas = seriesPermitidas(nascIso);
+  const serieMax = permitidas[permitidas.length - 1];
+
+  useEffect(() => {
+    if (!nascIso) return;
+    if (form.serie_pretendida && !permitidas.includes(form.serie_pretendida)) {
+      set("serie_pretendida", "");
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [nascIso]);
+
+  return (
   <div className="space-y-5">
     <SecaoTitulo>Informações do Aluno</SecaoTitulo>
     <Campo label="Nome completo do aluno" erro={erros.aluno_nome}>
@@ -275,18 +289,31 @@ export const EtapaAluno = ({ form, erros, set }: Props) => (
       <Select
         value={form.serie_pretendida}
         onValueChange={(v) => set("serie_pretendida", v)}
+        disabled={!nascIso}
       >
         <SelectTrigger>
-          <SelectValue placeholder="Selecione a série" />
+          <SelectValue
+            placeholder={nascIso ? "Selecione a série" : "Informe a data de nascimento"}
+          />
         </SelectTrigger>
         <SelectContent className="bg-background z-50">
           {SERIES.map((s) => (
-            <SelectItem key={s} value={s}>
+            <SelectItem key={s} value={s} disabled={!permitidas.includes(s)}>
               {s}
+              {!permitidas.includes(s) && nascIso ? " — idade insuficiente" : ""}
             </SelectItem>
           ))}
         </SelectContent>
       </Select>
+      {nascIso && idade !== null && (
+        <p className="text-xs text-muted-foreground mt-1">
+          {idade >= 18
+            ? "Alunos com 18 anos ou mais em 31/03/2027 não podem ser matriculados. Fale com a secretaria."
+            : permitidas.length === 0
+              ? `Idade em 31/03/2027: ${idade} ano(s). Não há série disponível para essa idade.`
+              : `Idade em 31/03/2027: ${idade} ano(s). Série máxima permitida: ${serieMax}.`}
+        </p>
+      )}
     </Campo>
     <RadioGrupo
       label="Turno de preferência"
