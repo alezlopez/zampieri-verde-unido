@@ -74,8 +74,21 @@ const PreMatricula = () => {
       if (!e.resp_whatsapp && telefoneVerificado !== onlyDigits(form.resp_whatsapp))
         e.resp_whatsapp = "Confirme o código enviado no WhatsApp";
     }
-    if (etapa === 1 && !e.aluno_nascimento && !brToIso(form.aluno_nascimento))
-      e.aluno_nascimento = "Data inválida";
+    if (etapa === 1) {
+      const iso = brToIso(form.aluno_nascimento);
+      if (!e.aluno_nascimento && !iso) e.aluno_nascimento = "Data inválida";
+      if (iso) {
+        const idade = idadeEm31Marco(iso);
+        const permitidas = seriesPermitidas(iso);
+        if (idade !== null && idade >= 18)
+          e.aluno_nascimento =
+            "Alunos com 18 anos ou mais em 31/03/2027 não podem ser matriculados";
+        else if (permitidas.length === 0)
+          e.aluno_nascimento = "Não há série disponível para essa data de nascimento";
+        else if (form.serie_pretendida && !permitidas.includes(form.serie_pretendida))
+          e.serie_pretendida = "Série incompatível com a data de nascimento";
+      }
+    }
     if (etapa === 2) {
       if (!boletim) e.boletim = "Anexe o último boletim escolar";
     }
