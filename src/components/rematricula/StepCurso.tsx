@@ -89,6 +89,10 @@ export const StepCurso = ({
       setErro("Escolha quem será o responsável financeiro.");
       return;
     }
+    if (!concordou) {
+      setErro("É necessário confirmar que leu e concorda com a observação sobre a distribuição de turmas.");
+      return;
+    }
     setErro(null);
     onFinalizar();
   };
