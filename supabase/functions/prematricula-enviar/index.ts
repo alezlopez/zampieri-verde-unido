@@ -110,6 +110,15 @@ Deno.serve(async (req) => {
     if (d.consentimento_privacidade !== true) erros.push("consentimento_privacidade");
     if (erros.length) return json({ error: "dados_invalidos", campos: erros }, 400);
 
+    // Corte etário: série precisa ser compatível com a data de nascimento (31/03/2027)
+    const permitidas = seriesPermitidas(alunoNasc);
+    if (!permitidas.includes(serie)) {
+      return json(
+        { error: "serie_incompativel", idade: idadeEm31Marco(alunoNasc), permitidas },
+        400,
+      );
+    }
+
     const admin = createClient(
       Deno.env.get("SUPABASE_URL")!,
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
