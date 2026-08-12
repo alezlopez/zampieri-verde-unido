@@ -13,6 +13,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import {
+  brToIso,
   isValidEmail,
   maskCpf,
   maskDataBr,
@@ -20,7 +21,7 @@ import {
   onlyDigits,
 } from "@/components/rematricula/utils";
 import { Campo, RadioGrupo, SecaoTitulo } from "./Campos";
-import { PreMatriculaForm, SERIES } from "./types";
+import { PreMatriculaForm, SERIES, idadeEm31Marco, seriesPermitidas } from "./types";
 
 type Erros = Partial<Record<keyof PreMatriculaForm | "boletim", string>>;
 
