@@ -15,6 +15,41 @@ export const SERIES = [
 ];
 
 
+/** Ano letivo de referência para o corte etário (31/03) */
+export const ANO_LETIVO_REFERENCIA = 2027;
+
+/** Idade mínima (completa até 31/03 do ano de referência) exigida por série */
+export const IDADE_MINIMA_SERIE: Record<string, number> = SERIES.reduce(
+  (acc, serie, i) => ({ ...acc, [serie]: i + 5 }),
+  {} as Record<string, number>,
+);
+
+/** Idade completa em 31/03 do ano de referência. Recebe data ISO (aaaa-mm-dd). */
+export const idadeEm31Marco = (
+  nascIso: string,
+  ano = ANO_LETIVO_REFERENCIA,
+): number | null => {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(nascIso || "")) return null;
+  const [a, m, d] = nascIso.split("-").map(Number);
+  const nasc = new Date(Date.UTC(a, m - 1, d));
+  if (Number.isNaN(nasc.getTime())) return null;
+  const corte = new Date(Date.UTC(ano, 2, 31));
+  let idade = ano - a;
+  const aniversarioNoAno = new Date(Date.UTC(ano, m - 1, d));
+  if (aniversarioNoAno > corte) idade -= 1;
+  return idade;
+};
+
+/** Séries permitidas: a compatível com a idade e todas as anteriores. */
+export const seriesPermitidas = (
+  nascIso: string,
+  ano = ANO_LETIVO_REFERENCIA,
+): string[] => {
+  const idade = idadeEm31Marco(nascIso, ano);
+  if (idade === null || idade < 5 || idade >= 18) return [];
+  return SERIES.filter((s) => IDADE_MINIMA_SERIE[s] <= idade);
+};
+
 export const ETAPAS = [
   "Dados do Responsável",
   "Dados do Aluno",
