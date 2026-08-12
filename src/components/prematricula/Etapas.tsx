@@ -345,7 +345,9 @@ export const EtapaAluno = ({ form, erros, set }: Props) => {
     )}
 
   </div>
-);
+  );
+};
+
 
 export const EtapaHistorico = ({ form, erros, set, boletim, setBoletim }: Props) => (
   <div className="space-y-5">
