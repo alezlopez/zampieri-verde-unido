@@ -3,6 +3,7 @@ import { corsHeaders } from "../_shared/cors.ts";
 import { recomputeIngressosFinancials } from "../_shared/financeiro.ts";
 import { getCheckout } from "../_shared/asaas.ts";
 import { notificar } from "../_shared/prematricula-mensagens.ts";
+import { enviarTemplateWebhook } from "../_shared/whatsapp-webhook.ts";
 
 const STATUS_MAP: Record<string, string> = {
   PAYMENT_CONFIRMED: "pago",
