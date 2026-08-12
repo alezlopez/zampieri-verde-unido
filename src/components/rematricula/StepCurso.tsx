@@ -185,6 +185,17 @@ export const StepCurso = ({
         <p className="text-sm text-foreground font-bold">
           A sua vaga para o período escolhido (manhã ou tarde) está garantida. A distribuição dos alunos para as turmas, será realizada em janeiro/27 pela equipe pedagógica. Não há possibilidade de escolha de turma pela família.
         </p>
+        <div className="flex items-start gap-2 rounded-lg border border-border p-3">
+          <Checkbox
+            id="concordou-turno"
+            checked={concordou}
+            onCheckedChange={(v) => setConcordou(v === true)}
+            className="mt-0.5"
+          />
+          <Label htmlFor="concordou-turno" className="text-sm font-normal cursor-pointer leading-snug">
+            Li e concordo com a observação acima sobre a distribuição de turmas.
+          </Label>
+        </div>
         {loading ? (
           <div className="flex items-center gap-2 text-sm text-muted-foreground">
             <Loader2 className="w-4 h-4 animate-spin" /> Verificando vagas…
