@@ -110,13 +110,13 @@ Deno.serve(async (req) => {
       if (Number.isFinite(idAluno)) {
         if (newStatus === "pago") {
           const valor = Number(payload?.payment?.value ?? payload?.checkout?.value ?? 0) || null;
-          await admin.from("alunos_rematricula_2027").update({
+          const { data: alunoRemat } = await admin.from("alunos_rematricula_2027").update({
             rematricula_concluida: true,
             asaas_payment_id: installmentId || paymentId,
             data_pagamento: new Date().toISOString(),
             valor_pago: valor,
             updated_at: new Date().toISOString(),
-          }).eq("id_aluno", idAluno);
+          }).eq("id_aluno", idAluno).select("*").maybeSingle();
 
           try {
             await admin.functions.invoke("rematricula-2027-email-conclusao", {
@@ -125,6 +125,58 @@ Deno.serve(async (req) => {
           } catch (e) {
             console.error("[asaas-webhook] falha ao enviar e-mail de conclusão", e);
           }
+
+          try {
+            const a: any = alunoRemat || {};
+            const usaPai = String(a.responsavel_financeiro || "").toLowerCase().includes("pai");
+            const respNome = (usaPai ? a.nome_pai : a.nome_mae) || a.nome_mae || a.nome_pai || "";
+            const respWhats = String(
+              (usaPai ? a.celular_pai : a.celular_mae) || a.celular_mae || a.celular_pai || "",
+            ).replace(/\D/g, "");
+            const to = respWhats
+              ? (respWhats.startsWith("55") ? respWhats : `55${respWhats}`)
+              : "";
+            const params = [
+              respNome,
+              a.nome_aluno || "",
+              a.curso_2027 || "",
+              a.turno || "",
+            ];
+            await enviarTemplateWebhook({
+              evento: "rematricula_concluida",
+              origem: "rematricula2027",
+              template: "rematricula_concluida_u",
+              template_utility: "rematricula_concluida_u",
+              template_fallback: "rematricula_concluida",
+              language: "pt_BR",
+              to,
+              telefone_original: (usaPai ? a.celular_pai : a.celular_mae) || "",
+              params,
+              body_params: Object.fromEntries(params.map((v, i) => [String(i + 1), v])),
+              link: a.link_contrato || null,
+              dados: {
+                id_aluno: idAluno,
+                aluno: a.nome_aluno || "",
+                curso: a.curso_2027 || "",
+                turno: a.turno || "",
+                responsavel_financeiro: a.responsavel_financeiro || "",
+                responsavel_nome: respNome,
+                responsavel_email: (usaPai ? a.email_pai : a.email_mae) || a.email_mae || a.email_pai || "",
+                responsavel_whatsapp: to,
+                forma_pagamento: a.forma_pagamento || null,
+                parcelas: a.parcelas ?? null,
+                valor_pago: valor,
+                link_contrato: a.link_contrato || null,
+                contrato_assinado: !!a.contrato_assinado,
+                data_pagamento: new Date().toISOString(),
+              },
+              enviado_em: new Date().toISOString(),
+            });
+          } catch (e) {
+            console.error("[asaas-webhook] falha ao enviar webhook de rematrícula concluída", e);
+          }
+
+
 
         } else if (newStatus === "estornado" || newStatus === "cancelado") {
           await admin.from("alunos_rematricula_2027").update({
