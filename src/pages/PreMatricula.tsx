@@ -14,7 +14,7 @@ import {
 } from "@/components/prematricula/Etapas";
 import { ETAPAS, PreMatriculaForm, formVazio } from "@/components/prematricula/types";
 
-type Erros = Partial<Record<keyof PreMatriculaForm, string>>;
+type Erros = Partial<Record<keyof PreMatriculaForm | "boletim", string>>;
 
 const obrigatoriosPorEtapa: Record<number, (keyof PreMatriculaForm)[]> = {
   0: ["resp_tipo", "resp_nome", "resp_email", "resp_cpf", "resp_whatsapp"],
@@ -76,6 +76,9 @@ const PreMatricula = () => {
     }
     if (etapa === 1 && !e.aluno_nascimento && !brToIso(form.aluno_nascimento))
       e.aluno_nascimento = "Data inválida";
+    if (etapa === 2) {
+      if (!boletim) e.boletim = "Anexe o último boletim escolar";
+    }
     if (etapa === 3) {
       const pede = form.diagnostico.startsWith("Sim");
       if (pede && !form.diagnostico_detalhe.trim())

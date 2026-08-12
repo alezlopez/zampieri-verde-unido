@@ -22,7 +22,7 @@ import {
 import { Campo, RadioGrupo, SecaoTitulo } from "./Campos";
 import { PreMatriculaForm, SERIES } from "./types";
 
-type Erros = Partial<Record<keyof PreMatriculaForm, string>>;
+type Erros = Partial<Record<keyof PreMatriculaForm | "boletim", string>>;
 
 interface Props {
   form: PreMatriculaForm;
@@ -332,7 +332,8 @@ export const EtapaHistorico = ({ form, erros, set, boletim, setBoletim }: Props)
       erro={erros.repetiu_ano}
     />
     <Campo
-      label="Upload do boletim escolar (opcional)"
+      label="Último boletim escolar"
+      erro={erros.boletim}
       dica="Formatos aceitos: PDF, JPG, JPEG, PNG. Tamanho máximo: 10MB."
     >
       <Input
