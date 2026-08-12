@@ -176,6 +176,9 @@ export const StepCurso = ({
 
       <div className="space-y-2">
         <Label>Turno desejado</Label>
+        <p className="text-sm text-foreground font-bold">
+          A sua vaga para o período escolhido (manhã ou tarde) está garantida. A distribuição dos alunos para as turmas, será realizada em janeiro/27 pela equipe pedagógica. Não há possibilidade de escolha de turma pela família.
+        </p>
         {loading ? (
           <div className="flex items-center gap-2 text-sm text-muted-foreground">
             <Loader2 className="w-4 h-4 animate-spin" /> Verificando vagas…
