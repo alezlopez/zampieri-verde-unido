@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { AlertTriangle, CalendarDays, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import { supabase } from "@/integrations/supabase/client";
 import { AlunoCompleto, TurnoDisponivel } from "./types";
@@ -30,6 +31,7 @@ export const StepCurso = ({
   const [turnos, setTurnos] = useState<TurnoDisponivel[]>([]);
   const [loading, setLoading] = useState(true);
   const [erro, setErro] = useState<string | null>(null);
+  const [concordou, setConcordou] = useState(false);
   const [valores, setValores] = useState<{
     valor_rematricula: number | null;
     valor_promocional: number | null;
@@ -85,6 +87,10 @@ export const StepCurso = ({
     }
     if (!responsavel) {
       setErro("Escolha quem será o responsável financeiro.");
+      return;
+    }
+    if (!concordou) {
+      setErro("É necessário confirmar que leu e concorda com a observação sobre a distribuição de turmas.");
       return;
     }
     setErro(null);
@@ -179,6 +185,17 @@ export const StepCurso = ({
         <p className="text-sm text-foreground font-bold">
           A sua vaga para o período escolhido (manhã ou tarde) está garantida. A distribuição dos alunos para as turmas, será realizada em janeiro/27 pela equipe pedagógica. Não há possibilidade de escolha de turma pela família.
         </p>
+        <div className="flex items-start gap-2 rounded-lg border border-border p-3">
+          <Checkbox
+            id="concordou-turno"
+            checked={concordou}
+            onCheckedChange={(v) => setConcordou(v === true)}
+            className="mt-0.5"
+          />
+          <Label htmlFor="concordou-turno" className="text-sm font-normal cursor-pointer leading-snug">
+            Li e concordo com a observação acima sobre a distribuição de turmas.
+          </Label>
+        </div>
         {loading ? (
           <div className="flex items-center gap-2 text-sm text-muted-foreground">
             <Loader2 className="w-4 h-4 animate-spin" /> Verificando vagas…
@@ -246,7 +263,7 @@ export const StepCurso = ({
         </Button>
         <Button
           onClick={finalizar}
-          disabled={salvando}
+          disabled={salvando || !concordou}
           className="flex-1 bg-zampieri-green-dark hover:bg-zampieri-green"
         >
           {salvando && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
