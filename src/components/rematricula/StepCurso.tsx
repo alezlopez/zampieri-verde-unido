@@ -31,6 +31,7 @@ export const StepCurso = ({
   const [turnos, setTurnos] = useState<TurnoDisponivel[]>([]);
   const [loading, setLoading] = useState(true);
   const [erro, setErro] = useState<string | null>(null);
+  const [concordou, setConcordou] = useState(false);
   const [valores, setValores] = useState<{
     valor_rematricula: number | null;
     valor_promocional: number | null;
