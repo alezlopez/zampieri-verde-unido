@@ -263,7 +263,7 @@ export const StepCurso = ({
         </Button>
         <Button
           onClick={finalizar}
-          disabled={salvando}
+          disabled={salvando || !concordou}
           className="flex-1 bg-zampieri-green-dark hover:bg-zampieri-green"
         >
           {salvando && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
