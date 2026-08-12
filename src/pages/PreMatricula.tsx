@@ -12,7 +12,13 @@ import {
   EtapaResponsavel,
   EtapaSaude,
 } from "@/components/prematricula/Etapas";
-import { ETAPAS, PreMatriculaForm, formVazio } from "@/components/prematricula/types";
+import {
+  ETAPAS,
+  PreMatriculaForm,
+  formVazio,
+  idadeEm31Marco,
+  seriesPermitidas,
+} from "@/components/prematricula/types";
 
 type Erros = Partial<Record<keyof PreMatriculaForm | "boletim", string>>;
 
