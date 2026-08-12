@@ -24,6 +24,40 @@ const cpfValido = (cpf: string) => {
   return calc(9) === Number(d[9]) && calc(10) === Number(d[10]);
 };
 
+const ANO_LETIVO_REFERENCIA = 2027;
+const SERIES = [
+  "Infantil 5 (Pré-Escola)",
+  "1º ano",
+  "2º ano",
+  "3º ano",
+  "4º ano",
+  "5º ano",
+  "6º ano",
+  "7º ano",
+  "8º ano",
+  "9º ano",
+  "1ª série do Ensino Médio",
+  "2ª série do Ensino Médio",
+  "3ª série do Ensino Médio",
+];
+
+/** Idade completa em 31/03 do ano de referência */
+const idadeEm31Marco = (nascIso: string, ano = ANO_LETIVO_REFERENCIA) => {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(nascIso)) return null;
+  const [a, m, d] = nascIso.split("-").map(Number);
+  const corte = new Date(Date.UTC(ano, 2, 31));
+  const aniversario = new Date(Date.UTC(ano, m - 1, d));
+  let idade = ano - a;
+  if (aniversario > corte) idade -= 1;
+  return idade;
+};
+
+const seriesPermitidas = (nascIso: string) => {
+  const idade = idadeEm31Marco(nascIso);
+  if (idade === null || idade < 5 || idade >= 18) return [];
+  return SERIES.filter((_, i) => i + 5 <= idade);
+};
+
 const TIPOS_OK = ["application/pdf", "image/jpeg", "image/jpg", "image/png"];
 const MAX_BYTES = 10 * 1024 * 1024;
 
@@ -75,6 +109,15 @@ Deno.serve(async (req) => {
     if (d.consentimento_veracidade !== true) erros.push("consentimento_veracidade");
     if (d.consentimento_privacidade !== true) erros.push("consentimento_privacidade");
     if (erros.length) return json({ error: "dados_invalidos", campos: erros }, 400);
+
+    // Corte etário: série precisa ser compatível com a data de nascimento (31/03/2027)
+    const permitidas = seriesPermitidas(alunoNasc);
+    if (!permitidas.includes(serie)) {
+      return json(
+        { error: "serie_incompativel", idade: idadeEm31Marco(alunoNasc), permitidas },
+        400,
+      );
+    }
 
     const admin = createClient(
       Deno.env.get("SUPABASE_URL")!,
