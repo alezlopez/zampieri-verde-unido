@@ -85,6 +85,12 @@ const NumerosDaSorte = () => {
           <p className="text-sm text-muted-foreground">
             Consulte os números da sorte gerados após a confirmação do pagamento da rematrícula.
           </p>
+          <Link
+            to="/numerosdasorte/transparencia"
+            className="inline-block text-sm font-medium text-zampieri-green-dark underline"
+          >
+            Ver portal de transparência
+          </Link>
         </header>
 
         <section className="bg-white rounded-xl border border-border p-5 space-y-4">
