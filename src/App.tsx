@@ -31,6 +31,7 @@ import AdminHome from "./pages/AdminHome";
 import AdminUsuarios from "./pages/AdminUsuarios";
 import RequireAdmin from "./components/admin/RequireAdmin";
 import NumerosDaSorte from "./pages/NumerosDaSorte";
+import NumerosDaSorteTransparencia from "./pages/NumerosDaSorteTransparencia";
 import Rematricula2027Admin from "./pages/Rematricula2027Admin";
 import Rematricula2027Followup from "./pages/Rematricula2027Followup";
 import PreMatricula from "./pages/PreMatricula";
