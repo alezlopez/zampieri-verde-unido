@@ -176,6 +176,9 @@ Deno.serve(async (req) => {
                 link_contrato: a.link_contrato || null,
                 contrato_assinado: !!a.contrato_assinado,
                 data_pagamento: new Date().toISOString(),
+                numeros_sorte: numerosSorte,
+                numeros_sorte_texto: numerosSorte.join(", "),
+                total_numeros_sorte: numerosSorte.length,
               },
               enviado_em: new Date().toISOString(),
             });
