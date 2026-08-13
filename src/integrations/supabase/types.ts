@@ -2639,6 +2639,13 @@ export type Database = {
           numero: string
         }[]
       }
+      rematricula_2027_numeros_publicos: {
+        Args: never
+        Returns: {
+          nome_mascarado: string
+          numero: string
+        }[]
+      }
       rematricula_2027_rate_hit: {
         Args: { p_bucket: string; p_janela_seg: number; p_limite: number }
         Returns: boolean
