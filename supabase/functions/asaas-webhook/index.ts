@@ -129,6 +129,12 @@ Deno.serve(async (req) => {
 
           try {
             const a: any = alunoRemat || {};
+            const { data: sorteRows } = await admin
+              .from("rematricula_2027_numeros_sorte")
+              .select("numero")
+              .eq("id_aluno", idAluno)
+              .order("numero");
+            const numerosSorte = (sorteRows ?? []).map((r: { numero: string }) => r.numero);
             const usaPai = String(a.responsavel_financeiro || "").toLowerCase().includes("pai");
             const respNome = (usaPai ? a.nome_pai : a.nome_mae) || a.nome_mae || a.nome_pai || "";
             const respWhats = String(
