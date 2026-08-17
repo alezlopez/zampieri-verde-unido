@@ -17,7 +17,8 @@ import {
   ResponsavelForm,
   emptyResponsavel,
 } from "@/components/rematricula/types";
-import { brToIso, isoToBr, maskCep, maskCpf, maskTelefone, onlyDigits } from "@/components/rematricula/utils";
+import { brToIso, isoToBr, maskCep, maskCpf, maskTelefone, onlyDigits, rematriculaLiberada } from "@/components/rematricula/utils";
+import { RematriculaEmBreve } from "@/components/rematricula/EmBreve";
 
 type Fase = "busca" | "canal" | "codigo" | "aluno" | "mae" | "pai" | "curso" | "sucesso";
 
@@ -52,6 +53,7 @@ const travadosDe = (form: ResponsavelForm) =>
   >;
 
 const Rematricula2027 = () => {
+  const [liberada, setLiberada] = useState(rematriculaLiberada);
   const [fase, setFase] = useState<Fase>("busca");
   const [resumo, setResumo] = useState<AlunoResumo | null>(null);
   const [aluno, setAluno] = useState<AlunoCompleto | null>(null);
@@ -265,6 +267,7 @@ const Rematricula2027 = () => {
     await gerarContrato(aluno.id_aluno, dataIso);
   };
 
+  if (!liberada) return <RematriculaEmBreve onAbrir={() => setLiberada(true)} />;
 
   return (
     <div className="min-h-screen bg-zampieri-cream/30">

@@ -1,6 +1,7 @@
 import { createClient } from "npm:@supabase/supabase-js@2";
 import { corsHeaders } from "../_shared/cors.ts";
 import { getOrCreateCustomer, createCheckout } from "../_shared/asaas.ts";
+import { rematriculaLiberada } from "../_shared/rematricula-abertura.ts";
 
 const CHECKOUT_TTL_MS = 60 * 60 * 1000; // 60 min
 const FALLBACK_ORIGIN = "https://colegiozampieri.com.br";
@@ -21,6 +22,9 @@ const hostPermitido = (hostname: string) =>
 const safeOrigin = (req: Request, bodyOrigin?: unknown) => {
   const raw = String(bodyOrigin ?? "") || req.headers.get("origin") || "";
   try {
+    if (!rematriculaLiberada()) {
+      return json({ error: "rematricula_nao_liberada" }, 403);
+    }
     const u = new URL(raw);
     if (u.protocol !== "https:" && u.hostname !== "localhost") return FALLBACK_ORIGIN;
     if (!hostPermitido(u.hostname)) return FALLBACK_ORIGIN;
