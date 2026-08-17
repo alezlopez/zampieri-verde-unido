@@ -9,6 +9,7 @@ import {
   mascararTelefone,
   onlyDigits,
 } from "../_shared/otp.ts";
+import { rematriculaLiberada } from "../_shared/rematricula-abertura.ts";
 
 const CHAVES_VALIDAS = ["celular_mae", "celular_pai", "email_mae", "email_pai"] as const;
 
@@ -22,6 +23,9 @@ Deno.serve(async (req) => {
     });
 
   try {
+    if (!rematriculaLiberada()) {
+      return json({ error: "rematricula_nao_liberada" }, 403);
+    }
     const supabase = createClient(
       Deno.env.get("SUPABASE_URL")!,
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,

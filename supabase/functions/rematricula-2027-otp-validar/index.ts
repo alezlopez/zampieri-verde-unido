@@ -1,5 +1,6 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
 import { corsHeadersOtp, hashCodigo } from "../_shared/otp.ts";
+import { rematriculaLiberada } from "../_shared/rematricula-abertura.ts";
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeadersOtp });
@@ -11,6 +12,9 @@ Deno.serve(async (req) => {
     });
 
   try {
+    if (!rematriculaLiberada()) {
+      return json({ error: "rematricula_nao_liberada" }, 403);
+    }
     const supabase = createClient(
       Deno.env.get("SUPABASE_URL")!,
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
