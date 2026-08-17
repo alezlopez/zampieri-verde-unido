@@ -7,7 +7,6 @@ import { EnrollmentBanner } from "@/components/EnrollmentBanner";
 const Rematricula2027Regulamento = () => {
   return (
     <div className="min-h-screen bg-background">
-      <EnrollmentBanner />
       <Header activeSection="" />
 
       <main className="pt-[120px] md:pt-[140px]">
