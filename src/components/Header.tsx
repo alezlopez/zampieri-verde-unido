@@ -56,7 +56,7 @@ export const Header = ({ activeSection }: HeaderProps) => {
           </nav>
 
           <a
-            href="https://forms.gle/4cKW6oXBQqDvhkCS8"
+            href="https://colegiozampieri.com.br/prematricula"
             target="_blank"
             rel="noopener noreferrer"
             className="hidden md:inline-flex items-center bg-zampieri-green-dark hover:bg-zampieri-green text-white text-sm font-semibold px-5 py-2.5 rounded-md transition-colors shadow-sm"
@@ -94,7 +94,7 @@ export const Header = ({ activeSection }: HeaderProps) => {
               Eventos
             </Link>
             <a
-              href="https://forms.gle/4cKW6oXBQqDvhkCS8"
+              href="https://colegiozampieri.com.br/prematricula"
               target="_blank"
               rel="noopener noreferrer"
               className="block mt-2 text-center bg-zampieri-green-dark text-white font-semibold px-4 py-2.5 rounded-md"

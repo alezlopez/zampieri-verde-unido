@@ -46,7 +46,7 @@ export const HeroSection = () => {
               Conheça a escola
             </button>
             <a
-              href="https://espera.colegiozampieri.com.br"
+              href="https://colegiozampieri.com.br/prematricula"
               target="_blank"
               rel="noopener noreferrer"
               className="border-2 border-white/70 hover:bg-white hover:text-zampieri-green-dark text-white font-semibold px-6 py-3 rounded-md transition-colors"
