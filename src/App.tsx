@@ -77,6 +77,7 @@ const App = () => (
             <Route path="/eventos/minhas-compras" element={<MeusIngressos />} />
             <Route path="/rematricula2027" element={<Rematricula2027 />} />
             <Route path="/rematricula2027/regulamento" element={<Rematricula2027Regulamento />} />
+            <Route path="/rematricula2027/informativo" element={<Rematricula2027Informativo />} />
             <Route path="/manualdafamilia" element={<ManualDaFamilia />} />
             <Route path="/admin/login" element={<AdminLogin />} />
             <Route path="/admin" element={<RequireAdmin allow="scan"><AdminHome /></RequireAdmin>} />
