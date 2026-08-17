@@ -85,3 +85,8 @@ export const ESTADOS_CIVIS = [
   "Viúvo(a)",
   "União estável",
 ];
+
+// Abertura oficial da rematrícula 2027: 24/08/2026 00:00 (horário de Brasília)
+export const REMATRICULA_ABERTURA = new Date("2026-08-24T00:00:00-03:00");
+
+export const rematriculaLiberada = () => Date.now() >= REMATRICULA_ABERTURA.getTime();
