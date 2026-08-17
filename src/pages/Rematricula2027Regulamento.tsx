@@ -8,7 +8,7 @@ const Rematricula2027Regulamento = () => {
   return (
     <div className="min-h-screen bg-background">
       <EnrollmentBanner />
-      <Header />
+      <Header activeSection="" />
 
       <main className="pt-[120px] md:pt-[140px]">
         <div className="container mx-auto px-4 py-6 md:py-12">
