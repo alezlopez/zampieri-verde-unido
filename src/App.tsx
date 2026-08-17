@@ -34,6 +34,7 @@ import NumerosDaSorte from "./pages/NumerosDaSorte";
 import NumerosDaSorteTransparencia from "./pages/NumerosDaSorteTransparencia";
 import Rematricula2027Admin from "./pages/Rematricula2027Admin";
 import Rematricula2027Followup from "./pages/Rematricula2027Followup";
+import Rematricula2027Regulamento from "./pages/Rematricula2027Regulamento";
 import PreMatricula from "./pages/PreMatricula";
 import PreMatriculaAgendar from "./pages/PreMatriculaAgendar";
 import PreMatriculaAdmin from "./pages/PreMatriculaAdmin";
@@ -74,6 +75,7 @@ const App = () => (
             <Route path="/eventos/sucesso" element={<CompraSucesso />} />
             <Route path="/eventos/minhas-compras" element={<MeusIngressos />} />
             <Route path="/rematricula2027" element={<Rematricula2027 />} />
+            <Route path="/rematricula2027/regulamento" element={<Rematricula2027Regulamento />} />
             <Route path="/manualdafamilia" element={<ManualDaFamilia />} />
             <Route path="/admin/login" element={<AdminLogin />} />
             <Route path="/admin" element={<RequireAdmin allow="scan"><AdminHome /></RequireAdmin>} />
