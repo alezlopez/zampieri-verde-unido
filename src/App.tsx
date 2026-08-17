@@ -36,6 +36,7 @@ import Rematricula2027Admin from "./pages/Rematricula2027Admin";
 import Rematricula2027Followup from "./pages/Rematricula2027Followup";
 import Rematricula2027Regulamento from "./pages/Rematricula2027Regulamento";
 import Rematricula2027Informativo from "./pages/Rematricula2027Informativo";
+import Materiai2027 from "./pages/Materiai2027";
 import PreMatricula from "./pages/PreMatricula";
 import PreMatriculaAgendar from "./pages/PreMatriculaAgendar";
 import PreMatriculaAdmin from "./pages/PreMatriculaAdmin";
