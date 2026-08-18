@@ -95,6 +95,7 @@ const App = () => (
             <Route path="/prematricula/agenda" element={<RequireAdmin setor="matricula"><PreMatriculaAgenda /></RequireAdmin>} />
             <Route path="/matricula" element={<Matricula />} />
             <Route path="/matricula/admin" element={<RequireAdmin setor="matricula"><MatriculaAdmin /></RequireAdmin>} />
+            <Route path="/informativomatricula" element={<InformativoMatricula />} />
 
 
 
