@@ -1,5 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
+import { Lock } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import logoZampieri from "@/assets/logo-zampieri.png";
 import { supabase } from "@/integrations/supabase/client";
 import { StepBusca } from "@/components/rematricula/StepBusca";
@@ -20,7 +22,7 @@ import {
 import { brToIso, isoToBr, maskCep, maskCpf, maskTelefone, onlyDigits, rematriculaLiberada } from "@/components/rematricula/utils";
 import { RematriculaEmBreve } from "@/components/rematricula/EmBreve";
 
-type Fase = "busca" | "canal" | "codigo" | "aluno" | "mae" | "pai" | "curso" | "sucesso";
+type Fase = "busca" | "bloqueado" | "canal" | "codigo" | "aluno" | "mae" | "pai" | "curso" | "sucesso";
 
 
 const temResponsavel = (v?: string | null) => {
@@ -307,9 +309,44 @@ const Rematricula2027 = () => {
               onSelecionar={(a) => {
                 setResumo(a);
                 setCanal(null);
-                setFase("canal");
+                setFase(a.rematricula_liberada === true ? "canal" : "bloqueado");
               }}
             />
+          )}
+
+          {fase === "bloqueado" && (
+            <div className="space-y-5">
+              <div className="flex items-start gap-3">
+                <span className="w-10 h-10 rounded-full bg-destructive/10 flex items-center justify-center shrink-0">
+                  <Lock className="w-5 h-5 text-destructive" />
+                </span>
+                <div>
+                  <h2 className="font-serif text-xl font-bold text-zampieri-green-dark">
+                    Rematrícula indisponível
+                  </h2>
+                  <p className="text-sm text-foreground mt-1">
+                    Não foi possível seguir com sua rematrícula, por favor procure a secretaria da escola.
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex flex-col sm:flex-row gap-2">
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    setResumo(null);
+                    setFase("busca");
+                  }}
+                >
+                  Fazer nova busca
+                </Button>
+                <Button asChild className="bg-zampieri-green-dark hover:bg-zampieri-green">
+                  <a href="https://wa.me/5511939341503" target="_blank" rel="noopener noreferrer">
+                    Falar com a secretaria
+                  </a>
+                </Button>
+              </div>
+            </div>
           )}
 
           {fase === "canal" && resumo && (

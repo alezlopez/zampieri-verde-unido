@@ -40,12 +40,15 @@ Deno.serve(async (req) => {
 
     const { data: aluno, error: erroAluno } = await supabase
       .from("alunos_rematricula_2027")
-      .select("id_aluno, nome_aluno, celular_mae, celular_pai, email_mae, email_pai")
+      .select("id_aluno, nome_aluno, celular_mae, celular_pai, email_mae, email_pai, rematricula_liberada")
       .eq("id_aluno", idAluno)
       .maybeSingle();
 
     if (erroAluno) throw erroAluno;
     if (!aluno) return json({ error: "aluno_nao_encontrado" }, 404);
+    if (aluno.rematricula_liberada !== true) {
+      return json({ error: "rematricula_nao_liberada" }, 403);
+    }
 
     // Limite: 5 envios por aluno a cada 10 minutos
     const desde = new Date(Date.now() - 10 * 60 * 1000).toISOString();

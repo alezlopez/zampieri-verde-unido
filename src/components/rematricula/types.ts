@@ -3,6 +3,7 @@ export interface AlunoResumo {
   nome_aluno: string;
   curso_atual: string | null;
   curso_2027: string | null;
+  rematricula_liberada?: boolean | null;
 }
 
 export interface AlunoCompleto {
