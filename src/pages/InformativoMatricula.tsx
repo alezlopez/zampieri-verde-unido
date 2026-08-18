@@ -1,4 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
+import fotoOntem from "@/assets/foto_ontem.jpg.asset.json";
+import fotoHoje from "@/assets/foto_hoje.jpg.asset.json";
 
 const LOGO =
   "https://lzdhrtcugqnqmyapgmbs.supabase.co/storage/v1/object/public/zampieri/fotos/Logotipo.png";
@@ -7,13 +9,14 @@ const CTA = "https://colegiozampieri.com.br/prematricula";
 
 // Fotos enviadas manualmente — basta substituir os arquivos em /public/fotos/
 const FOTOS = {
-  ontem: "/fotos/foto_ontem.jpg",
-  hoje: "/fotos/foto_hoje.jpg",
+  ontem: fotoOntem.url,
+  hoje: fotoHoje.url,
   playground: "/fotos/foto_playground.jpg",
   lab: "/fotos/foto_lab.jpg",
   recreio: "/fotos/foto_recreio.jpg",
   lanche: "/fotos/foto_lanche.jpg",
 };
+
 
 const C = {
   verdeEscuro: "#0F3D24",
