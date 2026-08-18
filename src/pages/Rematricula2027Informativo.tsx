@@ -274,7 +274,7 @@ export default function Rematricula2027Informativo() {
       >
         <div className="mx-auto max-w-3xl">
           <p className="text-xs font-bold uppercase tracking-[0.2em] text-[#D4A017] sm:text-sm">
-            45 anos de tradição · 3ª geração de famílias Zampieri
+            46 anos de tradição · 3ª geração de famílias Zampieri
           </p>
           <h1
             className={`${titulo} mt-5 text-3xl font-bold leading-tight text-[#F5F0E8] sm:text-5xl`}
