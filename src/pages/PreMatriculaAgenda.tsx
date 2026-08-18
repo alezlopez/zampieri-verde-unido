@@ -192,8 +192,13 @@ const PreMatriculaAgenda = () => {
           <>
             <section className="space-y-3">
               <h2 className="font-semibold text-zampieri-green-dark">Horários por dia da semana</h2>
+              <p className="text-sm text-muted-foreground">
+                As janelas são fixas: das 08:00 às 10:30 e das 13:30 às 16:00. Você ajusta apenas o
+                intervalo entre os horários e as vagas. As famílias veem os horários de hoje até 7
+                dias à frente.
+              </p>
               {DIAS.map((dia) => {
-                const regra = regraDoDia(dia.valor);
+                const doDia = regrasDoDia(dia.valor);
                 return (
                   <div
                     key={dia.valor}
@@ -201,24 +206,15 @@ const PreMatriculaAgenda = () => {
                   >
                     <div className="flex items-center justify-between gap-3">
                       <span className="font-medium">{dia.nome}</span>
-                      {regra ? (
-                        <div className="flex items-center gap-2">
-                          <Switch
-                            checked={regra.ativo}
-                            onCheckedChange={(v) => atualizarLocal(dia.valor, "ativo", v)}
-                          />
-                          <span className="text-sm text-muted-foreground">
-                            {regra.ativo ? "Aberto" : "Fechado"}
-                          </span>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            onClick={() => removerDia(regra.id)}
-                            aria-label={`Remover regra de ${dia.nome}`}
-                          >
-                            <Trash2 className="h-4 w-4 text-destructive" />
-                          </Button>
-                        </div>
+                      {doDia.length ? (
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => removerDia(dia.valor)}
+                          aria-label={`Fechar ${dia.nome}`}
+                        >
+                          <Trash2 className="h-4 w-4 text-destructive" />
+                        </Button>
                       ) : (
                         <Button
                           variant="outline"
@@ -232,32 +228,26 @@ const PreMatriculaAgenda = () => {
                       )}
                     </div>
 
-                    {regra && (
-                      <div className="grid gap-3 sm:grid-cols-5 items-end">
+                    {doDia.map((regra) => (
+                      <div key={regra.id} className="grid gap-3 sm:grid-cols-5 items-end">
                         <div className="space-y-1">
-                          <Label className="text-xs">Início</Label>
+                          <Label className="text-xs">Janela</Label>
                           <Input
-                            type="time"
-                            value={hhmm(regra.hora_inicio)}
-                            onChange={(e) => atualizarLocal(dia.valor, "hora_inicio", e.target.value)}
+                            readOnly
+                            value={`${hhmm(regra.hora_inicio)} às ${hhmm(regra.hora_fim)}`}
+                            className="bg-muted"
                           />
                         </div>
                         <div className="space-y-1">
-                          <Label className="text-xs">Fim</Label>
-                          <Input
-                            type="time"
-                            value={hhmm(regra.hora_fim)}
-                            onChange={(e) => atualizarLocal(dia.valor, "hora_fim", e.target.value)}
-                          />
-                        </div>
-                        <div className="space-y-1">
-                          <Label className="text-xs">Duração (min)</Label>
+                          <Label className="text-xs">Intervalo (min)</Label>
                           <Input
                             type="number"
                             min={10}
                             step={5}
                             value={regra.duracao_min}
-                            onChange={(e) => atualizarLocal(dia.valor, "duracao_min", Number(e.target.value))}
+                            onChange={(e) =>
+                              atualizarLocal(regra.id, "duracao_min", Number(e.target.value))
+                            }
                           />
                         </div>
                         <div className="space-y-1">
@@ -266,20 +256,28 @@ const PreMatriculaAgenda = () => {
                             type="number"
                             min={1}
                             value={regra.capacidade}
-                            onChange={(e) => atualizarLocal(dia.valor, "capacidade", Number(e.target.value))}
+                            onChange={(e) =>
+                              atualizarLocal(regra.id, "capacidade", Number(e.target.value))
+                            }
                           />
                         </div>
-                        <Button
-                          onClick={() => salvarDia(dia.valor)}
-                          disabled={salvando === `dia-${dia.valor}`}
-                        >
-                          {salvando === `dia-${dia.valor}` && (
+                        <div className="flex items-center gap-2">
+                          <Switch
+                            checked={regra.ativo}
+                            onCheckedChange={(v) => atualizarLocal(regra.id, "ativo", v)}
+                          />
+                          <span className="text-sm text-muted-foreground">
+                            {regra.ativo ? "Aberta" : "Fechada"}
+                          </span>
+                        </div>
+                        <Button onClick={() => salvarRegra(regra.id)} disabled={salvando === regra.id}>
+                          {salvando === regra.id && (
                             <Loader2 className="h-4 w-4 mr-2 animate-spin" />
                           )}
                           Salvar
                         </Button>
                       </div>
-                    )}
+                    ))}
                   </div>
                 );
               })}
