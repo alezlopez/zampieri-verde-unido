@@ -307,9 +307,44 @@ const Rematricula2027 = () => {
               onSelecionar={(a) => {
                 setResumo(a);
                 setCanal(null);
-                setFase("canal");
+                setFase(a.rematricula_liberada === true ? "canal" : "bloqueado");
               }}
             />
+          )}
+
+          {fase === "bloqueado" && (
+            <div className="space-y-5">
+              <div className="flex items-start gap-3">
+                <span className="w-10 h-10 rounded-full bg-destructive/10 flex items-center justify-center shrink-0">
+                  <Lock className="w-5 h-5 text-destructive" />
+                </span>
+                <div>
+                  <h2 className="font-serif text-xl font-bold text-zampieri-green-dark">
+                    Rematrícula indisponível
+                  </h2>
+                  <p className="text-sm text-foreground mt-1">
+                    Não foi possível seguir com sua rematrícula, por favor procure a secretaria da escola.
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex flex-col sm:flex-row gap-2">
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    setResumo(null);
+                    setFase("busca");
+                  }}
+                >
+                  Fazer nova busca
+                </Button>
+                <Button asChild className="bg-zampieri-green-dark hover:bg-zampieri-green">
+                  <a href="https://wa.me/5511939341503" target="_blank" rel="noopener noreferrer">
+                    Falar com a secretaria
+                  </a>
+                </Button>
+              </div>
+            </div>
           )}
 
           {fase === "canal" && resumo && (
