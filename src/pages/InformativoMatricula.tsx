@@ -3,7 +3,7 @@ import { useEffect, useMemo, useState } from "react";
 const LOGO =
   "https://lzdhrtcugqnqmyapgmbs.supabase.co/storage/v1/object/public/zampieri/fotos/Logotipo.png";
 
-const CTA = "/informativomatricula";
+const CTA = "https://colegiozampieri.com.br/prematricula";
 
 // Fotos enviadas manualmente — basta substituir os arquivos em /public/fotos/
 const FOTOS = {
