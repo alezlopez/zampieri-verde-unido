@@ -33,6 +33,12 @@ const DIAS = [
   { valor: 6, nome: "Sábado" },
 ];
 
+/** Janelas fixas da entrevista familiar. */
+const JANELAS: [string, string][] = [
+  ["08:00", "10:30"],
+  ["13:30", "16:00"],
+];
+
 const hhmm = (v: string) => (v || "").slice(0, 5);
 
 const PreMatriculaAgenda = () => {
