@@ -1,7 +1,7 @@
 import { formatarDataHora } from "./prematricula-mensagens.ts";
 
 export const TZ = "-03:00";
-export const DIAS_A_FRENTE = 45;
+export const DIAS_A_FRENTE = 7;
 
 export interface Slot {
   inicio: string;
