@@ -1,5 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
+import { Lock } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import logoZampieri from "@/assets/logo-zampieri.png";
 import { supabase } from "@/integrations/supabase/client";
 import { StepBusca } from "@/components/rematricula/StepBusca";
