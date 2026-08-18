@@ -72,6 +72,9 @@ Deno.serve(async (req) => {
 
     if (alunoErr) throw alunoErr;
     if (!aluno) return json({ error: "Aluno não encontrado" }, 404);
+    if (aluno.rematricula_liberada !== true) {
+      return json({ error: "rematricula_nao_liberada" }, 403);
+    }
 
     if (!aluno.contrato_assinado) {
       return json({ error: "contrato_nao_assinado" }, 403);
