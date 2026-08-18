@@ -74,33 +74,27 @@ const PreMatriculaAgenda = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const regraDoDia = (dia: number) => regras.find((r) => r.dia_semana === dia);
+  const regrasDoDia = (dia: number) =>
+    regras
+      .filter((r) => r.dia_semana === dia)
+      .sort((a, b) => hhmm(a.hora_inicio).localeCompare(hhmm(b.hora_inicio)));
 
-  const atualizarLocal = (dia: number, campo: keyof Regra, valor: unknown) => {
-    setRegras((prev) =>
-      prev.map((r) => (r.dia_semana === dia ? { ...r, [campo]: valor } as Regra : r))
-    );
+  const atualizarLocal = (id: string, campo: keyof Regra, valor: unknown) => {
+    setRegras((prev) => prev.map((r) => (r.id === id ? ({ ...r, [campo]: valor } as Regra) : r)));
   };
 
-  const salvarDia = async (dia: number) => {
-    const regra = regraDoDia(dia);
+  const salvarRegra = async (id: string) => {
+    const regra = regras.find((r) => r.id === id);
     if (!regra) return;
-    if (hhmm(regra.hora_fim) <= hhmm(regra.hora_inicio)) {
-      toast({ title: "Horário inválido", description: "O fim deve ser depois do início.", variant: "destructive" });
-      return;
-    }
-    setSalvando(`dia-${dia}`);
-    const payload = {
-      hora_inicio: hhmm(regra.hora_inicio),
-      hora_fim: hhmm(regra.hora_fim),
-      duracao_min: Number(regra.duracao_min) || 45,
-      capacidade: Number(regra.capacidade) || 1,
-      ativo: regra.ativo,
-    };
+    setSalvando(id);
     const { error } = await supabase
       .from("prematricula_agenda_regras")
-      .update(payload)
-      .eq("id", regra.id);
+      .update({
+        duracao_min: Number(regra.duracao_min) || 30,
+        capacidade: Number(regra.capacidade) || 1,
+        ativo: regra.ativo,
+      })
+      .eq("id", id);
     setSalvando(null);
     if (error) {
       toast({ title: "Não foi possível salvar", description: error.message, variant: "destructive" });
@@ -113,31 +107,34 @@ const PreMatriculaAgenda = () => {
     setSalvando(`dia-${dia}`);
     const { data, error } = await supabase
       .from("prematricula_agenda_regras")
-      .insert({
-        dia_semana: dia,
-        hora_inicio: "08:00",
-        hora_fim: "17:00",
-        duracao_min: 45,
-        capacidade: 1,
-        ativo: true,
-      })
-      .select("id, dia_semana, hora_inicio, hora_fim, duracao_min, capacidade, ativo")
-      .single();
+      .insert(
+        JANELAS.map(([ini, fim]) => ({
+          dia_semana: dia,
+          hora_inicio: ini,
+          hora_fim: fim,
+          duracao_min: 30,
+          capacidade: 1,
+          ativo: true,
+        })),
+      )
+      .select("id, dia_semana, hora_inicio, hora_fim, duracao_min, capacidade, ativo");
     setSalvando(null);
     if (error) {
       toast({ title: "Não foi possível criar", description: error.message, variant: "destructive" });
       return;
     }
-    setRegras((prev) => [...prev, data as Regra].sort((a, b) => a.dia_semana - b.dia_semana));
+    setRegras((prev) => [...prev, ...((data as Regra[]) || [])].sort((a, b) => a.dia_semana - b.dia_semana));
   };
 
-  const removerDia = async (id: string) => {
-    const { error } = await supabase.from("prematricula_agenda_regras").delete().eq("id", id);
+  const removerDia = async (dia: number) => {
+    const ids = regrasDoDia(dia).map((r) => r.id);
+    if (!ids.length) return;
+    const { error } = await supabase.from("prematricula_agenda_regras").delete().in("id", ids);
     if (error) {
       toast({ title: "Não foi possível remover", description: error.message, variant: "destructive" });
       return;
     }
-    setRegras((prev) => prev.filter((r) => r.id !== id));
+    setRegras((prev) => prev.filter((r) => !ids.includes(r.id)));
   };
 
   const adicionarBloqueio = async () => {
