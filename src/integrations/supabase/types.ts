@@ -2615,6 +2615,7 @@ export type Database = {
           curso_atual: string
           id_aluno: number
           nome_aluno: string
+          rematricula_liberada: boolean
         }[]
       }
       rematricula_2027_canais: {
