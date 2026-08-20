@@ -9,7 +9,9 @@ const json = (body: unknown, status = 200) =>
     headers: { ...corsHeaders, "Content-Type": "application/json" },
   });
 
-const DESCONTOS = [5, 10, 15, 20, 25, 30];
+const SERIE_PRE = "Infantil 5 (Pré-Escola)";
+const descontosPorSerie = (serie?: string | null) =>
+  Array.from({ length: (serie === SERIE_PRE ? 60 : 30) / 5 + 1 }, (_, i) => i * 5);
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
@@ -95,7 +97,7 @@ Deno.serve(async (req) => {
     if (acao === "concluir_entrevista") {
       if (pm.status !== "entrevista_agendada") return json({ error: "status_invalido" }, 400);
       const desconto = Number(body?.desconto);
-      if (!DESCONTOS.includes(desconto)) return json({ error: "desconto_invalido" }, 400);
+      if (!descontosPorSerie(pm.serie_pretendida).includes(desconto)) return json({ error: "desconto_invalido" }, 400);
       const observacoes = String(body?.observacoes || "").trim().slice(0, 2000);
 
       const token =

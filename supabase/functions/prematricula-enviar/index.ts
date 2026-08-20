@@ -106,6 +106,8 @@ Deno.serve(async (req) => {
     if (!/^\d{4}-\d{2}-\d{2}$/.test(alunoNasc)) erros.push("aluno_nascimento");
     if (!serie) erros.push("serie_pretendida");
     if (!turno) erros.push("turno_preferencia");
+    // Pré (Infantil 5) só tem turno da tarde
+    if (serie === SERIES[0] && turno !== "Tarde") erros.push("turno_preferencia");
     if (d.consentimento_veracidade !== true) erros.push("consentimento_veracidade");
     if (d.consentimento_privacidade !== true) erros.push("consentimento_privacidade");
     if (erros.length) return json({ error: "dados_invalidos", campos: erros }, 400);
