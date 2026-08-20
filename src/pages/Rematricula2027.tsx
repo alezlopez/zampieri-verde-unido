@@ -322,15 +322,19 @@ const Rematricula2027 = () => {
                 </span>
                 <div>
                   <h2 className="font-serif text-xl font-bold text-zampieri-green-dark">
-                    Rematrícula indisponível
+                    Rematrícula bloqueada por pendências
                   </h2>
                   <p className="text-sm text-foreground mt-1">
-                    Não foi possível seguir com sua rematrícula, por favor procure a secretaria da escola.
+                    Identificamos débitos em aberto. Regularize suas mensalidades para liberar a
+                    rematrícula 2027 — se preferir, procure a secretaria da escola.
                   </p>
                 </div>
               </div>
 
               <div className="flex flex-col sm:flex-row gap-2">
+                <Button asChild className="bg-zampieri-green-dark hover:bg-zampieri-green">
+                  <Link to="/renegociacao">Regularizar débitos</Link>
+                </Button>
                 <Button
                   variant="outline"
                   onClick={() => {
@@ -340,7 +344,7 @@ const Rematricula2027 = () => {
                 >
                   Fazer nova busca
                 </Button>
-                <Button asChild className="bg-zampieri-green-dark hover:bg-zampieri-green">
+                <Button asChild variant="ghost">
                   <a href="https://wa.me/5511939341503" target="_blank" rel="noopener noreferrer">
                     Falar com a secretaria
                   </a>
