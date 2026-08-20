@@ -316,6 +316,20 @@ const MatriculaAdmin = () => {
     );
   }, [aberta]);
 
+  /** Lista legível do que ainda falta nos valores. */
+  const pendenciasValores = useMemo(() => {
+    if (!aberta) return [] as string[];
+    const txt = (v: unknown) => String(v ?? "").trim().length > 0;
+    const faltas: string[] = [];
+    if (!txt(aberta.anuidade_total)) faltas.push("Anuidade total");
+    if (!txt(aberta.valor_com_desconto)) faltas.push("Mensalidade com desconto");
+    if (!(aberta.matricula_gratuita === true || Number(aberta.valor_matricula) > 0))
+      faltas.push("Valor da matrícula (ou marcar matrícula gratuita)");
+    if (!(Number(aberta.dia_vencimento) > 0)) faltas.push("Dia de vencimento");
+    return faltas;
+  }, [aberta]);
+
+
 
   /** Só os documentos obrigatórios precisam estar aprovados (ou aguardando escola). */
   const docsConferidos = useMemo(() => {
@@ -781,11 +795,12 @@ const MatriculaAdmin = () => {
                 </section>
 
                 <section className="space-y-2 rounded-lg border border-border bg-zampieri-cream/40 p-4">
-                  {dadosLiberados ? (
+                  {dadosLiberados && (
                     <p className="text-sm text-emerald-700">
                       Contrato liberado — a família já pode preencher os dados no portal.
                     </p>
-                  ) : (
+                  )}
+                  {!aberta.contrato_assinado && (
                     <>
                       <Button
                         className={`w-full ${
@@ -797,22 +812,29 @@ const MatriculaAdmin = () => {
                         disabled={acaoEmCurso || !docsConferidos || !valoresProntos}
                         onClick={() => executar("liberar_dados")}
                       >
-                        Liberar contrato para a família preencher
+                        {dadosLiberados
+                          ? "Liberar novamente (reenviar aviso à família)"
+                          : "Liberar contrato para a família preencher"}
                       </Button>
-                      {!docsConferidos && (
-                        <p className="text-xs text-amber-700">
-                          Aprove todos os documentos obrigatórios para liberar.
-                        </p>
-                      )}
-                      {docsConferidos && !valoresProntos && (
-                        <p className="text-xs text-amber-700">
-                          Preencha e salve os valores (anuidade, mensalidade com desconto, dia de
-                          vencimento e valor da matrícula) para liberar.
-                        </p>
+                      {(!docsConferidos || !valoresProntos) && (
+                        <div className="text-xs text-amber-700 space-y-1">
+                          <p className="font-medium">Falta para liberar:</p>
+                          <ul className="list-disc pl-4">
+                            {!docsConferidos && <li>Aprovar todos os documentos obrigatórios</li>}
+                            {pendenciasValores.map((p) => (
+                              <li key={p}>{p}</li>
+                            ))}
+                          </ul>
+                          <p>
+                            Preencha os campos acima e clique em <strong>Salvar dados</strong> antes
+                            de liberar.
+                          </p>
+                        </div>
                       )}
                     </>
                   )}
                 </section>
+
 
 
 
