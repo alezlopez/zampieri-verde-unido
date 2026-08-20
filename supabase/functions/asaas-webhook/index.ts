@@ -102,10 +102,66 @@ Deno.serve(async (req) => {
 
 
     // ============ ROTEAMENTO ============
+    // - "reneg:<checkout_id>" → renegociação de débitos 2026/2027
     // - "remat:<id_aluno>" → rematrícula 2027
     // - "prod:..." → apenas pedidos_produtos
     // - "mix:ing=...;prod=..." → atualiza pedidos_produtos E continua para atualizar ingressos
     // - default → ingressos (fluxo abaixo)
+    if (externalRef && externalRef.startsWith("reneg:")) {
+      const regId = externalRef.slice(6);
+      const { data: reg } = await admin
+        .from("renegociacao_2027_checkouts")
+        .select("*")
+        .eq("id", regId)
+        .maybeSingle();
+
+      if (!reg) {
+        console.warn("[asaas-webhook] renegociação não encontrada", { regId });
+        return new Response(JSON.stringify({ ok: true, ignored: true }), {
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+
+      const rowIds: number[] = (reg.row_ids ?? []).map(Number);
+      const pagoAgora = newStatus === "pago";
+      const estornado = newStatus === "estornado" || newStatus === "cancelado";
+
+      if (pagoAgora || estornado) {
+        const valorTotal = Number(reg.valor_total ?? 0);
+        const rateio = rowIds.length ? Number((valorTotal / rowIds.length).toFixed(2)) : 0;
+
+        await admin.from("devedores_2027").update(
+          pagoAgora
+            ? {
+              pago: true,
+              pago_em: new Date().toISOString(),
+              asaas_payment_id: installmentId || paymentId,
+              asaas_checkout_id: reg.asaas_checkout_id,
+              forma_pagamento: reg.forma_pagamento,
+              valor_pago: rateio,
+            }
+            : {
+              pago: false,
+              pago_em: null,
+              valor_pago: null,
+              forma_pagamento: null,
+            },
+        ).in("row_id", rowIds).eq("id_aluno", reg.id_aluno);
+
+        await admin.from("renegociacao_2027_checkouts").update({
+          status: pagoAgora ? "pago" : "cancelado",
+          asaas_payment_id: installmentId || paymentId,
+        }).eq("id", reg.id);
+
+        await admin.rpc("renegociacao_2027_recalcular_liberacao", { p_id_aluno: reg.id_aluno });
+      }
+
+      return new Response(JSON.stringify({ ok: true, renegociacao: reg.id, status: newStatus }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+
     if (externalRef && externalRef.startsWith("remat:")) {
       const idAluno = Number(externalRef.slice(6));
       if (Number.isFinite(idAluno)) {

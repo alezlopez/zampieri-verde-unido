@@ -23,9 +23,6 @@ Deno.serve(async (req) => {
     });
 
   try {
-    if (!rematriculaLiberada()) {
-      return json({ error: "rematricula_nao_liberada" }, 403);
-    }
     const supabase = createClient(
       Deno.env.get("SUPABASE_URL")!,
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
@@ -33,7 +30,16 @@ Deno.serve(async (req) => {
 
     const body = await req.json().catch(() => ({}));
     const idAluno = Number(body?.id_aluno);
-    const finalidade: string = body?.finalidade === "contato" ? "contato" : "login";
+    const finalidade: string = body?.finalidade === "contato"
+      ? "contato"
+      : body?.finalidade === "renegociacao"
+      ? "renegociacao"
+      : "login";
+    // A renegociação de débitos é o único fluxo liberado antes da abertura e
+    // para alunos com rematricula_liberada = false.
+    if (finalidade !== "renegociacao" && !rematriculaLiberada()) {
+      return json({ error: "rematricula_nao_liberada" }, 403);
+    }
     if (!Number.isFinite(idAluno) || idAluno <= 0) {
       return json({ error: "id_aluno inválido" }, 400);
     }
@@ -46,7 +52,7 @@ Deno.serve(async (req) => {
 
     if (erroAluno) throw erroAluno;
     if (!aluno) return json({ error: "aluno_nao_encontrado" }, 404);
-    if (aluno.rematricula_liberada !== true) {
+    if (finalidade !== "renegociacao" && aluno.rematricula_liberada !== true) {
       return json({ error: "rematricula_nao_liberada" }, 403);
     }
 
@@ -63,7 +69,7 @@ Deno.serve(async (req) => {
     let destino: string;
     let chave: string | null = null;
 
-    if (finalidade === "login") {
+    if (finalidade === "login" || finalidade === "renegociacao") {
       chave = String(body?.chave || "");
       if (!CHAVES_VALIDAS.includes(chave as (typeof CHAVES_VALIDAS)[number])) {
         return json({ error: "canal_invalido" }, 400);

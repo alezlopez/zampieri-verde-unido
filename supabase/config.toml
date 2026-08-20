@@ -19,6 +19,9 @@ verify_jwt = false
 [functions.rematricula-2027-checkout]
 verify_jwt = false
 
+[functions.renegociacao-2027-checkout]
+verify_jwt = false
+
 [functions.rematricula-2027-otp-enviar]
 verify_jwt = false
 

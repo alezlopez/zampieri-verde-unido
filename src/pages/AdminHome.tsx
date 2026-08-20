@@ -79,6 +79,12 @@ const blocos: Bloco[] = [
         icone: BarChart3,
       },
       {
+        titulo: "Renegociação de débitos",
+        descricao: "Alunos bloqueados, débitos em aberto e baixas manuais.",
+        href: "/renegociacao/admin",
+        icone: BarChart3,
+      },
+      {
         titulo: "Números da sorte",
         descricao: "Consultar os números gerados para o sorteio.",
         href: "/numerosdasorte",
