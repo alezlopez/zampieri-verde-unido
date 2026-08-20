@@ -2,6 +2,7 @@ import { ReactNode } from "react";
 import { Link, Navigate, useLocation } from "react-router-dom";
 import { LayoutDashboard, Loader2 } from "lucide-react";
 import { useAuth, Setor } from "@/contexts/AuthContext";
+import NotificacoesBell from "@/components/admin/NotificacoesBell";
 
 
 interface Props {
@@ -47,13 +48,16 @@ export const RequireAdmin = ({ children, allow = "admin", setor }: Props) => {
     <>
       {children}
       {!naHome && (
-        <Link
-          to="/admin"
-          className="fixed bottom-4 right-4 z-50 inline-flex items-center gap-2 rounded-full bg-zampieri-green-dark px-4 py-2.5 text-sm font-medium text-white shadow-lg transition-transform hover:scale-105"
-        >
-          <LayoutDashboard className="w-4 h-4" />
-          Painel Admin
-        </Link>
+        <div className="fixed bottom-4 right-4 z-50 flex items-center gap-2">
+          <NotificacoesBell className="bg-white shadow-lg rounded-full h-10 w-10" />
+          <Link
+            to="/admin"
+            className="inline-flex items-center gap-2 rounded-full bg-zampieri-green-dark px-4 py-2.5 text-sm font-medium text-white shadow-lg transition-transform hover:scale-105"
+          >
+            <LayoutDashboard className="w-4 h-4" />
+            Painel Admin
+          </Link>
+        </div>
       )}
     </>
   );
