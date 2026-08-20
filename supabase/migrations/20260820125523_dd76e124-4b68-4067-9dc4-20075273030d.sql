@@ -1,0 +1,2 @@
+ALTER TABLE public.prematriculas DROP CONSTRAINT IF EXISTS prematriculas_desconto_check;
+ALTER TABLE public.prematriculas ADD CONSTRAINT prematriculas_desconto_check CHECK (desconto_percentual IS NULL OR (desconto_percentual >= 0 AND desconto_percentual <= 60 AND desconto_percentual % 5 = 0));
