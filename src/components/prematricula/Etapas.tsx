@@ -289,7 +289,11 @@ export const EtapaAluno = ({ form, erros, set }: Props) => {
     <Campo label="Série pretendida" erro={erros.serie_pretendida}>
       <Select
         value={form.serie_pretendida}
-        onValueChange={(v) => set("serie_pretendida", v)}
+        onValueChange={(v) => {
+          set("serie_pretendida", v);
+          const turnos = turnosPorSerie(v);
+          if (!turnos.includes(form.turno_preferencia)) set("turno_preferencia", turnos[0]);
+        }}
         disabled={!nascIso}
       >
         <SelectTrigger>
@@ -319,7 +323,7 @@ export const EtapaAluno = ({ form, erros, set }: Props) => {
     <RadioGrupo
       label="Turno de preferência"
       nome="turno"
-      opcoes={["Manhã", "Tarde"]}
+      opcoes={turnosPorSerie(form.serie_pretendida)}
       valor={form.turno_preferencia}
       onChange={(v) => set("turno_preferencia", v)}
       erro={erros.turno_preferencia}
