@@ -581,6 +581,45 @@ export type Database = {
         }
         Relationships: []
       }
+      devedores_2027: {
+        Row: {
+          evento: string | null
+          id_aluno: number
+          juros: number | null
+          multa: number | null
+          nome_aluno: string | null
+          row_id: number
+          valor_a_vista: number | null
+          valor_parcelado: number | null
+          valor_principal: number | null
+          vencimento: string | null
+        }
+        Insert: {
+          evento?: string | null
+          id_aluno: number
+          juros?: number | null
+          multa?: number | null
+          nome_aluno?: string | null
+          row_id?: number
+          valor_a_vista?: number | null
+          valor_parcelado?: number | null
+          valor_principal?: number | null
+          vencimento?: string | null
+        }
+        Update: {
+          evento?: string | null
+          id_aluno?: number
+          juros?: number | null
+          multa?: number | null
+          nome_aluno?: string | null
+          row_id?: number
+          valor_a_vista?: number | null
+          valor_parcelado?: number | null
+          valor_principal?: number | null
+          vencimento?: string | null
+        }
+        Relationships: []
+      }
       disciplinas_alunos: {
         Row: {
           cod_discplina: number | null
