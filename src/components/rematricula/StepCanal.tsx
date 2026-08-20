@@ -14,9 +14,11 @@ interface Props {
   aluno: AlunoResumo;
   onVoltar: () => void;
   onEnviado: (canal: CanalOtp) => void;
+  /** "renegociacao" usa a RPC de canais que aceita alunos com débitos em aberto */
+  finalidade?: "login" | "renegociacao";
 }
 
-export const StepCanal = ({ aluno, onVoltar, onEnviado }: Props) => {
+export const StepCanal = ({ aluno, onVoltar, onEnviado, finalidade = "login" }: Props) => {
   const [canais, setCanais] = useState<CanalOtp[] | null>(null);
   const [selecionado, setSelecionado] = useState<string>("");
   const [enviando, setEnviando] = useState(false);
@@ -25,9 +27,9 @@ export const StepCanal = ({ aluno, onVoltar, onEnviado }: Props) => {
   useEffect(() => {
     let ativo = true;
     (async () => {
-      const { data, error } = await supabase.rpc("rematricula_2027_canais", {
-        p_id_aluno: aluno.id_aluno,
-      });
+      const { data, error } = finalidade === "renegociacao"
+        ? await supabase.rpc("renegociacao_2027_canais", { p_id_aluno: aluno.id_aluno })
+        : await supabase.rpc("rematricula_2027_canais", { p_id_aluno: aluno.id_aluno });
       if (!ativo) return;
       if (error) {
         setErro("Não foi possível carregar os canais agora. Tente novamente.");
@@ -41,7 +43,7 @@ export const StepCanal = ({ aluno, onVoltar, onEnviado }: Props) => {
     return () => {
       ativo = false;
     };
-  }, [aluno.id_aluno]);
+  }, [aluno.id_aluno, finalidade]);
 
   const enviar = async () => {
     const canal = canais?.find((c) => c.chave === selecionado);
@@ -49,7 +51,7 @@ export const StepCanal = ({ aluno, onVoltar, onEnviado }: Props) => {
     setEnviando(true);
     setErro(null);
     const { data, error } = await supabase.functions.invoke("rematricula-2027-otp-enviar", {
-      body: { id_aluno: aluno.id_aluno, chave: canal.chave, finalidade: "login" },
+      body: { id_aluno: aluno.id_aluno, chave: canal.chave, finalidade },
     });
     setEnviando(false);
     const res = data as { success?: boolean; error?: string } | null;

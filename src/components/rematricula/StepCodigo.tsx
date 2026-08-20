@@ -12,6 +12,7 @@ interface Props {
   canal: CanalOtp;
   onVoltar: () => void;
   onValidado: (dataNascimentoIso: string) => void;
+  finalidade?: "login" | "renegociacao";
 }
 
 export const mensagemErroOtp = (codigo?: string) => {
@@ -29,7 +30,7 @@ export const mensagemErroOtp = (codigo?: string) => {
   }
 };
 
-export const StepCodigo = ({ aluno, canal, onVoltar, onValidado }: Props) => {
+export const StepCodigo = ({ aluno, canal, onVoltar, onValidado, finalidade = "login" }: Props) => {
   const [codigo, setCodigo] = useState("");
   const [loading, setLoading] = useState(false);
   const [reenviando, setReenviando] = useState(false);
@@ -51,7 +52,7 @@ export const StepCodigo = ({ aluno, canal, onVoltar, onValidado }: Props) => {
     setErro(null);
     setLoading(true);
     const { data, error } = await supabase.functions.invoke("rematricula-2027-otp-validar", {
-      body: { id_aluno: aluno.id_aluno, codigo, finalidade: "login" },
+      body: { id_aluno: aluno.id_aluno, codigo, finalidade },
     });
     setLoading(false);
     const res = data as { success?: boolean; error?: string; data_nascimento?: string } | null;
@@ -67,7 +68,7 @@ export const StepCodigo = ({ aluno, canal, onVoltar, onValidado }: Props) => {
     setErro(null);
     setAviso(null);
     const { data, error } = await supabase.functions.invoke("rematricula-2027-otp-enviar", {
-      body: { id_aluno: aluno.id_aluno, chave: canal.chave, finalidade: "login" },
+      body: { id_aluno: aluno.id_aluno, chave: canal.chave, finalidade },
     });
     setReenviando(false);
     const res = data as { success?: boolean; error?: string } | null;
