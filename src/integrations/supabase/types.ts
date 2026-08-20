@@ -583,37 +583,61 @@ export type Database = {
       }
       devedores_2027: {
         Row: {
+          asaas_checkout_id: string | null
+          asaas_payment_id: string | null
+          baixa_manual_em: string | null
+          baixa_manual_por: string | null
           evento: string | null
+          forma_pagamento: string | null
           id_aluno: number
           juros: number | null
           multa: number | null
           nome_aluno: string | null
+          pago: boolean
+          pago_em: string | null
           row_id: number
           valor_a_vista: number | null
+          valor_pago: number | null
           valor_parcelado: number | null
           valor_principal: number | null
           vencimento: string | null
         }
         Insert: {
+          asaas_checkout_id?: string | null
+          asaas_payment_id?: string | null
+          baixa_manual_em?: string | null
+          baixa_manual_por?: string | null
           evento?: string | null
+          forma_pagamento?: string | null
           id_aluno: number
           juros?: number | null
           multa?: number | null
           nome_aluno?: string | null
+          pago?: boolean
+          pago_em?: string | null
           row_id?: number
           valor_a_vista?: number | null
+          valor_pago?: number | null
           valor_parcelado?: number | null
           valor_principal?: number | null
           vencimento?: string | null
         }
         Update: {
+          asaas_checkout_id?: string | null
+          asaas_payment_id?: string | null
+          baixa_manual_em?: string | null
+          baixa_manual_por?: string | null
           evento?: string | null
+          forma_pagamento?: string | null
           id_aluno?: number
           juros?: number | null
           multa?: number | null
           nome_aluno?: string | null
+          pago?: boolean
+          pago_em?: string | null
           row_id?: number
           valor_a_vista?: number | null
+          valor_pago?: number | null
           valor_parcelado?: number | null
           valor_principal?: number | null
           vencimento?: string | null
@@ -2221,6 +2245,54 @@ export type Database = {
         }
         Relationships: []
       }
+      renegociacao_2027_checkouts: {
+        Row: {
+          asaas_checkout_id: string | null
+          asaas_customer_id: string | null
+          asaas_payment_id: string | null
+          checkout_url: string | null
+          created_at: string
+          forma_pagamento: string
+          id: string
+          id_aluno: number
+          parcelas: number
+          row_ids: number[]
+          status: string
+          updated_at: string
+          valor_total: number
+        }
+        Insert: {
+          asaas_checkout_id?: string | null
+          asaas_customer_id?: string | null
+          asaas_payment_id?: string | null
+          checkout_url?: string | null
+          created_at?: string
+          forma_pagamento: string
+          id?: string
+          id_aluno: number
+          parcelas?: number
+          row_ids: number[]
+          status?: string
+          updated_at?: string
+          valor_total: number
+        }
+        Update: {
+          asaas_checkout_id?: string | null
+          asaas_customer_id?: string | null
+          asaas_payment_id?: string | null
+          checkout_url?: string | null
+          created_at?: string
+          forma_pagamento?: string
+          id?: string
+          id_aluno?: number
+          parcelas?: number
+          row_ids?: number[]
+          status?: string
+          updated_at?: string
+          valor_total?: number
+        }
+        Relationships: []
+      }
       user_profiles: {
         Row: {
           created_at: string
@@ -2774,6 +2846,83 @@ export type Database = {
           "Telefone do Pai": string
           "token contrato": string
           "Turno 2026": string
+        }[]
+      }
+      renegociacao_2027_admin_baixa: {
+        Args: { p_pago: boolean; p_row_id: number }
+        Returns: {
+          id_aluno: number
+          liberada: boolean
+        }[]
+      }
+      renegociacao_2027_admin_debitos: {
+        Args: { p_id_aluno: number }
+        Returns: {
+          asaas_payment_id: string
+          baixa_manual_em: string
+          evento: string
+          forma_pagamento: string
+          pago: boolean
+          pago_em: string
+          row_id: number
+          valor_a_vista: number
+          valor_pago: number
+          valor_parcelado: number
+          vencimento: string
+        }[]
+      }
+      renegociacao_2027_admin_listagem: {
+        Args: never
+        Returns: {
+          curso_atual: string
+          em_aberto: number
+          id_aluno: number
+          nome_aluno: string
+          rematricula_liberada: boolean
+          situacao: string
+          total_debitos: number
+          ultima_forma: string
+          ultimo_pagamento: string
+          valor_aberto: number
+          valor_pago: number
+        }[]
+      }
+      renegociacao_2027_canais: {
+        Args: { p_id_aluno: number }
+        Returns: {
+          canal: string
+          chave: string
+          rotulo: string
+        }[]
+      }
+      renegociacao_2027_debitos: {
+        Args: { p_data_nascimento: string; p_id_aluno: number }
+        Returns: {
+          evento: string
+          juros: number
+          multa: number
+          pago: boolean
+          pago_em: string
+          row_id: number
+          valor_a_vista: number
+          valor_parcelado: number
+          valor_principal: number
+          vencimento: string
+        }[]
+      }
+      renegociacao_2027_recalcular_liberacao: {
+        Args: { p_id_aluno: number }
+        Returns: boolean
+      }
+      renegociacao_2027_status: {
+        Args: { p_data_nascimento: string; p_id_aluno: number }
+        Returns: {
+          em_aberto: number
+          quitado: boolean
+          rematricula_liberada: boolean
+          total_debitos: number
+          valor_aberto: number
+          valor_pago: number
         }[]
       }
       update_rematricula_fields: {
