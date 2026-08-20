@@ -12,9 +12,6 @@ Deno.serve(async (req) => {
     });
 
   try {
-    if (!rematriculaLiberada()) {
-      return json({ error: "rematricula_nao_liberada" }, 403);
-    }
     const supabase = createClient(
       Deno.env.get("SUPABASE_URL")!,
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
@@ -23,7 +20,14 @@ Deno.serve(async (req) => {
     const body = await req.json().catch(() => ({}));
     const idAluno = Number(body?.id_aluno);
     const codigo = String(body?.codigo || "").replace(/\D/g, "");
-    const finalidade = body?.finalidade === "contato" ? "contato" : "login";
+    const finalidade = body?.finalidade === "contato"
+      ? "contato"
+      : body?.finalidade === "renegociacao"
+      ? "renegociacao"
+      : "login";
+    if (finalidade !== "renegociacao" && !rematriculaLiberada()) {
+      return json({ error: "rematricula_nao_liberada" }, 403);
+    }
 
     if (!Number.isFinite(idAluno) || idAluno <= 0 || codigo.length !== 6) {
       return json({ error: "dados_invalidos" }, 400);
