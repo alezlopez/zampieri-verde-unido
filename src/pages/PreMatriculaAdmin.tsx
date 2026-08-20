@@ -21,8 +21,7 @@ import {
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { isoToBr, maskCpf, maskTelefone } from "@/components/rematricula/utils";
-import { STATUS_LABEL   descontosPorSerie,
-} from "@/components/prematricula/types";
+import { STATUS_LABEL, descontosPorSerie } from "@/components/prematricula/types";
 
 interface Prematricula {
   id: string;
