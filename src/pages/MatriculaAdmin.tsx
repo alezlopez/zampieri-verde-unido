@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { descontosPorSerie } from "@/components/prematricula/types";
 import { Loader2, RefreshCw, Search, FileText, ExternalLink } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -692,7 +693,7 @@ const MatriculaAdmin = () => {
                               <SelectValue placeholder="Selecione %" />
                             </SelectTrigger>
                             <SelectContent className="bg-background z-50">
-                              {Array.from({ length: 12 }, (_, i) => (i + 1) * 5).map((n) => (
+                              {descontosPorSerie(aberta.prematricula?.serie_pretendida).map((n) => (
                                 <SelectItem key={n} value={String(n)}>
                                   {n}%
                                 </SelectItem>
