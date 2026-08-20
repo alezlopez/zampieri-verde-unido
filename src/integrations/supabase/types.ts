@@ -14,6 +14,68 @@ export type Database = {
   }
   public: {
     Tables: {
+      admin_notificacoes: {
+        Row: {
+          created_at: string
+          descricao: string | null
+          id: string
+          link: string | null
+          ref_id: string | null
+          setor: string
+          tipo: string
+          titulo: string
+        }
+        Insert: {
+          created_at?: string
+          descricao?: string | null
+          id?: string
+          link?: string | null
+          ref_id?: string | null
+          setor: string
+          tipo: string
+          titulo: string
+        }
+        Update: {
+          created_at?: string
+          descricao?: string | null
+          id?: string
+          link?: string | null
+          ref_id?: string | null
+          setor?: string
+          tipo?: string
+          titulo?: string
+        }
+        Relationships: []
+      }
+      admin_notificacoes_lidas: {
+        Row: {
+          id: string
+          lida_em: string
+          notificacao_id: string
+          user_id: string
+        }
+        Insert: {
+          id?: string
+          lida_em?: string
+          notificacao_id: string
+          user_id: string
+        }
+        Update: {
+          id?: string
+          lida_em?: string
+          notificacao_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "admin_notificacoes_lidas_notificacao_id_fkey"
+            columns: ["notificacao_id"]
+            isOneToOne: false
+            referencedRelation: "admin_notificacoes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       alunos_26: {
         Row: {
           celular_pai: string | null
@@ -2596,6 +2658,17 @@ export type Database = {
           metadata: Json
           similarity: number
         }[]
+      }
+      notificar_admin: {
+        Args: {
+          _descricao?: string
+          _link?: string
+          _ref_id?: string
+          _setor: string
+          _tipo: string
+          _titulo: string
+        }
+        Returns: undefined
       }
       prematricula_norm_nome: { Args: { p_nome: string }; Returns: string }
       purgar_asaas_webhook_events: { Args: never; Returns: undefined }
