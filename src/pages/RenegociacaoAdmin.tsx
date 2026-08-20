@@ -11,11 +11,12 @@ import { brl, dataBr, type Debito } from "@/components/renegociacao/StepDebitos"
 interface LinhaAluno {
   id_aluno: number;
   nome_aluno: string;
-  curso_2027: string | null;
+  curso_atual: string | null;
   rematricula_liberada: boolean | null;
   total_debitos: number;
-  debitos_pagos: number;
+  em_aberto: number;
   valor_aberto: number;
+  situacao: string | null;
 }
 
 const RenegociacaoAdmin = () => {
@@ -67,13 +68,20 @@ const RenegociacaoAdmin = () => {
   const darBaixa = async () => {
     if (!aberto || selecionados.length === 0) return;
     setSalvando(true);
-    const { error } = await supabase.rpc("renegociacao_2027_admin_baixa", {
-      p_id_aluno: aberto,
-      p_row_ids: selecionados,
-    });
+    let falhou: string | null = null;
+    for (const rowId of selecionados) {
+      const { error } = await supabase.rpc("renegociacao_2027_admin_baixa", {
+        p_row_id: rowId,
+        p_pago: true,
+      });
+      if (error) {
+        falhou = error.message;
+        break;
+      }
+    }
     setSalvando(false);
-    if (error) {
-      toast({ title: "Erro na baixa", description: error.message, variant: "destructive" });
+    if (falhou) {
+      toast({ title: "Erro na baixa", description: falhou, variant: "destructive" });
       return;
     }
     toast({ title: "Baixa registrada", description: `${selecionados.length} débito(s) quitado(s).` });
@@ -147,8 +155,8 @@ const RenegociacaoAdmin = () => {
                       {l.nome_aluno}
                     </span>
                     <span className="block text-xs text-muted-foreground">
-                      #{l.id_aluno} · {l.curso_2027 || "sem curso 2027"} ·{" "}
-                      {l.debitos_pagos}/{l.total_debitos} quitados
+                      #{l.id_aluno} · {l.curso_atual || "sem curso"} ·{" "}
+                      {l.em_aberto}/{l.total_debitos} em aberto
                     </span>
                   </span>
                   <span className="flex items-center gap-3">
