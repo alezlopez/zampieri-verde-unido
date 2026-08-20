@@ -17,6 +17,7 @@ import {
 } from "lucide-react";
 import { useAuth, Setor } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
+import NotificacoesBell from "@/components/admin/NotificacoesBell";
 
 interface Atalho {
   titulo: string;
@@ -176,9 +177,12 @@ const AdminHome = () => {
               {isAdmin ? "Administrador" : visiveis.map((b) => b.titulo).join(", ") || "Sem acesso"}
             </p>
           </div>
-          <Button variant="outline" size="sm" onClick={() => signOut()}>
-            <LogOut className="w-4 h-4 mr-2" /> Sair
-          </Button>
+          <div className="flex items-center gap-2 shrink-0">
+            <NotificacoesBell />
+            <Button variant="outline" size="sm" onClick={() => signOut()}>
+              <LogOut className="w-4 h-4 mr-2" /> Sair
+            </Button>
+          </div>
         </div>
       </header>
 
