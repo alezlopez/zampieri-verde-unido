@@ -120,3 +120,16 @@ export const STATUS_LABEL: Record<string, string> = {
   entrevista_agendada: "Entrevista agendada",
   entrevista_concluida: "Entrevista concluída",
 };
+
+/** Série do Pré (Infantil 5) — só turno da tarde e desconto até 60% */
+export const SERIE_PRE = SERIES[0];
+
+/** Percentuais de desconto disponíveis por série (0% a 60% no Pré, 0% a 30% nas demais) */
+export const descontosPorSerie = (serie?: string | null): number[] => {
+  const max = serie === SERIE_PRE ? 60 : 30;
+  return Array.from({ length: max / 5 + 1 }, (_, i) => i * 5);
+};
+
+/** Turnos disponíveis por série */
+export const turnosPorSerie = (serie?: string | null): string[] =>
+  serie === SERIE_PRE ? ["Tarde"] : ["Manhã", "Tarde"];
