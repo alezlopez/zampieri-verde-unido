@@ -21,7 +21,13 @@ import {
   onlyDigits,
 } from "@/components/rematricula/utils";
 import { Campo, RadioGrupo, SecaoTitulo } from "./Campos";
-import { PreMatriculaForm, SERIES, idadeEm31Marco, seriesPermitidas } from "./types";
+import {
+  PreMatriculaForm,
+  SERIES,
+  idadeEm31Marco,
+  seriesPermitidas,
+  turnosPorSerie,
+} from "./types";
 
 type Erros = Partial<Record<keyof PreMatriculaForm | "boletim", string>>;
 

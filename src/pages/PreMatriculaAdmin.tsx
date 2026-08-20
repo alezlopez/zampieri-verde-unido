@@ -21,7 +21,8 @@ import {
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { isoToBr, maskCpf, maskTelefone } from "@/components/rematricula/utils";
-import { STATUS_LABEL } from "@/components/prematricula/types";
+import { STATUS_LABEL   descontosPorSerie,
+} from "@/components/prematricula/types";
 
 interface Prematricula {
   id: string;
@@ -71,7 +72,7 @@ const CORES: Record<string, string> = {
   entrevista_concluida: "bg-emerald-100 text-emerald-800",
 };
 
-const DESCONTOS = [5, 10, 15, 20, 25, 30];
+
 
 const dataHora = (iso?: string | null) =>
   iso
@@ -413,7 +414,7 @@ const PreMatriculaAdmin = () => {
                           <SelectValue placeholder="Selecione o percentual" />
                         </SelectTrigger>
                         <SelectContent className="bg-background z-50">
-                          {DESCONTOS.map((d) => (
+                          {descontosPorSerie(aberta.serie_pretendida).map((d) => (
                             <SelectItem key={d} value={String(d)}>
                               {d}%
                             </SelectItem>
