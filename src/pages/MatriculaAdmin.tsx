@@ -316,6 +316,20 @@ const MatriculaAdmin = () => {
     );
   }, [aberta]);
 
+  /** Lista legível do que ainda falta nos valores. */
+  const pendenciasValores = useMemo(() => {
+    if (!aberta) return [] as string[];
+    const txt = (v: unknown) => String(v ?? "").trim().length > 0;
+    const faltas: string[] = [];
+    if (!txt(aberta.anuidade_total)) faltas.push("Anuidade total");
+    if (!txt(aberta.valor_com_desconto)) faltas.push("Mensalidade com desconto");
+    if (!(aberta.matricula_gratuita === true || Number(aberta.valor_matricula) > 0))
+      faltas.push("Valor da matrícula (ou marcar matrícula gratuita)");
+    if (!(Number(aberta.dia_vencimento) > 0)) faltas.push("Dia de vencimento");
+    return faltas;
+  }, [aberta]);
+
+
 
   /** Só os documentos obrigatórios precisam estar aprovados (ou aguardando escola). */
   const docsConferidos = useMemo(() => {
