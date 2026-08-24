@@ -840,7 +840,118 @@ const Rematricula2027Admin = () => {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <Dialog open={!!editandoValores} onOpenChange={(o) => !o && setEditandoValores(null)}>
+        <DialogContent className="max-w-lg max-h-[85vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Editar valores da rematrícula</DialogTitle>
+            <DialogDescription>
+              {editandoValores?.nome_aluno} · {editandoValores?.curso_2027 || "—"}
+            </DialogDescription>
+          </DialogHeader>
+
+          {editandoValores && (
+            <div className="space-y-4">
+              <div className="rounded-lg bg-zampieri-cream/60 p-3 text-sm">
+                <p>
+                  Valor cheio: <strong>{formatBRL(editandoValores.valor_cheio)}</strong>
+                </p>
+                <p>
+                  Atual: <strong>{Number(editandoValores.percentual_desconto ?? 0)}%</strong> ·{" "}
+                  <strong>{formatBRL(editandoValores.valor_com_desconto)}</strong>/mês
+                </p>
+              </div>
+
+              {valoresTravados && (
+                <p className="rounded-lg bg-amber-100 p-3 text-xs font-medium text-amber-900">
+                  Contrato assinado ou rematrícula paga: os valores não podem mais ser alterados por
+                  aqui. Trate o caso diretamente com a secretaria.
+                </p>
+              )}
+              {!valoresTravados && editandoValores.contrato_gerado && (
+                <p className="rounded-lg bg-amber-100 p-3 text-xs font-medium text-amber-900">
+                  O contrato já foi gerado. Ao salvar, ele será invalidado e precisará ser gerado
+                  novamente com os novos valores.
+                </p>
+              )}
+
+              <div className="space-y-1">
+                <label className="text-xs font-medium text-muted-foreground">
+                  Percentual de desconto
+                </label>
+                <select
+                  disabled={valoresTravados}
+                  value={formValores.percentual}
+                  onChange={(e) => mudarPercentual(e.target.value)}
+                  className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm disabled:opacity-60"
+                >
+                  {Array.from({ length: 13 }, (_, i) => i * 5).map((p) => (
+                    <option key={p} value={p}>
+                      {p}%
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="space-y-1">
+                <label className="text-xs font-medium text-muted-foreground">
+                  Percentual por extenso (contrato)
+                </label>
+                <Input
+                  disabled={valoresTravados}
+                  value={formValores.percentual_ext}
+                  onChange={(e) =>
+                    setFormValores((f) => ({ ...f, percentual_ext: e.target.value }))
+                  }
+                  placeholder="trinta por cento"
+                />
+              </div>
+
+              <div className="space-y-1">
+                <label className="text-xs font-medium text-muted-foreground">
+                  Mensalidade com desconto (R$)
+                </label>
+                <Input
+                  disabled={valoresTravados}
+                  inputMode="decimal"
+                  value={formValores.valor}
+                  onChange={(e) => mudarValor(e.target.value)}
+                  placeholder="Ex: 850.00"
+                />
+              </div>
+
+              <div className="space-y-1">
+                <label className="text-xs font-medium text-muted-foreground">
+                  Mensalidade por extenso (contrato)
+                </label>
+                <Input
+                  disabled={valoresTravados}
+                  value={formValores.valor_ext}
+                  onChange={(e) => setFormValores((f) => ({ ...f, valor_ext: e.target.value }))}
+                  placeholder="oitocentos e cinquenta reais"
+                />
+              </div>
+
+              <p className="text-xs text-muted-foreground">
+                Os textos por extenso são sugeridos automaticamente e podem ser ajustados. As
+                mudanças ficam registradas no histórico de alterações.
+              </p>
+            </div>
+          )}
+
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setEditandoValores(null)}>
+              Cancelar
+            </Button>
+            <Button disabled={salvandoValores || valoresTravados} onClick={salvarValores}>
+              {salvandoValores && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
+              Salvar valores
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </main>
+
 
   );
 };
