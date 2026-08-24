@@ -139,8 +139,8 @@ export const StepResponsavel = ({
     }
   };
 
-  const cpfInvalidoLive =
-    !travados.cpf && onlyDigits(form.cpf).length === 11 && !isValidCpf(form.cpf);
+  const cpfInvalidoLive = onlyDigits(form.cpf).length === 11 && !isValidCpf(form.cpf);
+  const cpfCadastradoInvalido = !travados.cpf && cpfInvalidoLive;
 
   const campo = (
     key: keyof ResponsavelForm,
