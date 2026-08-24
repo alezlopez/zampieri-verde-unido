@@ -54,9 +54,15 @@ interface LinhaAdmin {
   celular_mae: string | null;
   telefone_mae: string | null;
   email_mae: string | null;
+  cancelada?: boolean;
+  cancelada_em?: string | null;
+  motivo_cancelamento?: string | null;
+  estorno_valor?: number | null;
+  estorno_em?: string | null;
 
   qtd_alteracoes: number;
   alteracoes: Alteracao[];
+
 }
 
 type Filtro = "todos" | "concluidas" | "a_conferir" | "conferidas" | "assinados" | "pendentes" | "cpf_invalido";
