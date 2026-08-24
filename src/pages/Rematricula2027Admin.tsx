@@ -756,7 +756,26 @@ const Rematricula2027Admin = () => {
                         >
                           <Pencil className="w-3 h-3" /> Editar valores
                         </button>
+                        <br />
+                        <button
+                          type="button"
+                          onClick={() => abrirCancelamento(l)}
+                          className="mt-1 inline-flex items-center gap-1 text-xs text-destructive underline"
+                        >
+                          <Ban className="w-3 h-3" /> Cancelar rematrícula
+                        </button>
+                        {l.cancelada && (
+                          <p className="mt-1 rounded bg-destructive/10 px-2 py-0.5 text-xs text-destructive">
+                            Cancelada
+                            {l.cancelada_em
+                              ? ` em ${new Date(l.cancelada_em).toLocaleDateString("pt-BR")}`
+                              : ""}
+                            {l.motivo_cancelamento ? ` · ${l.motivo_cancelamento}` : ""}
+                            {l.estorno_valor ? ` · estorno ${formatBRL(l.estorno_valor)}` : ""}
+                          </p>
+                        )}
                       </td>
+
 
 
                       <td className="p-3">
