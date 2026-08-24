@@ -184,23 +184,120 @@ const respLabel = (r: string | null) => {
   return r || "—";
 };
 
-const ListaAlteracoes = ({ itens }: { itens: Alteracao[] }) => (
-  <div className="space-y-1">
-    {itens.map((a, i) => (
-      <div key={`${a.campo}-${i}`} className="text-xs">
-        <span className="font-medium text-zampieri-green-dark">
-          {LABEL_CAMPO[a.campo] || a.campo}:
-        </span>{" "}
-        <span className="text-muted-foreground line-through">{a.valor_anterior || "vazio"}</span>{" "}
-        <span aria-hidden>→</span>{" "}
-        <span className="font-medium">{a.valor_novo || "vazio"}</span>{" "}
-        <span className="text-muted-foreground">
-          ({new Date(a.created_at).toLocaleDateString("pt-BR")})
-        </span>
+const GRUPOS: { chave: string; titulo: string; teste: (campo: string) => boolean }[] = [
+  { chave: "aluno", titulo: "Aluno", teste: (c) => c === "cpf_aluno" || c.endsWith("_aluno") },
+  {
+    chave: "curso",
+    titulo: "Curso e turno",
+    teste: (c) => c === "curso_2027" || c === "turno_escolhido" || c === "responsavel_financeiro",
+  },
+  { chave: "pai", titulo: "Pai", teste: (c) => c.endsWith("_pai") },
+  { chave: "mae", titulo: "Mãe", teste: (c) => c.endsWith("_mae") },
+  {
+    chave: "valores",
+    titulo: "Valores",
+    teste: (c) => c.startsWith("percentual_") || c.startsWith("valor_"),
+  },
+  { chave: "outros", titulo: "Outros", teste: () => true },
+];
+
+const grupoDe = (campo: string) => GRUPOS.find((g) => g.teste(campo)) ?? GRUPOS[GRUPOS.length - 1];
+
+const ListaAlteracoes = ({ itens }: { itens: Alteracao[] }) => {
+  const [modo, setModo] = useState<"todos" | "corrigidos" | "preenchidos">("todos");
+
+  const ehPreenchido = (a: Alteracao) => !a.valor_anterior || !a.valor_anterior.trim();
+
+  const filtrados = itens.filter((a) =>
+    modo === "todos" ? true : modo === "preenchidos" ? ehPreenchido(a) : !ehPreenchido(a),
+  );
+
+  const totalCorrigidos = itens.filter((a) => !ehPreenchido(a)).length;
+  const totalPreenchidos = itens.length - totalCorrigidos;
+
+  const grupos = GRUPOS.map((g) => ({
+    ...g,
+    itens: filtrados.filter((a) => grupoDe(a.campo).chave === g.chave),
+  })).filter((g) => g.itens.length > 0);
+
+  const opcoes: { id: typeof modo; label: string }[] = [
+    { id: "todos", label: `Todos (${itens.length})` },
+    { id: "corrigidos", label: `Corrigidos (${totalCorrigidos})` },
+    { id: "preenchidos", label: `Preenchidos (${totalPreenchidos})` },
+  ];
+
+  return (
+    <div className="space-y-4">
+      <div className="flex flex-wrap gap-2">
+        {opcoes.map((o) => (
+          <button
+            key={o.id}
+            type="button"
+            onClick={() => setModo(o.id)}
+            className={`rounded-full border px-3 py-1 text-xs font-medium transition-colors ${
+              modo === o.id
+                ? "border-zampieri-green-dark bg-zampieri-green-dark text-white"
+                : "border-border bg-background text-muted-foreground hover:bg-muted"
+            }`}
+          >
+            {o.label}
+          </button>
+        ))}
       </div>
-    ))}
-  </div>
-);
+
+      {grupos.length === 0 ? (
+        <p className="text-sm text-muted-foreground">Nenhuma alteração nesta seleção.</p>
+      ) : (
+        grupos.map((g) => (
+          <div key={g.chave} className="space-y-2">
+            <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+              {g.titulo} · {g.itens.length}
+            </p>
+            <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+              {g.itens.map((a, i) => {
+                const preenchido = ehPreenchido(a);
+                return (
+                  <div
+                    key={`${a.campo}-${i}`}
+                    className="rounded-lg border bg-card p-3 shadow-sm"
+                  >
+                    <div className="mb-1.5 flex items-start justify-between gap-2">
+                      <p className="text-sm font-semibold text-zampieri-green-dark">
+                        {LABEL_CAMPO[a.campo] || a.campo}
+                      </p>
+                      <span
+                        className={`shrink-0 rounded px-1.5 py-0.5 text-[10px] font-semibold uppercase ${
+                          preenchido
+                            ? "bg-zampieri-green-light/15 text-zampieri-green-dark"
+                            : "bg-zampieri-gold/15 text-zampieri-gold"
+                        }`}
+                      >
+                        {preenchido ? "Preenchido" : "Corrigido"}
+                      </span>
+                    </div>
+
+                    {!preenchido && (
+                      <p className="break-words text-xs text-muted-foreground line-through">
+                        {a.valor_anterior}
+                      </p>
+                    )}
+                    <p className="break-words text-sm font-medium text-foreground">
+                      {a.valor_novo || "vazio"}
+                    </p>
+                    <p className="mt-1 text-[11px] text-muted-foreground">
+                      {new Date(a.created_at).toLocaleDateString("pt-BR")}
+                    </p>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        ))
+      )}
+    </div>
+  );
+};
+
 
 const Rematricula2027Admin = () => {
   const { loading: authLoading , podeAcessar } = useAuth();
