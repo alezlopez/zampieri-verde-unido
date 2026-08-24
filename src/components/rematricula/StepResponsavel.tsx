@@ -56,6 +56,7 @@ export const StepResponsavel = ({
   const [editando, setEditando] = useState<Partial<Record<keyof ResponsavelForm, boolean>>>({});
   const [verificados, setVerificados] = useState<{ celular?: string; email?: string }>({});
   const [dialogo, setDialogo] = useState<null | "celular" | "email">(null);
+  const [cpfOriginal] = useState(form.cpf);
 
   const set = (campo: keyof ResponsavelForm, valor: string) =>
     onChange({ ...form, [campo]: valor });
@@ -80,8 +81,9 @@ export const StepResponsavel = ({
   const emailPendente =
     emailAlterado && (verificados.email || "").toLowerCase() !== form.email.trim().toLowerCase();
 
-  // CPF de mãe/pai já cadastrado não pode ser corrigido
-  const naoCorrigivel = (campo: keyof ResponsavelForm) => campo === "cpf";
+  // Todos os campos travados podem ser corrigidos pela família (inclusive o CPF,
+  // já que parte da base foi importada com números incorretos).
+  const naoCorrigivel = (_campo: keyof ResponsavelForm) => false;
 
   const bloqueado = (campo: keyof ResponsavelForm) =>
     !!travados[campo] && (naoCorrigivel(campo) || !editando[campo]);
@@ -138,8 +140,10 @@ export const StepResponsavel = ({
     }
   };
 
-  const cpfInvalidoLive =
-    !travados.cpf && onlyDigits(form.cpf).length === 11 && !isValidCpf(form.cpf);
+  const cpfInvalidoLive = onlyDigits(form.cpf).length === 11 && !isValidCpf(form.cpf);
+  // CPF que já veio da base com número incorreto (ainda não editado pela família)
+  const cpfCadastradoInvalido = cpfInvalidoLive && form.cpf === cpfOriginal;
+  const cpfDigitadoInvalido = cpfInvalidoLive && !cpfCadastradoInvalido;
 
   const campo = (
     key: keyof ResponsavelForm,
@@ -174,10 +178,17 @@ export const StepResponsavel = ({
           set(key, props.mask ? props.mask(e.target.value) : e.target.value);
         }}
       />
-      {key === "cpf" && travados.cpf && (
-        <p className="text-xs text-muted-foreground">CPF já cadastrado e não pode ser alterado.</p>
+      {key === "cpf" && travados.cpf && !editando.cpf && (
+        <p className="text-xs text-muted-foreground">
+          CPF já cadastrado. Se não for o número correto, use "corrigir".
+        </p>
       )}
-      {invalido && !erros.cpf && (
+      {key === "cpf" && cpfCadastradoInvalido && (
+        <p className="text-xs text-amber-700">
+          Confira o CPF: o número cadastrado parece incorreto, corrija antes de continuar.
+        </p>
+      )}
+      {key === "cpf" && cpfDigitadoInvalido && !erros.cpf && (
         <p className="text-xs text-destructive">CPF inválido. Confira os números digitados.</p>
       )}
       {erros[key] && <p className="text-xs text-destructive">{erros[key]}</p>}

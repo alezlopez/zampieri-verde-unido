@@ -19,7 +19,7 @@ import {
   ResponsavelForm,
   emptyResponsavel,
 } from "@/components/rematricula/types";
-import { brToIso, isoToBr, maskCep, maskCpf, maskTelefone, onlyDigits, rematriculaLiberada } from "@/components/rematricula/utils";
+import { brToIso, isValidCpf, isoToBr, maskCep, maskCpf, maskTelefone, onlyDigits, rematriculaLiberada } from "@/components/rematricula/utils";
 import { RematriculaEmBreve } from "@/components/rematricula/EmBreve";
 
 type Fase = "busca" | "bloqueado" | "canal" | "codigo" | "aluno" | "mae" | "pai" | "curso" | "sucesso";
@@ -50,9 +50,14 @@ const carregarResponsavel = (a: AlunoCompleto, tipo: "mae" | "pai"): Responsavel
 });
 
 const travadosDe = (form: ResponsavelForm) =>
-  Object.fromEntries(Object.entries(form).map(([k, v]) => [k, !!String(v || "").trim()])) as Partial<
-    Record<keyof ResponsavelForm, boolean>
-  >;
+  Object.fromEntries(
+    Object.entries(form).map(([k, v]) => {
+      const preenchido = !!String(v || "").trim();
+      // CPF importado com número incorreto abre destravado para correção
+      if (k === "cpf") return [k, preenchido && isValidCpf(String(v))];
+      return [k, preenchido];
+    }),
+  ) as Partial<Record<keyof ResponsavelForm, boolean>>;
 
 const Rematricula2027 = () => {
   const [liberada, setLiberada] = useState(rematriculaLiberada);

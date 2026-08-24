@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
-import { formatBRL, maskCpf, maskTelefone } from "@/components/rematricula/utils";
+import { formatBRL, isValidCpf, maskCpf, maskTelefone } from "@/components/rematricula/utils";
 
 import { toast } from "sonner";
 import {
@@ -59,7 +59,7 @@ interface LinhaAdmin {
   alteracoes: Alteracao[];
 }
 
-type Filtro = "todos" | "concluidas" | "a_conferir" | "conferidas" | "assinados" | "pendentes";
+type Filtro = "todos" | "concluidas" | "a_conferir" | "conferidas" | "assinados" | "pendentes" | "cpf_invalido";
 
 const LABEL_CAMPO: Record<string, string> = {
   cpf_aluno: "CPF do aluno",
@@ -104,15 +104,32 @@ const LABEL_CAMPO: Record<string, string> = {
 
 };
 
-const Badge = ({ ok, label }: { ok: boolean; label: string }) => (
-  <span
-    className={`inline-block rounded px-2 py-0.5 text-xs font-medium ${
-      ok ? "bg-zampieri-cream text-zampieri-green-dark" : "bg-muted text-muted-foreground"
-    }`}
-  >
-    {label}
-  </span>
-);
+/** Só aparece quando a etapa foi realmente concluída */
+const Badge = ({ ok, label }: { ok: boolean; label: string }) =>
+  ok ? (
+    <span className="inline-block rounded bg-zampieri-green-dark px-2 py-0.5 text-xs font-medium text-white">
+      {label}
+    </span>
+  ) : null;
+
+const Situacao = ({
+  gerado,
+  assinado,
+  pago,
+}: {
+  gerado: boolean;
+  assinado: boolean;
+  pago: boolean;
+}) =>
+  gerado || assinado || pago ? (
+    <span className="space-x-1">
+      <Badge ok={gerado} label="Gerado" />
+      <Badge ok={assinado} label="Assinado" />
+      <Badge ok={pago} label="Pago" />
+    </span>
+  ) : (
+    <span className="text-xs text-muted-foreground">Não iniciada</span>
+  );
 
 const respLabel = (r: string | null) => {
   const v = (r || "").toLowerCase();
@@ -237,9 +254,13 @@ const Rematricula2027Admin = () => {
     );
   };
 
+  const cpfSuspeito = (l: LinhaAdmin) =>
+    (!!l.cpf_pai && !isValidCpf(l.cpf_pai)) || (!!l.cpf_mae && !isValidCpf(l.cpf_mae));
+
   const filtradas = useMemo(() => {
     const termo = busca.trim().toLowerCase();
     return linhas.filter((l) => {
+      if (filtro === "cpf_invalido" && !cpfSuspeito(l)) return false;
       if (filtro === "concluidas" && !l.rematricula_concluida) return false;
       if (filtro === "a_conferir" && (!l.rematricula_concluida || l.conferida)) return false;
       if (filtro === "conferidas" && !l.conferida) return false;
@@ -260,6 +281,9 @@ const Rematricula2027Admin = () => {
       concluidas: linhas.filter((l) => l.rematricula_concluida).length,
       aConferir: linhas.filter((l) => l.rematricula_concluida && !l.conferida).length,
       conferidas: linhas.filter((l) => l.conferida).length,
+      cpfInvalido: linhas.filter(
+        (l) => (!!l.cpf_pai && !isValidCpf(l.cpf_pai)) || (!!l.cpf_mae && !isValidCpf(l.cpf_mae)),
+      ).length,
     }),
     [linhas],
   );
@@ -331,6 +355,7 @@ const Rematricula2027Admin = () => {
               ["conferidas", "Conferidas"],
               ["assinados", "Contrato assinado"],
               ["pendentes", "Pendentes"],
+              ["cpf_invalido", `CPF inválido (${totais.cpfInvalido})`],
             ] as [Filtro, string][]
           ).map(([v, label]) => (
             <button
@@ -407,7 +432,12 @@ const Rematricula2027Admin = () => {
                         {respNome && (
                           <p className="text-xs text-muted-foreground">
                             {respNome}
-                            {respCpf ? ` · ${respCpf}` : ""}
+                            {respCpf ? ` · ${maskCpf(respCpf)}` : ""}
+                          </p>
+                        )}
+                        {cpfSuspeito(l) && (
+                          <p className="mt-1 inline-block rounded bg-amber-100 px-2 py-0.5 text-xs font-medium text-amber-900">
+                            CPF cadastrado inválido
                           </p>
                         )}
                       </td>
@@ -420,9 +450,11 @@ const Rematricula2027Admin = () => {
                         </p>
                       </td>
                       <td className="p-3 space-x-1 whitespace-nowrap">
-                        <Badge ok={l.contrato_gerado} label="Gerado" />
-                        <Badge ok={l.contrato_assinado} label="Assinado" />
-                        <Badge ok={l.rematricula_concluida} label="Pago" />
+                        <Situacao
+                          gerado={l.contrato_gerado}
+                          assinado={l.contrato_assinado}
+                          pago={l.rematricula_concluida}
+                        />
                       </td>
                       <td className="p-3 whitespace-nowrap">
                         {l.rematricula_concluida ? (

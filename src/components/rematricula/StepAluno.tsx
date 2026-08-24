@@ -16,7 +16,10 @@ interface Props {
 
 export const StepAluno = ({ aluno, cpf, semCpf, onChange, onVoltar, onAvancar }: Props) => {
   const [erro, setErro] = useState<string | null>(null);
-  const cpfJaCadastrado = !!aluno.cpf_aluno;
+  // CPF gravado só é considerado "já cadastrado" (travado) quando é válido.
+  // Registros importados com CPF incorreto precisam poder ser corrigidos pela família.
+  const cpfJaCadastrado = !!aluno.cpf_aluno && isValidCpf(aluno.cpf_aluno);
+  const cpfCadastradoInvalido = !!aluno.cpf_aluno && !cpfJaCadastrado;
   const digitos = cpf.replace(/\D/g, "");
   const cpfInvalido = !cpfJaCadastrado && !semCpf && digitos.length === 11 && !isValidCpf(cpf);
 
@@ -74,6 +77,11 @@ export const StepAluno = ({ aluno, cpf, semCpf, onChange, onVoltar, onAvancar }:
                   onChange({ cpf: maskCpf(e.target.value), semCpf });
                 }}
               />
+              {cpfCadastradoInvalido && !cpfInvalido && (
+                <p className="text-sm text-amber-700">
+                  Confira o CPF: o número cadastrado parece incorreto, corrija antes de continuar.
+                </p>
+              )}
               {cpfInvalido && (
                 <p className="text-sm text-destructive">CPF inválido. Confira os números digitados.</p>
               )}
