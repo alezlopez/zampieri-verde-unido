@@ -432,7 +432,12 @@ const Rematricula2027Admin = () => {
                         {respNome && (
                           <p className="text-xs text-muted-foreground">
                             {respNome}
-                            {respCpf ? ` · ${respCpf}` : ""}
+                            {respCpf ? ` · ${maskCpf(respCpf)}` : ""}
+                          </p>
+                        )}
+                        {cpfSuspeito(l) && (
+                          <p className="mt-1 inline-block rounded bg-amber-100 px-2 py-0.5 text-xs font-medium text-amber-900">
+                            CPF cadastrado inválido
                           </p>
                         )}
                       </td>
