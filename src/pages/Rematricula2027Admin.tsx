@@ -885,7 +885,7 @@ const Rematricula2027Admin = () => {
                   onChange={(e) => mudarPercentual(e.target.value)}
                   className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm disabled:opacity-60"
                 >
-                  {Array.from({ length: 13 }, (_, i) => i * 5).map((p) => (
+                  {opcoesPercentual.map((p) => (
                     <option key={p} value={p}>
                       {p}%
                     </option>
