@@ -1,5 +1,5 @@
 import { Fragment, useEffect, useMemo, useState } from "react";
-import { Check, ChevronDown, ChevronUp, Loader2, Pencil, RefreshCw, Search, Undo2 } from "lucide-react";
+import { Ban, Check, ChevronDown, ChevronUp, Loader2, Pencil, RefreshCw, Search, Undo2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { supabase } from "@/integrations/supabase/client";
@@ -54,9 +54,15 @@ interface LinhaAdmin {
   celular_mae: string | null;
   telefone_mae: string | null;
   email_mae: string | null;
+  cancelada?: boolean;
+  cancelada_em?: string | null;
+  motivo_cancelamento?: string | null;
+  estorno_valor?: number | null;
+  estorno_em?: string | null;
 
   qtd_alteracoes: number;
   alteracoes: Alteracao[];
+
 }
 
 type Filtro = "todos" | "concluidas" | "a_conferir" | "conferidas" | "assinados" | "pendentes" | "cpf_invalido";
@@ -491,6 +497,44 @@ const Rematricula2027Admin = () => {
     carregar();
   };
 
+  // ---- Cancelamento da rematrícula (estorno + contrato + reset) ----
+  const [cancelando, setCancelando] = useState<LinhaAdmin | null>(null);
+  const [motivoCancel, setMotivoCancel] = useState("");
+  const [confirmaCancel, setConfirmaCancel] = useState("");
+  const [executandoCancel, setExecutandoCancel] = useState(false);
+
+  const abrirCancelamento = (l: LinhaAdmin) => {
+    setMotivoCancel("");
+    setConfirmaCancel("");
+    setCancelando(l);
+  };
+
+  const executarCancelamento = async () => {
+    if (!cancelando) return;
+    setExecutandoCancel(true);
+    const { data, error } = await supabase.functions.invoke("rematricula-2027-admin-cancelar", {
+      body: { id_aluno: cancelando.id_aluno, motivo: motivoCancel.trim() },
+    });
+    setExecutandoCancel(false);
+    const res = data as
+      | { ok?: boolean; estornado?: number; contrato_cancelado?: boolean; avisos?: string[]; error?: string }
+      | null;
+    if (error || !res?.ok) {
+      toast.error(res?.error === "forbidden" ? "Sem permissão." : "Não foi possível cancelar agora.");
+      return;
+    }
+    const partes = [
+      res.estornado && res.estornado > 0 ? `estorno de ${formatBRL(res.estornado)}` : "sem estorno",
+      res.contrato_cancelado ? "contrato cancelado" : null,
+    ].filter(Boolean);
+    toast.success(`Rematrícula cancelada (${partes.join(", ")}).`);
+    (res.avisos ?? []).forEach((a) => toast.warning(a));
+    setCancelando(null);
+    carregar();
+  };
+
+
+
 
 
 
@@ -712,7 +756,26 @@ const Rematricula2027Admin = () => {
                         >
                           <Pencil className="w-3 h-3" /> Editar valores
                         </button>
+                        <br />
+                        <button
+                          type="button"
+                          onClick={() => abrirCancelamento(l)}
+                          className="mt-1 inline-flex items-center gap-1 text-xs text-destructive underline"
+                        >
+                          <Ban className="w-3 h-3" /> Cancelar rematrícula
+                        </button>
+                        {l.cancelada && (
+                          <p className="mt-1 rounded bg-destructive/10 px-2 py-0.5 text-xs text-destructive">
+                            Cancelada
+                            {l.cancelada_em
+                              ? ` em ${new Date(l.cancelada_em).toLocaleDateString("pt-BR")}`
+                              : ""}
+                            {l.motivo_cancelamento ? ` · ${l.motivo_cancelamento}` : ""}
+                            {l.estorno_valor ? ` · estorno ${formatBRL(l.estorno_valor)}` : ""}
+                          </p>
+                        )}
                       </td>
+
 
 
                       <td className="p-3">
@@ -1118,7 +1181,77 @@ const Rematricula2027Admin = () => {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <Dialog open={!!cancelando} onOpenChange={(o) => !o && setCancelando(null)}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle>Cancelar rematrícula</DialogTitle>
+            <DialogDescription>
+              {cancelando?.nome_aluno} · ID {cancelando?.id_aluno}
+            </DialogDescription>
+          </DialogHeader>
+
+          {cancelando && (
+            <div className="space-y-4">
+              <ul className="space-y-1 rounded-md bg-destructive/5 p-3 text-sm text-foreground">
+                <li>
+                  •{" "}
+                  {cancelando.valor_pago
+                    ? `Estorno do valor pago (${formatBRL(cancelando.valor_pago)}) no Asaas`
+                    : "Nenhum pagamento confirmado — nada será estornado"}
+                </li>
+                <li>
+                  •{" "}
+                  {cancelando.contrato_gerado || cancelando.contrato_assinado
+                    ? "Cancelamento do contrato na ZapSign"
+                    : "Nenhum contrato gerado"}
+                </li>
+                <li>• A família volta ao início e pode refazer a rematrícula</li>
+              </ul>
+
+              <div className="space-y-1">
+                <label className="text-xs font-medium text-muted-foreground">
+                  Motivo do cancelamento
+                </label>
+                <Input
+                  value={motivoCancel}
+                  onChange={(e) => setMotivoCancel(e.target.value)}
+                  placeholder="Ex: solicitação da família"
+                />
+              </div>
+
+              <div className="space-y-1">
+                <label className="text-xs font-medium text-muted-foreground">
+                  Digite CANCELAR para confirmar
+                </label>
+                <Input
+                  value={confirmaCancel}
+                  onChange={(e) => setConfirmaCancel(e.target.value.toUpperCase())}
+                  placeholder="CANCELAR"
+                />
+              </div>
+            </div>
+          )}
+
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setCancelando(null)}>
+              Voltar
+            </Button>
+            <Button
+              variant="destructive"
+              disabled={
+                executandoCancel || motivoCancel.trim().length < 3 || confirmaCancel !== "CANCELAR"
+              }
+              onClick={executarCancelamento}
+            >
+              {executandoCancel && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
+              Confirmar cancelamento
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </main>
+
 
 
   );
