@@ -497,6 +497,44 @@ const Rematricula2027Admin = () => {
     carregar();
   };
 
+  // ---- Cancelamento da rematrícula (estorno + contrato + reset) ----
+  const [cancelando, setCancelando] = useState<LinhaAdmin | null>(null);
+  const [motivoCancel, setMotivoCancel] = useState("");
+  const [confirmaCancel, setConfirmaCancel] = useState("");
+  const [executandoCancel, setExecutandoCancel] = useState(false);
+
+  const abrirCancelamento = (l: LinhaAdmin) => {
+    setMotivoCancel("");
+    setConfirmaCancel("");
+    setCancelando(l);
+  };
+
+  const executarCancelamento = async () => {
+    if (!cancelando) return;
+    setExecutandoCancel(true);
+    const { data, error } = await supabase.functions.invoke("rematricula-2027-admin-cancelar", {
+      body: { id_aluno: cancelando.id_aluno, motivo: motivoCancel.trim() },
+    });
+    setExecutandoCancel(false);
+    const res = data as
+      | { ok?: boolean; estornado?: number; contrato_cancelado?: boolean; avisos?: string[]; error?: string }
+      | null;
+    if (error || !res?.ok) {
+      toast.error(res?.error === "forbidden" ? "Sem permissão." : "Não foi possível cancelar agora.");
+      return;
+    }
+    const partes = [
+      res.estornado && res.estornado > 0 ? `estorno de ${formatBRL(res.estornado)}` : "sem estorno",
+      res.contrato_cancelado ? "contrato cancelado" : null,
+    ].filter(Boolean);
+    toast.success(`Rematrícula cancelada (${partes.join(", ")}).`);
+    (res.avisos ?? []).forEach((a) => toast.warning(a));
+    setCancelando(null);
+    carregar();
+  };
+
+
+
 
 
 
