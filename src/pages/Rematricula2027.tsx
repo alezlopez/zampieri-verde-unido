@@ -19,7 +19,7 @@ import {
   ResponsavelForm,
   emptyResponsavel,
 } from "@/components/rematricula/types";
-import { brToIso, isoToBr, maskCep, maskCpf, maskTelefone, onlyDigits, rematriculaLiberada } from "@/components/rematricula/utils";
+import { brToIso, isValidCpf, isoToBr, maskCep, maskCpf, maskTelefone, onlyDigits, rematriculaLiberada } from "@/components/rematricula/utils";
 import { RematriculaEmBreve } from "@/components/rematricula/EmBreve";
 
 type Fase = "busca" | "bloqueado" | "canal" | "codigo" | "aluno" | "mae" | "pai" | "curso" | "sucesso";
