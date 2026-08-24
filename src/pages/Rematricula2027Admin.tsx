@@ -281,6 +281,9 @@ const Rematricula2027Admin = () => {
       concluidas: linhas.filter((l) => l.rematricula_concluida).length,
       aConferir: linhas.filter((l) => l.rematricula_concluida && !l.conferida).length,
       conferidas: linhas.filter((l) => l.conferida).length,
+      cpfInvalido: linhas.filter(
+        (l) => (!!l.cpf_pai && !isValidCpf(l.cpf_pai)) || (!!l.cpf_mae && !isValidCpf(l.cpf_mae)),
+      ).length,
     }),
     [linhas],
   );
@@ -352,6 +355,7 @@ const Rematricula2027Admin = () => {
               ["conferidas", "Conferidas"],
               ["assinados", "Contrato assinado"],
               ["pendentes", "Pendentes"],
+              ["cpf_invalido", `CPF inválido (${totais.cpfInvalido})`],
             ] as [Filtro, string][]
           ).map(([v, label]) => (
             <button
