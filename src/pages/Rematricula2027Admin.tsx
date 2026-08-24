@@ -601,7 +601,11 @@ const Rematricula2027Admin = () => {
                       <td className="p-3 whitespace-nowrap">
                         {l.rematricula_concluida ? (
                           <>
-                            <p className="font-medium">{formatBRL(l.valor_pago)}</p>
+                            <p className="font-medium">
+                              {l.valor_pago == null
+                                ? "Valor não informado"
+                                : formatBRL(l.valor_pago)}
+                            </p>
                             <p className="text-xs text-muted-foreground">
                               {l.forma_pagamento === "pix" ? "PIX" : "Cartão"}
                               {l.parcelas && l.parcelas > 1 ? ` ${l.parcelas}x` : ""}
