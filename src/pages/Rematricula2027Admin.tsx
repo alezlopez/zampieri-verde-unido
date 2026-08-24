@@ -544,7 +544,16 @@ const Rematricula2027Admin = () => {
                         >
                           <Pencil className="w-3 h-3" /> Editar contatos
                         </button>
+                        <br />
+                        <button
+                          type="button"
+                          onClick={() => abrirEdicaoValores(l)}
+                          className="mt-1 inline-flex items-center gap-1 text-xs text-zampieri-green-dark underline"
+                        >
+                          <Pencil className="w-3 h-3" /> Editar valores
+                        </button>
                       </td>
+
 
                       <td className="p-3">
                         {l.curso_2027}
