@@ -769,7 +769,7 @@ const Rematricula2027Admin = () => {
                         )}
                       </td>
                       <td className="p-3">
-                        {l.qtd_alteracoes === 0 ? (
+                        {alteracoesReais(l.alteracoes).length === 0 ? (
                           <span className="text-xs text-muted-foreground">Sem alterações</span>
                         ) : (
                           <button
@@ -779,7 +779,7 @@ const Rematricula2027Admin = () => {
                             }
                             className="inline-flex items-center gap-1 rounded bg-amber-100 px-2 py-0.5 text-xs font-medium text-amber-900"
                           >
-                            Dados alterados ({l.qtd_alteracoes})
+                            Dados alterados ({alteracoesReais(l.alteracoes).length})
                             {expandido === l.id_aluno ? (
                               <ChevronUp className="w-3 h-3" />
                             ) : (
@@ -788,6 +788,7 @@ const Rematricula2027Admin = () => {
                           </button>
                         )}
                       </td>
+
                       <td className="p-3 whitespace-nowrap">
                         {!l.rematricula_concluida ? (
                           <span className="text-xs text-muted-foreground">—</span>
