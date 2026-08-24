@@ -166,7 +166,7 @@ Deno.serve(async (req) => {
       _tipo: "rematricula_cancelada",
       _titulo: "Rematrícula cancelada",
       _descricao: `${aluno.nome_aluno} — ${motivo}`,
-      _link: "/admin/rematriculas",
+      _link: "/rematricula2027/admin",
       _ref_id: String(idAluno),
     }).then(() => null, () => null);
 
