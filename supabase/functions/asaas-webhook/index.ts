@@ -166,7 +166,17 @@ Deno.serve(async (req) => {
       const idAluno = Number(externalRef.slice(6));
       if (Number.isFinite(idAluno)) {
         if (newStatus === "pago") {
-          const valor = Number(payload?.payment?.value ?? payload?.checkout?.value ?? 0) || null;
+          const itensCheckout: any[] = Array.isArray(payload?.checkout?.items)
+            ? payload.checkout.items
+            : [];
+          const somaItens = itensCheckout.reduce(
+            (acc, it) => acc + Number(it?.value ?? 0) * Number(it?.quantity ?? 1),
+            0,
+          );
+          const valor = Number(payload?.payment?.value ?? 0) ||
+            Number(payload?.checkout?.value ?? 0) ||
+            somaItens ||
+            null;
           const { data: alunoRemat } = await admin.from("alunos_rematricula_2027").update({
             rematricula_concluida: true,
             asaas_payment_id: installmentId || paymentId,
