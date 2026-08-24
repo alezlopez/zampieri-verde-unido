@@ -188,7 +188,7 @@ export const StepResponsavel = ({
           Confira o CPF: o número cadastrado parece incorreto, corrija antes de continuar.
         </p>
       )}
-      {invalido && !erros.cpf && (
+      {key === "cpf" && cpfDigitadoInvalido && !erros.cpf && (
         <p className="text-xs text-destructive">CPF inválido. Confira os números digitados.</p>
       )}
       {erros[key] && <p className="text-xs text-destructive">{erros[key]}</p>}
