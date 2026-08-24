@@ -77,6 +77,11 @@ export const StepAluno = ({ aluno, cpf, semCpf, onChange, onVoltar, onAvancar }:
                   onChange({ cpf: maskCpf(e.target.value), semCpf });
                 }}
               />
+              {cpfCadastradoInvalido && !cpfInvalido && (
+                <p className="text-sm text-amber-700">
+                  Confira o CPF: o número cadastrado parece incorreto, corrija antes de continuar.
+                </p>
+              )}
               {cpfInvalido && (
                 <p className="text-sm text-destructive">CPF inválido. Confira os números digitados.</p>
               )}
