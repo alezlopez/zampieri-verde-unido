@@ -254,9 +254,13 @@ const Rematricula2027Admin = () => {
     );
   };
 
+  const cpfSuspeito = (l: LinhaAdmin) =>
+    (!!l.cpf_pai && !isValidCpf(l.cpf_pai)) || (!!l.cpf_mae && !isValidCpf(l.cpf_mae));
+
   const filtradas = useMemo(() => {
     const termo = busca.trim().toLowerCase();
     return linhas.filter((l) => {
+      if (filtro === "cpf_invalido" && !cpfSuspeito(l)) return false;
       if (filtro === "concluidas" && !l.rematricula_concluida) return false;
       if (filtro === "a_conferir" && (!l.rematricula_concluida || l.conferida)) return false;
       if (filtro === "conferidas" && !l.conferida) return false;
