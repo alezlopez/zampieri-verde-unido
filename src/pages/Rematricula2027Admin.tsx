@@ -437,9 +437,11 @@ const Rematricula2027Admin = () => {
                         </p>
                       </td>
                       <td className="p-3 space-x-1 whitespace-nowrap">
-                        <Badge ok={l.contrato_gerado} label="Gerado" />
-                        <Badge ok={l.contrato_assinado} label="Assinado" />
-                        <Badge ok={l.rematricula_concluida} label="Pago" />
+                        <Situacao
+                          gerado={l.contrato_gerado}
+                          assinado={l.contrato_assinado}
+                          pago={l.rematricula_concluida}
+                        />
                       </td>
                       <td className="p-3 whitespace-nowrap">
                         {l.rematricula_concluida ? (
