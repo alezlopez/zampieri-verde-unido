@@ -175,8 +175,15 @@ export const StepResponsavel = ({
           set(key, props.mask ? props.mask(e.target.value) : e.target.value);
         }}
       />
-      {key === "cpf" && travados.cpf && (
-        <p className="text-xs text-muted-foreground">CPF já cadastrado e não pode ser alterado.</p>
+      {key === "cpf" && travados.cpf && !editando.cpf && (
+        <p className="text-xs text-muted-foreground">
+          CPF já cadastrado. Se não for o número correto, use "corrigir".
+        </p>
+      )}
+      {key === "cpf" && cpfCadastradoInvalido && (
+        <p className="text-xs text-amber-700">
+          Confira o CPF: o número cadastrado parece incorreto, corrija antes de continuar.
+        </p>
       )}
       {invalido && !erros.cpf && (
         <p className="text-xs text-destructive">CPF inválido. Confira os números digitados.</p>
