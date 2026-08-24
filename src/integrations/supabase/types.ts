@@ -139,6 +139,9 @@ export type Database = {
           asaas_payment_id: string | null
           bairro_mae: string | null
           bairro_pai: string | null
+          cancelada: boolean
+          cancelada_em: string | null
+          cancelada_por: string | null
           celular_mae: string | null
           celular_pai: string | null
           cep_mae: string | null
@@ -172,11 +175,14 @@ export type Database = {
           estado_civil_pai: string | null
           estado_mae: string | null
           estado_pai: string | null
+          estorno_em: string | null
+          estorno_valor: number | null
           forma_pagamento: string | null
           id_aluno: number
           link_contrato: string | null
           logradouro_mae: string | null
           logradouro_pai: string | null
+          motivo_cancelamento: string | null
           nacionalidade_mae: string | null
           nacionalidade_pai: string | null
           naturalidade_mae: string | null
@@ -216,6 +222,9 @@ export type Database = {
           asaas_payment_id?: string | null
           bairro_mae?: string | null
           bairro_pai?: string | null
+          cancelada?: boolean
+          cancelada_em?: string | null
+          cancelada_por?: string | null
           celular_mae?: string | null
           celular_pai?: string | null
           cep_mae?: string | null
@@ -249,11 +258,14 @@ export type Database = {
           estado_civil_pai?: string | null
           estado_mae?: string | null
           estado_pai?: string | null
+          estorno_em?: string | null
+          estorno_valor?: number | null
           forma_pagamento?: string | null
           id_aluno: number
           link_contrato?: string | null
           logradouro_mae?: string | null
           logradouro_pai?: string | null
+          motivo_cancelamento?: string | null
           nacionalidade_mae?: string | null
           nacionalidade_pai?: string | null
           naturalidade_mae?: string | null
@@ -293,6 +305,9 @@ export type Database = {
           asaas_payment_id?: string | null
           bairro_mae?: string | null
           bairro_pai?: string | null
+          cancelada?: boolean
+          cancelada_em?: string | null
+          cancelada_por?: string | null
           celular_mae?: string | null
           celular_pai?: string | null
           cep_mae?: string | null
@@ -326,11 +341,14 @@ export type Database = {
           estado_civil_pai?: string | null
           estado_mae?: string | null
           estado_pai?: string | null
+          estorno_em?: string | null
+          estorno_valor?: number | null
           forma_pagamento?: string | null
           id_aluno?: number
           link_contrato?: string | null
           logradouro_mae?: string | null
           logradouro_pai?: string | null
+          motivo_cancelamento?: string | null
           nacionalidade_mae?: string | null
           nacionalidade_pai?: string | null
           naturalidade_mae?: string | null
