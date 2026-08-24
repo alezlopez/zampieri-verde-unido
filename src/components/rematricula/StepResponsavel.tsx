@@ -56,6 +56,7 @@ export const StepResponsavel = ({
   const [editando, setEditando] = useState<Partial<Record<keyof ResponsavelForm, boolean>>>({});
   const [verificados, setVerificados] = useState<{ celular?: string; email?: string }>({});
   const [dialogo, setDialogo] = useState<null | "celular" | "email">(null);
+  const [cpfOriginal] = useState(form.cpf);
 
   const set = (campo: keyof ResponsavelForm, valor: string) =>
     onChange({ ...form, [campo]: valor });
