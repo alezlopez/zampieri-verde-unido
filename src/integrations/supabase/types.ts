@@ -2752,6 +2752,19 @@ export type Database = {
           success: boolean
         }[]
       }
+      rematricula_2027_admin_editar_valores: {
+        Args: {
+          p_id_aluno: number
+          p_percentual_desconto: number
+          p_percentual_desconto_ext: string
+          p_valor_com_desconto: number
+          p_valor_com_desconto_ext: string
+        }
+        Returns: {
+          message: string
+          success: boolean
+        }[]
+      }
       rematricula_2027_admin_listagem: {
         Args: never
         Returns: {

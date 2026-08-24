@@ -102,7 +102,53 @@ const LABEL_CAMPO: Record<string, string> = {
   telefone_mae: "Telefone da mãe",
   email_mae: "E-mail da mãe",
 
+  percentual_desconto: "Percentual de desconto",
+  percentual_desconto_ext: "Percentual por extenso",
+  valor_com_desconto: "Mensalidade com desconto",
+  valor_com_desconto_ext: "Mensalidade por extenso",
 };
+
+/* ---------- número por extenso (pt-BR) ---------- */
+const UNIDADES = ["zero","um","dois","três","quatro","cinco","seis","sete","oito","nove","dez","onze","doze","treze","quatorze","quinze","dezesseis","dezessete","dezoito","dezenove"];
+const DEZENAS = ["","","vinte","trinta","quarenta","cinquenta","sessenta","setenta","oitenta","noventa"];
+const CENTENAS = ["","cento","duzentos","trezentos","quatrocentos","quinhentos","seiscentos","setecentos","oitocentos","novecentos"];
+
+const ateMil = (n: number): string => {
+  if (n === 0) return "";
+  if (n === 100) return "cem";
+  if (n < 20) return UNIDADES[n];
+  if (n < 100) {
+    const d = Math.floor(n / 10);
+    const r = n % 10;
+    return DEZENAS[d] + (r ? ` e ${UNIDADES[r]}` : "");
+  }
+  const c = Math.floor(n / 100);
+  const r = n % 100;
+  return CENTENAS[c] + (r ? ` e ${ateMil(r)}` : "");
+};
+
+const inteiroExtenso = (n: number): string => {
+  if (n === 0) return "zero";
+  const milhares = Math.floor(n / 1000);
+  const resto = n % 1000;
+  const partes: string[] = [];
+  if (milhares === 1) partes.push("mil");
+  else if (milhares > 1) partes.push(`${ateMil(milhares)} mil`);
+  if (resto) partes.push(ateMil(resto));
+  return partes.join(resto && resto < 100 ? " e " : " ");
+};
+
+const reaisExtenso = (valor: number): string => {
+  const inteiro = Math.floor(valor);
+  const centavos = Math.round((valor - inteiro) * 100);
+  const base = `${inteiroExtenso(inteiro)} ${inteiro === 1 ? "real" : "reais"}`;
+  if (!centavos) return base;
+  return `${base} e ${inteiroExtenso(centavos)} ${centavos === 1 ? "centavo" : "centavos"}`;
+};
+
+const percentualExtenso = (p: number): string =>
+  `${inteiroExtenso(p)} por cento`;
+
 
 /** Só aparece quando a etapa foi realmente concluída */
 const Badge = ({ ok, label }: { ok: boolean; label: string }) =>
@@ -209,6 +255,83 @@ const Rematricula2027Admin = () => {
     setEditando(null);
     carregar();
   };
+
+  const [editandoValores, setEditandoValores] = useState<LinhaAdmin | null>(null);
+  const [salvandoValores, setSalvandoValores] = useState(false);
+  const [formValores, setFormValores] = useState({
+    percentual: "0",
+    percentual_ext: "",
+    valor: "",
+    valor_ext: "",
+  });
+
+  const valoresTravados = editandoValores
+    ? editandoValores.contrato_assinado ||
+      editandoValores.rematricula_concluida ||
+      !!editandoValores.data_pagamento
+    : false;
+
+  const abrirEdicaoValores = (l: LinhaAdmin) => {
+    const p = Number(l.percentual_desconto ?? 0);
+    const v = Number(l.valor_com_desconto ?? 0);
+    setFormValores({
+      percentual: String(p),
+      percentual_ext: percentualExtenso(p),
+      valor: v ? v.toFixed(2) : "",
+      valor_ext: v ? reaisExtenso(v) : "",
+    });
+    setEditandoValores(l);
+  };
+
+  const mudarPercentual = (valorPercentual: string) => {
+    const p = Number(valorPercentual);
+    const cheio = Number(editandoValores?.valor_cheio ?? 0);
+    const sugerido = cheio ? Math.round(cheio * (1 - p / 100) * 100) / 100 : null;
+    setFormValores((f) => ({
+      ...f,
+      percentual: valorPercentual,
+      percentual_ext: percentualExtenso(p),
+      valor: sugerido !== null ? sugerido.toFixed(2) : f.valor,
+      valor_ext: sugerido !== null ? reaisExtenso(sugerido) : f.valor_ext,
+    }));
+  };
+
+  const mudarValor = (v: string) => {
+    const num = Number(v.replace(",", "."));
+    setFormValores((f) => ({
+      ...f,
+      valor: v,
+      valor_ext: Number.isFinite(num) && num > 0 ? reaisExtenso(num) : f.valor_ext,
+    }));
+  };
+
+  const salvarValores = async () => {
+    if (!editandoValores) return;
+    const valorNum = Number(formValores.valor.replace(",", "."));
+    if (!Number.isFinite(valorNum) || valorNum <= 0) {
+      toast.error("Informe uma mensalidade válida.");
+      return;
+    }
+    setSalvandoValores(true);
+    const { data, error } = await supabase.rpc("rematricula_2027_admin_editar_valores", {
+      p_id_aluno: editandoValores.id_aluno,
+      p_percentual_desconto: Number(formValores.percentual),
+      p_percentual_desconto_ext: formValores.percentual_ext || null,
+      p_valor_com_desconto: valorNum,
+      p_valor_com_desconto_ext: formValores.valor_ext || null,
+    });
+    setSalvandoValores(false);
+    const res = (data as { success: boolean; message: string }[] | null)?.[0];
+    if (error || !res?.success) {
+      toast.error(res?.message || "Não foi possível salvar os valores.");
+      return;
+    }
+    toast.success("Valores atualizados.");
+    setEditandoValores(null);
+    carregar();
+  };
+
+
 
 
   useEffect(() => {
@@ -421,7 +544,16 @@ const Rematricula2027Admin = () => {
                         >
                           <Pencil className="w-3 h-3" /> Editar contatos
                         </button>
+                        <br />
+                        <button
+                          type="button"
+                          onClick={() => abrirEdicaoValores(l)}
+                          className="mt-1 inline-flex items-center gap-1 text-xs text-zampieri-green-dark underline"
+                        >
+                          <Pencil className="w-3 h-3" /> Editar valores
+                        </button>
                       </td>
+
 
                       <td className="p-3">
                         {l.curso_2027}
@@ -708,7 +840,118 @@ const Rematricula2027Admin = () => {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <Dialog open={!!editandoValores} onOpenChange={(o) => !o && setEditandoValores(null)}>
+        <DialogContent className="max-w-lg max-h-[85vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Editar valores da rematrícula</DialogTitle>
+            <DialogDescription>
+              {editandoValores?.nome_aluno} · {editandoValores?.curso_2027 || "—"}
+            </DialogDescription>
+          </DialogHeader>
+
+          {editandoValores && (
+            <div className="space-y-4">
+              <div className="rounded-lg bg-zampieri-cream/60 p-3 text-sm">
+                <p>
+                  Valor cheio: <strong>{formatBRL(editandoValores.valor_cheio)}</strong>
+                </p>
+                <p>
+                  Atual: <strong>{Number(editandoValores.percentual_desconto ?? 0)}%</strong> ·{" "}
+                  <strong>{formatBRL(editandoValores.valor_com_desconto)}</strong>/mês
+                </p>
+              </div>
+
+              {valoresTravados && (
+                <p className="rounded-lg bg-amber-100 p-3 text-xs font-medium text-amber-900">
+                  Contrato assinado ou rematrícula paga: os valores não podem mais ser alterados por
+                  aqui. Trate o caso diretamente com a secretaria.
+                </p>
+              )}
+              {!valoresTravados && editandoValores.contrato_gerado && (
+                <p className="rounded-lg bg-amber-100 p-3 text-xs font-medium text-amber-900">
+                  O contrato já foi gerado. Ao salvar, ele será invalidado e precisará ser gerado
+                  novamente com os novos valores.
+                </p>
+              )}
+
+              <div className="space-y-1">
+                <label className="text-xs font-medium text-muted-foreground">
+                  Percentual de desconto
+                </label>
+                <select
+                  disabled={valoresTravados}
+                  value={formValores.percentual}
+                  onChange={(e) => mudarPercentual(e.target.value)}
+                  className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm disabled:opacity-60"
+                >
+                  {Array.from({ length: 13 }, (_, i) => i * 5).map((p) => (
+                    <option key={p} value={p}>
+                      {p}%
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="space-y-1">
+                <label className="text-xs font-medium text-muted-foreground">
+                  Percentual por extenso (contrato)
+                </label>
+                <Input
+                  disabled={valoresTravados}
+                  value={formValores.percentual_ext}
+                  onChange={(e) =>
+                    setFormValores((f) => ({ ...f, percentual_ext: e.target.value }))
+                  }
+                  placeholder="trinta por cento"
+                />
+              </div>
+
+              <div className="space-y-1">
+                <label className="text-xs font-medium text-muted-foreground">
+                  Mensalidade com desconto (R$)
+                </label>
+                <Input
+                  disabled={valoresTravados}
+                  inputMode="decimal"
+                  value={formValores.valor}
+                  onChange={(e) => mudarValor(e.target.value)}
+                  placeholder="Ex: 850.00"
+                />
+              </div>
+
+              <div className="space-y-1">
+                <label className="text-xs font-medium text-muted-foreground">
+                  Mensalidade por extenso (contrato)
+                </label>
+                <Input
+                  disabled={valoresTravados}
+                  value={formValores.valor_ext}
+                  onChange={(e) => setFormValores((f) => ({ ...f, valor_ext: e.target.value }))}
+                  placeholder="oitocentos e cinquenta reais"
+                />
+              </div>
+
+              <p className="text-xs text-muted-foreground">
+                Os textos por extenso são sugeridos automaticamente e podem ser ajustados. As
+                mudanças ficam registradas no histórico de alterações.
+              </p>
+            </div>
+          )}
+
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setEditandoValores(null)}>
+              Cancelar
+            </Button>
+            <Button disabled={salvandoValores || valoresTravados} onClick={salvarValores}>
+              {salvandoValores && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
+              Salvar valores
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </main>
+
 
   );
 };
