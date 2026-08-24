@@ -140,7 +140,9 @@ export const StepResponsavel = ({
   };
 
   const cpfInvalidoLive = onlyDigits(form.cpf).length === 11 && !isValidCpf(form.cpf);
-  const cpfCadastradoInvalido = !travados.cpf && cpfInvalidoLive;
+  // CPF que já veio da base com número incorreto (ainda não editado pela família)
+  const cpfCadastradoInvalido = cpfInvalidoLive && form.cpf === cpfOriginal;
+  const cpfDigitadoInvalido = cpfInvalidoLive && !cpfCadastradoInvalido;
 
   const campo = (
     key: keyof ResponsavelForm,
