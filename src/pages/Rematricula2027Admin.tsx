@@ -271,6 +271,16 @@ const Rematricula2027Admin = () => {
       !!editandoValores.data_pagamento
     : false;
 
+  const opcoesPercentual = useMemo(() => {
+    const base = Array.from({ length: 41 }, (_, i) => i + 10);
+    const atual = Number(editandoValores?.percentual_desconto ?? 0);
+    if (Number.isFinite(atual) && atual > 0 && !base.includes(atual)) {
+      return [atual, ...base].sort((a, b) => a - b);
+    }
+    return base;
+  }, [editandoValores]);
+
+
   const abrirEdicaoValores = (l: LinhaAdmin) => {
     const p = Number(l.percentual_desconto ?? 0);
     const v = Number(l.valor_com_desconto ?? 0);
@@ -885,7 +895,7 @@ const Rematricula2027Admin = () => {
                   onChange={(e) => mudarPercentual(e.target.value)}
                   className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm disabled:opacity-60"
                 >
-                  {Array.from({ length: 13 }, (_, i) => i * 5).map((p) => (
+                  {opcoesPercentual.map((p) => (
                     <option key={p} value={p}>
                       {p}%
                     </option>
