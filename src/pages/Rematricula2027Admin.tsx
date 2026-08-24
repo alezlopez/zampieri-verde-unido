@@ -256,6 +256,83 @@ const Rematricula2027Admin = () => {
     carregar();
   };
 
+  const [editandoValores, setEditandoValores] = useState<LinhaAdmin | null>(null);
+  const [salvandoValores, setSalvandoValores] = useState(false);
+  const [formValores, setFormValores] = useState({
+    percentual: "0",
+    percentual_ext: "",
+    valor: "",
+    valor_ext: "",
+  });
+
+  const valoresTravados = editandoValores
+    ? editandoValores.contrato_assinado ||
+      editandoValores.rematricula_concluida ||
+      !!editandoValores.data_pagamento
+    : false;
+
+  const abrirEdicaoValores = (l: LinhaAdmin) => {
+    const p = Number(l.percentual_desconto ?? 0);
+    const v = Number(l.valor_com_desconto ?? 0);
+    setFormValores({
+      percentual: String(p),
+      percentual_ext: percentualExtenso(p),
+      valor: v ? v.toFixed(2) : "",
+      valor_ext: v ? reaisExtenso(v) : "",
+    });
+    setEditandoValores(l);
+  };
+
+  const mudarPercentual = (valorPercentual: string) => {
+    const p = Number(valorPercentual);
+    const cheio = Number(editandoValores?.valor_cheio ?? 0);
+    const sugerido = cheio ? Math.round(cheio * (1 - p / 100) * 100) / 100 : null;
+    setFormValores((f) => ({
+      ...f,
+      percentual: valorPercentual,
+      percentual_ext: percentualExtenso(p),
+      valor: sugerido !== null ? sugerido.toFixed(2) : f.valor,
+      valor_ext: sugerido !== null ? reaisExtenso(sugerido) : f.valor_ext,
+    }));
+  };
+
+  const mudarValor = (v: string) => {
+    const num = Number(v.replace(",", "."));
+    setFormValores((f) => ({
+      ...f,
+      valor: v,
+      valor_ext: Number.isFinite(num) && num > 0 ? reaisExtenso(num) : f.valor_ext,
+    }));
+  };
+
+  const salvarValores = async () => {
+    if (!editandoValores) return;
+    const valorNum = Number(formValores.valor.replace(",", "."));
+    if (!Number.isFinite(valorNum) || valorNum <= 0) {
+      toast.error("Informe uma mensalidade válida.");
+      return;
+    }
+    setSalvandoValores(true);
+    const { data, error } = await supabase.rpc("rematricula_2027_admin_editar_valores", {
+      p_id_aluno: editandoValores.id_aluno,
+      p_percentual_desconto: Number(formValores.percentual),
+      p_percentual_desconto_ext: formValores.percentual_ext || null,
+      p_valor_com_desconto: valorNum,
+      p_valor_com_desconto_ext: formValores.valor_ext || null,
+    });
+    setSalvandoValores(false);
+    const res = (data as { success: boolean; message: string }[] | null)?.[0];
+    if (error || !res?.success) {
+      toast.error(res?.message || "Não foi possível salvar os valores.");
+      return;
+    }
+    toast.success("Valores atualizados.");
+    setEditandoValores(null);
+    carregar();
+  };
+
+
+
 
   useEffect(() => {
     document.title = "Rematrícula 2027 — Administração";
