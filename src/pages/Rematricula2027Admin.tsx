@@ -1181,7 +1181,77 @@ const Rematricula2027Admin = () => {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <Dialog open={!!cancelando} onOpenChange={(o) => !o && setCancelando(null)}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle>Cancelar rematrícula</DialogTitle>
+            <DialogDescription>
+              {cancelando?.nome_aluno} · ID {cancelando?.id_aluno}
+            </DialogDescription>
+          </DialogHeader>
+
+          {cancelando && (
+            <div className="space-y-4">
+              <ul className="space-y-1 rounded-md bg-destructive/5 p-3 text-sm text-foreground">
+                <li>
+                  •{" "}
+                  {cancelando.valor_pago
+                    ? `Estorno do valor pago (${formatBRL(cancelando.valor_pago)}) no Asaas`
+                    : "Nenhum pagamento confirmado — nada será estornado"}
+                </li>
+                <li>
+                  •{" "}
+                  {cancelando.contrato_gerado || cancelando.contrato_assinado
+                    ? "Cancelamento do contrato na ZapSign"
+                    : "Nenhum contrato gerado"}
+                </li>
+                <li>• A família volta ao início e pode refazer a rematrícula</li>
+              </ul>
+
+              <div className="space-y-1">
+                <label className="text-xs font-medium text-muted-foreground">
+                  Motivo do cancelamento
+                </label>
+                <Input
+                  value={motivoCancel}
+                  onChange={(e) => setMotivoCancel(e.target.value)}
+                  placeholder="Ex: solicitação da família"
+                />
+              </div>
+
+              <div className="space-y-1">
+                <label className="text-xs font-medium text-muted-foreground">
+                  Digite CANCELAR para confirmar
+                </label>
+                <Input
+                  value={confirmaCancel}
+                  onChange={(e) => setConfirmaCancel(e.target.value.toUpperCase())}
+                  placeholder="CANCELAR"
+                />
+              </div>
+            </div>
+          )}
+
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setCancelando(null)}>
+              Voltar
+            </Button>
+            <Button
+              variant="destructive"
+              disabled={
+                executandoCancel || motivoCancel.trim().length < 3 || confirmaCancel !== "CANCELAR"
+              }
+              onClick={executarCancelamento}
+            >
+              {executandoCancel && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
+              Confirmar cancelamento
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </main>
+
 
 
   );
