@@ -2787,6 +2787,8 @@ export type Database = {
         Args: never
         Returns: {
           alteracoes: Json
+          cancelada: boolean
+          cancelada_em: string
           celular_mae: string
           celular_pai: string
           checkout_criado_em: string
@@ -2802,9 +2804,12 @@ export type Database = {
           data_pagamento: string
           email_mae: string
           email_pai: string
+          estorno_em: string
+          estorno_valor: number
           forma_pagamento: string
           id_aluno: number
           link_contrato: string
+          motivo_cancelamento: string
           nome_aluno: string
           nome_mae: string
           nome_pai: string
