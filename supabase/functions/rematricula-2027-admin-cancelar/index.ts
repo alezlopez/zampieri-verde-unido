@@ -162,12 +162,12 @@ Deno.serve(async (req) => {
     }).then(() => null, () => null);
 
     await admin.rpc("notificar_admin", {
-      p_setor: "rematricula",
-      p_tipo: "rematricula_cancelada",
-      p_titulo: "Rematrícula cancelada",
-      p_descricao: `${aluno.nome_aluno} — ${motivo}`,
-      p_link: "/admin/rematriculas",
-      p_ref_id: String(idAluno),
+      _setor: "rematricula",
+      _tipo: "rematricula_cancelada",
+      _titulo: "Rematrícula cancelada",
+      _descricao: `${aluno.nome_aluno} — ${motivo}`,
+      _link: "/admin/rematriculas",
+      _ref_id: String(idAluno),
     }).then(() => null, () => null);
 
     return json({
