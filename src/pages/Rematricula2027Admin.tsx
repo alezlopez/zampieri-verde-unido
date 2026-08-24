@@ -885,9 +885,9 @@ const Rematricula2027Admin = () => {
               </div>
               <div className="rounded-lg border border-border p-3">
                 <p className="text-xs text-muted-foreground mb-1">
-                  Alterações de dados ({revisando.qtd_alteracoes})
+                  Alterações de dados ({alteracoesReais(revisando.alteracoes).length})
                 </p>
-                {revisando.alteracoes.length === 0 ? (
+                {alteracoesReais(revisando.alteracoes).length === 0 ? (
                   <p className="text-xs text-muted-foreground">
                     Nenhuma alteração registrada pela família.
                   </p>
