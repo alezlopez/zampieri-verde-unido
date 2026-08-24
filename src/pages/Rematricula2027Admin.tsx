@@ -104,15 +104,32 @@ const LABEL_CAMPO: Record<string, string> = {
 
 };
 
-const Badge = ({ ok, label }: { ok: boolean; label: string }) => (
-  <span
-    className={`inline-block rounded px-2 py-0.5 text-xs font-medium ${
-      ok ? "bg-zampieri-cream text-zampieri-green-dark" : "bg-muted text-muted-foreground"
-    }`}
-  >
-    {label}
-  </span>
-);
+/** Só aparece quando a etapa foi realmente concluída */
+const Badge = ({ ok, label }: { ok: boolean; label: string }) =>
+  ok ? (
+    <span className="inline-block rounded bg-zampieri-green-dark px-2 py-0.5 text-xs font-medium text-white">
+      {label}
+    </span>
+  ) : null;
+
+const Situacao = ({
+  gerado,
+  assinado,
+  pago,
+}: {
+  gerado: boolean;
+  assinado: boolean;
+  pago: boolean;
+}) =>
+  gerado || assinado || pago ? (
+    <span className="space-x-1">
+      <Badge ok={gerado} label="Gerado" />
+      <Badge ok={assinado} label="Assinado" />
+      <Badge ok={pago} label="Pago" />
+    </span>
+  ) : (
+    <span className="text-xs text-muted-foreground">Não iniciada</span>
+  );
 
 const respLabel = (r: string | null) => {
   const v = (r || "").toLowerCase();
