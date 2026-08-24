@@ -80,8 +80,9 @@ export const StepResponsavel = ({
   const emailPendente =
     emailAlterado && (verificados.email || "").toLowerCase() !== form.email.trim().toLowerCase();
 
-  // CPF de mãe/pai já cadastrado não pode ser corrigido
-  const naoCorrigivel = (campo: keyof ResponsavelForm) => campo === "cpf";
+  // Todos os campos travados podem ser corrigidos pela família (inclusive o CPF,
+  // já que parte da base foi importada com números incorretos).
+  const naoCorrigivel = (_campo: keyof ResponsavelForm) => false;
 
   const bloqueado = (campo: keyof ResponsavelForm) =>
     !!travados[campo] && (naoCorrigivel(campo) || !editando[campo]);
