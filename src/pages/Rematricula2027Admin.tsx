@@ -102,7 +102,53 @@ const LABEL_CAMPO: Record<string, string> = {
   telefone_mae: "Telefone da mãe",
   email_mae: "E-mail da mãe",
 
+  percentual_desconto: "Percentual de desconto",
+  percentual_desconto_ext: "Percentual por extenso",
+  valor_com_desconto: "Mensalidade com desconto",
+  valor_com_desconto_ext: "Mensalidade por extenso",
 };
+
+/* ---------- número por extenso (pt-BR) ---------- */
+const UNIDADES = ["zero","um","dois","três","quatro","cinco","seis","sete","oito","nove","dez","onze","doze","treze","quatorze","quinze","dezesseis","dezessete","dezoito","dezenove"];
+const DEZENAS = ["","","vinte","trinta","quarenta","cinquenta","sessenta","setenta","oitenta","noventa"];
+const CENTENAS = ["","cento","duzentos","trezentos","quatrocentos","quinhentos","seiscentos","setecentos","oitocentos","novecentos"];
+
+const ateMil = (n: number): string => {
+  if (n === 0) return "";
+  if (n === 100) return "cem";
+  if (n < 20) return UNIDADES[n];
+  if (n < 100) {
+    const d = Math.floor(n / 10);
+    const r = n % 10;
+    return DEZENAS[d] + (r ? ` e ${UNIDADES[r]}` : "");
+  }
+  const c = Math.floor(n / 100);
+  const r = n % 100;
+  return CENTENAS[c] + (r ? ` e ${ateMil(r)}` : "");
+};
+
+const inteiroExtenso = (n: number): string => {
+  if (n === 0) return "zero";
+  const milhares = Math.floor(n / 1000);
+  const resto = n % 1000;
+  const partes: string[] = [];
+  if (milhares === 1) partes.push("mil");
+  else if (milhares > 1) partes.push(`${ateMil(milhares)} mil`);
+  if (resto) partes.push(ateMil(resto));
+  return partes.join(resto && resto < 100 ? " e " : " ");
+};
+
+const reaisExtenso = (valor: number): string => {
+  const inteiro = Math.floor(valor);
+  const centavos = Math.round((valor - inteiro) * 100);
+  const base = `${inteiroExtenso(inteiro)} ${inteiro === 1 ? "real" : "reais"}`;
+  if (!centavos) return base;
+  return `${base} e ${inteiroExtenso(centavos)} ${centavos === 1 ? "centavo" : "centavos"}`;
+};
+
+const percentualExtenso = (p: number): string =>
+  `${inteiroExtenso(p)} por cento`;
+
 
 /** Só aparece quando a etapa foi realmente concluída */
 const Badge = ({ ok, label }: { ok: boolean; label: string }) =>
