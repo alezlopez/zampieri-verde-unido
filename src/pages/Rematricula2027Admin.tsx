@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
-import { formatBRL, maskCpf, maskTelefone } from "@/components/rematricula/utils";
+import { formatBRL, isValidCpf, maskCpf, maskTelefone } from "@/components/rematricula/utils";
 
 import { toast } from "sonner";
 import {
@@ -59,7 +59,7 @@ interface LinhaAdmin {
   alteracoes: Alteracao[];
 }
 
-type Filtro = "todos" | "concluidas" | "a_conferir" | "conferidas" | "assinados" | "pendentes";
+type Filtro = "todos" | "concluidas" | "a_conferir" | "conferidas" | "assinados" | "pendentes" | "cpf_invalido";
 
 const LABEL_CAMPO: Record<string, string> = {
   cpf_aluno: "CPF do aluno",
