@@ -203,14 +203,67 @@ const GRUPOS: { chave: string; titulo: string; teste: (campo: string) => boolean
 
 const grupoDe = (campo: string) => GRUPOS.find((g) => g.teste(campo)) ?? GRUPOS[GRUPOS.length - 1];
 
-const ListaAlteracoes = ({ itens }: { itens: Alteracao[] }) => {
+/* ---------- equivalência de valores (ignora diferença só de formatação) ---------- */
+const soDigitos = (v: string) => v.replace(/\D+/g, "");
+
+const CAMPOS_NUMERICOS = /(cpf|rg|cep|celular|telefone)/;
+const CAMPOS_DATA = /^data_nascimento_/;
+const CAMPOS_VALOR = /^(percentual_desconto|valor_com_desconto)$/;
+
+const normTexto = (v: string) =>
+  v
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/\s+/g, " ")
+    .trim()
+    .toLowerCase();
+
+const parseData = (v: string): string | null => {
+  const t = v.trim();
+  const iso = t.match(/^(\d{4})-(\d{2})-(\d{2})/);
+  if (iso) return `${iso[1]}-${iso[2]}-${iso[3]}`;
+  const br = t.match(/^(\d{2})[/-](\d{2})[/-](\d{4})/);
+  if (br) return `${br[3]}-${br[2]}-${br[1]}`;
+  return null;
+};
+
+/** true quando anterior e novo representam o mesmo dado (só mudou a formatação) */
+const mesmoValor = (campo: string, anterior: string | null, novo: string | null) => {
+  const a = (anterior ?? "").trim();
+  const b = (novo ?? "").trim();
+  if (!a && !b) return true;
+  if (!a || !b) return false;
+  if (a === b) return true;
+
+  if (CAMPOS_NUMERICOS.test(campo)) return soDigitos(a) === soDigitos(b) && soDigitos(a) !== "";
+  if (CAMPOS_DATA.test(campo)) {
+    const da = parseData(a);
+    const db = parseData(b);
+    return !!da && da === db;
+  }
+  if (CAMPOS_VALOR.test(campo)) {
+    const na = Number(a.replace(/[^\d,.-]/g, "").replace(",", "."));
+    const nb = Number(b.replace(/[^\d,.-]/g, "").replace(",", "."));
+    return Number.isFinite(na) && Number.isFinite(nb) && Math.abs(na - nb) < 0.005;
+  }
+  return normTexto(a) === normTexto(b);
+};
+
+/** alterações reais: descarta as que são só diferença de formatação */
+const alteracoesReais = (itens: Alteracao[]) =>
+  itens.filter((a) => !mesmoValor(a.campo, a.valor_anterior, a.valor_novo));
+
+const ListaAlteracoes = ({ itens: brutos }: { itens: Alteracao[] }) => {
   const [modo, setModo] = useState<"todos" | "corrigidos" | "preenchidos">("todos");
+
+  const itens = alteracoesReais(brutos);
 
   const ehPreenchido = (a: Alteracao) => !a.valor_anterior || !a.valor_anterior.trim();
 
   const filtrados = itens.filter((a) =>
     modo === "todos" ? true : modo === "preenchidos" ? ehPreenchido(a) : !ehPreenchido(a),
   );
+
 
   const totalCorrigidos = itens.filter((a) => !ehPreenchido(a)).length;
   const totalPreenchidos = itens.length - totalCorrigidos;
