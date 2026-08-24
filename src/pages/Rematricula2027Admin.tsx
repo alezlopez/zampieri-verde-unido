@@ -719,7 +719,10 @@ const Rematricula2027Admin = () => {
               <div className="rounded-lg border border-border p-3">
                 <p className="text-xs text-muted-foreground">Pagamento</p>
                 <p className="font-medium">
-                  {formatBRL(revisando.valor_pago)} ·{" "}
+                  {revisando.valor_pago == null
+                    ? "Valor não informado"
+                    : formatBRL(revisando.valor_pago)}{" "}
+                  ·{" "}
                   {revisando.forma_pagamento === "pix" ? "PIX" : "Cartão"}
                   {revisando.parcelas && revisando.parcelas > 1 ? ` ${revisando.parcelas}x` : ""}
                 </p>
