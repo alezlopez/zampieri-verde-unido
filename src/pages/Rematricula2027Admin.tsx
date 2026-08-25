@@ -428,7 +428,7 @@ const Rematricula2027Admin = () => {
     : false;
 
   const opcoesPercentual = useMemo(() => {
-    const base = Array.from({ length: 41 }, (_, i) => i + 10);
+    const base = Array.from({ length: 56 }, (_, i) => i + 5);
     const atual = Number(editandoValores?.percentual_desconto ?? 0);
     if (Number.isFinite(atual) && atual > 0 && !base.includes(atual)) {
       return [atual, ...base].sort((a, b) => a - b);
