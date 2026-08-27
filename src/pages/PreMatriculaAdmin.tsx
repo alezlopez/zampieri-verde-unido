@@ -133,6 +133,9 @@ const PreMatriculaAdmin = () => {
     const t = busca.trim().toLowerCase();
     return lista.filter((p) => {
       if (filtro !== "todos" && p.status !== filtro) return false;
+      // Entrevista concluída já migra para "Matrículas em andamento":
+      // só aparece aqui via filtro específico ou busca por texto.
+      if (filtro === "todos" && !t && p.status === "entrevista_concluida") return false;
       if (!t) return true;
       return (
         p.aluno_nome.toLowerCase().includes(t) ||
