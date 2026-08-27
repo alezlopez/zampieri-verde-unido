@@ -133,6 +133,9 @@ const PreMatriculaAdmin = () => {
     const t = busca.trim().toLowerCase();
     return lista.filter((p) => {
       if (filtro !== "todos" && p.status !== filtro) return false;
+      // Entrevista concluída já migra para "Matrículas em andamento":
+      // só aparece aqui via filtro específico ou busca por texto.
+      if (filtro === "todos" && !t && p.status === "entrevista_concluida") return false;
       if (!t) return true;
       return (
         p.aluno_nome.toLowerCase().includes(t) ||
@@ -227,10 +230,10 @@ const PreMatriculaAdmin = () => {
               <SelectValue />
             </SelectTrigger>
             <SelectContent className="bg-background z-50">
-              <SelectItem value="todos">Todos os status</SelectItem>
+              <SelectItem value="todos">Em andamento (todos)</SelectItem>
               {Object.entries(STATUS_LABEL).map(([k, v]) => (
                 <SelectItem key={k} value={k}>
-                  {v}
+                  {k === "entrevista_concluida" ? "Entrevista concluída (já em matrícula)" : v}
                 </SelectItem>
               ))}
             </SelectContent>
