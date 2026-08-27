@@ -230,10 +230,10 @@ const PreMatriculaAdmin = () => {
               <SelectValue />
             </SelectTrigger>
             <SelectContent className="bg-background z-50">
-              <SelectItem value="todos">Todos os status</SelectItem>
+              <SelectItem value="todos">Em andamento (todos)</SelectItem>
               {Object.entries(STATUS_LABEL).map(([k, v]) => (
                 <SelectItem key={k} value={k}>
-                  {v}
+                  {k === "entrevista_concluida" ? "Entrevista concluída (já em matrícula)" : v}
                 </SelectItem>
               ))}
             </SelectContent>
