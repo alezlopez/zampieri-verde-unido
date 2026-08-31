@@ -84,7 +84,11 @@ Deno.serve(async (req) => {
         .from("alunos_rematricula_2027")
         .update({ contrato_assinado: true })
         .eq("id_aluno", idAluno);
+
+      // Aluno isento do valor de rematrícula: conclui direto após a assinatura
+      await concluirRematriculaIsenta(supabase, idAluno);
     }
+
 
 
     return json({
