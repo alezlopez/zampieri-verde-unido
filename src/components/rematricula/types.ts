@@ -60,6 +60,7 @@ export interface AlunoCompleto {
   rematricula_concluida?: boolean | null;
   checkout_url?: string | null;
   forma_pagamento?: string | null;
+  isentar_valor_rematricula?: boolean | null;
 
 }
 
