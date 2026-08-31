@@ -499,6 +499,29 @@ const Rematricula2027Admin = () => {
     carregar();
   };
 
+  const [salvandoIsencao, setSalvandoIsencao] = useState(false);
+
+  const alternarIsencao = async (isento: boolean) => {
+    if (!editandoValores) return;
+    setSalvandoIsencao(true);
+    const { data, error } = await supabase.rpc("rematricula_2027_admin_isentar", {
+      p_id_aluno: editandoValores.id_aluno,
+      p_isento: isento,
+    });
+    setSalvandoIsencao(false);
+    const res = (data as { ok: boolean; mensagem: string }[] | null)?.[0];
+    if (error || !res?.ok) {
+      toast.error(res?.mensagem || "Não foi possível alterar a isenção.");
+      return;
+    }
+    toast.success(res.mensagem);
+    setEditandoValores((atual) =>
+      atual ? { ...atual, isentar_valor_rematricula: isento } : atual,
+    );
+    carregar();
+  };
+
+
   // ---- Cancelamento da rematrícula (estorno + contrato + reset) ----
   const [cancelando, setCancelando] = useState<LinhaAdmin | null>(null);
   const [motivoCancel, setMotivoCancel] = useState("");
