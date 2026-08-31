@@ -1118,6 +1118,28 @@ const Rematricula2027Admin = () => {
                 </p>
               </div>
 
+              <div className="flex items-start justify-between gap-3 rounded-lg border border-border p-3">
+                <div>
+                  <p className="text-sm font-medium text-zampieri-green-dark">
+                    Isentar valor da rematrícula
+                  </p>
+                  <p className="text-xs text-muted-foreground">
+                    Sem cobrança: a rematrícula é concluída assim que o contrato for assinado.
+                  </p>
+                </div>
+                <Switch
+                  checked={!!editandoValores.isentar_valor_rematricula}
+                  disabled={
+                    salvandoIsencao ||
+                    editandoValores.rematricula_concluida ||
+                    !!editandoValores.data_pagamento
+                  }
+                  onCheckedChange={(v) => alternarIsencao(v)}
+                />
+              </div>
+
+
+
               {valoresTravados && (
                 <p className="rounded-lg bg-amber-100 p-3 text-xs font-medium text-amber-900">
                   Contrato assinado ou rematrícula paga: os valores não podem mais ser alterados por
