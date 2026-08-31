@@ -1,6 +1,7 @@
 import { createClient } from "npm:@supabase/supabase-js@2";
 import { corsHeaders } from "../_shared/cors.ts";
 import { assinarEmLote } from "../_shared/zapsign-lote.ts";
+import { concluirRematriculaIsenta } from "../_shared/rematricula-isencao.ts";
 
 
 /**
