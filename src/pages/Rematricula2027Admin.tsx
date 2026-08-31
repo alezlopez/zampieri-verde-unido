@@ -70,6 +70,7 @@ type Filtro = "todos" | "concluidas" | "a_conferir" | "conferidas" | "assinados"
 
 const LABEL_CAMPO: Record<string, string> = {
   cpf_aluno: "CPF do aluno",
+  isentar_valor_rematricula: "Isenção do valor de rematrícula",
   curso_2027: "Curso 2027",
   turno_escolhido: "Turno",
   responsavel_financeiro: "Responsável financeiro",
