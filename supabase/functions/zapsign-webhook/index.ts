@@ -150,6 +150,9 @@ Deno.serve(async (req) => {
       return json({ error: "Falha ao atualizar" }, 500);
     }
 
+    // Aluno isento do valor de rematrícula: conclui direto após a assinatura
+    await concluirRematriculaIsenta(supabase, idReal);
+
     return json({ ok: true, id_aluno: idReal });
   } catch (e) {
     console.error("zapsign-webhook", e);
