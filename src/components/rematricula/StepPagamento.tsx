@@ -9,6 +9,7 @@ export interface StatusRematricula {
   valor_avista: number | null;
   valor_parcelado: number | null;
   max_parcelas: number | null;
+  isentar_valor_rematricula?: boolean | null;
 }
 
 interface Props {
