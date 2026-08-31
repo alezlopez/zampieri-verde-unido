@@ -9,6 +9,7 @@ export interface StatusRematricula {
   valor_avista: number | null;
   valor_parcelado: number | null;
   max_parcelas: number | null;
+  isentar_valor_rematricula?: boolean | null;
 }
 
 interface Props {
@@ -111,6 +112,34 @@ export const StepPagamento = ({
     );
   }
 
+
+  if (status?.isentar_valor_rematricula) {
+    return (
+      <div className="rounded-lg border border-zampieri-green-dark bg-zampieri-cream/60 p-4 space-y-3 text-left">
+        <div className="flex items-start gap-2">
+          <CheckCircle2 className="w-5 h-5 text-zampieri-green-dark shrink-0 mt-0.5" />
+          <div>
+            <p className="text-sm font-semibold text-zampieri-green-dark">
+              Rematrícula isenta de taxa — nada a pagar.
+            </p>
+            <p className="text-sm text-muted-foreground">
+              {status.contrato_assinado
+                ? "Assinatura recebida. Estamos finalizando sua rematrícula."
+                : "Basta assinar o contrato para concluir a rematrícula."}
+            </p>
+          </div>
+        </div>
+        <Button variant="outline" size="sm" className="w-full" onClick={onVerificar} disabled={verificando}>
+          {verificando ? (
+            <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+          ) : (
+            <RefreshCw className="w-4 h-4 mr-2" />
+          )}
+          Já assinei — verificar
+        </Button>
+      </div>
+    );
+  }
 
   if (!status?.contrato_assinado) {
     return (

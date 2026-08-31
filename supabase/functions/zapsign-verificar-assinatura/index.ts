@@ -1,6 +1,7 @@
 import { createClient } from "npm:@supabase/supabase-js@2";
 import { corsHeaders } from "../_shared/cors.ts";
 import { assinarEmLote } from "../_shared/zapsign-lote.ts";
+import { concluirRematriculaIsenta } from "../_shared/rematricula-isencao.ts";
 
 
 /**
@@ -83,7 +84,11 @@ Deno.serve(async (req) => {
         .from("alunos_rematricula_2027")
         .update({ contrato_assinado: true })
         .eq("id_aluno", idAluno);
+
+      // Aluno isento do valor de rematrícula: conclui direto após a assinatura
+      await concluirRematriculaIsenta(supabase, idAluno);
     }
+
 
 
     return json({

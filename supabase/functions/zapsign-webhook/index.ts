@@ -2,6 +2,7 @@ import { createClient } from "npm:@supabase/supabase-js@2";
 import { corsHeaders } from "npm:@supabase/supabase-js@2/cors";
 import { concluirMatriculaGratuita } from "../_shared/matricula-contrato.ts";
 import { notificar } from "../_shared/prematricula-mensagens.ts";
+import { concluirRematriculaIsenta } from "../_shared/rematricula-isencao.ts";
 
 const json = (body: unknown, status = 200) =>
   new Response(JSON.stringify(body), {
@@ -148,6 +149,9 @@ Deno.serve(async (req) => {
       console.error("zapsign-webhook update erro", error);
       return json({ error: "Falha ao atualizar" }, 500);
     }
+
+    // Aluno isento do valor de rematrícula: conclui direto após a assinatura
+    await concluirRematriculaIsenta(supabase, idReal);
 
     return json({ ok: true, id_aluno: idReal });
   } catch (e) {

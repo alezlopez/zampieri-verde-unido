@@ -15,6 +15,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { Switch } from "@/components/ui/switch";
 
 interface Alteracao {
   campo: string;
@@ -59,6 +60,7 @@ interface LinhaAdmin {
   motivo_cancelamento?: string | null;
   estorno_valor?: number | null;
   estorno_em?: string | null;
+  isentar_valor_rematricula?: boolean | null;
 
   qtd_alteracoes: number;
   alteracoes: Alteracao[];
@@ -69,6 +71,7 @@ type Filtro = "todos" | "concluidas" | "a_conferir" | "conferidas" | "assinados"
 
 const LABEL_CAMPO: Record<string, string> = {
   cpf_aluno: "CPF do aluno",
+  isentar_valor_rematricula: "Isenção do valor de rematrícula",
   curso_2027: "Curso 2027",
   turno_escolhido: "Turno",
   responsavel_financeiro: "Responsável financeiro",
@@ -497,6 +500,29 @@ const Rematricula2027Admin = () => {
     carregar();
   };
 
+  const [salvandoIsencao, setSalvandoIsencao] = useState(false);
+
+  const alternarIsencao = async (isento: boolean) => {
+    if (!editandoValores) return;
+    setSalvandoIsencao(true);
+    const { data, error } = await supabase.rpc("rematricula_2027_admin_isentar", {
+      p_id_aluno: editandoValores.id_aluno,
+      p_isento: isento,
+    });
+    setSalvandoIsencao(false);
+    const res = (data as { ok: boolean; mensagem: string }[] | null)?.[0];
+    if (error || !res?.ok) {
+      toast.error(res?.mensagem || "Não foi possível alterar a isenção.");
+      return;
+    }
+    toast.success(res.mensagem);
+    setEditandoValores((atual) =>
+      atual ? { ...atual, isentar_valor_rematricula: isento } : atual,
+    );
+    carregar();
+  };
+
+
   // ---- Cancelamento da rematrícula (estorno + contrato + reset) ----
   const [cancelando, setCancelando] = useState<LinhaAdmin | null>(null);
   const [motivoCancel, setMotivoCancel] = useState("");
@@ -764,6 +790,11 @@ const Rematricula2027Admin = () => {
                         >
                           <Ban className="w-3 h-3" /> Cancelar rematrícula
                         </button>
+                        {l.isentar_valor_rematricula && (
+                          <p className="mt-1 inline-block rounded bg-zampieri-cream px-2 py-0.5 text-xs font-semibold text-zampieri-green-dark">
+                            Isento
+                          </p>
+                        )}
                         {l.cancelada && (
                           <p className="mt-1 rounded bg-destructive/10 px-2 py-0.5 text-xs text-destructive">
                             Cancelada
@@ -1092,6 +1123,28 @@ const Rematricula2027Admin = () => {
                   <strong>{formatBRL(editandoValores.valor_com_desconto)}</strong>/mês
                 </p>
               </div>
+
+              <div className="flex items-start justify-between gap-3 rounded-lg border border-border p-3">
+                <div>
+                  <p className="text-sm font-medium text-zampieri-green-dark">
+                    Isentar valor da rematrícula
+                  </p>
+                  <p className="text-xs text-muted-foreground">
+                    Sem cobrança: a rematrícula é concluída assim que o contrato for assinado.
+                  </p>
+                </div>
+                <Switch
+                  checked={!!editandoValores.isentar_valor_rematricula}
+                  disabled={
+                    salvandoIsencao ||
+                    editandoValores.rematricula_concluida ||
+                    !!editandoValores.data_pagamento
+                  }
+                  onCheckedChange={(v) => alternarIsencao(v)}
+                />
+              </div>
+
+
 
               {valoresTravados && (
                 <p className="rounded-lg bg-amber-100 p-3 text-xs font-medium text-amber-900">

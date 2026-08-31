@@ -179,6 +179,7 @@ export type Database = {
           estorno_valor: number | null
           forma_pagamento: string | null
           id_aluno: number
+          isentar_valor_rematricula: boolean
           link_contrato: string | null
           logradouro_mae: string | null
           logradouro_pai: string | null
@@ -262,6 +263,7 @@ export type Database = {
           estorno_valor?: number | null
           forma_pagamento?: string | null
           id_aluno: number
+          isentar_valor_rematricula?: boolean
           link_contrato?: string | null
           logradouro_mae?: string | null
           logradouro_pai?: string | null
@@ -345,6 +347,7 @@ export type Database = {
           estorno_valor?: number | null
           forma_pagamento?: string | null
           id_aluno?: number
+          isentar_valor_rematricula?: boolean
           link_contrato?: string | null
           logradouro_mae?: string | null
           logradouro_pai?: string | null
@@ -2723,6 +2726,7 @@ export type Database = {
           estado_pai: string
           forma_pagamento: string
           id_aluno: number
+          isentar_valor_rematricula: boolean
           link_contrato: string
           logradouro_mae: string
           logradouro_pai: string
@@ -2783,6 +2787,13 @@ export type Database = {
           success: boolean
         }[]
       }
+      rematricula_2027_admin_isentar: {
+        Args: { p_id_aluno: number; p_isento: boolean }
+        Returns: {
+          mensagem: string
+          ok: boolean
+        }[]
+      }
       rematricula_2027_admin_listagem: {
         Args: never
         Returns: {
@@ -2808,6 +2819,7 @@ export type Database = {
           estorno_valor: number
           forma_pagamento: string
           id_aluno: number
+          isentar_valor_rematricula: boolean
           link_contrato: string
           motivo_cancelamento: string
           nome_aluno: string
@@ -2888,6 +2900,7 @@ export type Database = {
           contrato_assinado: boolean
           contrato_gerado: boolean
           forma_pagamento: string
+          isentar_valor_rematricula: boolean
           link_contrato: string
           max_parcelas: number
           parcelas: number

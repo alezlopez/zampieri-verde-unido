@@ -82,6 +82,9 @@ Deno.serve(async (req) => {
     if (aluno.rematricula_concluida) {
       return json({ error: "ja_pago" }, 409);
     }
+    if (aluno.isentar_valor_rematricula) {
+      return json({ error: "rematricula_isenta" }, 409);
+    }
 
     // Reaproveita checkout válido com a mesma configuração
     const criado = aluno.checkout_criado_em ? new Date(aluno.checkout_criado_em).getTime() : 0;
