@@ -790,6 +790,11 @@ const Rematricula2027Admin = () => {
                         >
                           <Ban className="w-3 h-3" /> Cancelar rematrícula
                         </button>
+                        {l.isentar_valor_rematricula && (
+                          <p className="mt-1 inline-block rounded bg-zampieri-cream px-2 py-0.5 text-xs font-semibold text-zampieri-green-dark">
+                            Isento
+                          </p>
+                        )}
                         {l.cancelada && (
                           <p className="mt-1 rounded bg-destructive/10 px-2 py-0.5 text-xs text-destructive">
                             Cancelada
