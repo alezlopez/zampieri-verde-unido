@@ -59,6 +59,7 @@ interface LinhaAdmin {
   motivo_cancelamento?: string | null;
   estorno_valor?: number | null;
   estorno_em?: string | null;
+  isentar_valor_rematricula?: boolean | null;
 
   qtd_alteracoes: number;
   alteracoes: Alteracao[];
