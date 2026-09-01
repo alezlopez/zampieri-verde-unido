@@ -407,7 +407,58 @@ const Rematricula2027Followup = () => {
                         </a>
                       )}
                     </div>
+
+                    {ETAPA_TEMPLATE[etapa] && (
+                      <div className="pt-2 mt-2 border-t border-border space-y-2">
+                        <div className="flex md:justify-end flex-wrap items-center gap-2">
+                          {[1, 2, 3].map((s) => {
+                            const env = (l.followup_envios ?? []).find(
+                              (e) => e.etapa === ETAPA_TEMPLATE[etapa] && e.sequencia === s,
+                            );
+                            return (
+                              <Button
+                                key={s}
+                                size="sm"
+                                variant={env ? "secondary" : "outline"}
+                                className="h-7 px-2 text-[11px]"
+                                disabled={enviando === `${l.id_aluno}-${s}`}
+                                onClick={() => reenviar(l, s)}
+                                title={env ? `Enviada em ${dataHora(env.enviado_em)}` : "Enviar agora"}
+                              >
+                                {enviando === `${l.id_aluno}-${s}` ? (
+                                  <Loader2 className="w-3 h-3 mr-1 animate-spin" />
+                                ) : (
+                                  <Send className="w-3 h-3 mr-1" />
+                                )}
+                                Msg {s}
+                                {env ? ` · ${dataHora(env.enviado_em)}` : ""}
+                              </Button>
+                            );
+                          })}
+                        </div>
+                        {etapa === "nao_pagou" && l.prazo_cancelamento_em && (
+                          <p
+                            className={`text-xs inline-flex items-center gap-1 ${
+                              horasAte(l.prazo_cancelamento_em) < 24
+                                ? "font-semibold text-red-700"
+                                : "text-muted-foreground"
+                            }`}
+                          >
+                            <AlarmClock className="w-3 h-3" />
+                            Cancelamento automático em {dataHora(l.prazo_cancelamento_em)}
+                          </p>
+                        )}
+                        <label className="flex md:justify-end items-center gap-2 text-xs text-muted-foreground">
+                          <Switch
+                            checked={!!l.followup_pausado}
+                            onCheckedChange={(v) => alternarPausa(l, v)}
+                          />
+                          Pausar follow-up
+                        </label>
+                      </div>
+                    )}
                   </div>
+
                 </div>
               );
             })}
