@@ -170,7 +170,7 @@ export const StepPagamento = ({
     );
   }
 
-  const pagar = async () => {
+  const pagar = async (forcarNovo = false) => {
     setEnviando(true);
     setErro(null);
     const { data, error } = await supabase.functions.invoke("rematricula-2027-checkout", {
@@ -180,6 +180,7 @@ export const StepPagamento = ({
         forma_pagamento: opcao === "pix" ? "pix" : "credit_card",
         parcelas: opcao === "credito_parcelado" ? parcelas : 1,
         origin: window.location.origin,
+        force_regenerate: forcarNovo,
       },
     });
     let res = data as { checkout_url?: string; error?: string } | null;
