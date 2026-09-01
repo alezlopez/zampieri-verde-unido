@@ -1,10 +1,31 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
-import { ArrowLeft, ExternalLink, Loader2, Mail, MessageCircle, RefreshCw, Search } from "lucide-react";
+import {
+  AlarmClock,
+  ArrowLeft,
+  ExternalLink,
+  Loader2,
+  Mail,
+  MessageCircle,
+  RefreshCw,
+  Search,
+  Send,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Switch } from "@/components/ui/switch";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
+import { toast } from "@/hooks/use-toast";
+
+interface EnvioFollowup {
+  etapa: string;
+  sequencia: number;
+  template: string;
+  destino: string | null;
+  sucesso: boolean;
+  enviado_em: string;
+}
 
 interface LinhaFollowup {
   id_aluno: number;
@@ -27,9 +48,21 @@ interface LinhaFollowup {
   nome_mae: string | null;
   celular_mae: string | null;
   email_mae: string | null;
+  cancelada?: boolean | null;
+  followup_pausado?: boolean | null;
+  prazo_cancelamento_em?: string | null;
+  followup_envios?: EnvioFollowup[] | null;
 }
 
 type Etapa = "nao_iniciou" | "preenchendo" | "nao_assinou" | "nao_pagou";
+
+const ETAPA_TEMPLATE: Record<Etapa, "parou" | "assinar" | "pagar" | null> = {
+  nao_iniciou: null,
+  preenchendo: "parou",
+  nao_assinou: "assinar",
+  nao_pagou: "pagar",
+};
+
 
 const ETAPAS: { id: Etapa; titulo: string; descricao: string; cor: string }[] = [
   {
@@ -59,12 +92,18 @@ const ETAPAS: { id: Etapa; titulo: string; descricao: string; cor: string }[] = 
 ];
 
 const etapaDe = (l: LinhaFollowup): Etapa | null => {
-  if (l.rematricula_concluida) return null;
+  if (l.rematricula_concluida || l.cancelada) return null;
   if (l.contrato_assinado) return "nao_pagou";
   if (l.contrato_gerado) return "nao_assinou";
   if (l.qtd_alteracoes > 0 || l.turno_escolhido) return "preenchendo";
   return "nao_iniciou";
 };
+
+const dataHora = (iso: string) =>
+  new Date(iso).toLocaleString("pt-BR", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" });
+
+const horasAte = (iso: string) => (new Date(iso).getTime() - Date.now()) / 3600000;
+
 
 const diasDesde = (iso: string | null) => {
   if (!iso) return null;
@@ -127,6 +166,8 @@ const Rematricula2027Followup = () => {
   const [loading, setLoading] = useState(true);
   const [busca, setBusca] = useState("");
   const [etapa, setEtapa] = useState<Etapa>("nao_pagou");
+  const [soPausados, setSoPausados] = useState(false);
+  const [enviando, setEnviando] = useState<string | null>(null);
 
   useEffect(() => {
     document.title = "Follow-up — Rematrícula 2027";
@@ -142,6 +183,36 @@ const Rematricula2027Followup = () => {
   useEffect(() => {
     if (podeAcessar("rematricula")) carregar();
   }, [podeAcessar("rematricula")]);
+
+  const alternarPausa = async (l: LinhaFollowup, pausado: boolean) => {
+    setLinhas((prev) =>
+      prev.map((x) => (x.id_aluno === l.id_aluno ? { ...x, followup_pausado: pausado } : x)),
+    );
+    const { error } = await supabase.rpc("rematricula_2027_admin_followup_pausar", {
+      _id_aluno: l.id_aluno,
+      _pausado: pausado,
+    });
+    if (error) {
+      toast({ title: "Não foi possível alterar o follow-up", variant: "destructive" });
+      carregar();
+    }
+  };
+
+  const reenviar = async (l: LinhaFollowup, sequencia: number) => {
+    const tpl = ETAPA_TEMPLATE[etapa];
+    if (!tpl) return;
+    setEnviando(`${l.id_aluno}-${sequencia}`);
+    const { data, error } = await supabase.functions.invoke("rematricula-2027-followup", {
+      body: { modo: "manual", id_aluno: l.id_aluno, etapa: tpl, sequencia },
+    });
+    setEnviando(null);
+    if (error || (data as any)?.error) {
+      toast({ title: "Falha ao enviar a mensagem", variant: "destructive" });
+      return;
+    }
+    toast({ title: `Mensagem ${sequencia} enviada`, description: l.nome_aluno });
+    carregar();
+  };
 
   const porEtapa = useMemo(() => {
     const mapa: Record<Etapa, LinhaFollowup[]> = {
@@ -162,12 +233,14 @@ const Rematricula2027Followup = () => {
     return porEtapa[etapa]
       .filter(
         (l) =>
-          !termo ||
-          l.nome_aluno.toLowerCase().includes(termo) ||
-          String(l.id_aluno).includes(termo),
+          (!soPausados || l.followup_pausado) &&
+          (!termo ||
+            l.nome_aluno.toLowerCase().includes(termo) ||
+            String(l.id_aluno).includes(termo)),
       )
       .sort((a, b) => (b.updated_at || "").localeCompare(a.updated_at || ""));
-  }, [porEtapa, etapa, busca]);
+  }, [porEtapa, etapa, busca, soPausados]);
+
 
   if (authLoading || !podeAcessar("rematricula")) {
     return (
@@ -233,16 +306,25 @@ const Rematricula2027Followup = () => {
               <h2 className="font-semibold text-zampieri-green-dark">{etapaAtual.titulo}</h2>
               <p className="text-xs text-muted-foreground">{etapaAtual.descricao}</p>
             </div>
-            <div className="relative min-w-[240px]">
-              <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
-              <Input
-                value={busca}
-                onChange={(e) => setBusca(e.target.value)}
-                placeholder="Buscar por nome ou ID"
-                className="pl-9"
-              />
+            <div className="flex flex-wrap items-center gap-4">
+              <label className="flex items-center gap-2 text-xs text-muted-foreground">
+                <Switch checked={soPausados} onCheckedChange={setSoPausados} />
+                Só follow-up pausado
+              </label>
+              <div className="relative min-w-[240px]">
+                <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+                <Input
+                  value={busca}
+                  onChange={(e) => setBusca(e.target.value)}
+                  placeholder="Buscar por nome ou ID"
+                  className="pl-9"
+                />
+              </div>
             </div>
           </div>
+
+
+
 
           {loading && (
             <p className="py-8 text-center text-muted-foreground">
@@ -325,7 +407,58 @@ const Rematricula2027Followup = () => {
                         </a>
                       )}
                     </div>
+
+                    {ETAPA_TEMPLATE[etapa] && (
+                      <div className="pt-2 mt-2 border-t border-border space-y-2">
+                        <div className="flex md:justify-end flex-wrap items-center gap-2">
+                          {[1, 2, 3].map((s) => {
+                            const env = (l.followup_envios ?? []).find(
+                              (e) => e.etapa === ETAPA_TEMPLATE[etapa] && e.sequencia === s,
+                            );
+                            return (
+                              <Button
+                                key={s}
+                                size="sm"
+                                variant={env ? "secondary" : "outline"}
+                                className="h-7 px-2 text-[11px]"
+                                disabled={enviando === `${l.id_aluno}-${s}`}
+                                onClick={() => reenviar(l, s)}
+                                title={env ? `Enviada em ${dataHora(env.enviado_em)}` : "Enviar agora"}
+                              >
+                                {enviando === `${l.id_aluno}-${s}` ? (
+                                  <Loader2 className="w-3 h-3 mr-1 animate-spin" />
+                                ) : (
+                                  <Send className="w-3 h-3 mr-1" />
+                                )}
+                                Msg {s}
+                                {env ? ` · ${dataHora(env.enviado_em)}` : ""}
+                              </Button>
+                            );
+                          })}
+                        </div>
+                        {etapa === "nao_pagou" && l.prazo_cancelamento_em && (
+                          <p
+                            className={`text-xs inline-flex items-center gap-1 ${
+                              horasAte(l.prazo_cancelamento_em) < 24
+                                ? "font-semibold text-red-700"
+                                : "text-muted-foreground"
+                            }`}
+                          >
+                            <AlarmClock className="w-3 h-3" />
+                            Cancelamento automático em {dataHora(l.prazo_cancelamento_em)}
+                          </p>
+                        )}
+                        <label className="flex md:justify-end items-center gap-2 text-xs text-muted-foreground">
+                          <Switch
+                            checked={!!l.followup_pausado}
+                            onCheckedChange={(v) => alternarPausa(l, v)}
+                          />
+                          Pausar follow-up
+                        </label>
+                      </div>
+                    )}
                   </div>
+
                 </div>
               );
             })}
