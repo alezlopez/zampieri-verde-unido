@@ -3,7 +3,8 @@ import { corsHeaders } from "../_shared/cors.ts";
 import { getOrCreateCustomer, createCheckout } from "../_shared/asaas.ts";
 import { rematriculaLiberada } from "../_shared/rematricula-abertura.ts";
 
-const CHECKOUT_TTL_MS = 60 * 60 * 1000; // 60 min
+const CHECKOUT_MINUTES = 1440; // 24h (máximo aceito pelo Asaas)
+const CHECKOUT_TTL_MS = CHECKOUT_MINUTES * 60 * 1000;
 const FALLBACK_ORIGIN = "https://colegiozampieri.com.br";
 
 const digits = (v: unknown) => String(v ?? "").replace(/\D/g, "");
@@ -168,7 +169,7 @@ Deno.serve(async (req) => {
       cancelUrl: `${origin}/rematricula2027?pagamento=cancelado&aluno=${idAluno}`,
       expiredUrl: `${origin}/rematricula2027?pagamento=expirado&aluno=${idAluno}`,
       externalReference: `remat:${idAluno}`,
-      minutesToExpire: 60,
+      minutesToExpire: CHECKOUT_MINUTES,
       maxInstallmentCount: isParcelado ? parcelas : undefined,
     });
 
