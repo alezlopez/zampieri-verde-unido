@@ -45,13 +45,14 @@ type Linha = AlunoFollowup & {
   updated_at: string | null;
   created_at: string | null;
   checkout_url: string | null;
+  link_contrato: string | null;
   valor_com_desconto: number | null;
   zapsign_token: string | null;
   asaas_payment_id: string | null;
 };
 
 const CAMPOS =
-  "id_aluno, nome_aluno, responsavel_financeiro, nome_pai, celular_pai, telefone_pai, nome_mae, celular_mae, telefone_mae, contrato_gerado, contrato_assinado, rematricula_concluida, cancelada, rematricula_liberada, isentar_valor_rematricula, followup_pausado, prazo_cancelamento_em, turno_escolhido, updated_at, created_at, checkout_url, valor_com_desconto, zapsign_token, asaas_payment_id";
+  "id_aluno, nome_aluno, responsavel_financeiro, nome_pai, celular_pai, telefone_pai, nome_mae, celular_mae, telefone_mae, contrato_gerado, contrato_assinado, rematricula_concluida, cancelada, rematricula_liberada, isentar_valor_rematricula, followup_pausado, prazo_cancelamento_em, turno_escolhido, updated_at, created_at, checkout_url, link_contrato, valor_com_desconto, zapsign_token, asaas_payment_id";
 
 const etapaDe = (l: Linha, qtdAlteracoes: number): EtapaFollowup | null => {
   if (l.rematricula_concluida) return null;
@@ -182,6 +183,13 @@ async function registrar(
   );
 }
 
+const linkDe = (etapa: EtapaFollowup, l: Linha) =>
+  etapa === "pagar"
+    ? l.checkout_url || undefined
+    : etapa === "assinar"
+    ? l.link_contrato || undefined
+    : undefined;
+
 async function paramsDe(etapa: EtapaFollowup, seq: number, l: Linha) {
   const dest = destinatario(l);
   const base = [dest.nome, l.nome_aluno];
@@ -246,7 +254,7 @@ Deno.serve(async (req) => {
         sequencia: seq,
         template,
         params: await paramsDe(etapa, seq, linha),
-        link: linha.checkout_url || undefined,
+        link: linkDe(etapa, linha),
       });
       await registrar(admin, idAluno, etapa, seq, template, env);
       return json({ ok: env.sucesso, destino: env.destino, template });
@@ -324,7 +332,7 @@ Deno.serve(async (req) => {
         sequencia: seq,
         template,
         params: await paramsDe(etapa, seq, l),
-        link: l.checkout_url || undefined,
+        link: linkDe(etapa, l),
       });
       await registrar(admin, l.id_aluno, etapa, seq, template, env);
       resultado.enviados++;
