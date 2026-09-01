@@ -306,16 +306,22 @@ const Rematricula2027Followup = () => {
               <h2 className="font-semibold text-zampieri-green-dark">{etapaAtual.titulo}</h2>
               <p className="text-xs text-muted-foreground">{etapaAtual.descricao}</p>
             </div>
-            <div className="relative min-w-[240px]">
-              <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
-              <Input
-                value={busca}
-                onChange={(e) => setBusca(e.target.value)}
-                placeholder="Buscar por nome ou ID"
-                className="pl-9"
-              />
+            <div className="flex flex-wrap items-center gap-4">
+              <label className="flex items-center gap-2 text-xs text-muted-foreground">
+                <Switch checked={soPausados} onCheckedChange={setSoPausados} />
+                Só follow-up pausado
+              </label>
+              <div className="relative min-w-[240px]">
+                <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+                <Input
+                  value={busca}
+                  onChange={(e) => setBusca(e.target.value)}
+                  placeholder="Buscar por nome ou ID"
+                  className="pl-9"
+                />
+              </div>
             </div>
-          </div>
+
 
           {loading && (
             <p className="py-8 text-center text-muted-foreground">
