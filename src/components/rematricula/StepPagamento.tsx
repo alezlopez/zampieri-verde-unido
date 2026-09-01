@@ -290,15 +290,33 @@ export const StepPagamento = ({
         </div>
       )}
 
+      {opcao === "pix" && (
+        <p className="text-xs text-muted-foreground">
+          O código PIX vale por 24 horas. Se ele expirar ou o banco recusar o código, volte a esta
+          página e toque em <strong>Gerar novo código PIX</strong>.
+        </p>
+      )}
+
       {erro && <p className="text-xs text-destructive">{erro}</p>}
 
       <Button
         className="w-full bg-zampieri-green-dark hover:bg-zampieri-green"
-        onClick={pagar}
+        onClick={() => pagar(false)}
         disabled={enviando}
       >
         {enviando && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
         Ir para o pagamento
+      </Button>
+
+      <Button
+        variant="outline"
+        size="sm"
+        className="w-full"
+        onClick={() => pagar(true)}
+        disabled={enviando}
+      >
+        <RefreshCw className="w-4 h-4 mr-2" />
+        {opcao === "pix" ? "Gerar novo código PIX" : "Gerar novo link de pagamento"}
       </Button>
     </div>
   );
