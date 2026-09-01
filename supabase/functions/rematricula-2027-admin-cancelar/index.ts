@@ -4,6 +4,7 @@
 // - Reseta o aluno para que a família possa refazer o processo
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { getPayment, listInstallmentPayments, refundPayment, deletePayment } from "../_shared/asaas.ts";
+import { enviarCancelamento } from "../_shared/rematricula-followup.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -51,7 +52,7 @@ Deno.serve(async (req) => {
     const { data: aluno, error: getErr } = await admin
       .from("alunos_rematricula_2027")
       .select(
-        "id_aluno, nome_aluno, asaas_payment_id, valor_pago, zapsign_token, rematricula_concluida, contrato_gerado, contrato_assinado",
+        "id_aluno, nome_aluno, asaas_payment_id, valor_pago, zapsign_token, rematricula_concluida, contrato_gerado, contrato_assinado, responsavel_financeiro, nome_pai, celular_pai, telefone_pai, nome_mae, celular_mae, telefone_mae",
       )
       .eq("id_aluno", idAluno)
       .maybeSingle();
@@ -150,6 +151,7 @@ Deno.serve(async (req) => {
         motivo_cancelamento: motivo,
         estorno_valor: estornado > 0 ? estornado : null,
         estorno_em: estornado > 0 ? agora : null,
+        prazo_cancelamento_em: null,
       })
       .eq("id_aluno", idAluno);
     if (upErr) throw upErr;
@@ -170,8 +172,32 @@ Deno.serve(async (req) => {
       _ref_id: String(idAluno),
     }).then(() => null, () => null);
 
+    // 4) Aviso de cancelamento no WhatsApp (mesmo template do cancelamento automático)
+    let avisoEnviado = false;
+    try {
+      const env = await enviarCancelamento(aluno as any, motivo);
+      avisoEnviado = env.sucesso;
+      await admin.from("rematricula_2027_followup_envios").upsert(
+        {
+          id_aluno: idAluno,
+          etapa: "cancelada",
+          sequencia: 0,
+          template: "rematricula2027_cancelada",
+          destino: env.destino,
+          sucesso: env.sucesso,
+          payload: env.payload as any,
+          enviado_em: agora,
+        },
+        { onConflict: "id_aluno,etapa,sequencia" },
+      );
+      if (!env.sucesso) avisos.push("Não foi possível enviar o aviso de cancelamento no WhatsApp.");
+    } catch (e) {
+      avisos.push(`Falha ao enviar o aviso de cancelamento: ${(e as Error).message}`);
+    }
+
     return json({
       ok: true,
+      aviso_enviado: avisoEnviado,
       estornado,
       contrato_cancelado: contratoCancelado,
       refunds,

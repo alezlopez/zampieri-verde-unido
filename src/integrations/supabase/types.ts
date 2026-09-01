@@ -2840,6 +2840,10 @@ export type Database = {
           success: boolean
         }[]
       }
+      rematricula_2027_admin_followup_pausar: {
+        Args: { _id_aluno: number; _pausado: boolean }
+        Returns: boolean
+      }
       rematricula_2027_admin_isentar: {
         Args: { p_id_aluno: number; p_isento: boolean }
         Returns: {
@@ -2870,6 +2874,8 @@ export type Database = {
           email_pai: string
           estorno_em: string
           estorno_valor: number
+          followup_envios: Json
+          followup_pausado: boolean
           forma_pagamento: string
           id_aluno: number
           isentar_valor_rematricula: boolean
@@ -2881,6 +2887,7 @@ export type Database = {
           numeros: string[]
           parcelas: number
           percentual_desconto: number
+          prazo_cancelamento_em: string
           qtd_alteracoes: number
           rematricula_concluida: boolean
           responsavel_financeiro: string
