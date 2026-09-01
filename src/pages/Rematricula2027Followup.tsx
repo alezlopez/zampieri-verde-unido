@@ -92,12 +92,18 @@ const ETAPAS: { id: Etapa; titulo: string; descricao: string; cor: string }[] = 
 ];
 
 const etapaDe = (l: LinhaFollowup): Etapa | null => {
-  if (l.rematricula_concluida) return null;
+  if (l.rematricula_concluida || l.cancelada) return null;
   if (l.contrato_assinado) return "nao_pagou";
   if (l.contrato_gerado) return "nao_assinou";
   if (l.qtd_alteracoes > 0 || l.turno_escolhido) return "preenchendo";
   return "nao_iniciou";
 };
+
+const dataHora = (iso: string) =>
+  new Date(iso).toLocaleString("pt-BR", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" });
+
+const horasAte = (iso: string) => (new Date(iso).getTime() - Date.now()) / 3600000;
+
 
 const diasDesde = (iso: string | null) => {
   if (!iso) return null;
