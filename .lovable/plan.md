@@ -40,7 +40,17 @@ São 3 templates por etapa (9 no total). Todos com parâmetros no corpo e botão
 3. `rematricula2027_pagar_3` (aviso final)
    "Olá, {{1}}. A rematrícula de {{2}} continua sem o pagamento de {{3}}. Sem a confirmação em até 3 dias ({{4}}), o contrato será cancelado e a vaga liberada para outra família. Para manter a vaga, pague pelo link abaixo."
 
-Parâmetros: {{1}} responsável, {{2}} aluno, {{3}} valor, {{4}} data limite. Botão URL: `https://colegiozampieri.com.br/rematricula2027`.
+### D. Cancelamento (automático e manual)
+`rematricula2027_cancelada`
+"Olá, {{1}}. A rematrícula de {{2}} para 2027 foi cancelada ({{3}}) e o contrato correspondente também foi cancelado. A vaga foi liberada. Se isso não era o esperado ou quiser retomar, fale com a secretaria da escola."
+
+{{3}} = motivo ("falta de pagamento no prazo" no cancelamento automático, ou o motivo digitado pelo admin no cancelamento manual). Esse mesmo template é disparado pela função de cancelamento manual já existente.
+
+Parâmetros gerais: {{1}} responsável, {{2}} aluno, {{3}} valor (ou motivo, no template D), {{4}} data limite. Botão URL: `https://colegiozampieri.com.br/rematricula2027`.
+
+## Destinatário
+
+Todas as mensagens vão apenas para o responsável financeiro (celular do pai ou da mãe conforme `responsavel_financeiro`; se estiver vazio ou sem número, cai no número disponível e o caso fica marcado como "sem contato" no painel).
 
 ## Como o envio funciona
 
@@ -54,20 +64,23 @@ Mantemos o padrão atual: o sistema não chama a Meta direto, envia o payload pa
    - GRANTs + RLS: leitura para staff do setor rematrícula, escrita só service_role.
 
 2. **Edge function `rematricula-2027-followup`**
-   - Modo `cron` (sem usuário): seleciona alunos não concluídos, não cancelados, com `rematricula_liberada = true` e não pausados; classifica a etapa com a mesma regra da tela de follow-up; calcula qual sequência é devida pela idade da última atividade (1/3/6 dias); pula quem é isento na etapa C; envia via `enviarTemplateWebhook` e registra em `rematricula_2027_followup_envios`.
+   - Modo `cron` (sem usuário): seleciona alunos não concluídos, não cancelados, com `rematricula_liberada = true` e não pausados; classifica a etapa com a mesma regra da tela de follow-up; calcula qual sequência é devida pela idade da última atividade (1/3/6 dias); pula quem é isento na etapa C; envia via `enviarTemplateWebhook` ao responsável financeiro e registra em `rematricula_2027_followup_envios`.
    - Na 3ª mensagem da etapa C grava `prazo_cancelamento_em = now() + 3 dias`.
-   - Passada de cancelamento: alunos com `prazo_cancelamento_em` vencido e ainda não pagos → chama a mesma rotina do `rematricula-2027-admin-cancelar` (estorno não se aplica, cancela contrato ZapSign, cancela cobrança pendente no Asaas, reseta o aluno) com motivo "Cancelamento automático por falta de pagamento".
+   - Passada de cancelamento: alunos com `prazo_cancelamento_em` vencido e ainda não pagos são cancelados automaticamente (mesma rotina do `rematricula-2027-admin-cancelar`: cancela contrato ZapSign, cancela cobrança pendente no Asaas, reseta o aluno) com motivo "Cancelamento automático por falta de pagamento", e em seguida dispara o template D.
    - Modo `manual` (com JWT + `has_setor('rematricula')`): reenvia uma mensagem específica para um aluno, a partir do painel.
    - Idempotente: nunca envia duas vezes a mesma (aluno, etapa, sequência); se o aluno avança de etapa, o contador da nova etapa começa do zero.
 
-3. **Agendamento**
+3. **Cancelamento manual**
+   - `rematricula-2027-admin-cancelar` passa a disparar o template D com o motivo informado pelo admin, para o responsável financeiro, registrando o envio na mesma tabela.
+
+4. **Agendamento**
    - `pg_cron` uma vez por dia às 13:00 UTC (10:00 Brasília) chamando a função. Roda 1x/dia; é o mínimo necessário para respeitar a cadência de dias e o prazo de 3 dias, com atraso máximo de 24h.
 
-4. **UI — `src/pages/Rematricula2027Followup.tsx`**
+5. **UI — `src/pages/Rematricula2027Followup.tsx`**
    - Em cada linha: quais mensagens já foram enviadas (1/2/3) e quando, botão "Reenviar mensagem", switch "Pausar follow-up" e, na etapa C, o prazo de cancelamento com destaque quando faltarem menos de 24h.
    - Filtro extra "com follow-up pausado".
 
-## Confirmações antes de implementar
+## Antes de ligar
 
-- O cancelamento automático deve mesmo executar sozinho após o prazo, ou prefere que ele apenas marque "pronto para cancelar" e a secretaria confirme com um clique?
-- Manda para mãe e pai (quando houver os dois números) ou só para o responsável financeiro?
+Os 10 templates precisam estar aprovados na Meta (UTILITY, pt_BR) e mapeados no n8n. O follow-up entra no ar com uma chave de ativação, para poder ser testado com um aluno antes do disparo geral.
+
