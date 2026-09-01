@@ -177,6 +177,7 @@ export type Database = {
           estado_pai: string | null
           estorno_em: string | null
           estorno_valor: number | null
+          followup_pausado: boolean
           forma_pagamento: string | null
           id_aluno: number
           isentar_valor_rematricula: boolean
@@ -196,6 +197,7 @@ export type Database = {
           parcelas: number | null
           percentual_desconto: number
           percentual_desconto_ext: string | null
+          prazo_cancelamento_em: string | null
           rematricula_concluida: boolean | null
           rematricula_liberada: boolean | null
           responsavel_financeiro: string | null
@@ -261,6 +263,7 @@ export type Database = {
           estado_pai?: string | null
           estorno_em?: string | null
           estorno_valor?: number | null
+          followup_pausado?: boolean
           forma_pagamento?: string | null
           id_aluno: number
           isentar_valor_rematricula?: boolean
@@ -280,6 +283,7 @@ export type Database = {
           parcelas?: number | null
           percentual_desconto: number
           percentual_desconto_ext?: string | null
+          prazo_cancelamento_em?: string | null
           rematricula_concluida?: boolean | null
           rematricula_liberada?: boolean | null
           responsavel_financeiro?: string | null
@@ -345,6 +349,7 @@ export type Database = {
           estado_pai?: string | null
           estorno_em?: string | null
           estorno_valor?: number | null
+          followup_pausado?: boolean
           forma_pagamento?: string | null
           id_aluno?: number
           isentar_valor_rematricula?: boolean
@@ -364,6 +369,7 @@ export type Database = {
           parcelas?: number | null
           percentual_desconto?: number
           percentual_desconto_ext?: string | null
+          prazo_cancelamento_em?: string | null
           rematricula_concluida?: boolean | null
           rematricula_liberada?: boolean | null
           responsavel_financeiro?: string | null
@@ -2187,6 +2193,53 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "rematricula_2027_alteracoes_id_aluno_fkey"
+            columns: ["id_aluno"]
+            isOneToOne: false
+            referencedRelation: "alunos_rematricula_2027"
+            referencedColumns: ["id_aluno"]
+          },
+        ]
+      }
+      rematricula_2027_followup_envios: {
+        Row: {
+          created_at: string
+          destino: string | null
+          enviado_em: string
+          etapa: string
+          id: string
+          id_aluno: number
+          payload: Json | null
+          sequencia: number
+          sucesso: boolean
+          template: string
+        }
+        Insert: {
+          created_at?: string
+          destino?: string | null
+          enviado_em?: string
+          etapa: string
+          id?: string
+          id_aluno: number
+          payload?: Json | null
+          sequencia: number
+          sucesso?: boolean
+          template: string
+        }
+        Update: {
+          created_at?: string
+          destino?: string | null
+          enviado_em?: string
+          etapa?: string
+          id?: string
+          id_aluno?: number
+          payload?: Json | null
+          sequencia?: number
+          sucesso?: boolean
+          template?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "rematricula_2027_followup_envios_id_aluno_fkey"
             columns: ["id_aluno"]
             isOneToOne: false
             referencedRelation: "alunos_rematricula_2027"
