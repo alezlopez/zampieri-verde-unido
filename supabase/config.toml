@@ -40,3 +40,6 @@ verify_jwt = false
 [functions.prematricula-otp]
 verify_jwt = false
 
+
+[functions.rematricula-2027-followup]
+verify_jwt = false

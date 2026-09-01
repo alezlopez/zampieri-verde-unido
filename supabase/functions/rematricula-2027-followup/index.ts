@@ -64,10 +64,6 @@ const etapaDe = (l: Linha, qtdAlteracoes: number): EtapaFollowup | null => {
 const diasDesde = (iso: string | null) =>
   iso ? Math.floor((Date.now() - new Date(iso).getTime()) / DIA_MS) : null;
 
-async function valorRematricula(admin: any, l: Linha) {
-  return brl(l.valor_com_desconto);
-}
-
 async function cancelarAluno(admin: any, l: Linha, motivo: string) {
   // Asaas: apaga cobranças pendentes (não há pagamento confirmado nesse fluxo)
   if (l.asaas_payment_id) {
