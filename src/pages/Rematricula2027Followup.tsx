@@ -1,10 +1,31 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
-import { ArrowLeft, ExternalLink, Loader2, Mail, MessageCircle, RefreshCw, Search } from "lucide-react";
+import {
+  AlarmClock,
+  ArrowLeft,
+  ExternalLink,
+  Loader2,
+  Mail,
+  MessageCircle,
+  RefreshCw,
+  Search,
+  Send,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Switch } from "@/components/ui/switch";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
+import { toast } from "@/hooks/use-toast";
+
+interface EnvioFollowup {
+  etapa: string;
+  sequencia: number;
+  template: string;
+  destino: string | null;
+  sucesso: boolean;
+  enviado_em: string;
+}
 
 interface LinhaFollowup {
   id_aluno: number;
@@ -27,9 +48,21 @@ interface LinhaFollowup {
   nome_mae: string | null;
   celular_mae: string | null;
   email_mae: string | null;
+  cancelada?: boolean | null;
+  followup_pausado?: boolean | null;
+  prazo_cancelamento_em?: string | null;
+  followup_envios?: EnvioFollowup[] | null;
 }
 
 type Etapa = "nao_iniciou" | "preenchendo" | "nao_assinou" | "nao_pagou";
+
+const ETAPA_TEMPLATE: Record<Etapa, "parou" | "assinar" | "pagar" | null> = {
+  nao_iniciou: null,
+  preenchendo: "parou",
+  nao_assinou: "assinar",
+  nao_pagou: "pagar",
+};
+
 
 const ETAPAS: { id: Etapa; titulo: string; descricao: string; cor: string }[] = [
   {
