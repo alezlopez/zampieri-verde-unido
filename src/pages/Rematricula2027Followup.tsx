@@ -166,6 +166,8 @@ const Rematricula2027Followup = () => {
   const [loading, setLoading] = useState(true);
   const [busca, setBusca] = useState("");
   const [etapa, setEtapa] = useState<Etapa>("nao_pagou");
+  const [soPausados, setSoPausados] = useState(false);
+  const [enviando, setEnviando] = useState<string | null>(null);
 
   useEffect(() => {
     document.title = "Follow-up — Rematrícula 2027";
@@ -181,6 +183,36 @@ const Rematricula2027Followup = () => {
   useEffect(() => {
     if (podeAcessar("rematricula")) carregar();
   }, [podeAcessar("rematricula")]);
+
+  const alternarPausa = async (l: LinhaFollowup, pausado: boolean) => {
+    setLinhas((prev) =>
+      prev.map((x) => (x.id_aluno === l.id_aluno ? { ...x, followup_pausado: pausado } : x)),
+    );
+    const { error } = await supabase.rpc("rematricula_2027_admin_followup_pausar", {
+      _id_aluno: l.id_aluno,
+      _pausado: pausado,
+    });
+    if (error) {
+      toast({ title: "Não foi possível alterar o follow-up", variant: "destructive" });
+      carregar();
+    }
+  };
+
+  const reenviar = async (l: LinhaFollowup, sequencia: number) => {
+    const tpl = ETAPA_TEMPLATE[etapa];
+    if (!tpl) return;
+    setEnviando(`${l.id_aluno}-${sequencia}`);
+    const { data, error } = await supabase.functions.invoke("rematricula-2027-followup", {
+      body: { modo: "manual", id_aluno: l.id_aluno, etapa: tpl, sequencia },
+    });
+    setEnviando(null);
+    if (error || (data as any)?.error) {
+      toast({ title: "Falha ao enviar a mensagem", variant: "destructive" });
+      return;
+    }
+    toast({ title: `Mensagem ${sequencia} enviada`, description: l.nome_aluno });
+    carregar();
+  };
 
   const porEtapa = useMemo(() => {
     const mapa: Record<Etapa, LinhaFollowup[]> = {
@@ -201,12 +233,14 @@ const Rematricula2027Followup = () => {
     return porEtapa[etapa]
       .filter(
         (l) =>
-          !termo ||
-          l.nome_aluno.toLowerCase().includes(termo) ||
-          String(l.id_aluno).includes(termo),
+          (!soPausados || l.followup_pausado) &&
+          (!termo ||
+            l.nome_aluno.toLowerCase().includes(termo) ||
+            String(l.id_aluno).includes(termo)),
       )
       .sort((a, b) => (b.updated_at || "").localeCompare(a.updated_at || ""));
-  }, [porEtapa, etapa, busca]);
+  }, [porEtapa, etapa, busca, soPausados]);
+
 
   if (authLoading || !podeAcessar("rematricula")) {
     return (
