@@ -169,7 +169,7 @@ Deno.serve(async (req) => {
       cancelUrl: `${origin}/rematricula2027?pagamento=cancelado&aluno=${idAluno}`,
       expiredUrl: `${origin}/rematricula2027?pagamento=expirado&aluno=${idAluno}`,
       externalReference: `remat:${idAluno}`,
-      minutesToExpire: 60,
+      minutesToExpire: CHECKOUT_MINUTES,
       maxInstallmentCount: isParcelado ? parcelas : undefined,
     });
 
