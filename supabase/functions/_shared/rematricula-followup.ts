@@ -103,6 +103,12 @@ export async function enviarFollowup(opts: {
     return { sucesso: false, destino: null, payload: { erro: "sem_telefone" } };
   }
 
+  const linkFinal = opts.link ?? LINK_REMATRICULA;
+  // Botão de URL dinâmica da Meta: base fixa + sufixo variável ({{1}})
+  const corte = linkFinal.lastIndexOf("/") + 1;
+  const link_base = linkFinal.slice(0, corte);
+  const button_url_param = linkFinal.slice(corte) || null;
+
   const payload = {
     evento: `${opts.etapa}_${opts.sequencia}`,
     origem: "rematricula_followup",
@@ -114,8 +120,10 @@ export async function enviarFollowup(opts: {
     telefone_original: dest.telefone_original,
     params: opts.params,
     body_params,
-    button_url_param: null,
-    link: opts.link ?? LINK_REMATRICULA,
+    button_url_param,
+    link_base,
+    link: linkFinal,
+
     dados: {
       id_aluno: opts.aluno.id_aluno,
       nome_aluno: opts.aluno.nome_aluno,
