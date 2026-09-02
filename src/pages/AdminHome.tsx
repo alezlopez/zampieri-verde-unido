@@ -14,6 +14,7 @@ import {
   FileSignature,
   ShoppingBag,
   ShieldCheck,
+  Users,
 } from "lucide-react";
 import { useAuth, Setor } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
@@ -84,6 +85,12 @@ const blocos: Bloco[] = [
         descricao: "Alunos bloqueados, débitos em aberto e baixas manuais.",
         href: "/renegociacao/admin",
         icone: BarChart3,
+      },
+      {
+        titulo: "Controle de vagas",
+        descricao: "Visualizar ocupação por curso/turno e editar limites.",
+        href: "/admin/vagas",
+        icone: Users,
       },
       {
         titulo: "Números da sorte",

@@ -2900,6 +2900,18 @@ export type Database = {
           valor_pago: number
         }[]
       }
+      rematricula_2027_admin_vagas: {
+        Args: never
+        Returns: {
+          ativo: boolean
+          curso_2027: string
+          disponiveis: number
+          id: string
+          max_vagas: number
+          ocupadas: number
+          turno: string
+        }[]
+      }
       rematricula_2027_buscar: {
         Args: { p_termo: string }
         Returns: {
