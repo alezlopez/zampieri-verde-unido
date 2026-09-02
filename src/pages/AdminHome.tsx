@@ -14,6 +14,7 @@ import {
   FileSignature,
   ShoppingBag,
   ShieldCheck,
+  Users,
 } from "lucide-react";
 import { useAuth, Setor } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
