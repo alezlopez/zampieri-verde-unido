@@ -86,6 +86,12 @@ const blocos: Bloco[] = [
         icone: BarChart3,
       },
       {
+        titulo: "Controle de vagas",
+        descricao: "Visualizar ocupação por curso/turno e editar limites.",
+        href: "/admin/vagas",
+        icone: Users,
+      },
+      {
         titulo: "Números da sorte",
         descricao: "Consultar os números gerados para o sorteio.",
         href: "/numerosdasorte",
