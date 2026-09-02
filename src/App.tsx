@@ -29,6 +29,7 @@ import ManualDaFamilia from "./pages/ManualDaFamilia";
 import AdminLogin from "./pages/AdminLogin";
 import AdminHome from "./pages/AdminHome";
 import AdminUsuarios from "./pages/AdminUsuarios";
+import AdminVagas from "./pages/AdminVagas";
 import RequireAdmin from "./components/admin/RequireAdmin";
 import NumerosDaSorte from "./pages/NumerosDaSorte";
 import NumerosDaSorteTransparencia from "./pages/NumerosDaSorteTransparencia";
