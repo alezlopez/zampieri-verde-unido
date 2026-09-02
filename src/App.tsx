@@ -88,6 +88,7 @@ const App = () => (
             <Route path="/admin/login" element={<AdminLogin />} />
             <Route path="/admin" element={<RequireAdmin allow="scan"><AdminHome /></RequireAdmin>} />
             <Route path="/admin/usuarios" element={<RequireAdmin><AdminUsuarios /></RequireAdmin>} />
+            <Route path="/admin/vagas" element={<RequireAdmin setor="rematricula"><AdminVagas /></RequireAdmin>} />>
             <Route path="/numerosdasorte" element={<NumerosDaSorte />} />
             <Route path="/numerosdasorte/transparencia" element={<NumerosDaSorteTransparencia />} />
             <Route path="/rematricula2027/admin" element={<RequireAdmin setor="rematricula"><Rematricula2027Admin /></RequireAdmin>} />
