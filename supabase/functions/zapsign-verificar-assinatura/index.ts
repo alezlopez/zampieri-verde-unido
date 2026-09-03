@@ -43,7 +43,11 @@ Deno.serve(async (req) => {
       .maybeSingle();
 
     if (!a) return json({ error: "Aluno não encontrado" }, 404);
-    if (a.contrato_assinado) return json({ assinado: true, fonte: "banco" });
+    if (a.contrato_assinado) {
+      // Isento cuja isenção foi marcada depois da assinatura: conclui agora
+      const r = await concluirRematriculaIsenta(supabase, idAluno);
+      return json({ assinado: true, fonte: "banco", isencao: r });
+    }
 
     // token do documento: coluna zapsign_token ou último trecho do link de verificação
     const docToken =
