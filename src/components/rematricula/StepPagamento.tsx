@@ -283,6 +283,10 @@ export const StepPagamento = ({
         checkout_url?: string;
         error?: string;
         mode?: string;
+        existente?: boolean;
+        forma_pagamento?: string;
+        parcelas?: number;
+        expira_em?: string | null;
         pix?: { copia_cola: string; qr_image: string | null; expira_em: string | null };
       }
       | null;
@@ -295,6 +299,7 @@ export const StepPagamento = ({
 
     if (!error && res?.mode === "pix" && res.pix?.copia_cola) {
       setPix(res.pix);
+      setCartao(null);
       setCopiado(false);
       setEnviando(false);
       return;
@@ -314,6 +319,16 @@ export const StepPagamento = ({
       );
       return;
     }
+    setPix(null);
+    setCartao({
+      checkout_url: res.checkout_url,
+      forma_pagamento: res.forma_pagamento || (opcao === "credito_parcelado" ? "credit_card" : "credit_card"),
+      parcelas: Number(res.parcelas || (opcao === "credito_parcelado" ? parcelas : 1)),
+      expira_em: res.expira_em ?? new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
+    });
+    setEnviando(false);
+    window.location.href = res.checkout_url;
+
     window.location.href = res.checkout_url;
   };
 
