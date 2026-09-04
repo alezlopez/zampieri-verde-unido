@@ -182,6 +182,48 @@ Deno.serve(async (req) => {
     const origin = safeOrigin(req, body?.origin);
     const successUrl = `${origin}/rematricula2027?pagamento=sucesso&aluno=${idAluno}`;
 
+    // ===== PIX: cobrança direta, sem depender da tela de checkout do Asaas =====
+    if (forma === "pix") {
+      const venc = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
+      const pagamento = await createPayment({
+        customer: customerId,
+        billingType: "PIX",
+        value: valorTotal,
+        dueDate: venc,
+        description: `Rematrícula 2027 - ${aluno.nome_aluno} (${aluno.curso_2027})`,
+        externalReference: `remat:${idAluno}`,
+      });
+      if (!pagamento?.id) return json({ error: "Falha ao gerar cobrança PIX" }, 502);
+
+      const qr = await getPixQrCode(pagamento.id);
+      if (!qr?.payload) return json({ error: "Falha ao gerar código PIX" }, 502);
+      const expira = qr?.expirationDate ? new Date(String(qr.expirationDate).replace(" ", "T")) : null;
+
+      await admin.from("alunos_rematricula_2027").update({
+        asaas_customer_id: customerId,
+        asaas_payment_id: pagamento.id,
+        asaas_checkout_id: null,
+        checkout_url: pagamento.invoiceUrl ?? null,
+        checkout_criado_em: new Date().toISOString(),
+        forma_pagamento: "pix",
+        parcelas: 1,
+        updated_at: new Date().toISOString(),
+      }).eq("id_aluno", idAluno);
+
+      return json({
+        mode: "pix",
+        payment_id: pagamento.id,
+        valor: valorTotal,
+        invoice_url: pagamento.invoiceUrl ?? null,
+        pix: {
+          copia_cola: qr.payload,
+          qr_image: qr.encodedImage ? `data:image/png;base64,${qr.encodedImage}` : null,
+          expira_em: expira ? expira.toISOString() : null,
+        },
+      });
+    }
+
+
     const checkout = await createCheckout({
       customer: customerId,
       billingTypes: forma === "pix" ? ["PIX"] : ["CREDIT_CARD"],
