@@ -1,5 +1,5 @@
 import { Fragment, useEffect, useMemo, useState } from "react";
-import { Ban, Check, ChevronDown, ChevronUp, Loader2, Pencil, RefreshCw, Search, Undo2 } from "lucide-react";
+import { ArrowDown, ArrowUp, ArrowUpDown, Ban, Check, ChevronDown, ChevronUp, Loader2, Pencil, RefreshCw, Search, Undo2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { supabase } from "@/integrations/supabase/client";
@@ -367,6 +367,9 @@ const Rematricula2027Admin = () => {
   const [loading, setLoading] = useState(true);
   const [busca, setBusca] = useState("");
   const [filtro, setFiltro] = useState<Filtro>("todos");
+  const [ordem, setOrdem] = useState<"padrao" | "conf_desc" | "conf_asc">("padrao");
+  const [confDe, setConfDe] = useState("");
+  const [confAte, setConfAte] = useState("");
   const [expandido, setExpandido] = useState<number | null>(null);
   const [revisando, setRevisando] = useState<LinhaAdmin | null>(null);
   const [salvando, setSalvando] = useState(false);
@@ -613,13 +616,22 @@ const Rematricula2027Admin = () => {
 
   const filtradas = useMemo(() => {
     const termo = busca.trim().toLowerCase();
-    return linhas.filter((l) => {
+    const de = confDe ? new Date(`${confDe}T00:00:00`).getTime() : null;
+    const ate = confAte ? new Date(`${confAte}T23:59:59.999`).getTime() : null;
+
+    const base = linhas.filter((l) => {
       if (filtro === "cpf_invalido" && !cpfSuspeito(l)) return false;
       if (filtro === "concluidas" && !l.rematricula_concluida) return false;
       if (filtro === "a_conferir" && (!l.rematricula_concluida || l.conferida)) return false;
       if (filtro === "conferidas" && !l.conferida) return false;
       if (filtro === "assinados" && !l.contrato_assinado) return false;
       if (filtro === "pendentes" && l.rematricula_concluida) return false;
+      if (filtro === "conferidas" && (de !== null || ate !== null)) {
+        const t = l.conferida_em ? new Date(l.conferida_em).getTime() : null;
+        if (t === null) return false;
+        if (de !== null && t < de) return false;
+        if (ate !== null && t > ate) return false;
+      }
       if (!termo) return true;
       return (
         l.nome_aluno.toLowerCase().includes(termo) ||
@@ -627,20 +639,43 @@ const Rematricula2027Admin = () => {
         l.numeros.some((n) => n.includes(termo))
       );
     });
-  }, [linhas, busca, filtro]);
 
-  const totais = useMemo(
-    () => ({
+    if (ordem === "padrao") return base;
+    return [...base].sort((a, b) => {
+      const ta = a.conferida_em ? new Date(a.conferida_em).getTime() : null;
+      const tb = b.conferida_em ? new Date(b.conferida_em).getTime() : null;
+      if (ta === null && tb === null) return 0;
+      if (ta === null) return 1;
+      if (tb === null) return -1;
+      return ordem === "conf_desc" ? tb - ta : ta - tb;
+    });
+  }, [linhas, busca, filtro, ordem, confDe, confAte]);
+
+
+  const periodoAtivo = !!confDe || !!confAte;
+
+  const totais = useMemo(() => {
+    const de = confDe ? new Date(`${confDe}T00:00:00`).getTime() : null;
+    const ate = confAte ? new Date(`${confAte}T23:59:59.999`).getTime() : null;
+    const noPeriodo = (iso: string | null) => {
+      if (de === null && ate === null) return true;
+      if (!iso) return false;
+      const t = new Date(iso).getTime();
+      if (de !== null && t < de) return false;
+      if (ate !== null && t > ate) return false;
+      return true;
+    };
+    return {
       alunos: linhas.length,
       concluidas: linhas.filter((l) => l.rematricula_concluida).length,
       aConferir: linhas.filter((l) => l.rematricula_concluida && !l.conferida).length,
-      conferidas: linhas.filter((l) => l.conferida).length,
+      conferidas: linhas.filter((l) => l.conferida && noPeriodo(l.conferida_em)).length,
       cpfInvalido: linhas.filter(
         (l) => (!!l.cpf_pai && !isValidCpf(l.cpf_pai)) || (!!l.cpf_mae && !isValidCpf(l.cpf_mae)),
       ).length,
-    }),
-    [linhas],
-  );
+    };
+  }, [linhas, confDe, confAte]);
+
 
   if (authLoading || !podeAcessar("rematricula")) {
     return (
@@ -727,6 +762,68 @@ const Rematricula2027Admin = () => {
           ))}
         </div>
 
+        {filtro === "conferidas" && (
+          <div className="flex flex-wrap items-end gap-3 rounded-lg border border-border bg-white p-3">
+            <div>
+              <label className="block text-xs text-muted-foreground mb-1">Conferida de</label>
+              <Input
+                type="date"
+                value={confDe}
+                onChange={(e) => setConfDe(e.target.value)}
+                className="h-9 w-[160px]"
+              />
+            </div>
+            <div>
+              <label className="block text-xs text-muted-foreground mb-1">até</label>
+              <Input
+                type="date"
+                value={confAte}
+                onChange={(e) => setConfAte(e.target.value)}
+                className="h-9 w-[160px]"
+              />
+            </div>
+            <div className="flex flex-wrap gap-2">
+              {(
+                [
+                  ["Hoje", 0],
+                  ["Últimos 7 dias", 6],
+                  ["Últimos 30 dias", 29],
+                ] as [string, number][]
+              ).map(([label, dias]) => (
+                <Button
+                  key={label}
+                  size="sm"
+                  variant="outline"
+                  onClick={() => {
+                    const hoje = new Date();
+                    const inicio = new Date();
+                    inicio.setDate(hoje.getDate() - dias);
+                    const iso = (d: Date) =>
+                      `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(
+                        d.getDate(),
+                      ).padStart(2, "0")}`;
+                    setConfDe(iso(inicio));
+                    setConfAte(iso(hoje));
+                  }}
+                >
+                  {label}
+                </Button>
+              ))}
+              <Button
+                size="sm"
+                variant="ghost"
+                disabled={!periodoAtivo}
+                onClick={() => {
+                  setConfDe("");
+                  setConfAte("");
+                }}
+              >
+                Limpar
+              </Button>
+            </div>
+          </div>
+        )}
+
         <div className="rounded-lg border border-border bg-white overflow-x-auto">
           <table className="w-full text-sm">
             <thead className="bg-muted/50 text-left">
@@ -738,7 +835,27 @@ const Rematricula2027Admin = () => {
                 <th className="p-3">Situação</th>
                 <th className="p-3">Pagamento</th>
                 <th className="p-3">Alterações</th>
-                <th className="p-3">Conferência</th>
+                <th className="p-3">
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setOrdem((o) =>
+                        o === "padrao" ? "conf_desc" : o === "conf_desc" ? "conf_asc" : "padrao",
+                      )
+                    }
+                    className="inline-flex items-center gap-1 font-semibold hover:text-zampieri-green-dark"
+                    title="Ordenar pela data de conferência"
+                  >
+                    Conferência
+                    {ordem === "conf_desc" ? (
+                      <ArrowDown className="w-3 h-3" />
+                    ) : ordem === "conf_asc" ? (
+                      <ArrowUp className="w-3 h-3" />
+                    ) : (
+                      <ArrowUpDown className="w-3 h-3 opacity-50" />
+                    )}
+                  </button>
+                </th>
               </tr>
             </thead>
             <tbody>
@@ -892,9 +1009,22 @@ const Rematricula2027Admin = () => {
                             <span className="inline-flex items-center gap-1 rounded bg-zampieri-green-dark px-2 py-0.5 text-xs font-medium text-white">
                               <Check className="w-3 h-3" /> Conferida
                             </span>
-                            <p className="text-xs text-muted-foreground">
+                            <p
+                              className="text-xs text-muted-foreground"
+                              title={
+                                l.conferida_em
+                                  ? new Date(l.conferida_em).toLocaleString("pt-BR", {
+                                      dateStyle: "full",
+                                      timeStyle: "short",
+                                    })
+                                  : undefined
+                              }
+                            >
                               {l.conferida_em
-                                ? new Date(l.conferida_em).toLocaleDateString("pt-BR")
+                                ? new Date(l.conferida_em).toLocaleString("pt-BR", {
+                                    dateStyle: "short",
+                                    timeStyle: "short",
+                                  })
                                 : ""}
                             </p>
                             <button
