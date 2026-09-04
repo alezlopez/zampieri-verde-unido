@@ -1009,9 +1009,22 @@ const Rematricula2027Admin = () => {
                             <span className="inline-flex items-center gap-1 rounded bg-zampieri-green-dark px-2 py-0.5 text-xs font-medium text-white">
                               <Check className="w-3 h-3" /> Conferida
                             </span>
-                            <p className="text-xs text-muted-foreground">
+                            <p
+                              className="text-xs text-muted-foreground"
+                              title={
+                                l.conferida_em
+                                  ? new Date(l.conferida_em).toLocaleString("pt-BR", {
+                                      dateStyle: "full",
+                                      timeStyle: "short",
+                                    })
+                                  : undefined
+                              }
+                            >
                               {l.conferida_em
-                                ? new Date(l.conferida_em).toLocaleDateString("pt-BR")
+                                ? new Date(l.conferida_em).toLocaleString("pt-BR", {
+                                    dateStyle: "short",
+                                    timeStyle: "short",
+                                  })
                                 : ""}
                             </p>
                             <button
