@@ -87,15 +87,43 @@ Deno.serve(async (req) => {
       return json({ error: "rematricula_isenta" }, 409);
     }
 
-    // Reaproveita checkout válido com a mesma configuração
+    // Reaproveita cobrança/checkout válido com a mesma configuração
     const criado = aluno.checkout_criado_em ? new Date(aluno.checkout_criado_em).getTime() : 0;
     const valido = criado && Date.now() - criado < CHECKOUT_TTL_MS;
+
+    // PIX: cobrança direta, QR exibido na nossa própria página
+    if (forma === "pix" && aluno.asaas_payment_id && aluno.forma_pagamento === "pix" && !body?.force_regenerate) {
+      try {
+        const pay = await getPayment(aluno.asaas_payment_id);
+        if (pay?.status === "PENDING") {
+          const qr = await getPixQrCode(aluno.asaas_payment_id);
+          const expira = qr?.expirationDate ? new Date(String(qr.expirationDate).replace(" ", "T")) : null;
+          if (qr?.payload && (!expira || expira.getTime() > Date.now())) {
+            return json({
+              mode: "pix",
+              reused: true,
+              payment_id: aluno.asaas_payment_id,
+              valor: Number(pay?.value ?? 0),
+              pix: {
+                copia_cola: qr.payload,
+                qr_image: qr.encodedImage ? `data:image/png;base64,${qr.encodedImage}` : null,
+                expira_em: expira ? expira.toISOString() : null,
+              },
+            });
+          }
+        }
+      } catch (e) {
+        console.warn("[rematricula-2027-checkout] falha ao reaproveitar PIX", (e as Error).message);
+      }
+    }
+
     if (
-      aluno.checkout_url && valido && !body?.force_regenerate &&
+      forma !== "pix" && aluno.checkout_url && valido && !body?.force_regenerate &&
       aluno.forma_pagamento === forma && Number(aluno.parcelas || 1) === parcelas
     ) {
       return json({ checkout_url: aluno.checkout_url, checkout_id: aluno.asaas_checkout_id, reused: true });
     }
+
 
     // Valor pelo curso
     const { data: valores } = await admin
