@@ -64,6 +64,30 @@ export const StepPagamento = ({
     };
   }, [concluida, idAluno, dataNascimento]);
 
+  // Relógio para contagem regressiva do PIX + verificação automática do pagamento
+  useEffect(() => {
+    if (!pix || concluida) return;
+    const t = setInterval(() => setAgora(Date.now()), 1000);
+    return () => clearInterval(t);
+  }, [pix, concluida]);
+
+  useEffect(() => {
+    if (!pix || concluida) return;
+    const t = setInterval(() => onVerificar(), 15000);
+    return () => clearInterval(t);
+  }, [pix, concluida, onVerificar]);
+
+  const pixExpiraEm = pix?.expira_em ? new Date(pix.expira_em).getTime() : 0;
+  const pixExpirado = !!pix && !!pixExpiraEm && pixExpiraEm <= agora;
+  const restante = useMemo(() => {
+    if (!pixExpiraEm || pixExpirado) return null;
+    const s = Math.max(0, Math.floor((pixExpiraEm - agora) / 1000));
+    const h = Math.floor(s / 3600);
+    const m = Math.floor((s % 3600) / 60);
+    return h > 0 ? `${h}h ${m}min` : `${m}min`;
+  }, [pixExpiraEm, pixExpirado, agora]);
+
+
   const valorAvista = Number(status?.valor_avista || 0);
   const valorParcelado = Number(status?.valor_parcelado || 0);
   const maxParcelas = Math.min(12, Math.max(2, Number(status?.max_parcelas || 12)));
