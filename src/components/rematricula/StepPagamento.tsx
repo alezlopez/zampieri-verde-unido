@@ -70,28 +70,87 @@ export const StepPagamento = ({
     };
   }, [concluida, idAluno, dataNascimento]);
 
-  // Relógio para contagem regressiva do PIX + verificação automática do pagamento
+  // Consulta se já existe um pagamento gerado (PIX ou cartão) ainda válido
   useEffect(() => {
-    if (!pix || concluida) return;
+    if (concluida || !status?.contrato_assinado || status?.isentar_valor_rematricula) {
+      setConsultando(false);
+      return;
+    }
+    let ativo = true;
+    setConsultando(true);
+    supabase.functions
+      .invoke("rematricula-2027-checkout", {
+        body: { id_aluno: idAluno, data_nascimento: dataNascimento, apenas_consultar: true },
+      })
+      .then(({ data }) => {
+        if (!ativo) return;
+        const res = data as {
+          existente?: boolean;
+          mode?: string;
+          pix?: { copia_cola: string; qr_image: string | null; expira_em: string | null };
+          checkout_url?: string;
+          forma_pagamento?: string;
+          parcelas?: number;
+          expira_em?: string | null;
+        } | null;
+        if (res?.existente && res.mode === "pix" && res.pix?.copia_cola) {
+          setPix(res.pix);
+          setOpcao("pix");
+        } else if (res?.existente && res.checkout_url) {
+          setCartao({
+            checkout_url: res.checkout_url,
+            forma_pagamento: res.forma_pagamento || "credit_card",
+            parcelas: Number(res.parcelas || 1),
+            expira_em: res.expira_em ?? null,
+          });
+          setOpcao(Number(res.parcelas || 1) > 1 ? "credito_parcelado" : "credito_avista");
+          if (Number(res.parcelas || 1) > 1) setParcelas(Number(res.parcelas));
+        }
+      })
+      .finally(() => {
+        if (ativo) setConsultando(false);
+      });
+    return () => {
+      ativo = false;
+    };
+  }, [concluida, idAluno, dataNascimento, status?.contrato_assinado, status?.isentar_valor_rematricula]);
+
+  // Relógio para contagem regressiva + verificação automática do pagamento
+  useEffect(() => {
+    if ((!pix && !cartao) || concluida) return;
     const t = setInterval(() => setAgora(Date.now()), 1000);
     return () => clearInterval(t);
-  }, [pix, concluida]);
+  }, [pix, cartao, concluida]);
 
   useEffect(() => {
-    if (!pix || concluida) return;
+    if ((!pix && !cartao) || concluida) return;
     const t = setInterval(() => onVerificar(), 15000);
     return () => clearInterval(t);
-  }, [pix, concluida, onVerificar]);
+  }, [pix, cartao, concluida, onVerificar]);
+
+  const formatarRestante = (alvo: number) => {
+    const s = Math.max(0, Math.floor((alvo - agora) / 1000));
+    const h = Math.floor(s / 3600);
+    const m = Math.floor((s % 3600) / 60);
+    return h > 0 ? `${h}h ${m}min` : `${m}min`;
+  };
 
   const pixExpiraEm = pix?.expira_em ? new Date(pix.expira_em).getTime() : 0;
   const pixExpirado = !!pix && !!pixExpiraEm && pixExpiraEm <= agora;
   const restante = useMemo(() => {
     if (!pixExpiraEm || pixExpirado) return null;
-    const s = Math.max(0, Math.floor((pixExpiraEm - agora) / 1000));
-    const h = Math.floor(s / 3600);
-    const m = Math.floor((s % 3600) / 60);
-    return h > 0 ? `${h}h ${m}min` : `${m}min`;
+    return formatarRestante(pixExpiraEm);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [pixExpiraEm, pixExpirado, agora]);
+
+  const cartaoExpiraEm = cartao?.expira_em ? new Date(cartao.expira_em).getTime() : 0;
+  const cartaoExpirado = !!cartao && !!cartaoExpiraEm && cartaoExpiraEm <= agora;
+  const restanteCartao = useMemo(() => {
+    if (!cartaoExpiraEm || cartaoExpirado) return null;
+    return formatarRestante(cartaoExpiraEm);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [cartaoExpiraEm, cartaoExpirado, agora]);
+
 
 
   const valorAvista = Number(status?.valor_avista || 0);
