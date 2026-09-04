@@ -367,11 +367,25 @@ export const StepPagamento = ({
     </button>
   );
 
+  const pagamentoAtivo = (!!pix && !pixExpirado) || (!!cartao && !cartaoExpirado);
+
+  if (consultando) {
+    return (
+      <div className="rounded-lg border border-zampieri-gold bg-white p-4 flex items-center justify-center gap-2 text-sm text-muted-foreground">
+        <Loader2 className="w-4 h-4 animate-spin" /> Verificando pagamentos gerados…
+      </div>
+    );
+  }
+
   return (
     <div className="rounded-lg border border-zampieri-gold bg-white p-4 space-y-3 text-left">
       <div>
         <p className="font-semibold text-zampieri-green-dark">Pagamento da rematrícula</p>
-        <p className="text-xs text-muted-foreground">Escolha a forma de pagamento.</p>
+        <p className="text-xs text-muted-foreground">
+          {pagamentoAtivo
+            ? "Você já tem um pagamento gerado. Conclua-o abaixo — só é possível gerar outro depois que ele expirar."
+            : "Escolha a forma de pagamento."}
+        </p>
       </div>
 
       {aguardandoPagamento && (
@@ -381,26 +395,28 @@ export const StepPagamento = ({
         </p>
       )}
 
-      <div className="space-y-2">
-        <Card id="pix" icone={<QrCode className="w-5 h-5" />} titulo="PIX à vista" valor={brl(valorAvista)} />
-        <Card
-          id="credito_avista"
-          icone={<CreditCard className="w-5 h-5" />}
-          titulo="Cartão à vista"
-          valor={brl(valorAvista)}
-        />
-        {permiteParcelar && (
+      {!pagamentoAtivo && (
+        <div className="space-y-2">
+          <Card id="pix" icone={<QrCode className="w-5 h-5" />} titulo="PIX à vista" valor={brl(valorAvista)} />
           <Card
-            id="credito_parcelado"
+            id="credito_avista"
             icone={<CreditCard className="w-5 h-5" />}
-            titulo="Cartão parcelado"
-            detalhe={`${parcelas}x de ${brl(valorParcelado / parcelas)}`}
-            valor={brl(valorParcelado)}
+            titulo="Cartão à vista"
+            valor={brl(valorAvista)}
           />
-        )}
-      </div>
+          {permiteParcelar && (
+            <Card
+              id="credito_parcelado"
+              icone={<CreditCard className="w-5 h-5" />}
+              titulo="Cartão parcelado"
+              detalhe={`${parcelas}x de ${brl(valorParcelado / parcelas)}`}
+              valor={brl(valorParcelado)}
+            />
+          )}
+        </div>
+      )}
 
-      {opcao === "credito_parcelado" && permiteParcelar && (
+      {!pagamentoAtivo && opcao === "credito_parcelado" && permiteParcelar && (
         <div>
           <label className="text-xs text-muted-foreground">Número de parcelas</label>
           <select
@@ -417,10 +433,54 @@ export const StepPagamento = ({
         </div>
       )}
 
-      {opcao === "pix" && pix && (
+      {cartao && (
         <div className="rounded-lg border border-zampieri-green-dark bg-zampieri-cream/40 p-3 space-y-3 text-center">
           <p className="text-sm font-semibold text-zampieri-green-dark">
-            {pixExpirado ? "Código PIX expirado" : "Pague com PIX"}
+            {cartaoExpirado ? "Link de pagamento expirado" : "Pagamento no cartão já gerado"}
+          </p>
+          {!cartaoExpirado ? (
+            <>
+              <p className="text-xs text-muted-foreground">
+                {cartao.parcelas > 1 ? `Cartão em ${cartao.parcelas}x` : "Cartão à vista"}.
+                {restanteCartao && <> Este link vale por mais <strong>{restanteCartao}</strong>.</>}
+              </p>
+              <a href={cartao.checkout_url} target="_blank" rel="noopener noreferrer">
+                <Button className="w-full bg-zampieri-green-dark hover:bg-zampieri-green">
+                  <CreditCard className="w-4 h-4 mr-2" />
+                  Continuar pagamento
+                </Button>
+              </a>
+              <p className="text-xs text-muted-foreground">
+                Enquanto este link estiver válido, não é possível gerar outro pagamento.
+              </p>
+            </>
+          ) : (
+            <>
+              <p className="text-xs text-muted-foreground">
+                Este link não é mais válido. Você já pode gerar um novo pagamento.
+              </p>
+              <Button
+                variant="outline"
+                size="sm"
+                className="w-full"
+                onClick={() => {
+                  setCartao(null);
+                  setErro(null);
+                }}
+                disabled={enviando}
+              >
+                <RefreshCw className="w-4 h-4 mr-2" />
+                Escolher forma de pagamento
+              </Button>
+            </>
+          )}
+        </div>
+      )}
+
+      {pix && (
+        <div className="rounded-lg border border-zampieri-green-dark bg-zampieri-cream/40 p-3 space-y-3 text-center">
+          <p className="text-sm font-semibold text-zampieri-green-dark">
+            {pixExpirado ? "Código PIX expirado" : "PIX já gerado — pague com este código"}
           </p>
 
           {!pixExpirado && pix.qr_image && (
@@ -453,32 +513,34 @@ export const StepPagamento = ({
               </Button>
               <p className="text-xs text-muted-foreground">
                 Assim que o pagamento for identificado, esta tela é atualizada automaticamente.
+                Não é preciso gerar outro código.
               </p>
             </>
           ) : (
-            <p className="text-xs text-muted-foreground">
-              Este código não é mais válido. Gere um novo para concluir o pagamento.
-            </p>
+            <>
+              <p className="text-xs text-muted-foreground">
+                Este código não é mais válido. Gere um novo para concluir o pagamento.
+              </p>
+              <Button
+                variant="outline"
+                size="sm"
+                className="w-full"
+                onClick={() => pagar(true)}
+                disabled={enviando}
+              >
+                {enviando ? (
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                ) : (
+                  <RefreshCw className="w-4 h-4 mr-2" />
+                )}
+                Gerar novo código PIX
+              </Button>
+            </>
           )}
-
-          <Button
-            variant="outline"
-            size="sm"
-            className="w-full"
-            onClick={() => pagar(true)}
-            disabled={enviando}
-          >
-            {enviando ? (
-              <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-            ) : (
-              <RefreshCw className="w-4 h-4 mr-2" />
-            )}
-            Gerar novo código PIX
-          </Button>
         </div>
       )}
 
-      {opcao === "pix" && !pix && (
+      {!pagamentoAtivo && !pix && opcao === "pix" && (
         <p className="text-xs text-muted-foreground">
           O código PIX é gerado aqui mesmo e vale por 24 horas. Se expirar, você poderá gerar um
           novo nesta página.
@@ -487,32 +549,18 @@ export const StepPagamento = ({
 
       {erro && <p className="text-xs text-destructive">{erro}</p>}
 
-      {!(opcao === "pix" && pix) && (
-        <>
-          <Button
-            className="w-full bg-zampieri-green-dark hover:bg-zampieri-green"
-            onClick={() => pagar(false)}
-            disabled={enviando}
-          >
-            {enviando && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
-            {opcao === "pix" ? "Gerar código PIX" : "Ir para o pagamento"}
-          </Button>
-
-          {opcao !== "pix" && (
-            <Button
-              variant="outline"
-              size="sm"
-              className="w-full"
-              onClick={() => pagar(true)}
-              disabled={enviando}
-            >
-              <RefreshCw className="w-4 h-4 mr-2" />
-              Gerar novo link de pagamento
-            </Button>
-          )}
-        </>
+      {!pagamentoAtivo && !pix && !cartao && (
+        <Button
+          className="w-full bg-zampieri-green-dark hover:bg-zampieri-green"
+          onClick={() => pagar(false)}
+          disabled={enviando}
+        >
+          {enviando && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
+          {opcao === "pix" ? "Gerar código PIX" : "Ir para o pagamento"}
+        </Button>
       )}
     </div>
   );
 
 };
+
