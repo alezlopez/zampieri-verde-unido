@@ -652,18 +652,30 @@ const Rematricula2027Admin = () => {
   }, [linhas, busca, filtro, ordem, confDe, confAte]);
 
 
-  const totais = useMemo(
-    () => ({
+  const periodoAtivo = !!confDe || !!confAte;
+
+  const totais = useMemo(() => {
+    const de = confDe ? new Date(`${confDe}T00:00:00`).getTime() : null;
+    const ate = confAte ? new Date(`${confAte}T23:59:59.999`).getTime() : null;
+    const noPeriodo = (iso: string | null) => {
+      if (de === null && ate === null) return true;
+      if (!iso) return false;
+      const t = new Date(iso).getTime();
+      if (de !== null && t < de) return false;
+      if (ate !== null && t > ate) return false;
+      return true;
+    };
+    return {
       alunos: linhas.length,
       concluidas: linhas.filter((l) => l.rematricula_concluida).length,
       aConferir: linhas.filter((l) => l.rematricula_concluida && !l.conferida).length,
-      conferidas: linhas.filter((l) => l.conferida).length,
+      conferidas: linhas.filter((l) => l.conferida && noPeriodo(l.conferida_em)).length,
       cpfInvalido: linhas.filter(
         (l) => (!!l.cpf_pai && !isValidCpf(l.cpf_pai)) || (!!l.cpf_mae && !isValidCpf(l.cpf_mae)),
       ).length,
-    }),
-    [linhas],
-  );
+    };
+  }, [linhas, confDe, confAte]);
+
 
   if (authLoading || !podeAcessar("rematricula")) {
     return (
