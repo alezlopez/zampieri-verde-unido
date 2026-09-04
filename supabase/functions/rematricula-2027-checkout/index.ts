@@ -1,6 +1,6 @@
 import { createClient } from "npm:@supabase/supabase-js@2";
 import { corsHeaders } from "../_shared/cors.ts";
-import { getOrCreateCustomer, createCheckout } from "../_shared/asaas.ts";
+import { getOrCreateCustomer, createCheckout, createPayment, getPayment, getPixQrCode } from "../_shared/asaas.ts";
 import { rematriculaLiberada } from "../_shared/rematricula-abertura.ts";
 
 const CHECKOUT_MINUTES = 1440; // 24h (máximo aceito pelo Asaas)
@@ -87,15 +87,43 @@ Deno.serve(async (req) => {
       return json({ error: "rematricula_isenta" }, 409);
     }
 
-    // Reaproveita checkout válido com a mesma configuração
+    // Reaproveita cobrança/checkout válido com a mesma configuração
     const criado = aluno.checkout_criado_em ? new Date(aluno.checkout_criado_em).getTime() : 0;
     const valido = criado && Date.now() - criado < CHECKOUT_TTL_MS;
+
+    // PIX: cobrança direta, QR exibido na nossa própria página
+    if (forma === "pix" && aluno.asaas_payment_id && aluno.forma_pagamento === "pix" && !body?.force_regenerate) {
+      try {
+        const pay = await getPayment(aluno.asaas_payment_id);
+        if (pay?.status === "PENDING") {
+          const qr = await getPixQrCode(aluno.asaas_payment_id);
+          const expira = qr?.expirationDate ? new Date(String(qr.expirationDate).replace(" ", "T")) : null;
+          if (qr?.payload && (!expira || expira.getTime() > Date.now())) {
+            return json({
+              mode: "pix",
+              reused: true,
+              payment_id: aluno.asaas_payment_id,
+              valor: Number(pay?.value ?? 0),
+              pix: {
+                copia_cola: qr.payload,
+                qr_image: qr.encodedImage ? `data:image/png;base64,${qr.encodedImage}` : null,
+                expira_em: expira ? expira.toISOString() : null,
+              },
+            });
+          }
+        }
+      } catch (e) {
+        console.warn("[rematricula-2027-checkout] falha ao reaproveitar PIX", (e as Error).message);
+      }
+    }
+
     if (
-      aluno.checkout_url && valido && !body?.force_regenerate &&
+      forma !== "pix" && aluno.checkout_url && valido && !body?.force_regenerate &&
       aluno.forma_pagamento === forma && Number(aluno.parcelas || 1) === parcelas
     ) {
       return json({ checkout_url: aluno.checkout_url, checkout_id: aluno.asaas_checkout_id, reused: true });
     }
+
 
     // Valor pelo curso
     const { data: valores } = await admin
@@ -153,6 +181,48 @@ Deno.serve(async (req) => {
 
     const origin = safeOrigin(req, body?.origin);
     const successUrl = `${origin}/rematricula2027?pagamento=sucesso&aluno=${idAluno}`;
+
+    // ===== PIX: cobrança direta, sem depender da tela de checkout do Asaas =====
+    if (forma === "pix") {
+      const venc = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
+      const pagamento = await createPayment({
+        customer: customerId,
+        billingType: "PIX",
+        value: valorTotal,
+        dueDate: venc,
+        description: `Rematrícula 2027 - ${aluno.nome_aluno} (${aluno.curso_2027})`,
+        externalReference: `remat:${idAluno}`,
+      });
+      if (!pagamento?.id) return json({ error: "Falha ao gerar cobrança PIX" }, 502);
+
+      const qr = await getPixQrCode(pagamento.id);
+      if (!qr?.payload) return json({ error: "Falha ao gerar código PIX" }, 502);
+      const expira = qr?.expirationDate ? new Date(String(qr.expirationDate).replace(" ", "T")) : null;
+
+      await admin.from("alunos_rematricula_2027").update({
+        asaas_customer_id: customerId,
+        asaas_payment_id: pagamento.id,
+        asaas_checkout_id: null,
+        checkout_url: pagamento.invoiceUrl ?? null,
+        checkout_criado_em: new Date().toISOString(),
+        forma_pagamento: "pix",
+        parcelas: 1,
+        updated_at: new Date().toISOString(),
+      }).eq("id_aluno", idAluno);
+
+      return json({
+        mode: "pix",
+        payment_id: pagamento.id,
+        valor: valorTotal,
+        invoice_url: pagamento.invoiceUrl ?? null,
+        pix: {
+          copia_cola: qr.payload,
+          qr_image: qr.encodedImage ? `data:image/png;base64,${qr.encodedImage}` : null,
+          expira_em: expira ? expira.toISOString() : null,
+        },
+      });
+    }
+
 
     const checkout = await createCheckout({
       customer: customerId,

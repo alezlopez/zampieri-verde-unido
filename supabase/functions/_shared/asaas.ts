@@ -121,6 +121,12 @@ export async function getPayment(paymentId: string) {
   return await call(`/payments/${paymentId}`, { method: "GET" });
 }
 
+// QR Code + copia e cola de uma cobrança PIX já criada
+export async function getPixQrCode(paymentId: string) {
+  return await call(`/payments/${paymentId}/pixQrCode`, { method: "GET" });
+}
+
+
 export async function listInstallmentPayments(installmentId: string) {
   return await call(`/installments/${installmentId}/payments`, { method: "GET" });
 }

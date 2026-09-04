@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { CreditCard, Loader2, Lock, QrCode, RefreshCw, CheckCircle2, Sparkles } from "lucide-react";
+import { CreditCard, Copy, Loader2, Lock, QrCode, RefreshCw, CheckCircle2, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -39,6 +39,12 @@ export const StepPagamento = ({
   const [enviando, setEnviando] = useState(false);
   const [erro, setErro] = useState<string | null>(null);
   const [numeros, setNumeros] = useState<{ numero: string; faixa: string }[]>([]);
+  const [pix, setPix] = useState<
+    { copia_cola: string; qr_image: string | null; expira_em: string | null } | null
+  >(null);
+  const [copiado, setCopiado] = useState(false);
+  const [agora, setAgora] = useState(() => Date.now());
+
 
   const concluida = !!status?.rematricula_concluida;
 
@@ -57,6 +63,30 @@ export const StepPagamento = ({
       ativo = false;
     };
   }, [concluida, idAluno, dataNascimento]);
+
+  // Relógio para contagem regressiva do PIX + verificação automática do pagamento
+  useEffect(() => {
+    if (!pix || concluida) return;
+    const t = setInterval(() => setAgora(Date.now()), 1000);
+    return () => clearInterval(t);
+  }, [pix, concluida]);
+
+  useEffect(() => {
+    if (!pix || concluida) return;
+    const t = setInterval(() => onVerificar(), 15000);
+    return () => clearInterval(t);
+  }, [pix, concluida, onVerificar]);
+
+  const pixExpiraEm = pix?.expira_em ? new Date(pix.expira_em).getTime() : 0;
+  const pixExpirado = !!pix && !!pixExpiraEm && pixExpiraEm <= agora;
+  const restante = useMemo(() => {
+    if (!pixExpiraEm || pixExpirado) return null;
+    const s = Math.max(0, Math.floor((pixExpiraEm - agora) / 1000));
+    const h = Math.floor(s / 3600);
+    const m = Math.floor((s % 3600) / 60);
+    return h > 0 ? `${h}h ${m}min` : `${m}min`;
+  }, [pixExpiraEm, pixExpirado, agora]);
+
 
   const valorAvista = Number(status?.valor_avista || 0);
   const valorParcelado = Number(status?.valor_parcelado || 0);
@@ -183,13 +213,28 @@ export const StepPagamento = ({
         force_regenerate: forcarNovo,
       },
     });
-    let res = data as { checkout_url?: string; error?: string } | null;
+    let res = data as
+      | {
+        checkout_url?: string;
+        error?: string;
+        mode?: string;
+        pix?: { copia_cola: string; qr_image: string | null; expira_em: string | null };
+      }
+      | null;
     if (!res && error) {
       try {
         const ctx = (error as any)?.context;
         if (ctx && typeof ctx.json === "function") res = await ctx.json();
       } catch { /* ignore */ }
     }
+
+    if (!error && res?.mode === "pix" && res.pix?.copia_cola) {
+      setPix(res.pix);
+      setCopiado(false);
+      setEnviando(false);
+      return;
+    }
+
     if (error || !res?.checkout_url) {
       setEnviando(false);
       const code = res?.error;
@@ -206,6 +251,23 @@ export const StepPagamento = ({
     }
     window.location.href = res.checkout_url;
   };
+
+  const copiarPix = async () => {
+    if (!pix?.copia_cola) return;
+    try {
+      await navigator.clipboard.writeText(pix.copia_cola);
+    } catch {
+      const el = document.createElement("textarea");
+      el.value = pix.copia_cola;
+      document.body.appendChild(el);
+      el.select();
+      document.execCommand("copy");
+      document.body.removeChild(el);
+    }
+    setCopiado(true);
+    setTimeout(() => setCopiado(false), 2500);
+  };
+
 
   const Card = ({
     id,
@@ -290,34 +352,102 @@ export const StepPagamento = ({
         </div>
       )}
 
-      {opcao === "pix" && (
+      {opcao === "pix" && pix && (
+        <div className="rounded-lg border border-zampieri-green-dark bg-zampieri-cream/40 p-3 space-y-3 text-center">
+          <p className="text-sm font-semibold text-zampieri-green-dark">
+            {pixExpirado ? "Código PIX expirado" : "Pague com PIX"}
+          </p>
+
+          {!pixExpirado && pix.qr_image && (
+            <img
+              src={pix.qr_image}
+              alt="QR Code PIX da rematrícula 2027"
+              className="mx-auto h-48 w-48 rounded-md bg-white p-2"
+            />
+          )}
+
+          {!pixExpirado ? (
+            <>
+              <p className="text-xs text-muted-foreground">
+                Escaneie o QR Code ou use o código copia e cola abaixo.
+                {restante && <> Válido por mais <strong>{restante}</strong>.</>}
+              </p>
+              <p className="break-all rounded-md border border-border bg-white p-2 font-mono text-[10px] text-muted-foreground">
+                {pix.copia_cola}
+              </p>
+              <Button
+                className="w-full bg-zampieri-green-dark hover:bg-zampieri-green"
+                onClick={copiarPix}
+              >
+                {copiado ? (
+                  <CheckCircle2 className="w-4 h-4 mr-2" />
+                ) : (
+                  <Copy className="w-4 h-4 mr-2" />
+                )}
+                {copiado ? "Código copiado!" : "Copiar código PIX"}
+              </Button>
+              <p className="text-xs text-muted-foreground">
+                Assim que o pagamento for identificado, esta tela é atualizada automaticamente.
+              </p>
+            </>
+          ) : (
+            <p className="text-xs text-muted-foreground">
+              Este código não é mais válido. Gere um novo para concluir o pagamento.
+            </p>
+          )}
+
+          <Button
+            variant="outline"
+            size="sm"
+            className="w-full"
+            onClick={() => pagar(true)}
+            disabled={enviando}
+          >
+            {enviando ? (
+              <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+            ) : (
+              <RefreshCw className="w-4 h-4 mr-2" />
+            )}
+            Gerar novo código PIX
+          </Button>
+        </div>
+      )}
+
+      {opcao === "pix" && !pix && (
         <p className="text-xs text-muted-foreground">
-          O código PIX vale por 24 horas. Se ele expirar ou o banco recusar o código, volte a esta
-          página e toque em <strong>Gerar novo código PIX</strong>.
+          O código PIX é gerado aqui mesmo e vale por 24 horas. Se expirar, você poderá gerar um
+          novo nesta página.
         </p>
       )}
 
       {erro && <p className="text-xs text-destructive">{erro}</p>}
 
-      <Button
-        className="w-full bg-zampieri-green-dark hover:bg-zampieri-green"
-        onClick={() => pagar(false)}
-        disabled={enviando}
-      >
-        {enviando && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
-        Ir para o pagamento
-      </Button>
+      {!(opcao === "pix" && pix) && (
+        <>
+          <Button
+            className="w-full bg-zampieri-green-dark hover:bg-zampieri-green"
+            onClick={() => pagar(false)}
+            disabled={enviando}
+          >
+            {enviando && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
+            {opcao === "pix" ? "Gerar código PIX" : "Ir para o pagamento"}
+          </Button>
 
-      <Button
-        variant="outline"
-        size="sm"
-        className="w-full"
-        onClick={() => pagar(true)}
-        disabled={enviando}
-      >
-        <RefreshCw className="w-4 h-4 mr-2" />
-        {opcao === "pix" ? "Gerar novo código PIX" : "Gerar novo link de pagamento"}
-      </Button>
+          {opcao !== "pix" && (
+            <Button
+              variant="outline"
+              size="sm"
+              className="w-full"
+              onClick={() => pagar(true)}
+              disabled={enviando}
+            >
+              <RefreshCw className="w-4 h-4 mr-2" />
+              Gerar novo link de pagamento
+            </Button>
+          )}
+        </>
+      )}
     </div>
   );
+
 };
