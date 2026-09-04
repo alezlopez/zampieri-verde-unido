@@ -42,8 +42,14 @@ export const StepPagamento = ({
   const [pix, setPix] = useState<
     { copia_cola: string; qr_image: string | null; expira_em: string | null } | null
   >(null);
+  const [cartao, setCartao] = useState<
+    { checkout_url: string; forma_pagamento: string; parcelas: number; expira_em: string | null } | null
+  >(null);
+  const [consultando, setConsultando] = useState(true);
   const [copiado, setCopiado] = useState(false);
   const [agora, setAgora] = useState(() => Date.now());
+
+
 
 
   const concluida = !!status?.rematricula_concluida;
