@@ -1,6 +1,6 @@
 import { createClient } from "npm:@supabase/supabase-js@2";
 import { corsHeaders } from "../_shared/cors.ts";
-import { getOrCreateCustomer, createCheckout } from "../_shared/asaas.ts";
+import { getOrCreateCustomer, createCheckout, createPayment, getPayment, getPixQrCode } from "../_shared/asaas.ts";
 import { rematriculaLiberada } from "../_shared/rematricula-abertura.ts";
 
 const CHECKOUT_MINUTES = 1440; // 24h (máximo aceito pelo Asaas)
