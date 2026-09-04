@@ -183,13 +183,28 @@ export const StepPagamento = ({
         force_regenerate: forcarNovo,
       },
     });
-    let res = data as { checkout_url?: string; error?: string } | null;
+    let res = data as
+      | {
+        checkout_url?: string;
+        error?: string;
+        mode?: string;
+        pix?: { copia_cola: string; qr_image: string | null; expira_em: string | null };
+      }
+      | null;
     if (!res && error) {
       try {
         const ctx = (error as any)?.context;
         if (ctx && typeof ctx.json === "function") res = await ctx.json();
       } catch { /* ignore */ }
     }
+
+    if (!error && res?.mode === "pix" && res.pix?.copia_cola) {
+      setPix(res.pix);
+      setCopiado(false);
+      setEnviando(false);
+      return;
+    }
+
     if (error || !res?.checkout_url) {
       setEnviando(false);
       const code = res?.error;
@@ -206,6 +221,23 @@ export const StepPagamento = ({
     }
     window.location.href = res.checkout_url;
   };
+
+  const copiarPix = async () => {
+    if (!pix?.copia_cola) return;
+    try {
+      await navigator.clipboard.writeText(pix.copia_cola);
+    } catch {
+      const el = document.createElement("textarea");
+      el.value = pix.copia_cola;
+      document.body.appendChild(el);
+      el.select();
+      document.execCommand("copy");
+      document.body.removeChild(el);
+    }
+    setCopiado(true);
+    setTimeout(() => setCopiado(false), 2500);
+  };
+
 
   const Card = ({
     id,
