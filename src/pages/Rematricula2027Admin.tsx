@@ -616,13 +616,22 @@ const Rematricula2027Admin = () => {
 
   const filtradas = useMemo(() => {
     const termo = busca.trim().toLowerCase();
-    return linhas.filter((l) => {
+    const de = confDe ? new Date(`${confDe}T00:00:00`).getTime() : null;
+    const ate = confAte ? new Date(`${confAte}T23:59:59.999`).getTime() : null;
+
+    const base = linhas.filter((l) => {
       if (filtro === "cpf_invalido" && !cpfSuspeito(l)) return false;
       if (filtro === "concluidas" && !l.rematricula_concluida) return false;
       if (filtro === "a_conferir" && (!l.rematricula_concluida || l.conferida)) return false;
       if (filtro === "conferidas" && !l.conferida) return false;
       if (filtro === "assinados" && !l.contrato_assinado) return false;
       if (filtro === "pendentes" && l.rematricula_concluida) return false;
+      if (filtro === "conferidas" && (de !== null || ate !== null)) {
+        const t = l.conferida_em ? new Date(l.conferida_em).getTime() : null;
+        if (t === null) return false;
+        if (de !== null && t < de) return false;
+        if (ate !== null && t > ate) return false;
+      }
       if (!termo) return true;
       return (
         l.nome_aluno.toLowerCase().includes(termo) ||
@@ -630,7 +639,18 @@ const Rematricula2027Admin = () => {
         l.numeros.some((n) => n.includes(termo))
       );
     });
-  }, [linhas, busca, filtro]);
+
+    if (ordem === "padrao") return base;
+    return [...base].sort((a, b) => {
+      const ta = a.conferida_em ? new Date(a.conferida_em).getTime() : null;
+      const tb = b.conferida_em ? new Date(b.conferida_em).getTime() : null;
+      if (ta === null && tb === null) return 0;
+      if (ta === null) return 1;
+      if (tb === null) return -1;
+      return ordem === "conf_desc" ? tb - ta : ta - tb;
+    });
+  }, [linhas, busca, filtro, ordem, confDe, confAte]);
+
 
   const totais = useMemo(
     () => ({
