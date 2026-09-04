@@ -367,6 +367,9 @@ const Rematricula2027Admin = () => {
   const [loading, setLoading] = useState(true);
   const [busca, setBusca] = useState("");
   const [filtro, setFiltro] = useState<Filtro>("todos");
+  const [ordem, setOrdem] = useState<"padrao" | "conf_desc" | "conf_asc">("padrao");
+  const [confDe, setConfDe] = useState("");
+  const [confAte, setConfAte] = useState("");
   const [expandido, setExpandido] = useState<number | null>(null);
   const [revisando, setRevisando] = useState<LinhaAdmin | null>(null);
   const [salvando, setSalvando] = useState(false);
