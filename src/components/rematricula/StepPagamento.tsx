@@ -42,8 +42,14 @@ export const StepPagamento = ({
   const [pix, setPix] = useState<
     { copia_cola: string; qr_image: string | null; expira_em: string | null } | null
   >(null);
+  const [cartao, setCartao] = useState<
+    { checkout_url: string; forma_pagamento: string; parcelas: number; expira_em: string | null } | null
+  >(null);
+  const [consultando, setConsultando] = useState(true);
   const [copiado, setCopiado] = useState(false);
   const [agora, setAgora] = useState(() => Date.now());
+
+
 
 
   const concluida = !!status?.rematricula_concluida;
@@ -64,28 +70,87 @@ export const StepPagamento = ({
     };
   }, [concluida, idAluno, dataNascimento]);
 
-  // Relógio para contagem regressiva do PIX + verificação automática do pagamento
+  // Consulta se já existe um pagamento gerado (PIX ou cartão) ainda válido
   useEffect(() => {
-    if (!pix || concluida) return;
+    if (concluida || !status?.contrato_assinado || status?.isentar_valor_rematricula) {
+      setConsultando(false);
+      return;
+    }
+    let ativo = true;
+    setConsultando(true);
+    supabase.functions
+      .invoke("rematricula-2027-checkout", {
+        body: { id_aluno: idAluno, data_nascimento: dataNascimento, apenas_consultar: true },
+      })
+      .then(({ data }) => {
+        if (!ativo) return;
+        const res = data as {
+          existente?: boolean;
+          mode?: string;
+          pix?: { copia_cola: string; qr_image: string | null; expira_em: string | null };
+          checkout_url?: string;
+          forma_pagamento?: string;
+          parcelas?: number;
+          expira_em?: string | null;
+        } | null;
+        if (res?.existente && res.mode === "pix" && res.pix?.copia_cola) {
+          setPix(res.pix);
+          setOpcao("pix");
+        } else if (res?.existente && res.checkout_url) {
+          setCartao({
+            checkout_url: res.checkout_url,
+            forma_pagamento: res.forma_pagamento || "credit_card",
+            parcelas: Number(res.parcelas || 1),
+            expira_em: res.expira_em ?? null,
+          });
+          setOpcao(Number(res.parcelas || 1) > 1 ? "credito_parcelado" : "credito_avista");
+          if (Number(res.parcelas || 1) > 1) setParcelas(Number(res.parcelas));
+        }
+      })
+      .finally(() => {
+        if (ativo) setConsultando(false);
+      });
+    return () => {
+      ativo = false;
+    };
+  }, [concluida, idAluno, dataNascimento, status?.contrato_assinado, status?.isentar_valor_rematricula]);
+
+  // Relógio para contagem regressiva + verificação automática do pagamento
+  useEffect(() => {
+    if ((!pix && !cartao) || concluida) return;
     const t = setInterval(() => setAgora(Date.now()), 1000);
     return () => clearInterval(t);
-  }, [pix, concluida]);
+  }, [pix, cartao, concluida]);
 
   useEffect(() => {
-    if (!pix || concluida) return;
+    if ((!pix && !cartao) || concluida) return;
     const t = setInterval(() => onVerificar(), 15000);
     return () => clearInterval(t);
-  }, [pix, concluida, onVerificar]);
+  }, [pix, cartao, concluida, onVerificar]);
+
+  const formatarRestante = (alvo: number) => {
+    const s = Math.max(0, Math.floor((alvo - agora) / 1000));
+    const h = Math.floor(s / 3600);
+    const m = Math.floor((s % 3600) / 60);
+    return h > 0 ? `${h}h ${m}min` : `${m}min`;
+  };
 
   const pixExpiraEm = pix?.expira_em ? new Date(pix.expira_em).getTime() : 0;
   const pixExpirado = !!pix && !!pixExpiraEm && pixExpiraEm <= agora;
   const restante = useMemo(() => {
     if (!pixExpiraEm || pixExpirado) return null;
-    const s = Math.max(0, Math.floor((pixExpiraEm - agora) / 1000));
-    const h = Math.floor(s / 3600);
-    const m = Math.floor((s % 3600) / 60);
-    return h > 0 ? `${h}h ${m}min` : `${m}min`;
+    return formatarRestante(pixExpiraEm);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [pixExpiraEm, pixExpirado, agora]);
+
+  const cartaoExpiraEm = cartao?.expira_em ? new Date(cartao.expira_em).getTime() : 0;
+  const cartaoExpirado = !!cartao && !!cartaoExpiraEm && cartaoExpiraEm <= agora;
+  const restanteCartao = useMemo(() => {
+    if (!cartaoExpiraEm || cartaoExpirado) return null;
+    return formatarRestante(cartaoExpiraEm);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [cartaoExpiraEm, cartaoExpirado, agora]);
+
 
 
   const valorAvista = Number(status?.valor_avista || 0);
@@ -218,6 +283,10 @@ export const StepPagamento = ({
         checkout_url?: string;
         error?: string;
         mode?: string;
+        existente?: boolean;
+        forma_pagamento?: string;
+        parcelas?: number;
+        expira_em?: string | null;
         pix?: { copia_cola: string; qr_image: string | null; expira_em: string | null };
       }
       | null;
@@ -230,6 +299,7 @@ export const StepPagamento = ({
 
     if (!error && res?.mode === "pix" && res.pix?.copia_cola) {
       setPix(res.pix);
+      setCartao(null);
       setCopiado(false);
       setEnviando(false);
       return;
@@ -249,6 +319,16 @@ export const StepPagamento = ({
       );
       return;
     }
+    setPix(null);
+    setCartao({
+      checkout_url: res.checkout_url,
+      forma_pagamento: res.forma_pagamento || (opcao === "credito_parcelado" ? "credit_card" : "credit_card"),
+      parcelas: Number(res.parcelas || (opcao === "credito_parcelado" ? parcelas : 1)),
+      expira_em: res.expira_em ?? new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
+    });
+    setEnviando(false);
+    window.location.href = res.checkout_url;
+
     window.location.href = res.checkout_url;
   };
 
@@ -302,11 +382,25 @@ export const StepPagamento = ({
     </button>
   );
 
+  const pagamentoAtivo = (!!pix && !pixExpirado) || (!!cartao && !cartaoExpirado);
+
+  if (consultando) {
+    return (
+      <div className="rounded-lg border border-zampieri-gold bg-white p-4 flex items-center justify-center gap-2 text-sm text-muted-foreground">
+        <Loader2 className="w-4 h-4 animate-spin" /> Verificando pagamentos gerados…
+      </div>
+    );
+  }
+
   return (
     <div className="rounded-lg border border-zampieri-gold bg-white p-4 space-y-3 text-left">
       <div>
         <p className="font-semibold text-zampieri-green-dark">Pagamento da rematrícula</p>
-        <p className="text-xs text-muted-foreground">Escolha a forma de pagamento.</p>
+        <p className="text-xs text-muted-foreground">
+          {pagamentoAtivo
+            ? "Você já tem um pagamento gerado. Conclua-o abaixo — só é possível gerar outro depois que ele expirar."
+            : "Escolha a forma de pagamento."}
+        </p>
       </div>
 
       {aguardandoPagamento && (
@@ -316,26 +410,28 @@ export const StepPagamento = ({
         </p>
       )}
 
-      <div className="space-y-2">
-        <Card id="pix" icone={<QrCode className="w-5 h-5" />} titulo="PIX à vista" valor={brl(valorAvista)} />
-        <Card
-          id="credito_avista"
-          icone={<CreditCard className="w-5 h-5" />}
-          titulo="Cartão à vista"
-          valor={brl(valorAvista)}
-        />
-        {permiteParcelar && (
+      {!pagamentoAtivo && (
+        <div className="space-y-2">
+          <Card id="pix" icone={<QrCode className="w-5 h-5" />} titulo="PIX à vista" valor={brl(valorAvista)} />
           <Card
-            id="credito_parcelado"
+            id="credito_avista"
             icone={<CreditCard className="w-5 h-5" />}
-            titulo="Cartão parcelado"
-            detalhe={`${parcelas}x de ${brl(valorParcelado / parcelas)}`}
-            valor={brl(valorParcelado)}
+            titulo="Cartão à vista"
+            valor={brl(valorAvista)}
           />
-        )}
-      </div>
+          {permiteParcelar && (
+            <Card
+              id="credito_parcelado"
+              icone={<CreditCard className="w-5 h-5" />}
+              titulo="Cartão parcelado"
+              detalhe={`${parcelas}x de ${brl(valorParcelado / parcelas)}`}
+              valor={brl(valorParcelado)}
+            />
+          )}
+        </div>
+      )}
 
-      {opcao === "credito_parcelado" && permiteParcelar && (
+      {!pagamentoAtivo && opcao === "credito_parcelado" && permiteParcelar && (
         <div>
           <label className="text-xs text-muted-foreground">Número de parcelas</label>
           <select
@@ -352,10 +448,54 @@ export const StepPagamento = ({
         </div>
       )}
 
-      {opcao === "pix" && pix && (
+      {cartao && (
         <div className="rounded-lg border border-zampieri-green-dark bg-zampieri-cream/40 p-3 space-y-3 text-center">
           <p className="text-sm font-semibold text-zampieri-green-dark">
-            {pixExpirado ? "Código PIX expirado" : "Pague com PIX"}
+            {cartaoExpirado ? "Link de pagamento expirado" : "Pagamento no cartão já gerado"}
+          </p>
+          {!cartaoExpirado ? (
+            <>
+              <p className="text-xs text-muted-foreground">
+                {cartao.parcelas > 1 ? `Cartão em ${cartao.parcelas}x` : "Cartão à vista"}.
+                {restanteCartao && <> Este link vale por mais <strong>{restanteCartao}</strong>.</>}
+              </p>
+              <a href={cartao.checkout_url} target="_blank" rel="noopener noreferrer">
+                <Button className="w-full bg-zampieri-green-dark hover:bg-zampieri-green">
+                  <CreditCard className="w-4 h-4 mr-2" />
+                  Continuar pagamento
+                </Button>
+              </a>
+              <p className="text-xs text-muted-foreground">
+                Enquanto este link estiver válido, não é possível gerar outro pagamento.
+              </p>
+            </>
+          ) : (
+            <>
+              <p className="text-xs text-muted-foreground">
+                Este link não é mais válido. Você já pode gerar um novo pagamento.
+              </p>
+              <Button
+                variant="outline"
+                size="sm"
+                className="w-full"
+                onClick={() => {
+                  setCartao(null);
+                  setErro(null);
+                }}
+                disabled={enviando}
+              >
+                <RefreshCw className="w-4 h-4 mr-2" />
+                Escolher forma de pagamento
+              </Button>
+            </>
+          )}
+        </div>
+      )}
+
+      {pix && (
+        <div className="rounded-lg border border-zampieri-green-dark bg-zampieri-cream/40 p-3 space-y-3 text-center">
+          <p className="text-sm font-semibold text-zampieri-green-dark">
+            {pixExpirado ? "Código PIX expirado" : "PIX já gerado — pague com este código"}
           </p>
 
           {!pixExpirado && pix.qr_image && (
@@ -388,32 +528,34 @@ export const StepPagamento = ({
               </Button>
               <p className="text-xs text-muted-foreground">
                 Assim que o pagamento for identificado, esta tela é atualizada automaticamente.
+                Não é preciso gerar outro código.
               </p>
             </>
           ) : (
-            <p className="text-xs text-muted-foreground">
-              Este código não é mais válido. Gere um novo para concluir o pagamento.
-            </p>
+            <>
+              <p className="text-xs text-muted-foreground">
+                Este código não é mais válido. Gere um novo para concluir o pagamento.
+              </p>
+              <Button
+                variant="outline"
+                size="sm"
+                className="w-full"
+                onClick={() => pagar(true)}
+                disabled={enviando}
+              >
+                {enviando ? (
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                ) : (
+                  <RefreshCw className="w-4 h-4 mr-2" />
+                )}
+                Gerar novo código PIX
+              </Button>
+            </>
           )}
-
-          <Button
-            variant="outline"
-            size="sm"
-            className="w-full"
-            onClick={() => pagar(true)}
-            disabled={enviando}
-          >
-            {enviando ? (
-              <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-            ) : (
-              <RefreshCw className="w-4 h-4 mr-2" />
-            )}
-            Gerar novo código PIX
-          </Button>
         </div>
       )}
 
-      {opcao === "pix" && !pix && (
+      {!pagamentoAtivo && !pix && opcao === "pix" && (
         <p className="text-xs text-muted-foreground">
           O código PIX é gerado aqui mesmo e vale por 24 horas. Se expirar, você poderá gerar um
           novo nesta página.
@@ -422,32 +564,18 @@ export const StepPagamento = ({
 
       {erro && <p className="text-xs text-destructive">{erro}</p>}
 
-      {!(opcao === "pix" && pix) && (
-        <>
-          <Button
-            className="w-full bg-zampieri-green-dark hover:bg-zampieri-green"
-            onClick={() => pagar(false)}
-            disabled={enviando}
-          >
-            {enviando && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
-            {opcao === "pix" ? "Gerar código PIX" : "Ir para o pagamento"}
-          </Button>
-
-          {opcao !== "pix" && (
-            <Button
-              variant="outline"
-              size="sm"
-              className="w-full"
-              onClick={() => pagar(true)}
-              disabled={enviando}
-            >
-              <RefreshCw className="w-4 h-4 mr-2" />
-              Gerar novo link de pagamento
-            </Button>
-          )}
-        </>
+      {!pagamentoAtivo && !pix && !cartao && (
+        <Button
+          className="w-full bg-zampieri-green-dark hover:bg-zampieri-green"
+          onClick={() => pagar(false)}
+          disabled={enviando}
+        >
+          {enviando && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
+          {opcao === "pix" ? "Gerar código PIX" : "Ir para o pagamento"}
+        </Button>
       )}
     </div>
   );
 
 };
+

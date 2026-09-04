@@ -54,7 +54,7 @@ Deno.serve(async (req) => {
     if (!Number.isFinite(idAluno) || !/^\d{4}-\d{2}-\d{2}$/.test(dataNascimento)) {
       return json({ error: "Parâmetros inválidos" }, 400);
     }
-    if (forma !== "pix" && forma !== "credit_card") {
+    if (!body?.apenas_consultar && forma !== "pix" && forma !== "credit_card") {
       return json({ error: "Forma de pagamento inválida" }, 400);
     }
     const isParcelado = forma === "credit_card" && parcelas > 1;
@@ -87,12 +87,12 @@ Deno.serve(async (req) => {
       return json({ error: "rematricula_isenta" }, 409);
     }
 
-    // Reaproveita cobrança/checkout válido com a mesma configuração
+    // ===== Pagamento já gerado: sempre reaproveitado até expirar =====
     const criado = aluno.checkout_criado_em ? new Date(aluno.checkout_criado_em).getTime() : 0;
-    const valido = criado && Date.now() - criado < CHECKOUT_TTL_MS;
+    const valido = !!criado && Date.now() - criado < CHECKOUT_TTL_MS;
 
     // PIX: cobrança direta, QR exibido na nossa própria página
-    if (forma === "pix" && aluno.asaas_payment_id && aluno.forma_pagamento === "pix" && !body?.force_regenerate) {
+    if (aluno.asaas_payment_id && aluno.forma_pagamento === "pix") {
       try {
         const pay = await getPayment(aluno.asaas_payment_id);
         if (pay?.status === "PENDING") {
@@ -102,6 +102,7 @@ Deno.serve(async (req) => {
             return json({
               mode: "pix",
               reused: true,
+              existente: true,
               payment_id: aluno.asaas_payment_id,
               valor: Number(pay?.value ?? 0),
               pix: {
@@ -117,12 +118,22 @@ Deno.serve(async (req) => {
       }
     }
 
-    if (
-      forma !== "pix" && aluno.checkout_url && valido && !body?.force_regenerate &&
-      aluno.forma_pagamento === forma && Number(aluno.parcelas || 1) === parcelas
-    ) {
-      return json({ checkout_url: aluno.checkout_url, checkout_id: aluno.asaas_checkout_id, reused: true });
+    if (aluno.checkout_url && valido && aluno.forma_pagamento && aluno.forma_pagamento !== "pix") {
+      return json({
+        mode: "cartao",
+        checkout_url: aluno.checkout_url,
+        checkout_id: aluno.asaas_checkout_id,
+        reused: true,
+        existente: true,
+        forma_pagamento: aluno.forma_pagamento,
+        parcelas: Number(aluno.parcelas || 1),
+        expira_em: new Date(criado + CHECKOUT_TTL_MS).toISOString(),
+      });
     }
+
+    // Consulta pura: não cria nada quando não há pagamento pendente
+    if (body?.apenas_consultar) return json({ existente: false });
+
 
 
     // Valor pelo curso
