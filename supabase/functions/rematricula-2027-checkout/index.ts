@@ -54,7 +54,7 @@ Deno.serve(async (req) => {
     if (!Number.isFinite(idAluno) || !/^\d{4}-\d{2}-\d{2}$/.test(dataNascimento)) {
       return json({ error: "Parâmetros inválidos" }, 400);
     }
-    if (forma !== "pix" && forma !== "credit_card") {
+    if (!body?.apenas_consultar && forma !== "pix" && forma !== "credit_card") {
       return json({ error: "Forma de pagamento inválida" }, 400);
     }
     const isParcelado = forma === "credit_card" && parcelas > 1;
