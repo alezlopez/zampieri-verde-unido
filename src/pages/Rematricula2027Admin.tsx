@@ -762,6 +762,68 @@ const Rematricula2027Admin = () => {
           ))}
         </div>
 
+        {filtro === "conferidas" && (
+          <div className="flex flex-wrap items-end gap-3 rounded-lg border border-border bg-white p-3">
+            <div>
+              <label className="block text-xs text-muted-foreground mb-1">Conferida de</label>
+              <Input
+                type="date"
+                value={confDe}
+                onChange={(e) => setConfDe(e.target.value)}
+                className="h-9 w-[160px]"
+              />
+            </div>
+            <div>
+              <label className="block text-xs text-muted-foreground mb-1">até</label>
+              <Input
+                type="date"
+                value={confAte}
+                onChange={(e) => setConfAte(e.target.value)}
+                className="h-9 w-[160px]"
+              />
+            </div>
+            <div className="flex flex-wrap gap-2">
+              {(
+                [
+                  ["Hoje", 0],
+                  ["Últimos 7 dias", 6],
+                  ["Últimos 30 dias", 29],
+                ] as [string, number][]
+              ).map(([label, dias]) => (
+                <Button
+                  key={label}
+                  size="sm"
+                  variant="outline"
+                  onClick={() => {
+                    const hoje = new Date();
+                    const inicio = new Date();
+                    inicio.setDate(hoje.getDate() - dias);
+                    const iso = (d: Date) =>
+                      `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(
+                        d.getDate(),
+                      ).padStart(2, "0")}`;
+                    setConfDe(iso(inicio));
+                    setConfAte(iso(hoje));
+                  }}
+                >
+                  {label}
+                </Button>
+              ))}
+              <Button
+                size="sm"
+                variant="ghost"
+                disabled={!periodoAtivo}
+                onClick={() => {
+                  setConfDe("");
+                  setConfAte("");
+                }}
+              >
+                Limpar
+              </Button>
+            </div>
+          </div>
+        )}
+
         <div className="rounded-lg border border-border bg-white overflow-x-auto">
           <table className="w-full text-sm">
             <thead className="bg-muted/50 text-left">
@@ -773,7 +835,27 @@ const Rematricula2027Admin = () => {
                 <th className="p-3">Situação</th>
                 <th className="p-3">Pagamento</th>
                 <th className="p-3">Alterações</th>
-                <th className="p-3">Conferência</th>
+                <th className="p-3">
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setOrdem((o) =>
+                        o === "padrao" ? "conf_desc" : o === "conf_desc" ? "conf_asc" : "padrao",
+                      )
+                    }
+                    className="inline-flex items-center gap-1 font-semibold hover:text-zampieri-green-dark"
+                    title="Ordenar pela data de conferência"
+                  >
+                    Conferência
+                    {ordem === "conf_desc" ? (
+                      <ArrowDown className="w-3 h-3" />
+                    ) : ordem === "conf_asc" ? (
+                      <ArrowUp className="w-3 h-3" />
+                    ) : (
+                      <ArrowUpDown className="w-3 h-3 opacity-50" />
+                    )}
+                  </button>
+                </th>
               </tr>
             </thead>
             <tbody>
