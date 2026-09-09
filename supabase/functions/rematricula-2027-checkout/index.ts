@@ -141,34 +141,19 @@ Deno.serve(async (req) => {
 
 
 
-    // Valor pelo curso
-    const { data: valores } = await admin
-      .from("rematricula_valores_2027")
-      .select("valor_rematricula, valor_promocional, valor_promocional_pacelado, promocao_ate")
-      .eq("curso_2027", aluno.curso_2027)
-      .eq("ativo", true)
+    // Valor pela fase vigente do calendário de rematrícula
+    const { data: vigente, error: vigenteErr } = await admin
+      .rpc("rematricula_2027_valor_vigente", { p_curso: aluno.curso_2027 })
       .maybeSingle();
 
-    if (!valores) return json({ error: "Valor de rematrícula não configurado para o curso" }, 400);
+    if (vigenteErr) throw vigenteErr;
+    if (!vigente) return json({ error: "Valor de rematrícula não configurado para o curso" }, 400);
 
-    const hoje = new Date().toLocaleDateString("en-CA", { timeZone: "America/Sao_Paulo" });
-    const promoVigente = !valores.promocao_ate || String(valores.promocao_ate).slice(0, 10) >= hoje;
-
-    const valorAvista = Number(
-      promoVigente && valores.valor_promocional != null
-        ? valores.valor_promocional
-        : valores.valor_rematricula,
-    );
-    const valorParcelado = Number(
-      promoVigente && valores.valor_promocional_pacelado != null
-        ? valores.valor_promocional_pacelado
-        : valores.valor_rematricula,
-    );
-
-    const valorTotal = isParcelado ? valorParcelado : valorAvista;
+    const valorTotal = Number(isParcelado ? vigente.valor_parcelado : vigente.valor_avista);
     if (!isFinite(valorTotal) || valorTotal <= 0) {
       return json({ error: "Valor de rematrícula inválido" }, 400);
     }
+
 
     // Responsável financeiro (mãe por padrão)
     const respRaw = String(aluno.responsavel_financeiro || "").toLowerCase();
