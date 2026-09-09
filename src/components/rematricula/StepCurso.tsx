@@ -160,7 +160,7 @@ export const StepCurso = ({
           <div className="flex items-baseline gap-2 flex-wrap">
             {promoAtiva && (
               <span className="text-sm line-through text-muted-foreground">
-                {formatBRL(valores?.valor_rematricula)}
+                {formatBRL(valores?.valor_cheio)}
               </span>
             )}
             <span className="font-bold text-lg text-zampieri-green-dark">
