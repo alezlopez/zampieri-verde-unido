@@ -2200,6 +2200,77 @@ export type Database = {
           },
         ]
       }
+      rematricula_2027_fase_valores: {
+        Row: {
+          created_at: string
+          curso_2027: string
+          fase_id: string
+          id: string
+          updated_at: string
+          valor_avista: number
+          valor_parcelado: number
+        }
+        Insert: {
+          created_at?: string
+          curso_2027: string
+          fase_id: string
+          id?: string
+          updated_at?: string
+          valor_avista: number
+          valor_parcelado: number
+        }
+        Update: {
+          created_at?: string
+          curso_2027?: string
+          fase_id?: string
+          id?: string
+          updated_at?: string
+          valor_avista?: number
+          valor_parcelado?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "rematricula_2027_fase_valores_fase_id_fkey"
+            columns: ["fase_id"]
+            isOneToOne: false
+            referencedRelation: "rematricula_2027_fases"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      rematricula_2027_fases: {
+        Row: {
+          ativo: boolean
+          created_at: string
+          fase: number
+          fim: string | null
+          id: string
+          inicio: string
+          numeros_sorte: number
+          updated_at: string
+        }
+        Insert: {
+          ativo?: boolean
+          created_at?: string
+          fase: number
+          fim?: string | null
+          id?: string
+          inicio: string
+          numeros_sorte?: number
+          updated_at?: string
+        }
+        Update: {
+          ativo?: boolean
+          created_at?: string
+          fase?: number
+          fim?: string | null
+          id?: string
+          inicio?: string
+          numeros_sorte?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
       rematricula_2027_followup_envios: {
         Row: {
           created_at: string
@@ -2989,6 +3060,26 @@ export type Database = {
           max_vagas: number
           ocupadas: number
           turno: string
+        }[]
+      }
+      rematricula_2027_valor_vigente: {
+        Args: { p_curso: string }
+        Returns: {
+          fase: number
+          fase_fim: string
+          valor_avista: number
+          valor_cheio: number
+          valor_parcelado: number
+        }[]
+      }
+      rematricula_2027_valores_curso: {
+        Args: { p_curso: string }
+        Returns: {
+          fase: number
+          fase_fim: string
+          valor_avista: number
+          valor_cheio: number
+          valor_parcelado: number
         }[]
       }
       rematricula_by_codigo_aluno: {
