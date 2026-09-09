@@ -135,7 +135,11 @@ export const StepPagamento = ({
     return h > 0 ? `${h}h ${m}min` : `${m}min`;
   };
 
-  const pixExpiraEm = pix?.expira_em ? new Date(pix.expira_em).getTime() : 0;
+  // Teto de segurança: nunca exibir prazo maior que 24h
+  const TETO_24H_MS = 24 * 60 * 60 * 1000;
+  const limitar24h = (t: number) => (t ? Math.min(t, Date.now() + TETO_24H_MS) : 0);
+
+  const pixExpiraEm = limitar24h(pix?.expira_em ? new Date(pix.expira_em).getTime() : 0);
   const pixExpirado = !!pix && !!pixExpiraEm && pixExpiraEm <= agora;
   const restante = useMemo(() => {
     if (!pixExpiraEm || pixExpirado) return null;
