@@ -147,7 +147,7 @@ export const StepPagamento = ({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [pixExpiraEm, pixExpirado, agora]);
 
-  const cartaoExpiraEm = cartao?.expira_em ? new Date(cartao.expira_em).getTime() : 0;
+  const cartaoExpiraEm = limitar24h(cartao?.expira_em ? new Date(cartao.expira_em).getTime() : 0);
   const cartaoExpirado = !!cartao && !!cartaoExpiraEm && cartaoExpiraEm <= agora;
   const restanteCartao = useMemo(() => {
     if (!cartaoExpiraEm || cartaoExpirado) return null;
