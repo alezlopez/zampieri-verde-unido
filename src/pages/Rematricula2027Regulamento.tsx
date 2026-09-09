@@ -181,22 +181,22 @@ const Rematricula2027Regulamento = () => {
                       <tr>
                         <td className="p-3 font-medium">1ª</td>
                         <td className="p-3">Bolsa de estudos 100% para o ano letivo de 2027</td>
-                        <td className="p-3">Extração de 10/09/2026</td>
+                        <td className="p-3">Extração de 13/09/2026</td>
                       </tr>
                       <tr>
                         <td className="p-3 font-medium">2ª</td>
                         <td className="p-3">Kit de material didático SAE + Maker para 2027</td>
-                        <td className="p-3">Extração de 01/10/2026</td>
+                        <td className="p-3">Extração de 04/10/2026</td>
                       </tr>
                       <tr>
                         <td className="p-3 font-medium">3ª</td>
                         <td className="p-3">Kit completo de uniforme escolar para 2027</td>
-                        <td className="p-3">Extração de 15/10/2026</td>
+                        <td className="p-3">Extração de 18/10/2026</td>
                       </tr>
                       <tr>
                         <td className="p-3 font-medium">4ª</td>
                         <td className="p-3">Vale-excursão de fim de ano (Wet'n Wild, Cidade da Criança ou Parque da Mônica — data a definir)</td>
-                        <td className="p-3">Extração de 29/10/2026</td>
+                        <td className="p-3">Extração de 01/11/2026</td>
                       </tr>
                     </tbody>
                   </table>

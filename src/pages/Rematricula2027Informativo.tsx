@@ -33,7 +33,7 @@ const FASES: Fase[] = [
     desconto: 50,
     premio: "Bolsa Integral de 100% para 2027 (sorteio)",
     numeros: 6,
-    sorteio: "10/09/2026",
+    sorteio: "13/09/2026",
   },
   {
     n: 2,
@@ -42,7 +42,7 @@ const FASES: Fase[] = [
     desconto: 40,
     premio: "Material SAE/Maker (sorteio)",
     numeros: 3,
-    sorteio: "01/10/2026",
+    sorteio: "04/10/2026",
   },
   {
     n: 3,
@@ -51,7 +51,7 @@ const FASES: Fase[] = [
     desconto: 30,
     premio: "Kit uniforme (sorteio)",
     numeros: 2,
-    sorteio: "15/10/2026",
+    sorteio: "18/10/2026",
   },
   {
     n: 4,
@@ -60,7 +60,7 @@ const FASES: Fase[] = [
     desconto: 20,
     premio: "Vale-excursão (sorteio)",
     numeros: 1,
-    sorteio: "29/10/2026",
+    sorteio: "01/11/2026",
   },
 ];
 
@@ -324,7 +324,7 @@ export default function Rematricula2027Informativo() {
           <p className="mx-auto mt-4 max-w-2xl text-base leading-relaxed">
             Ao rematricular na Fase 1, sua família recebe <strong>6 números da sorte</strong> para o
             sorteio realizado com base na extração da Loteria Federal de{" "}
-            <strong>10/09/2026</strong>.
+            <strong>13/09/2026</strong>.
           </p>
           <p className="mx-auto mt-3 max-w-2xl text-xs opacity-70">
             Sorteio entre todas as famílias rematriculadas na Fase 1. As chances variam conforme o
