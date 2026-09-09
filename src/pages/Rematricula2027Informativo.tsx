@@ -287,20 +287,8 @@ export default function Rematricula2027Informativo() {
             números da sorte sua família recebe.
           </p>
 
-          <div
-            className="mx-auto mt-8 inline-flex flex-col items-center gap-1 rounded-2xl border-2 px-6 py-4"
-            style={{ borderColor: C.dourado, background: "rgba(255,255,255,0.05)" }}
-          >
-            <div className="flex items-baseline gap-3">
-              <span className="text-lg text-[#F5F0E8]/60 line-through">De R$ 910,00</span>
-              <span className={`${titulo} text-3xl font-bold text-[#D4A017] sm:text-4xl`}>
-                por R$ 455,00
-              </span>
-            </div>
-            <span className="text-[11px] uppercase tracking-widest text-[#F5F0E8]/70">
-              na taxa de rematrícula · 2º ao 5º Ano · Fase 1
-            </span>
-          </div>
+
+
 
           <div className="mt-9">
             <BotaoCTA className="text-base sm:text-lg">Rematricular agora</BotaoCTA>
