@@ -213,7 +213,11 @@ Deno.serve(async (req) => {
 
       const qr = await getPixQrCode(pagamento.id);
       if (!qr?.payload) return json({ error: "Falha ao gerar código PIX" }, 502);
-      const expira = qr?.expirationDate ? new Date(String(qr.expirationDate).replace(" ", "T")) : null;
+      const qrExpiraNovo = qr?.expirationDate
+        ? new Date(String(qr.expirationDate).replace(" ", "T")).getTime()
+        : 0;
+      const limiteNovo = Date.now() + CHECKOUT_TTL_MS;
+      const expira = new Date(qrExpiraNovo ? Math.min(qrExpiraNovo, limiteNovo) : limiteNovo);
 
       await admin.from("alunos_rematricula_2027").update({
         asaas_customer_id: customerId,
