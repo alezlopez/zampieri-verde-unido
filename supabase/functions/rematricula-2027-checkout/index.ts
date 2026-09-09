@@ -92,13 +92,18 @@ Deno.serve(async (req) => {
     const valido = !!criado && Date.now() - criado < CHECKOUT_TTL_MS;
 
     // PIX: cobrança direta, QR exibido na nossa própria página
-    if (aluno.asaas_payment_id && aluno.forma_pagamento === "pix") {
+    if (aluno.asaas_payment_id && aluno.forma_pagamento === "pix" && valido) {
       try {
         const pay = await getPayment(aluno.asaas_payment_id);
         if (pay?.status === "PENDING") {
           const qr = await getPixQrCode(aluno.asaas_payment_id);
-          const expira = qr?.expirationDate ? new Date(String(qr.expirationDate).replace(" ", "T")) : null;
-          if (qr?.payload && (!expira || expira.getTime() > Date.now())) {
+          const qrExpira = qr?.expirationDate
+            ? new Date(String(qr.expirationDate).replace(" ", "T")).getTime()
+            : 0;
+          // Nossa janela real: 24h a partir da criação da cobrança
+          const limite = criado + CHECKOUT_TTL_MS;
+          const expiraMs = qrExpira ? Math.min(qrExpira, limite) : limite;
+          if (qr?.payload && expiraMs > Date.now()) {
             return json({
               mode: "pix",
               reused: true,
@@ -108,7 +113,7 @@ Deno.serve(async (req) => {
               pix: {
                 copia_cola: qr.payload,
                 qr_image: qr.encodedImage ? `data:image/png;base64,${qr.encodedImage}` : null,
-                expira_em: expira ? expira.toISOString() : null,
+                expira_em: new Date(expiraMs).toISOString(),
               },
             });
           }
@@ -208,7 +213,11 @@ Deno.serve(async (req) => {
 
       const qr = await getPixQrCode(pagamento.id);
       if (!qr?.payload) return json({ error: "Falha ao gerar código PIX" }, 502);
-      const expira = qr?.expirationDate ? new Date(String(qr.expirationDate).replace(" ", "T")) : null;
+      const qrExpiraNovo = qr?.expirationDate
+        ? new Date(String(qr.expirationDate).replace(" ", "T")).getTime()
+        : 0;
+      const limiteNovo = Date.now() + CHECKOUT_TTL_MS;
+      const expira = new Date(qrExpiraNovo ? Math.min(qrExpiraNovo, limiteNovo) : limiteNovo);
 
       await admin.from("alunos_rematricula_2027").update({
         asaas_customer_id: customerId,
@@ -229,7 +238,7 @@ Deno.serve(async (req) => {
         pix: {
           copia_cola: qr.payload,
           qr_image: qr.encodedImage ? `data:image/png;base64,${qr.encodedImage}` : null,
-          expira_em: expira ? expira.toISOString() : null,
+          expira_em: expira.toISOString(),
         },
       });
     }
