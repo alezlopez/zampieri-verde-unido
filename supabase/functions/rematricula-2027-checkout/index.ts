@@ -146,7 +146,7 @@ Deno.serve(async (req) => {
 
     if (!valores) return json({ error: "Valor de rematrícula não configurado para o curso" }, 400);
 
-    const hoje = new Date().toISOString().slice(0, 10);
+    const hoje = new Date().toLocaleDateString("en-CA", { timeZone: "America/Sao_Paulo" });
     const promoVigente = !valores.promocao_ate || String(valores.promocao_ate).slice(0, 10) >= hoje;
 
     const valorAvista = Number(

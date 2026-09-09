@@ -61,7 +61,7 @@ export const StepCurso = ({
     carregar();
   }, [aluno.curso_2027]);
 
-  const hoje = new Date().toISOString().slice(0, 10);
+  const hoje = new Date().toLocaleDateString("en-CA", { timeZone: "America/Sao_Paulo" });
   const promoAtiva =
     !!valores?.valor_promocional &&
     (!valores.promocao_ate || valores.promocao_ate >= hoje) &&
