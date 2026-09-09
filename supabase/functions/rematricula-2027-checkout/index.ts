@@ -238,7 +238,7 @@ Deno.serve(async (req) => {
         pix: {
           copia_cola: qr.payload,
           qr_image: qr.encodedImage ? `data:image/png;base64,${qr.encodedImage}` : null,
-          expira_em: expira ? expira.toISOString() : null,
+          expira_em: expira.toISOString(),
         },
       });
     }
