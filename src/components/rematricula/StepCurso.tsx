@@ -33,9 +33,9 @@ export const StepCurso = ({
   const [erro, setErro] = useState<string | null>(null);
   const [concordou, setConcordou] = useState(false);
   const [valores, setValores] = useState<{
-    valor_rematricula: number | null;
-    valor_promocional: number | null;
-    promocao_ate: string | null;
+    valor_cheio: number | null;
+    valor_avista: number | null;
+    fase_fim: string | null;
   } | null>(null);
 
   useEffect(() => {
@@ -48,27 +48,23 @@ export const StepCurso = ({
       const [{ data }, { data: val }] = await Promise.all([
         supabase.rpc("rematricula_2027_turnos", { p_curso_2027: aluno.curso_2027 }),
         supabase
-          .from("rematricula_valores_2027")
-          .select("valor_rematricula, valor_promocional, promocao_ate")
-          .eq("curso_2027", aluno.curso_2027)
-          .eq("ativo", true)
+          .rpc("rematricula_2027_valores_curso", { p_curso: aluno.curso_2027 })
           .maybeSingle(),
       ]);
       setTurnos((data as TurnoDisponivel[]) ?? []);
-      setValores(val ?? null);
+      setValores((val as typeof valores) ?? null);
       setLoading(false);
     };
     carregar();
   }, [aluno.curso_2027]);
 
-  const hoje = new Date().toLocaleDateString("en-CA", { timeZone: "America/Sao_Paulo" });
   const promoAtiva =
-    !!valores?.valor_promocional &&
-    (!valores.promocao_ate || valores.promocao_ate >= hoje) &&
-    Number(valores.valor_promocional) < Number(valores.valor_rematricula ?? 0);
-  const promoAte = valores?.promocao_ate
-    ? valores.promocao_ate.split("-").reverse().join("/")
+    !!valores?.valor_avista &&
+    Number(valores.valor_avista) < Number(valores.valor_cheio ?? 0);
+  const promoAte = valores?.fase_fim
+    ? valores.fase_fim.slice(0, 10).split("-").reverse().join("/")
     : null;
+
 
 
   const opcoesResponsavel = [
@@ -164,7 +160,7 @@ export const StepCurso = ({
           <div className="flex items-baseline gap-2 flex-wrap">
             {promoAtiva && (
               <span className="text-sm line-through text-muted-foreground">
-                {formatBRL(valores?.valor_rematricula)}
+                {formatBRL(valores?.valor_cheio)}
               </span>
             )}
             <span className="font-bold text-lg text-zampieri-green-dark">
