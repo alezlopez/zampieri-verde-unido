@@ -192,7 +192,7 @@ const PreMatriculaAdmin = () => {
     setAberta(null);
     setSlots(null);
     setNovoHorario("");
-    setMotivo("");
+    setMotivoCodigo("");
     setDesconto("");
     setObservacoes("");
     carregar();
