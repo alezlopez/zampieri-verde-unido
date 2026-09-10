@@ -1792,10 +1792,13 @@ export type Database = {
           id: string
           laudo_path: string | null
           medicacao_detalhe: string | null
+          motivo_codigo: string | null
           motivo_reprovacao: string | null
+          motivo_texto: string | null
           observacoes_entrevista: string | null
           observacoes_saude: string | null
           protocolo: string
+          reenviado_em: string | null
           repetiu_ano: string | null
           reprovado_em: string | null
           resp_cpf: string
@@ -1803,7 +1806,10 @@ export type Database = {
           resp_nome: string
           resp_tipo: string | null
           resp_whatsapp: string
+          ressalva_documento: string | null
+          ressalva_em: string | null
           serie_pretendida: string
+          solucao_texto: string | null
           status: string
           tipo_escola: string | null
           token: string | null
@@ -1839,10 +1845,13 @@ export type Database = {
           id?: string
           laudo_path?: string | null
           medicacao_detalhe?: string | null
+          motivo_codigo?: string | null
           motivo_reprovacao?: string | null
+          motivo_texto?: string | null
           observacoes_entrevista?: string | null
           observacoes_saude?: string | null
           protocolo?: string
+          reenviado_em?: string | null
           repetiu_ano?: string | null
           reprovado_em?: string | null
           resp_cpf: string
@@ -1850,7 +1859,10 @@ export type Database = {
           resp_nome: string
           resp_tipo?: string | null
           resp_whatsapp: string
+          ressalva_documento?: string | null
+          ressalva_em?: string | null
           serie_pretendida: string
+          solucao_texto?: string | null
           status?: string
           tipo_escola?: string | null
           token?: string | null
@@ -1886,10 +1898,13 @@ export type Database = {
           id?: string
           laudo_path?: string | null
           medicacao_detalhe?: string | null
+          motivo_codigo?: string | null
           motivo_reprovacao?: string | null
+          motivo_texto?: string | null
           observacoes_entrevista?: string | null
           observacoes_saude?: string | null
           protocolo?: string
+          reenviado_em?: string | null
           repetiu_ano?: string | null
           reprovado_em?: string | null
           resp_cpf?: string
@@ -1897,7 +1912,10 @@ export type Database = {
           resp_nome?: string
           resp_tipo?: string | null
           resp_whatsapp?: string
+          ressalva_documento?: string | null
+          ressalva_em?: string | null
           serie_pretendida?: string
+          solucao_texto?: string | null
           status?: string
           tipo_escola?: string | null
           token?: string | null
