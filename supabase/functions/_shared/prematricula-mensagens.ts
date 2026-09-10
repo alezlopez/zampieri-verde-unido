@@ -90,17 +90,13 @@ const TEMPLATES: Partial<
     params: (d) => [primeiroNome(d.respNome), d.alunoNome, d.linkAgendamento || SITE_URL],
   },
   aprovada_com_ressalvas: {
-    envVar: "WHATSAPP_TPL_PREMATRICULA_RESSALVAS",
-    utility: "prematricula_ressalvas_u",
-    padrao: "prematricula_ressalvas",
-    params: (d) => [
-      primeiroNome(d.respNome),
-      d.alunoNome,
-      d.motivoTexto || "",
-      d.solucaoTexto || "",
-      d.linkReenvio || SITE_URL,
-    ],
+    // Usa o mesmo template UTILITY da reprovação (não há template próprio)
+    envVar: "WHATSAPP_TPL_PREMATRICULA_REPROVADA",
+    utility: "prematricula_reprovada_u",
+    padrao: "prematricula_reprovada",
+    params: (d) => [primeiroNome(d.respNome), d.alunoNome],
   },
+
   reenvio_recebido: {
     envVar: "WHATSAPP_TPL_PREMATRICULA_REENVIO_RECEBIDO",
     utility: "prematricula_reenvio_recebido_u",
