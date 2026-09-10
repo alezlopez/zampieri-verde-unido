@@ -15,6 +15,8 @@ export const WHATSAPP_SUPORTE = "5511939341503";
 export type EventoMensagem =
   | "recebida"
   | "aprovada"
+  | "aprovada_com_ressalvas"
+  | "reenvio_recebido"
   | "reprovada"
   | "agendada"
   | "concluida"
@@ -35,6 +37,12 @@ export interface DadosMensagem {
   linkContrato?: string;
   documentosPendentes?: string[];
   motivoReprovacao?: string;
+  motivoCodigo?: string | null;
+  motivoTitulo?: string | null;
+  motivoTexto?: string | null;
+  solucaoTexto?: string | null;
+  documentoPendente?: string | null;
+  linkReenvio?: string | null;
   dataEntrevista?: string;
   descontoPercentual?: number | null;
   curso?: string | null;
@@ -80,6 +88,24 @@ const TEMPLATES: Partial<
     utility: "prematricula_aprovada_u",
     padrao: "prematricula_aprovadav2",
     params: (d) => [primeiroNome(d.respNome), d.alunoNome, d.linkAgendamento || SITE_URL],
+  },
+  aprovada_com_ressalvas: {
+    envVar: "WHATSAPP_TPL_PREMATRICULA_RESSALVAS",
+    utility: "prematricula_ressalvas_u",
+    padrao: "prematricula_ressalvas",
+    params: (d) => [
+      primeiroNome(d.respNome),
+      d.alunoNome,
+      d.motivoTexto || "",
+      d.solucaoTexto || "",
+      d.linkReenvio || SITE_URL,
+    ],
+  },
+  reenvio_recebido: {
+    envVar: "WHATSAPP_TPL_PREMATRICULA_REENVIO_RECEBIDO",
+    utility: "prematricula_reenvio_recebido_u",
+    padrao: "prematricula_reenvio_recebido",
+    params: (d) => [primeiroNome(d.respNome), d.alunoNome],
   },
   reprovada: {
     envVar: "WHATSAPP_TPL_PREMATRICULA_REPROVADA",
@@ -132,6 +158,14 @@ const PARAM_NOMES: Partial<Record<EventoMensagem, string[]>> = {
   recebida: ["primeiro_nome_responsavel", "nome_aluno", "protocolo"],
   aprovada: ["primeiro_nome_responsavel", "nome_aluno", "link_agendamento"],
   reprovada: ["primeiro_nome_responsavel", "nome_aluno"],
+  aprovada_com_ressalvas: [
+    "primeiro_nome_responsavel",
+    "nome_aluno",
+    "motivo_texto",
+    "solucao_texto",
+    "link_reenvio",
+  ],
+  reenvio_recebido: ["primeiro_nome_responsavel", "nome_aluno"],
   agendada: ["primeiro_nome_responsavel", "nome_aluno", "data_entrevista"],
   documentos_reenvio: ["primeiro_nome_responsavel", "nome_aluno", "documentos_pendentes"],
   documentos_aprovados: ["primeiro_nome_responsavel", "nome_aluno"],
@@ -148,7 +182,9 @@ const imagemPorEvento = (evento: EventoMensagem) =>
 
 /** Link (com token) usado no botão dinâmico do template. */
 const linkDoEvento = (evento: EventoMensagem, d: DadosMensagem) =>
-  (evento === "aprovada" || evento === "agendada"
+  (evento === "aprovada_com_ressalvas"
+    ? d.linkReenvio
+    : evento === "aprovada" || evento === "agendada"
     ? d.linkAgendamento || d.linkMatricula
     : d.linkMatricula || d.linkAgendamento) || "";
 
@@ -211,6 +247,20 @@ async function enviarWhatsapp(evento: EventoMensagem, d: DadosMensagem) {
       link_contrato: d.linkContrato ?? null,
       documentos_pendentes: d.documentosPendentes ?? null,
       motivo_reprovacao: d.motivoReprovacao ?? null,
+      decisao:
+        evento === "reprovada"
+          ? "reprovada"
+          : evento === "aprovada_com_ressalvas"
+            ? "aprovada_com_ressalvas"
+            : evento === "aprovada"
+              ? "aprovada"
+              : null,
+      motivo_codigo: d.motivoCodigo ?? null,
+      motivo_titulo: d.motivoTitulo ?? null,
+      motivo_texto: d.motivoTexto ?? null,
+      solucao_texto: d.solucaoTexto ?? null,
+      documento_pendente: d.documentoPendente ?? null,
+      link_reenvio: d.linkReenvio ?? null,
       data_entrevista: d.dataEntrevista ?? null,
       desconto_percentual: d.descontoPercentual ?? null,
       curso: d.curso ?? null,
@@ -276,8 +326,35 @@ function montarEmail(evento: EventoMensagem, d: DadosMensagem): { subject: strin
           "Pré-matrícula não aprovada",
           p(`Olá, ${primeiroNome(d.respNome)}.`) +
             p(`Não foi possível seguir com a pré-matrícula de <strong>${d.alunoNome}</strong> neste momento.`) +
-            (d.motivoReprovacao ? p(`<strong>Motivo:</strong> ${d.motivoReprovacao}`) : "") +
+            (d.motivoTexto || d.motivoReprovacao
+              ? p(`<strong>Motivo:</strong> ${d.motivoTexto || d.motivoReprovacao}`)
+              : "") +
+            (d.solucaoTexto ? p(d.solucaoTexto) : "") +
+            (d.solucaoTexto ? botao(d.linkReenvio || `${SITE_URL}/prematricula`, "Abrir formulário") : "") +
             p("Se acredita que houve algum engano, fale com a nossa equipe."),
+        ),
+      };
+    case "aprovada_com_ressalvas":
+      return {
+        subject: `Pendência na pré-matrícula de ${d.alunoNome}`,
+        html: wrapper(
+          "Falta um documento",
+          p(`Olá, ${primeiroNome(d.respNome)}!`) +
+            p(`A pré-matrícula de <strong>${d.alunoNome}</strong> está quase pronta, mas ficou uma pendência.`) +
+            (d.motivoTexto ? p(`<strong>Motivo:</strong> ${d.motivoTexto}`) : "") +
+            (d.solucaoTexto ? p(d.solucaoTexto) : "") +
+            botao(d.linkReenvio || `${SITE_URL}/prematricula`, "Reenviar documento") +
+            p("Assim que recebermos, seguimos com a análise."),
+        ),
+      };
+    case "reenvio_recebido":
+      return {
+        subject: `Documento recebido — ${d.alunoNome}`,
+        html: wrapper(
+          "Documento recebido",
+          p(`Olá, ${primeiroNome(d.respNome)}!`) +
+            p(`Recebemos o novo documento da pré-matrícula de <strong>${d.alunoNome}</strong>.`) +
+            p("Nossa equipe vai conferir e retornamos em breve."),
         ),
       };
     case "agendada":

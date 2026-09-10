@@ -2,6 +2,7 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
 import { corsHeaders } from "../_shared/cors.ts";
 import { SITE_URL, formatarDataHora, notificar } from "../_shared/prematricula-mensagens.ts";
 import { gerarSlots } from "../_shared/prematricula-slots.ts";
+import { acharMotivo } from "../_shared/prematricula-motivos.ts";
 
 const json = (body: unknown, status = 200) =>
   new Response(JSON.stringify(body), {
@@ -54,8 +55,10 @@ Deno.serve(async (req) => {
       protocolo: pm.protocolo,
     };
 
+    const EM_ANALISE = ["pendente", "reenviado_aguardando_analise"];
+
     if (acao === "aprovar") {
-      if (pm.status !== "pendente") return json({ error: "status_invalido" }, 400);
+      if (!EM_ANALISE.includes(pm.status)) return json({ error: "status_invalido" }, 400);
       const token =
         pm.token ||
         crypto.randomUUID().replace(/-/g, "") + crypto.randomUUID().replace(/-/g, "");
@@ -65,6 +68,10 @@ Deno.serve(async (req) => {
           status: "aprovado_aguardando_agendamento",
           aprovado_em: new Date().toISOString(),
           motivo_reprovacao: null,
+          motivo_codigo: null,
+          motivo_texto: null,
+          solucao_texto: null,
+          ressalva_documento: null,
           token,
         })
         .eq("id", id);
@@ -77,21 +84,66 @@ Deno.serve(async (req) => {
       return json({ ok: true, status: "aprovado_aguardando_agendamento" });
     }
 
-    if (acao === "reprovar") {
-      if (pm.status !== "pendente") return json({ error: "status_invalido" }, 400);
-      const motivo = String(body?.motivo || "").trim().slice(0, 500);
+    if (acao === "reprovar" || acao === "aprovar_com_ressalvas") {
+      if (!EM_ANALISE.includes(pm.status)) return json({ error: "status_invalido" }, 400);
+      const motivo = acharMotivo(String(body?.motivo_codigo || ""));
+      if (!motivo) return json({ error: "motivo_obrigatorio" }, 400);
+
+      if (acao === "reprovar") {
+        if (!motivo.decisoes.includes("reprovar")) return json({ error: "motivo_invalido" }, 400);
+        const { error } = await admin
+          .from("prematriculas")
+          .update({
+            status: "reprovado",
+            reprovado_em: new Date().toISOString(),
+            motivo_reprovacao: motivo.texto,
+            motivo_codigo: motivo.codigo,
+            motivo_texto: motivo.texto,
+            solucao_texto: motivo.solucao,
+            ressalva_documento: null,
+          })
+          .eq("id", id);
+        if (error) throw error;
+
+        await notificar("reprovada", {
+          ...base,
+          motivoReprovacao: motivo.texto,
+          motivoCodigo: motivo.codigo,
+          motivoTitulo: motivo.titulo,
+          motivoTexto: motivo.texto,
+          solucaoTexto: motivo.solucao,
+          linkReenvio: `${SITE_URL}/prematricula`,
+        });
+        return json({ ok: true, status: "reprovado" });
+      }
+
+      if (!motivo.decisoes.includes("ressalvas") || !motivo.documento) {
+        return json({ error: "motivo_invalido" }, 400);
+      }
       const { error } = await admin
         .from("prematriculas")
         .update({
-          status: "reprovado",
-          reprovado_em: new Date().toISOString(),
-          motivo_reprovacao: motivo || null,
+          status: "aprovado_com_ressalvas",
+          motivo_reprovacao: null,
+          motivo_codigo: motivo.codigo,
+          motivo_texto: motivo.texto,
+          solucao_texto: motivo.solucao,
+          ressalva_documento: motivo.documento,
+          ressalva_em: new Date().toISOString(),
         })
         .eq("id", id);
       if (error) throw error;
 
-      await notificar("reprovada", { ...base, motivoReprovacao: motivo });
-      return json({ ok: true, status: "reprovado" });
+      await notificar("aprovada_com_ressalvas", {
+        ...base,
+        motivoCodigo: motivo.codigo,
+        motivoTitulo: motivo.titulo,
+        motivoTexto: motivo.texto,
+        solucaoTexto: motivo.solucao,
+        documentoPendente: motivo.documento,
+        linkReenvio: `${SITE_URL}/prematricula`,
+      });
+      return json({ ok: true, status: "aprovado_com_ressalvas" });
     }
 
     if (acao === "concluir_entrevista") {
