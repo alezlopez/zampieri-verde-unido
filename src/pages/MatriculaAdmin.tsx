@@ -225,6 +225,9 @@ const CAMPOS_VALORES: { campo: string; label: string }[] = [
   { campo: "max_parcelas", label: "Máximo de parcelas no cartão" },
 ];
 
+const dataHora = (iso: string) =>
+  new Date(iso).toLocaleString("pt-BR", { dateStyle: "short", timeStyle: "short" });
+
 /** Tabela oficial de anuidades por segmento. */
 const ANUIDADES = [
   { curso: "Pré", valor: "19.500,00", ext: "Dezenove mil e quinhentos reais" },
