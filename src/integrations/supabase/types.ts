@@ -3118,6 +3118,7 @@ export type Database = {
         Returns: {
           fase: number
           fase_fim: string
+          fase_inicio: string
           valor_avista: number
           valor_cheio: number
           valor_parcelado: number
