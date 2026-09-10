@@ -246,6 +246,27 @@ Deno.serve(async (req) => {
       return json({ ok: true, status: "entrevista_agendada" });
     }
 
+    // Marcador interno de acompanhamento (ativo / desistente / cancelado).
+    if (acao === "acompanhamento") {
+      const estado = String(body?.estado || "");
+      if (!["ativo", "desistente", "cancelado"].includes(estado)) {
+        return json({ error: "estado_invalido" }, 400);
+      }
+      const motivo = String(body?.motivo || "").trim().slice(0, 500);
+      if (estado !== "ativo" && !motivo) return json({ error: "motivo_obrigatorio" }, 400);
+      const { error } = await admin
+        .from("prematriculas")
+        .update({
+          acompanhamento: estado,
+          acompanhamento_motivo: estado === "ativo" ? null : motivo,
+          acompanhamento_em: estado === "ativo" ? null : new Date().toISOString(),
+          acompanhamento_por: estado === "ativo" ? null : user.id,
+        })
+        .eq("id", id);
+      if (error) throw error;
+      return json({ ok: true, acompanhamento: estado });
+    }
+
     return json({ error: "acao_invalida" }, 400);
   } catch (e) {
     console.error("prematricula-admin-acao erro:", e);
