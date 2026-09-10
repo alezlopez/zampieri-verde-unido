@@ -122,9 +122,14 @@ const FUTURO = [
 
 const FAQ = [
   {
+    q: "A rematrícula garante o turno escolhido?",
+    a: "Não. A rematrícula garante a vaga do aluno no Colégio Zampieri em 2027, e não o horário/turno. A escolha do turno fica sujeita à disponibilidade de vagas na turma e pode ser ajustada pela secretaria conforme a formação das turmas.",
+  },
+  {
     q: "Quem rematricula antes concorre nos sorteios seguintes?",
     a: "Sim. Famílias rematriculadas em fases anteriores seguem concorrendo aos sorteios das fases seguintes, com os números da sorte já emitidos.",
   },
+
   {
     q: "O desconto vale para o ano todo?",
     a: "O desconto de fase é aplicado uma única vez, sobre a taxa de rematrícula 2027. Ele não altera o valor da mensalidade 2027, que segue a tabela oficial (com o desconto individual da sua família, se houver).",
