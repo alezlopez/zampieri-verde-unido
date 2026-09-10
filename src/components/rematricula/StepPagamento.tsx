@@ -87,6 +87,7 @@ export const StepPagamento = ({
         if (!ativo) return;
         const res = data as {
           existente?: boolean;
+          fase_virou?: boolean;
           mode?: string;
           pix?: { copia_cola: string; qr_image: string | null; expira_em: string | null };
           checkout_url?: string;
@@ -94,6 +95,7 @@ export const StepPagamento = ({
           parcelas?: number;
           expira_em?: string | null;
         } | null;
+        setFaseVirou(!!res?.fase_virou);
         if (res?.existente && res.mode === "pix" && res.pix?.copia_cola) {
           setPix(res.pix);
           setOpcao("pix");
