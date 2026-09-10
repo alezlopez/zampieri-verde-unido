@@ -415,14 +415,38 @@ const PreMatriculaAdmin = () => {
                   </section>
                 )}
 
-                {aberta.status === "pendente" && (
+                {(aberta.status === "pendente" ||
+                  aberta.status === "reenviado_aguardando_analise") && (
                   <section className="space-y-3 rounded-lg border border-border p-4">
-                    <p className="text-sm font-medium">Conferência de CPF</p>
+                    <p className="text-sm font-medium">Análise do cadastro</p>
                     <div className="space-y-2">
-                      <Label>Motivo (em caso de reprovação)</Label>
-                      <Textarea value={motivo} onChange={(e) => setMotivo(e.target.value)} />
+                      <Label>Motivo (obrigatório para reprovar ou aprovar com ressalvas)</Label>
+                      <Select value={motivoCodigo} onValueChange={setMotivoCodigo}>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Selecione o motivo" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {MOTIVOS.map((m) => (
+                            <SelectItem key={m.codigo} value={m.codigo}>
+                              {m.titulo}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
                     </div>
-                    <div className="flex gap-2">
+                    {acharMotivo(motivoCodigo) && (
+                      <div className="space-y-2 rounded-md bg-muted/50 p-3 text-sm">
+                        <p>
+                          <span className="font-medium">Motivo enviado: </span>
+                          {acharMotivo(motivoCodigo)!.texto}
+                        </p>
+                        <p>
+                          <span className="font-medium">Solução enviada: </span>
+                          {acharMotivo(motivoCodigo)!.solucao}
+                        </p>
+                      </div>
+                    )}
+                    <div className="flex flex-wrap gap-2">
                       <Button
                         className="flex-1 bg-zampieri-green-dark hover:bg-zampieri-green"
                         disabled={acaoEmCurso}
@@ -431,14 +455,45 @@ const PreMatriculaAdmin = () => {
                         Aprovar
                       </Button>
                       <Button
+                        variant="outline"
+                        className="flex-1"
+                        disabled={
+                          acaoEmCurso ||
+                          !acharMotivo(motivoCodigo)?.decisoes.includes("ressalvas")
+                        }
+                        onClick={() =>
+                          executar("aprovar_com_ressalvas", { motivo_codigo: motivoCodigo })
+                        }
+                      >
+                        Aprovar com ressalvas
+                      </Button>
+                      <Button
                         variant="destructive"
                         className="flex-1"
-                        disabled={acaoEmCurso}
-                        onClick={() => executar("reprovar", { motivo })}
+                        disabled={
+                          acaoEmCurso || !acharMotivo(motivoCodigo)?.decisoes.includes("reprovar")
+                        }
+                        onClick={() => executar("reprovar", { motivo_codigo: motivoCodigo })}
                       >
                         Reprovar
                       </Button>
                     </div>
+                    <p className="text-xs text-muted-foreground">
+                      "Aprovar com ressalvas" só libera o reenvio do documento (laudo ou boletim);
+                      a entrevista só é liberada em "Aprovar".
+                    </p>
+                  </section>
+                )}
+
+                {aberta.status === "aprovado_com_ressalvas" && (
+                  <section className="space-y-2 rounded-lg border border-orange-200 bg-orange-50 p-4 text-sm">
+                    <p className="font-medium text-orange-900">
+                      Aguardando reenvio de {aberta.ressalva_documento === "laudo" ? "laudo" : "boletim"}
+                    </p>
+                    <p className="text-orange-900/80">{aberta.motivo_texto}</p>
+                    <p className="text-orange-900/80">
+                      O responsável reenvia pelo formulário de pré-matrícula informando o CPF.
+                    </p>
                   </section>
                 )}
 
