@@ -46,6 +46,7 @@ export const StepPagamento = ({
     { checkout_url: string; forma_pagamento: string; parcelas: number; expira_em: string | null } | null
   >(null);
   const [consultando, setConsultando] = useState(true);
+  const [faseVirou, setFaseVirou] = useState(false);
   const [copiado, setCopiado] = useState(false);
   const [agora, setAgora] = useState(() => Date.now());
 
