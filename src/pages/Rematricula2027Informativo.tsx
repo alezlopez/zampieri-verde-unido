@@ -321,24 +321,24 @@ export default function Rematricula2027Informativo() {
             className="inline-block rounded-full px-4 py-1 text-[11px] font-bold uppercase tracking-widest text-white"
             style={{ background: C.vinho }}
           >
-            Exclusivo Fase 1
+            Exclusivo Fase 2
           </span>
           <h2 className={`${titulo} mt-4 text-2xl font-bold sm:text-4xl`}>
-            Concorra a 1 Bolsa Integral de 100% para 2027
+            Concorra a 1 Kit de Material SAE + Maker para 2027
           </h2>
           <p className="mx-auto mt-4 max-w-2xl text-base leading-relaxed">
-            Ao rematricular na Fase 1, sua família recebe <strong>6 números da sorte</strong> para o
+            Ao rematricular na Fase 2, sua família recebe <strong>3 números da sorte</strong> para o
             sorteio realizado com base na extração da Loteria Federal de{" "}
-            <strong>13/09/2026</strong>.
+            <strong>04/10/2026</strong>.
           </p>
           <p className="mx-auto mt-3 max-w-2xl text-xs opacity-70">
-            Sorteio entre todas as famílias rematriculadas na Fase 1. As chances variam conforme o
+            Sorteio entre todas as famílias rematriculadas na Fase 2. As chances variam conforme o
             total de participantes e o total de números emitidos.
           </p>
 
           <div className="mt-7">
             <p className="mb-3 text-[11px] font-bold uppercase tracking-widest opacity-70">
-              Tempo restante para participar da Fase 1
+              Tempo restante para participar da Fase 2
             </p>
             <Contador alvo={sorteioFase1} />
           </div>
