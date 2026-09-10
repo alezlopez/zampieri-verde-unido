@@ -40,6 +40,11 @@ interface Matricula {
   link_contrato: string | null;
   valor_matricula: number | null;
   matricula_gratuita?: boolean;
+  conferida?: boolean;
+  conferida_em?: string | null;
+  acompanhamento?: string;
+  acompanhamento_motivo?: string | null;
+  acompanhamento_em?: string | null;
   data_pagamento: string | null;
   documentos: Doc[];
   prematricula: {
