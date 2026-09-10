@@ -369,6 +369,26 @@ export default function Rematricula2027Informativo() {
         )}
       </section>
 
+      {/* Aviso: garantia de vaga, não de turno */}
+      <section className="px-4 py-8" style={{ background: C.creme }}>
+        <div
+          className="mx-auto max-w-4xl rounded-2xl border-2 p-5 text-center sm:p-6"
+          style={{ borderColor: C.dourado, background: "#fff" }}
+        >
+          <p className="text-[11px] font-bold uppercase tracking-widest" style={{ color: C.dourado }}>
+            Importante
+          </p>
+          <p className="mt-2 text-base font-bold sm:text-lg" style={{ color: C.vinho }}>
+            A rematrícula garante a vaga do aluno em 2027 — não o turno/horário.
+          </p>
+          <p className="mx-auto mt-2 max-w-2xl text-sm opacity-80">
+            A escolha de manhã ou tarde depende da disponibilidade de vagas em cada turma e pode ser
+            ajustada pela secretaria conforme a formação das turmas.
+          </p>
+        </div>
+      </section>
+
+
       {/* Nos últimos 5 anos */}
       <section className="px-4 py-16">
         <div className="mx-auto max-w-6xl">
