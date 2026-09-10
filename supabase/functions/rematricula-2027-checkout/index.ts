@@ -180,14 +180,6 @@ Deno.serve(async (req) => {
 
 
 
-    // Valor pela fase vigente do calendário de rematrícula
-    const { data: vigente, error: vigenteErr } = await admin
-      .rpc("rematricula_2027_valor_vigente", { p_curso: aluno.curso_2027 })
-      .maybeSingle();
-
-    if (vigenteErr) throw vigenteErr;
-    if (!vigente) return json({ error: "Valor de rematrícula não configurado para o curso" }, 400);
-
     const valorTotal = Number(isParcelado ? vigente.valor_parcelado : vigente.valor_avista);
     if (!isFinite(valorTotal) || valorTotal <= 0) {
       return json({ error: "Valor de rematrícula inválido" }, 400);
