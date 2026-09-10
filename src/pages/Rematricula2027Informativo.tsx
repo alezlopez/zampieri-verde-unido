@@ -213,7 +213,7 @@ const BotaoCTA = ({
 export default function Rematricula2027Informativo() {
   const { hoje, fase } = useFaseAtual();
   const proxima = FASES.find((f) => hoje < f.inicio) ?? null;
-  const sorteioFase1 = new Date(2026, 8, 9, 23, 59, 59);
+  const sorteioFase1 = new Date(2026, 8, 30, 23, 59, 59);
 
   useEffect(() => {
     document.title = "Rematrícula 2027 | Colégio Zampieri";
