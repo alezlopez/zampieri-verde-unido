@@ -46,6 +46,7 @@ export const StepPagamento = ({
     { checkout_url: string; forma_pagamento: string; parcelas: number; expira_em: string | null } | null
   >(null);
   const [consultando, setConsultando] = useState(true);
+  const [faseVirou, setFaseVirou] = useState(false);
   const [copiado, setCopiado] = useState(false);
   const [agora, setAgora] = useState(() => Date.now());
 
@@ -86,6 +87,7 @@ export const StepPagamento = ({
         if (!ativo) return;
         const res = data as {
           existente?: boolean;
+          fase_virou?: boolean;
           mode?: string;
           pix?: { copia_cola: string; qr_image: string | null; expira_em: string | null };
           checkout_url?: string;
@@ -93,6 +95,7 @@ export const StepPagamento = ({
           parcelas?: number;
           expira_em?: string | null;
         } | null;
+        setFaseVirou(!!res?.fase_virou);
         if (res?.existente && res.mode === "pix" && res.pix?.copia_cola) {
           setPix(res.pix);
           setOpcao("pix");
@@ -406,6 +409,13 @@ export const StepPagamento = ({
             : "Escolha a forma de pagamento."}
         </p>
       </div>
+
+      {faseVirou && !pagamentoAtivo && (
+        <p className="text-xs rounded-md bg-zampieri-cream/60 border border-zampieri-gold p-2 text-zampieri-green-dark">
+          O período anterior foi encerrado. O pagamento que havia sido gerado não é mais válido e o
+          valor abaixo já está atualizado para o período atual.
+        </p>
+      )}
 
       {aguardandoPagamento && (
         <p className="text-xs rounded-md bg-zampieri-cream/60 border border-zampieri-gold p-2 text-zampieri-green-dark">

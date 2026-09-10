@@ -1,6 +1,6 @@
 import { createClient } from "npm:@supabase/supabase-js@2";
 import { corsHeaders } from "../_shared/cors.ts";
-import { getOrCreateCustomer, createCheckout, createPayment, getPayment, getPixQrCode } from "../_shared/asaas.ts";
+import { getOrCreateCustomer, createCheckout, createPayment, getPayment, getPixQrCode, deletePayment } from "../_shared/asaas.ts";
 import { rematriculaLiberada } from "../_shared/rematricula-abertura.ts";
 
 const CHECKOUT_MINUTES = 1440; // 24h (máximo aceito pelo Asaas)
@@ -87,9 +87,47 @@ Deno.serve(async (req) => {
       return json({ error: "rematricula_isenta" }, 409);
     }
 
-    // ===== Pagamento já gerado: sempre reaproveitado até expirar =====
+    // Valor pela fase vigente do calendário de rematrícula
+    const { data: vigente, error: vigenteErr } = await admin
+      .rpc("rematricula_2027_valor_vigente", { p_curso: aluno.curso_2027 })
+      .maybeSingle();
+
+    if (vigenteErr) throw vigenteErr;
+    if (!vigente) return json({ error: "Valor de rematrícula não configurado para o curso" }, 400);
+
+    // Início da fase vigente (00:00 no horário de Brasília)
+    const faseInicioMs = vigente.fase_inicio
+      ? new Date(`${String(vigente.fase_inicio).slice(0, 10)}T00:00:00-03:00`).getTime()
+      : 0;
+
+    // ===== Pagamento já gerado: reaproveitado até expirar, desde que seja da fase atual =====
     const criado = aluno.checkout_criado_em ? new Date(aluno.checkout_criado_em).getTime() : 0;
-    const valido = !!criado && Date.now() - criado < CHECKOUT_TTL_MS;
+    const dentroDaJanela = !!criado && Date.now() - criado < CHECKOUT_TTL_MS;
+    const faseVirou = !!criado && !!faseInicioMs && criado < faseInicioMs;
+    const valido = dentroDaJanela && !faseVirou;
+
+    // Cobrança gerada em fase anterior: cancela para ninguém pagar o valor vencido
+    if (faseVirou && (aluno.asaas_payment_id || aluno.checkout_url)) {
+      if (aluno.asaas_payment_id) {
+        try {
+          const pay = await getPayment(aluno.asaas_payment_id);
+          if (pay?.status === "PENDING") await deletePayment(aluno.asaas_payment_id);
+        } catch (e) {
+          console.warn("[rematricula-2027-checkout] falha ao cancelar cobrança de fase anterior", (e as Error).message);
+        }
+      }
+      await admin.from("alunos_rematricula_2027").update({
+        asaas_payment_id: null,
+        asaas_checkout_id: null,
+        checkout_url: null,
+        checkout_criado_em: null,
+        updated_at: new Date().toISOString(),
+      }).eq("id_aluno", idAluno);
+      aluno.asaas_payment_id = null;
+      aluno.asaas_checkout_id = null;
+      aluno.checkout_url = null;
+      aluno.checkout_criado_em = null;
+    }
 
     // PIX: cobrança direta, QR exibido na nossa própria página
     if (aluno.asaas_payment_id && aluno.forma_pagamento === "pix" && valido) {
@@ -137,17 +175,10 @@ Deno.serve(async (req) => {
     }
 
     // Consulta pura: não cria nada quando não há pagamento pendente
-    if (body?.apenas_consultar) return json({ existente: false });
+    if (body?.apenas_consultar) return json({ existente: false, fase_virou: faseVirou });
 
 
 
-    // Valor pela fase vigente do calendário de rematrícula
-    const { data: vigente, error: vigenteErr } = await admin
-      .rpc("rematricula_2027_valor_vigente", { p_curso: aluno.curso_2027 })
-      .maybeSingle();
-
-    if (vigenteErr) throw vigenteErr;
-    if (!vigente) return json({ error: "Valor de rematrícula não configurado para o curso" }, 400);
 
     const valorTotal = Number(isParcelado ? vigente.valor_parcelado : vigente.valor_avista);
     if (!isFinite(valorTotal) || valorTotal <= 0) {
