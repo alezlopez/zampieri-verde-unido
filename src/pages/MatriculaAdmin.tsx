@@ -472,9 +472,52 @@ const MatriculaAdmin = () => {
                   {v}
                 </SelectItem>
               ))}
+              <SelectItem value="a_conferir">A conferir</SelectItem>
+              <SelectItem value="conferidas">Conferidas</SelectItem>
+              <SelectItem value="desistentes">Desistentes</SelectItem>
+              <SelectItem value="cancelados">Cancelados</SelectItem>
             </SelectContent>
           </Select>
         </div>
+
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2">
+          {[
+            { label: "Em andamento", valor: totais.andamento },
+            { label: "Concluídas", valor: totais.concluidas },
+            { label: "A conferir", valor: totais.aConferir },
+            { label: "Conferidas", valor: totais.conferidas },
+            { label: "Desistentes", valor: totais.desistentes },
+            { label: "Cancelados", valor: totais.cancelados },
+          ].map((c) => (
+            <div key={c.label} className="rounded-lg border border-border bg-white p-3">
+              <p className="text-xs text-muted-foreground">{c.label}</p>
+              <p className="text-lg font-semibold text-zampieri-green-dark">{c.valor}</p>
+            </div>
+          ))}
+        </div>
+
+        {filtro === "conferidas" && (
+          <div className="flex flex-wrap gap-2">
+            {([
+              ["hoje", "Hoje"],
+              ["7d", "Últimos 7 dias"],
+              ["30d", "Últimos 30 dias"],
+            ] as const).map(([k, label]) => (
+              <Button
+                key={k}
+                size="sm"
+                variant={periodo === k ? "default" : "outline"}
+                onClick={() => setPeriodo(k)}
+              >
+                {label}
+              </Button>
+            ))}
+            <Button size="sm" variant="ghost" onClick={() => setPeriodo(null)}>
+              Limpar
+            </Button>
+          </div>
+        )}
+
 
         {carregando ? (
           <div className="flex justify-center py-16">
