@@ -266,9 +266,14 @@ const PreMatriculaAdmin = () => {
                   {k === "entrevista_concluida" ? "Entrevista concluída (já em matrícula)" : v}
                 </SelectItem>
               ))}
+              <SelectItem value="desistentes">
+                Desistentes ({totais.desistentes})
+              </SelectItem>
+              <SelectItem value="cancelados">Cancelados ({totais.cancelados})</SelectItem>
             </SelectContent>
           </Select>
         </div>
+
 
         {carregando ? (
           <div className="flex justify-center py-16">
