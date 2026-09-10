@@ -553,6 +553,70 @@ const PreMatriculaAdmin = () => {
                     <Linha rotulo="Motivo" valor={aberta.motivo_reprovacao} />
                   </section>
                 )}
+
+                <section className="space-y-2 rounded-lg border border-border p-4">
+                  <p className="text-xs font-semibold uppercase text-muted-foreground">
+                    Acompanhamento interno
+                  </p>
+                  {(aberta.acompanhamento ?? "ativo") !== "ativo" ? (
+                    <div className="space-y-2">
+                      <p className="text-sm">
+                        Marcada como{" "}
+                        <strong>
+                          {aberta.acompanhamento === "cancelado" ? "cancelada" : "desistente"}
+                        </strong>{" "}
+                        em {dataHora(aberta.acompanhamento_em)}.
+                      </p>
+                      {aberta.acompanhamento_motivo && (
+                        <Linha rotulo="Motivo" valor={aberta.acompanhamento_motivo} />
+                      )}
+                      <Button
+                        variant="outline"
+                        disabled={acaoEmCurso}
+                        onClick={() => marcarAcompanhamento("ativo")}
+                      >
+                        Reabrir como ativa
+                      </Button>
+                    </div>
+                  ) : marcando ? (
+                    <div className="space-y-2">
+                      <Label>
+                        Motivo {marcando === "cancelado" ? "do cancelamento" : "da desistência"}
+                      </Label>
+                      <Textarea
+                        value={motivoAcomp}
+                        onChange={(e) => setMotivoAcomp(e.target.value)}
+                      />
+                      <div className="flex flex-wrap gap-2">
+                        <Button
+                          variant="destructive"
+                          disabled={acaoEmCurso}
+                          onClick={() => marcarAcompanhamento(marcando)}
+                        >
+                          Confirmar
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          onClick={() => {
+                            setMarcando(null);
+                            setMotivoAcomp("");
+                          }}
+                        >
+                          Voltar
+                        </Button>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="flex flex-wrap gap-2">
+                      <Button variant="outline" onClick={() => setMarcando("desistente")}>
+                        Marcar desistente
+                      </Button>
+                      <Button variant="outline" onClick={() => setMarcando("cancelado")}>
+                        Marcar cancelada
+                      </Button>
+                    </div>
+                  )}
+                </section>
               </div>
             </>
           )}
