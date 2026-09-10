@@ -55,6 +55,9 @@ interface Prematricula {
   desconto_percentual: number | null;
   observacoes_entrevista: string | null;
   agendado_em: string | null;
+  acompanhamento?: string;
+  acompanhamento_motivo?: string | null;
+  acompanhamento_em?: string | null;
 }
 
 interface Agendamento {
