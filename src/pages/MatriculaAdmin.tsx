@@ -295,10 +295,18 @@ const MatriculaAdmin = () => {
     setAnuidadeOutro(!!anu && !ANUIDADES.some((a) => a.valor === anu));
   };
 
+  /** Limites do filtro de período aplicado sobre a data de conferência. */
+  const limites = useMemo(() => {
+    if (!periodo) return { de: null as number | null, ate: null as number | null };
+    const agora = new Date();
+    const inicioHoje = new Date(agora.getFullYear(), agora.getMonth(), agora.getDate()).getTime();
+    const dias = periodo === "hoje" ? 0 : periodo === "7d" ? 6 : 29;
+    return { de: inicioHoje - dias * 86400000, ate: null };
+  }, [periodo]);
+
   const filtradas = useMemo(() => {
     const t = busca.trim().toLowerCase();
-    return lista.filter((m) => {
-      if (filtro !== "todos" && m.status !== filtro) return false;
+    const combinaTexto = (m: Matricula) => {
       if (!t) return true;
       const p = m.prematricula;
       return (
@@ -306,8 +314,44 @@ const MatriculaAdmin = () => {
         (p?.resp_nome ?? "").toLowerCase().includes(t) ||
         (p?.protocolo ?? "").toLowerCase().includes(t)
       );
+    };
+    const out = lista.filter((m) => {
+      const ac = m.acompanhamento ?? "ativo";
+      if (filtro === "desistentes") return ac === "desistente" && combinaTexto(m);
+      if (filtro === "cancelados") return ac === "cancelado" && combinaTexto(m);
+      if (ac !== "ativo") return false;
+      if (filtro === "a_conferir" && !(m.status === "concluida" && !m.conferida)) return false;
+      if (filtro === "conferidas") {
+        if (!m.conferida) return false;
+        if (limites.de !== null) {
+          const q = m.conferida_em ? new Date(m.conferida_em).getTime() : null;
+          if (q === null || q < limites.de) return false;
+        }
+      }
+      if (!["todos", "a_conferir", "conferidas"].includes(filtro) && m.status !== filtro) return false;
+      return combinaTexto(m);
     });
-  }, [lista, busca, filtro]);
+    if (filtro === "conferidas") {
+      out.sort(
+        (a, b) =>
+          (b.conferida_em ? new Date(b.conferida_em).getTime() : 0) -
+          (a.conferida_em ? new Date(a.conferida_em).getTime() : 0),
+      );
+    }
+    return out;
+  }, [lista, busca, filtro, limites]);
+
+  const totais = useMemo(() => {
+    const ativos = lista.filter((m) => (m.acompanhamento ?? "ativo") === "ativo");
+    return {
+      andamento: ativos.filter((m) => m.status !== "concluida").length,
+      concluidas: ativos.filter((m) => m.status === "concluida").length,
+      aConferir: ativos.filter((m) => m.status === "concluida" && !m.conferida).length,
+      conferidas: ativos.filter((m) => m.conferida).length,
+      desistentes: lista.filter((m) => m.acompanhamento === "desistente").length,
+      cancelados: lista.filter((m) => m.acompanhamento === "cancelado").length,
+    };
+  }, [lista]);
 
   /** Espelha a validação do backend: valores mínimos salvos para gerar o contrato. */
   const valoresProntos = useMemo(() => {
