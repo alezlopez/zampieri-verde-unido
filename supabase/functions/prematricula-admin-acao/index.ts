@@ -2,6 +2,7 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
 import { corsHeaders } from "../_shared/cors.ts";
 import { SITE_URL, formatarDataHora, notificar } from "../_shared/prematricula-mensagens.ts";
 import { gerarSlots } from "../_shared/prematricula-slots.ts";
+import { acharMotivo } from "../_shared/prematricula-motivos.ts";
 
 const json = (body: unknown, status = 200) =>
   new Response(JSON.stringify(body), {
