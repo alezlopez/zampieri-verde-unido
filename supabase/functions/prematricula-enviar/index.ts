@@ -79,7 +79,82 @@ Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
 
   try {
+    const admin0 = createClient(
+      Deno.env.get("SUPABASE_URL")!,
+      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
+    );
+    const contentType = req.headers.get("content-type") || "";
+
+    // Consulta pelo CPF: existe pré-matrícula aguardando reenvio de documento?
+    if (contentType.includes("application/json")) {
+      const b = await req.json().catch(() => ({}));
+      if (String(b?.acao || "") !== "consultar_cpf") return json({ error: "acao_invalida" }, 400);
+      const cpf = onlyDigits(txt(b?.cpf, 20));
+      if (!cpfValido(cpf)) return json({ error: "cpf_invalido" }, 400);
+      const { data, error } = await admin0
+        .from("prematriculas")
+        .select("id, aluno_nome, protocolo, status, motivo_codigo, motivo_texto, solucao_texto, ressalva_documento")
+        .eq("resp_cpf", cpf)
+        .eq("status", "aprovado_com_ressalvas")
+        .order("created_at", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      if (error) throw error;
+      if (!data) return json({ ok: true, ressalva: null });
+      return json({ ok: true, ressalva: data });
+    }
+
     const form = await req.formData();
+
+    // Reenvio de documento (aprovado com ressalvas)
+    if (String(form.get("acao") || "") === "reenviar_documento") {
+      const cpf = onlyDigits(txt(form.get("cpf"), 20));
+      const pmId = txt(form.get("id"), 60);
+      if (!cpfValido(cpf) || !pmId) return json({ error: "dados_invalidos" }, 400);
+
+      const { data: pm, error: erroPm } = await admin0
+        .from("prematriculas")
+        .select("id, resp_cpf, status, ressalva_documento, resp_nome, resp_email, resp_whatsapp, aluno_nome, protocolo")
+        .eq("id", pmId)
+        .maybeSingle();
+      if (erroPm) throw erroPm;
+      if (!pm || pm.resp_cpf !== cpf) return json({ error: "nao_encontrado" }, 404);
+      if (pm.status !== "aprovado_com_ressalvas") return json({ error: "status_invalido" }, 400);
+
+      const campo = pm.ressalva_documento === "laudo" ? "laudo" : "boletim";
+      const file = form.get("arquivo");
+      if (!(file instanceof File) || file.size === 0) return json({ error: "arquivo_ausente" }, 400);
+      if (file.size > MAX_BYTES) return json({ error: "arquivo_grande" }, 400);
+      if (!TIPOS_OK.includes(file.type)) return json({ error: "arquivo_tipo" }, 400);
+
+      const ext = file.name.split(".").pop()?.toLowerCase().replace(/[^a-z0-9]/g, "") || "bin";
+      const path = `${pm.id}/${campo}-reenvio-${Date.now()}.${ext}`;
+      const { error: erroUp } = await admin0.storage
+        .from("prematricula-docs")
+        .upload(path, file, { contentType: file.type, upsert: true });
+      if (erroUp) throw erroUp;
+
+      const { error: erroUpd } = await admin0
+        .from("prematriculas")
+        .update({
+          [`${campo}_path`]: path,
+          status: "reenviado_aguardando_analise",
+          reenviado_em: new Date().toISOString(),
+        })
+        .eq("id", pm.id);
+      if (erroUpd) throw erroUpd;
+
+      await notificar("reenvio_recebido", {
+        respNome: pm.resp_nome,
+        respEmail: pm.resp_email,
+        respWhatsapp: pm.resp_whatsapp,
+        alunoNome: pm.aluno_nome,
+        protocolo: pm.protocolo,
+      });
+
+      return json({ ok: true, documento: campo });
+    }
+
     const raw = form.get("dados");
     if (typeof raw !== "string") return json({ error: "dados_ausentes" }, 400);
     const d = JSON.parse(raw);
