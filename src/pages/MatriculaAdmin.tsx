@@ -526,10 +526,13 @@ const MatriculaAdmin = () => {
         ) : (
           <div className="grid gap-3">
             {filtradas.map((m) => (
-              <button
+              <div
                 key={m.id}
+                role="button"
+                tabIndex={0}
                 onClick={() => abrir(m)}
-                className="text-left rounded-lg border border-border bg-white p-4 transition-colors hover:border-zampieri-green-dark"
+                onKeyDown={(e) => e.key === "Enter" && abrir(m)}
+                className="cursor-pointer text-left rounded-lg border border-border bg-white p-4 transition-colors hover:border-zampieri-green-dark"
               >
                 <div className="flex flex-wrap items-center justify-between gap-2">
                   <div className="min-w-0">
@@ -541,6 +544,16 @@ const MatriculaAdmin = () => {
                     </p>
                   </div>
                   <div className="flex items-center gap-2">
+                    {m.acompanhamento === "desistente" && (
+                      <span className="rounded-full bg-muted text-muted-foreground px-2.5 py-0.5 text-xs font-medium">
+                        Desistente
+                      </span>
+                    )}
+                    {m.acompanhamento === "cancelado" && (
+                      <span className="rounded-full bg-red-100 text-red-700 px-2.5 py-0.5 text-xs font-medium">
+                        Cancelada
+                      </span>
+                    )}
                     {m.matricula_gratuita && (
                       <span className="rounded-full bg-emerald-100 text-emerald-800 px-2.5 py-0.5 text-xs font-medium">
                         Isenta
@@ -558,7 +571,38 @@ const MatriculaAdmin = () => {
                   {m.documentos.filter((d) => d.status === "aprovado").length}/
                   {m.documentos.length} documentos aprovados
                 </p>
-              </button>
+                {m.status === "concluida" && (m.acompanhamento ?? "ativo") === "ativo" && (
+                  <div
+                    className="mt-3 flex flex-wrap items-center gap-2"
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    {m.conferida ? (
+                      <>
+                        <span className="rounded-full bg-emerald-100 text-emerald-800 px-2.5 py-0.5 text-xs font-medium">
+                          Conferida{m.conferida_em ? ` em ${dataHora(m.conferida_em)}` : ""}
+                        </span>
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          disabled={acaoEmCurso}
+                          onClick={() => conferir(m, false)}
+                        >
+                          Desfazer conferência
+                        </Button>
+                      </>
+                    ) : (
+                      <Button
+                        size="sm"
+                        className="bg-zampieri-green-dark hover:bg-zampieri-green"
+                        disabled={acaoEmCurso}
+                        onClick={() => conferir(m, true)}
+                      >
+                        Marcar como conferida
+                      </Button>
+                    )}
+                  </div>
+                )}
+              </div>
             ))}
             {filtradas.length === 0 && (
               <p className="text-sm text-muted-foreground text-center py-10">
