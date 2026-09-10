@@ -134,20 +134,34 @@ const PreMatriculaAdmin = () => {
 
   const filtradas = useMemo(() => {
     const t = busca.trim().toLowerCase();
+    const combinaTexto = (p: Prematricula) =>
+      !t ||
+      p.aluno_nome.toLowerCase().includes(t) ||
+      p.resp_nome.toLowerCase().includes(t) ||
+      p.protocolo.toLowerCase().includes(t) ||
+      p.resp_cpf.includes(t.replace(/\D/g, ""));
+
     return lista.filter((p) => {
+      const ac = p.acompanhamento ?? "ativo";
+      if (filtro === "desistentes") return ac === "desistente" && combinaTexto(p);
+      if (filtro === "cancelados") return ac === "cancelado" && combinaTexto(p);
+      // Desistentes e cancelados saem das listas normais.
+      if (ac !== "ativo") return false;
       if (filtro !== "todos" && p.status !== filtro) return false;
       // Entrevista concluída já migra para "Matrículas em andamento":
       // só aparece aqui via filtro específico ou busca por texto.
       if (filtro === "todos" && !t && p.status === "entrevista_concluida") return false;
-      if (!t) return true;
-      return (
-        p.aluno_nome.toLowerCase().includes(t) ||
-        p.resp_nome.toLowerCase().includes(t) ||
-        p.protocolo.toLowerCase().includes(t) ||
-        p.resp_cpf.includes(t.replace(/\D/g, ""))
-      );
+      return combinaTexto(p);
     });
   }, [lista, busca, filtro]);
+
+  const totais = useMemo(
+    () => ({
+      desistentes: lista.filter((p) => p.acompanhamento === "desistente").length,
+      cancelados: lista.filter((p) => p.acompanhamento === "cancelado").length,
+    }),
+    [lista],
+  );
 
   const executar = async (acao: string, extra: Record<string, unknown> = {}) => {
     if (!aberta) return;
