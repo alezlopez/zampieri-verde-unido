@@ -106,6 +106,8 @@ const PreMatriculaAdmin = () => {
   const [acaoEmCurso, setAcaoEmCurso] = useState(false);
   const [slots, setSlots] = useState<{ inicio: string; texto: string }[] | null>(null);
   const [novoHorario, setNovoHorario] = useState("");
+  const [marcando, setMarcando] = useState<"desistente" | "cancelado" | null>(null);
+  const [motivoAcomp, setMotivoAcomp] = useState("");
 
   useEffect(() => {
     document.title = "Pré-matrículas — Painel Administrativo";
