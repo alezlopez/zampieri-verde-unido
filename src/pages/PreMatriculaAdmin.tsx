@@ -22,6 +22,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { isoToBr, maskCpf, maskTelefone } from "@/components/rematricula/utils";
 import { STATUS_LABEL, descontosPorSerie } from "@/components/prematricula/types";
+import { MOTIVOS, acharMotivo } from "@/components/prematricula/motivos";
 
 interface Prematricula {
   id: string;
@@ -52,6 +53,11 @@ interface Prematricula {
   alergias: string | null;
   observacoes_saude: string | null;
   motivo_reprovacao: string | null;
+  motivo_codigo?: string | null;
+  motivo_texto?: string | null;
+  solucao_texto?: string | null;
+  ressalva_documento?: string | null;
+  reenviado_em?: string | null;
   desconto_percentual: number | null;
   observacoes_entrevista: string | null;
   agendado_em: string | null;
@@ -68,6 +74,8 @@ interface Agendamento {
 
 const CORES: Record<string, string> = {
   pendente: "bg-amber-100 text-amber-800",
+  aprovado_com_ressalvas: "bg-orange-100 text-orange-800",
+  reenviado_aguardando_analise: "bg-sky-100 text-sky-800",
   aprovado_aguardando_agendamento: "bg-blue-100 text-blue-800",
   reprovado: "bg-red-100 text-red-700",
   entrevista_agendada: "bg-violet-100 text-violet-800",
@@ -100,7 +108,7 @@ const PreMatriculaAdmin = () => {
   const [busca, setBusca] = useState("");
   const [filtro, setFiltro] = useState("todos");
   const [aberta, setAberta] = useState<Prematricula | null>(null);
-  const [motivo, setMotivo] = useState("");
+  const [motivoCodigo, setMotivoCodigo] = useState("");
   const [desconto, setDesconto] = useState<string>("");
   const [observacoes, setObservacoes] = useState("");
   const [acaoEmCurso, setAcaoEmCurso] = useState(false);

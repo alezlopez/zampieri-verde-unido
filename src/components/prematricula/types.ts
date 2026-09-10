@@ -116,6 +116,8 @@ export const formVazio = (): PreMatriculaForm => ({
 export const STATUS_LABEL: Record<string, string> = {
   pendente: "Pendente",
   aprovado_aguardando_agendamento: "Aprovado - Aguardando agendamento",
+  aprovado_com_ressalvas: "Aprovado com ressalvas",
+  reenviado_aguardando_analise: "Reenviado - aguardando análise",
   reprovado: "Reprovado",
   entrevista_agendada: "Entrevista agendada",
   entrevista_concluida: "Entrevista concluída",
