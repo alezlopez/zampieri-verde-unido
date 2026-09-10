@@ -205,6 +205,17 @@ const PreMatriculaAdmin = () => {
     setNovoHorario("");
   };
 
+  /** Marcador interno: desistente, cancelado ou reabertura do caso. */
+  const marcarAcompanhamento = async (estado: "ativo" | "desistente" | "cancelado") => {
+    if (estado !== "ativo" && !motivoAcomp.trim()) {
+      toast({ title: "Informe o motivo", variant: "destructive" });
+      return;
+    }
+    await executar("acompanhamento", { estado, motivo: motivoAcomp.trim() });
+    setMarcando(null);
+    setMotivoAcomp("");
+  };
+
   const abrirArquivo = async (campo: "boletim" | "laudo") => {
     if (!aberta) return;
     const { data, error } = await supabase.functions.invoke("prematricula-admin-acao", {
