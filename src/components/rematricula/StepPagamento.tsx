@@ -410,6 +410,13 @@ export const StepPagamento = ({
         </p>
       </div>
 
+      {faseVirou && !pagamentoAtivo && (
+        <p className="text-xs rounded-md bg-zampieri-cream/60 border border-zampieri-gold p-2 text-zampieri-green-dark">
+          O período anterior foi encerrado. O pagamento que havia sido gerado não é mais válido e o
+          valor abaixo já está atualizado para o período atual.
+        </p>
+      )}
+
       {aguardandoPagamento && (
         <p className="text-xs rounded-md bg-zampieri-cream/60 border border-zampieri-gold p-2 text-zampieri-green-dark">
           Pagamento em processamento. Assim que o Asaas confirmar, esta tela é atualizada
