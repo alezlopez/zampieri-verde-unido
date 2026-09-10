@@ -44,6 +44,17 @@ const PreMatricula = () => {
   const [emailVerificado, setEmailVerificado] = useState<string | null>(null);
   const [duplicado, setDuplicado] = useState<{ protocolo: string | null } | null>(null);
   const [checando, setChecando] = useState(false);
+  const [ressalva, setRessalva] = useState<{
+    id: string;
+    aluno_nome: string;
+    protocolo: string;
+    motivo_texto: string | null;
+    solucao_texto: string | null;
+    ressalva_documento: string | null;
+  } | null>(null);
+  const [arquivoReenvio, setArquivoReenvio] = useState<File | null>(null);
+  const [reenviando, setReenviando] = useState(false);
+  const [reenviado, setReenviado] = useState(false);
 
   useEffect(() => {
     document.title = "Pré-matrícula — Colégio Zampieri";
@@ -61,6 +72,52 @@ const PreMatricula = () => {
   const set = <K extends keyof PreMatriculaForm>(campo: K, valor: PreMatriculaForm[K]) => {
     setErros((p) => ({ ...p, [campo]: undefined }));
     setForm((p) => ({ ...p, [campo]: valor }));
+  };
+
+  // Se o CPF informado já tem uma pré-matrícula aprovada com ressalvas,
+  // abrimos a tela de reenvio do documento pendente.
+  useEffect(() => {
+    const cpf = onlyDigits(form.resp_cpf);
+    if (etapa !== 0 || cpf.length !== 11 || !isValidCpf(form.resp_cpf)) return;
+    let ativo = true;
+    (async () => {
+      try {
+        const { data } = await supabase.functions.invoke("prematricula-enviar", {
+          body: { acao: "consultar_cpf", cpf },
+        });
+        if (ativo && data?.ressalva) setRessalva(data.ressalva);
+      } catch {
+        /* silencioso */
+      }
+    })();
+    return () => {
+      ativo = false;
+    };
+  }, [form.resp_cpf, etapa]);
+
+  const enviarReenvio = async () => {
+    if (!ressalva || !arquivoReenvio) return;
+    setReenviando(true);
+    try {
+      const fd = new FormData();
+      fd.append("acao", "reenviar_documento");
+      fd.append("id", ressalva.id);
+      fd.append("cpf", onlyDigits(form.resp_cpf));
+      fd.append("arquivo", arquivoReenvio);
+      const { data, error } = await supabase.functions.invoke("prematricula-enviar", { body: fd });
+      if (error) throw error;
+      if (!data?.ok) throw new Error(data?.error || "falha");
+      setReenviado(true);
+    } catch (err) {
+      console.error(err);
+      toast({
+        title: "Não foi possível enviar o arquivo",
+        description: "Use PDF, JPG ou PNG de até 10 MB e tente novamente.",
+        variant: "destructive",
+      });
+    } finally {
+      setReenviando(false);
+    }
   };
 
   const progresso = useMemo(() => ((etapa + 1) / ETAPAS.length) * 100, [etapa]);
@@ -203,6 +260,67 @@ const PreMatricula = () => {
     emailVerificado,
     setEmailVerificado,
   };
+
+  if (ressalva) {
+    const doc = ressalva.ressalva_documento === "laudo" ? "laudo / relatório" : "boletim escolar";
+    return (
+      <main className="min-h-screen bg-zampieri-cream/30 flex items-center justify-center px-4 py-16">
+        <div className="max-w-md w-full rounded-2xl bg-white border border-border p-8 space-y-4">
+          {reenviado ? (
+            <>
+              <CheckCircle2 className="w-12 h-12 mx-auto text-zampieri-green-dark" />
+              <h1 className="font-serif text-2xl font-bold text-zampieri-green-dark text-center">
+                Documento recebido!
+              </h1>
+              <p className="text-sm text-muted-foreground text-center">
+                Recebemos o novo {doc} de <strong>{ressalva.aluno_nome}</strong>. Nossa equipe vai
+                conferir e retornar pelo WhatsApp e e-mail.
+              </p>
+              <Button asChild variant="outline" className="w-full">
+                <a href="/">Voltar ao site</a>
+              </Button>
+            </>
+          ) : (
+            <>
+              <AlertCircle className="w-12 h-12 mx-auto text-zampieri-green-dark" />
+              <h1 className="font-serif text-2xl font-bold text-zampieri-green-dark text-center">
+                Falta um documento
+              </h1>
+              <p className="text-sm text-muted-foreground">
+                Já temos a pré-matrícula de <strong>{ressalva.aluno_nome}</strong> (protocolo{" "}
+                <strong>{ressalva.protocolo}</strong>).
+              </p>
+              {ressalva.motivo_texto && <p className="text-sm">{ressalva.motivo_texto}</p>}
+              {ressalva.solucao_texto && (
+                <p className="text-sm text-muted-foreground">{ressalva.solucao_texto}</p>
+              )}
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Anexar {doc}</label>
+                <input
+                  type="file"
+                  accept="application/pdf,image/jpeg,image/png"
+                  className="block w-full text-sm file:mr-3 file:rounded-md file:border-0 file:bg-zampieri-green-dark file:px-3 file:py-2 file:text-white"
+                  onChange={(e) => setArquivoReenvio(e.target.files?.[0] ?? null)}
+                />
+                <p className="text-xs text-muted-foreground">PDF, JPG ou PNG de até 10 MB.</p>
+              </div>
+              <Button
+                className="w-full bg-zampieri-green-dark hover:bg-zampieri-green"
+                disabled={!arquivoReenvio || reenviando}
+                onClick={enviarReenvio}
+              >
+                {reenviando && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
+                Enviar documento
+              </Button>
+              <Button variant="ghost" className="w-full" onClick={() => setRessalva(null)}>
+                Não é o meu caso, continuar o formulário
+              </Button>
+            </>
+          )}
+        </div>
+      </main>
+    );
+  }
 
   if (duplicado) {
     return (
