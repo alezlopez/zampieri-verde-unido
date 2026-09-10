@@ -412,6 +412,30 @@ const MatriculaAdmin = () => {
     carregar();
   };
 
+  /** Conferência interna da matrícula concluída. */
+  const conferir = async (m: Matricula, valor: boolean) => {
+    setAcaoEmCurso(true);
+    const { erro } = await chamar(valor ? "conferir" : "desconferir", { id: m.id });
+    setAcaoEmCurso(false);
+    if (erro) {
+      toast({ title: "Não foi possível concluir", description: erro, variant: "destructive" });
+      return;
+    }
+    carregar();
+  };
+
+  /** Marca desistência/cancelamento (apenas controle interno) ou reabre o caso. */
+  const marcarAcompanhamento = async (estado: "ativo" | "desistente" | "cancelado") => {
+    if (!aberta) return;
+    if (estado !== "ativo" && !motivoAcomp.trim()) {
+      toast({ title: "Informe o motivo", variant: "destructive" });
+      return;
+    }
+    await executar("acompanhamento", { estado, motivo: motivoAcomp.trim() }, estado !== "ativo");
+    setMarcando(null);
+    setMotivoAcomp("");
+  };
+
   const verDoc = async (tipo: string) => {
     if (!aberta) return;
     const { erro, data } = await chamar("doc_url", { id: aberta.id, tipo });
