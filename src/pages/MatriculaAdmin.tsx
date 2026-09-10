@@ -247,6 +247,9 @@ const MatriculaAdmin = () => {
   const [gratuita, setGratuita] = useState(false);
   const [anuidadeOutro, setAnuidadeOutro] = useState(false);
   const [acaoEmCurso, setAcaoEmCurso] = useState(false);
+  const [periodo, setPeriodo] = useState<"hoje" | "7d" | "30d" | null>(null);
+  const [marcando, setMarcando] = useState<"desistente" | "cancelado" | null>(null);
+  const [motivoAcomp, setMotivoAcomp] = useState("");
 
   useEffect(() => {
     document.title = "Matrículas — Painel Administrativo";
