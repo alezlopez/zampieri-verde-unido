@@ -284,7 +284,7 @@ export default function Rematricula2027Informativo() {
           <h1
             className={`${titulo} mt-5 text-3xl font-bold leading-tight text-[#F5F0E8] sm:text-5xl`}
           >
-            Sua família já faz parte da história. Não deixe a Fase 1 passar sem garantir seu
+            Sua família já faz parte da história. Não deixe a Fase 2 passar sem garantir seu
             desconto.
           </h1>
           <p className="mx-auto mt-5 max-w-xl text-base text-[#F5F0E8]/85 sm:text-lg">
