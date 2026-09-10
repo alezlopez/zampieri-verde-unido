@@ -40,6 +40,11 @@ interface Matricula {
   link_contrato: string | null;
   valor_matricula: number | null;
   matricula_gratuita?: boolean;
+  conferida?: boolean;
+  conferida_em?: string | null;
+  acompanhamento?: string;
+  acompanhamento_motivo?: string | null;
+  acompanhamento_em?: string | null;
   data_pagamento: string | null;
   documentos: Doc[];
   prematricula: {
@@ -220,6 +225,9 @@ const CAMPOS_VALORES: { campo: string; label: string }[] = [
   { campo: "max_parcelas", label: "Máximo de parcelas no cartão" },
 ];
 
+const dataHora = (iso: string) =>
+  new Date(iso).toLocaleString("pt-BR", { dateStyle: "short", timeStyle: "short" });
+
 /** Tabela oficial de anuidades por segmento. */
 const ANUIDADES = [
   { curso: "Pré", valor: "19.500,00", ext: "Dezenove mil e quinhentos reais" },
@@ -242,6 +250,9 @@ const MatriculaAdmin = () => {
   const [gratuita, setGratuita] = useState(false);
   const [anuidadeOutro, setAnuidadeOutro] = useState(false);
   const [acaoEmCurso, setAcaoEmCurso] = useState(false);
+  const [periodo, setPeriodo] = useState<"hoje" | "7d" | "30d" | null>(null);
+  const [marcando, setMarcando] = useState<"desistente" | "cancelado" | null>(null);
+  const [motivoAcomp, setMotivoAcomp] = useState("");
 
   useEffect(() => {
     document.title = "Matrículas — Painel Administrativo";
@@ -290,10 +301,18 @@ const MatriculaAdmin = () => {
     setAnuidadeOutro(!!anu && !ANUIDADES.some((a) => a.valor === anu));
   };
 
+  /** Limites do filtro de período aplicado sobre a data de conferência. */
+  const limites = useMemo(() => {
+    if (!periodo) return { de: null as number | null, ate: null as number | null };
+    const agora = new Date();
+    const inicioHoje = new Date(agora.getFullYear(), agora.getMonth(), agora.getDate()).getTime();
+    const dias = periodo === "hoje" ? 0 : periodo === "7d" ? 6 : 29;
+    return { de: inicioHoje - dias * 86400000, ate: null };
+  }, [periodo]);
+
   const filtradas = useMemo(() => {
     const t = busca.trim().toLowerCase();
-    return lista.filter((m) => {
-      if (filtro !== "todos" && m.status !== filtro) return false;
+    const combinaTexto = (m: Matricula) => {
       if (!t) return true;
       const p = m.prematricula;
       return (
@@ -301,8 +320,44 @@ const MatriculaAdmin = () => {
         (p?.resp_nome ?? "").toLowerCase().includes(t) ||
         (p?.protocolo ?? "").toLowerCase().includes(t)
       );
+    };
+    const out = lista.filter((m) => {
+      const ac = m.acompanhamento ?? "ativo";
+      if (filtro === "desistentes") return ac === "desistente" && combinaTexto(m);
+      if (filtro === "cancelados") return ac === "cancelado" && combinaTexto(m);
+      if (ac !== "ativo") return false;
+      if (filtro === "a_conferir" && !(m.status === "concluida" && !m.conferida)) return false;
+      if (filtro === "conferidas") {
+        if (!m.conferida) return false;
+        if (limites.de !== null) {
+          const q = m.conferida_em ? new Date(m.conferida_em).getTime() : null;
+          if (q === null || q < limites.de) return false;
+        }
+      }
+      if (!["todos", "a_conferir", "conferidas"].includes(filtro) && m.status !== filtro) return false;
+      return combinaTexto(m);
     });
-  }, [lista, busca, filtro]);
+    if (filtro === "conferidas") {
+      out.sort(
+        (a, b) =>
+          (b.conferida_em ? new Date(b.conferida_em).getTime() : 0) -
+          (a.conferida_em ? new Date(a.conferida_em).getTime() : 0),
+      );
+    }
+    return out;
+  }, [lista, busca, filtro, limites]);
+
+  const totais = useMemo(() => {
+    const ativos = lista.filter((m) => (m.acompanhamento ?? "ativo") === "ativo");
+    return {
+      andamento: ativos.filter((m) => m.status !== "concluida").length,
+      concluidas: ativos.filter((m) => m.status === "concluida").length,
+      aConferir: ativos.filter((m) => m.status === "concluida" && !m.conferida).length,
+      conferidas: ativos.filter((m) => m.conferida).length,
+      desistentes: lista.filter((m) => m.acompanhamento === "desistente").length,
+      cancelados: lista.filter((m) => m.acompanhamento === "cancelado").length,
+    };
+  }, [lista]);
 
   /** Espelha a validação do backend: valores mínimos salvos para gerar o contrato. */
   const valoresProntos = useMemo(() => {
@@ -358,6 +413,30 @@ const MatriculaAdmin = () => {
     toast({ title: "Pronto!" });
     if (fechar) setAberta(null);
     carregar();
+  };
+
+  /** Conferência interna da matrícula concluída. */
+  const conferir = async (m: Matricula, valor: boolean) => {
+    setAcaoEmCurso(true);
+    const { erro } = await chamar(valor ? "conferir" : "desconferir", { id: m.id });
+    setAcaoEmCurso(false);
+    if (erro) {
+      toast({ title: "Não foi possível concluir", description: erro, variant: "destructive" });
+      return;
+    }
+    carregar();
+  };
+
+  /** Marca desistência/cancelamento (apenas controle interno) ou reabre o caso. */
+  const marcarAcompanhamento = async (estado: "ativo" | "desistente" | "cancelado") => {
+    if (!aberta) return;
+    if (estado !== "ativo" && !motivoAcomp.trim()) {
+      toast({ title: "Informe o motivo", variant: "destructive" });
+      return;
+    }
+    await executar("acompanhamento", { estado, motivo: motivoAcomp.trim() }, estado !== "ativo");
+    setMarcando(null);
+    setMotivoAcomp("");
   };
 
   const verDoc = async (tipo: string) => {
@@ -420,9 +499,52 @@ const MatriculaAdmin = () => {
                   {v}
                 </SelectItem>
               ))}
+              <SelectItem value="a_conferir">A conferir</SelectItem>
+              <SelectItem value="conferidas">Conferidas</SelectItem>
+              <SelectItem value="desistentes">Desistentes</SelectItem>
+              <SelectItem value="cancelados">Cancelados</SelectItem>
             </SelectContent>
           </Select>
         </div>
+
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2">
+          {[
+            { label: "Em andamento", valor: totais.andamento },
+            { label: "Concluídas", valor: totais.concluidas },
+            { label: "A conferir", valor: totais.aConferir },
+            { label: "Conferidas", valor: totais.conferidas },
+            { label: "Desistentes", valor: totais.desistentes },
+            { label: "Cancelados", valor: totais.cancelados },
+          ].map((c) => (
+            <div key={c.label} className="rounded-lg border border-border bg-white p-3">
+              <p className="text-xs text-muted-foreground">{c.label}</p>
+              <p className="text-lg font-semibold text-zampieri-green-dark">{c.valor}</p>
+            </div>
+          ))}
+        </div>
+
+        {filtro === "conferidas" && (
+          <div className="flex flex-wrap gap-2">
+            {([
+              ["hoje", "Hoje"],
+              ["7d", "Últimos 7 dias"],
+              ["30d", "Últimos 30 dias"],
+            ] as const).map(([k, label]) => (
+              <Button
+                key={k}
+                size="sm"
+                variant={periodo === k ? "default" : "outline"}
+                onClick={() => setPeriodo(k)}
+              >
+                {label}
+              </Button>
+            ))}
+            <Button size="sm" variant="ghost" onClick={() => setPeriodo(null)}>
+              Limpar
+            </Button>
+          </div>
+        )}
+
 
         {carregando ? (
           <div className="flex justify-center py-16">
@@ -431,10 +553,13 @@ const MatriculaAdmin = () => {
         ) : (
           <div className="grid gap-3">
             {filtradas.map((m) => (
-              <button
+              <div
                 key={m.id}
+                role="button"
+                tabIndex={0}
                 onClick={() => abrir(m)}
-                className="text-left rounded-lg border border-border bg-white p-4 transition-colors hover:border-zampieri-green-dark"
+                onKeyDown={(e) => e.key === "Enter" && abrir(m)}
+                className="cursor-pointer text-left rounded-lg border border-border bg-white p-4 transition-colors hover:border-zampieri-green-dark"
               >
                 <div className="flex flex-wrap items-center justify-between gap-2">
                   <div className="min-w-0">
@@ -446,6 +571,16 @@ const MatriculaAdmin = () => {
                     </p>
                   </div>
                   <div className="flex items-center gap-2">
+                    {m.acompanhamento === "desistente" && (
+                      <span className="rounded-full bg-muted text-muted-foreground px-2.5 py-0.5 text-xs font-medium">
+                        Desistente
+                      </span>
+                    )}
+                    {m.acompanhamento === "cancelado" && (
+                      <span className="rounded-full bg-red-100 text-red-700 px-2.5 py-0.5 text-xs font-medium">
+                        Cancelada
+                      </span>
+                    )}
                     {m.matricula_gratuita && (
                       <span className="rounded-full bg-emerald-100 text-emerald-800 px-2.5 py-0.5 text-xs font-medium">
                         Isenta
@@ -463,7 +598,38 @@ const MatriculaAdmin = () => {
                   {m.documentos.filter((d) => d.status === "aprovado").length}/
                   {m.documentos.length} documentos aprovados
                 </p>
-              </button>
+                {m.status === "concluida" && (m.acompanhamento ?? "ativo") === "ativo" && (
+                  <div
+                    className="mt-3 flex flex-wrap items-center gap-2"
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    {m.conferida ? (
+                      <>
+                        <span className="rounded-full bg-emerald-100 text-emerald-800 px-2.5 py-0.5 text-xs font-medium">
+                          Conferida{m.conferida_em ? ` em ${dataHora(m.conferida_em)}` : ""}
+                        </span>
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          disabled={acaoEmCurso}
+                          onClick={() => conferir(m, false)}
+                        >
+                          Desfazer conferência
+                        </Button>
+                      </>
+                    ) : (
+                      <Button
+                        size="sm"
+                        className="bg-zampieri-green-dark hover:bg-zampieri-green"
+                        disabled={acaoEmCurso}
+                        onClick={() => conferir(m, true)}
+                      >
+                        Marcar como conferida
+                      </Button>
+                    )}
+                  </div>
+                )}
+              </div>
             ))}
             {filtradas.length === 0 && (
               <p className="text-sm text-muted-foreground text-center py-10">
@@ -835,8 +1001,72 @@ const MatriculaAdmin = () => {
                   )}
                 </section>
 
-
-
+                <section className="space-y-2 rounded-lg border border-border p-4">
+                  <p className="text-xs font-semibold uppercase text-muted-foreground">
+                    Acompanhamento interno
+                  </p>
+                  {(aberta.acompanhamento ?? "ativo") !== "ativo" ? (
+                    <div className="space-y-2">
+                      <p className="text-sm">
+                        Marcada como{" "}
+                        <strong>
+                          {aberta.acompanhamento === "cancelado" ? "cancelada" : "desistente"}
+                        </strong>
+                        {aberta.acompanhamento_em ? ` em ${dataHora(aberta.acompanhamento_em)}` : ""}.
+                      </p>
+                      {aberta.acompanhamento_motivo && (
+                        <p className="text-sm text-muted-foreground">
+                          Motivo: {aberta.acompanhamento_motivo}
+                        </p>
+                      )}
+                      <Button
+                        variant="outline"
+                        disabled={acaoEmCurso}
+                        onClick={() => marcarAcompanhamento("ativo")}
+                      >
+                        Reabrir como ativa
+                      </Button>
+                    </div>
+                  ) : marcando ? (
+                    <div className="space-y-2">
+                      <Label>
+                        Motivo {marcando === "cancelado" ? "do cancelamento" : "da desistência"}
+                      </Label>
+                      <Input
+                        value={motivoAcomp}
+                        onChange={(e) => setMotivoAcomp(e.target.value)}
+                        placeholder="Descreva brevemente"
+                      />
+                      <div className="flex flex-wrap gap-2">
+                        <Button
+                          variant="destructive"
+                          disabled={acaoEmCurso}
+                          onClick={() => marcarAcompanhamento(marcando)}
+                        >
+                          Confirmar
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          onClick={() => {
+                            setMarcando(null);
+                            setMotivoAcomp("");
+                          }}
+                        >
+                          Cancelar
+                        </Button>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="flex flex-wrap gap-2">
+                      <Button variant="outline" onClick={() => setMarcando("desistente")}>
+                        Marcar desistente
+                      </Button>
+                      <Button variant="outline" onClick={() => setMarcando("cancelado")}>
+                        Marcar cancelada
+                      </Button>
+                    </div>
+                  )}
+                </section>
 
               </div>
             </>

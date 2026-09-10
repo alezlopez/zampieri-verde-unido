@@ -55,6 +55,9 @@ interface Prematricula {
   desconto_percentual: number | null;
   observacoes_entrevista: string | null;
   agendado_em: string | null;
+  acompanhamento?: string;
+  acompanhamento_motivo?: string | null;
+  acompanhamento_em?: string | null;
 }
 
 interface Agendamento {
@@ -103,6 +106,8 @@ const PreMatriculaAdmin = () => {
   const [acaoEmCurso, setAcaoEmCurso] = useState(false);
   const [slots, setSlots] = useState<{ inicio: string; texto: string }[] | null>(null);
   const [novoHorario, setNovoHorario] = useState("");
+  const [marcando, setMarcando] = useState<"desistente" | "cancelado" | null>(null);
+  const [motivoAcomp, setMotivoAcomp] = useState("");
 
   useEffect(() => {
     document.title = "Pré-matrículas — Painel Administrativo";
@@ -131,20 +136,34 @@ const PreMatriculaAdmin = () => {
 
   const filtradas = useMemo(() => {
     const t = busca.trim().toLowerCase();
+    const combinaTexto = (p: Prematricula) =>
+      !t ||
+      p.aluno_nome.toLowerCase().includes(t) ||
+      p.resp_nome.toLowerCase().includes(t) ||
+      p.protocolo.toLowerCase().includes(t) ||
+      p.resp_cpf.includes(t.replace(/\D/g, ""));
+
     return lista.filter((p) => {
+      const ac = p.acompanhamento ?? "ativo";
+      if (filtro === "desistentes") return ac === "desistente" && combinaTexto(p);
+      if (filtro === "cancelados") return ac === "cancelado" && combinaTexto(p);
+      // Desistentes e cancelados saem das listas normais.
+      if (ac !== "ativo") return false;
       if (filtro !== "todos" && p.status !== filtro) return false;
       // Entrevista concluída já migra para "Matrículas em andamento":
       // só aparece aqui via filtro específico ou busca por texto.
       if (filtro === "todos" && !t && p.status === "entrevista_concluida") return false;
-      if (!t) return true;
-      return (
-        p.aluno_nome.toLowerCase().includes(t) ||
-        p.resp_nome.toLowerCase().includes(t) ||
-        p.protocolo.toLowerCase().includes(t) ||
-        p.resp_cpf.includes(t.replace(/\D/g, ""))
-      );
+      return combinaTexto(p);
     });
   }, [lista, busca, filtro]);
+
+  const totais = useMemo(
+    () => ({
+      desistentes: lista.filter((p) => p.acompanhamento === "desistente").length,
+      cancelados: lista.filter((p) => p.acompanhamento === "cancelado").length,
+    }),
+    [lista],
+  );
 
   const executar = async (acao: string, extra: Record<string, unknown> = {}) => {
     if (!aberta) return;
@@ -184,6 +203,17 @@ const PreMatriculaAdmin = () => {
     }
     setSlots((data.slots as { inicio: string; texto: string }[]) ?? []);
     setNovoHorario("");
+  };
+
+  /** Marcador interno: desistente, cancelado ou reabertura do caso. */
+  const marcarAcompanhamento = async (estado: "ativo" | "desistente" | "cancelado") => {
+    if (estado !== "ativo" && !motivoAcomp.trim()) {
+      toast({ title: "Informe o motivo", variant: "destructive" });
+      return;
+    }
+    await executar("acompanhamento", { estado, motivo: motivoAcomp.trim() });
+    setMarcando(null);
+    setMotivoAcomp("");
   };
 
   const abrirArquivo = async (campo: "boletim" | "laudo") => {
@@ -236,9 +266,14 @@ const PreMatriculaAdmin = () => {
                   {k === "entrevista_concluida" ? "Entrevista concluída (já em matrícula)" : v}
                 </SelectItem>
               ))}
+              <SelectItem value="desistentes">
+                Desistentes ({totais.desistentes})
+              </SelectItem>
+              <SelectItem value="cancelados">Cancelados ({totais.cancelados})</SelectItem>
             </SelectContent>
           </Select>
         </div>
+
 
         {carregando ? (
           <div className="flex justify-center py-16">
@@ -266,6 +301,16 @@ const PreMatriculaAdmin = () => {
                     </p>
                   </div>
                   <div className="flex items-center gap-2">
+                    {p.acompanhamento === "desistente" && (
+                      <span className="rounded-full bg-muted px-2.5 py-0.5 text-xs font-medium text-muted-foreground">
+                        Desistente
+                      </span>
+                    )}
+                    {p.acompanhamento === "cancelado" && (
+                      <span className="rounded-full bg-red-100 px-2.5 py-0.5 text-xs font-medium text-red-700">
+                        Cancelada
+                      </span>
+                    )}
                     {p.desconto_percentual != null && (
                       <span className="rounded-full bg-emerald-50 px-2 py-0.5 text-xs font-medium text-emerald-700">
                         {p.desconto_percentual}% desconto
@@ -508,6 +553,70 @@ const PreMatriculaAdmin = () => {
                     <Linha rotulo="Motivo" valor={aberta.motivo_reprovacao} />
                   </section>
                 )}
+
+                <section className="space-y-2 rounded-lg border border-border p-4">
+                  <p className="text-xs font-semibold uppercase text-muted-foreground">
+                    Acompanhamento interno
+                  </p>
+                  {(aberta.acompanhamento ?? "ativo") !== "ativo" ? (
+                    <div className="space-y-2">
+                      <p className="text-sm">
+                        Marcada como{" "}
+                        <strong>
+                          {aberta.acompanhamento === "cancelado" ? "cancelada" : "desistente"}
+                        </strong>{" "}
+                        em {dataHora(aberta.acompanhamento_em)}.
+                      </p>
+                      {aberta.acompanhamento_motivo && (
+                        <Linha rotulo="Motivo" valor={aberta.acompanhamento_motivo} />
+                      )}
+                      <Button
+                        variant="outline"
+                        disabled={acaoEmCurso}
+                        onClick={() => marcarAcompanhamento("ativo")}
+                      >
+                        Reabrir como ativa
+                      </Button>
+                    </div>
+                  ) : marcando ? (
+                    <div className="space-y-2">
+                      <Label>
+                        Motivo {marcando === "cancelado" ? "do cancelamento" : "da desistência"}
+                      </Label>
+                      <Textarea
+                        value={motivoAcomp}
+                        onChange={(e) => setMotivoAcomp(e.target.value)}
+                      />
+                      <div className="flex flex-wrap gap-2">
+                        <Button
+                          variant="destructive"
+                          disabled={acaoEmCurso}
+                          onClick={() => marcarAcompanhamento(marcando)}
+                        >
+                          Confirmar
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          onClick={() => {
+                            setMarcando(null);
+                            setMotivoAcomp("");
+                          }}
+                        >
+                          Voltar
+                        </Button>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="flex flex-wrap gap-2">
+                      <Button variant="outline" onClick={() => setMarcando("desistente")}>
+                        Marcar desistente
+                      </Button>
+                      <Button variant="outline" onClick={() => setMarcando("cancelado")}>
+                        Marcar cancelada
+                      </Button>
+                    </div>
+                  )}
+                </section>
               </div>
             </>
           )}

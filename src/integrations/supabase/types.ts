@@ -1146,6 +1146,10 @@ export type Database = {
       }
       matriculas: {
         Row: {
+          acompanhamento: string
+          acompanhamento_em: string | null
+          acompanhamento_motivo: string | null
+          acompanhamento_por: string | null
           anuidade_total: string | null
           anuidade_total_ext: string | null
           asaas_checkout_id: string | null
@@ -1160,6 +1164,9 @@ export type Database = {
           cidade: string | null
           complemento: string | null
           concluida_em: string | null
+          conferida: boolean
+          conferida_em: string | null
+          conferida_por: string | null
           contrato_assinado: boolean
           contrato_assinado_em: string | null
           contrato_gerado: boolean
@@ -1228,6 +1235,10 @@ export type Database = {
           zapsign_token: string | null
         }
         Insert: {
+          acompanhamento?: string
+          acompanhamento_em?: string | null
+          acompanhamento_motivo?: string | null
+          acompanhamento_por?: string | null
           anuidade_total?: string | null
           anuidade_total_ext?: string | null
           asaas_checkout_id?: string | null
@@ -1242,6 +1253,9 @@ export type Database = {
           cidade?: string | null
           complemento?: string | null
           concluida_em?: string | null
+          conferida?: boolean
+          conferida_em?: string | null
+          conferida_por?: string | null
           contrato_assinado?: boolean
           contrato_assinado_em?: string | null
           contrato_gerado?: boolean
@@ -1310,6 +1324,10 @@ export type Database = {
           zapsign_token?: string | null
         }
         Update: {
+          acompanhamento?: string
+          acompanhamento_em?: string | null
+          acompanhamento_motivo?: string | null
+          acompanhamento_por?: string | null
           anuidade_total?: string | null
           anuidade_total_ext?: string | null
           asaas_checkout_id?: string | null
@@ -1324,6 +1342,9 @@ export type Database = {
           cidade?: string | null
           complemento?: string | null
           concluida_em?: string | null
+          conferida?: boolean
+          conferida_em?: string | null
+          conferida_por?: string | null
           contrato_assinado?: boolean
           contrato_assinado_em?: string | null
           contrato_gerado?: boolean
@@ -1745,6 +1766,10 @@ export type Database = {
       }
       prematriculas: {
         Row: {
+          acompanhamento: string
+          acompanhamento_em: string | null
+          acompanhamento_motivo: string | null
+          acompanhamento_por: string | null
           agendado_em: string | null
           alergias: string | null
           aluno_chave: string | null
@@ -1788,6 +1813,10 @@ export type Database = {
           usa_medicacao: string | null
         }
         Insert: {
+          acompanhamento?: string
+          acompanhamento_em?: string | null
+          acompanhamento_motivo?: string | null
+          acompanhamento_por?: string | null
           agendado_em?: string | null
           alergias?: string | null
           aluno_chave?: string | null
@@ -1831,6 +1860,10 @@ export type Database = {
           usa_medicacao?: string | null
         }
         Update: {
+          acompanhamento?: string
+          acompanhamento_em?: string | null
+          acompanhamento_motivo?: string | null
+          acompanhamento_por?: string | null
           agendado_em?: string | null
           alergias?: string | null
           aluno_chave?: string | null
