@@ -177,6 +177,7 @@ export type Database = {
           estado_pai: string | null
           estorno_em: string | null
           estorno_valor: number | null
+          fase_excecao: number | null
           followup_pausado: boolean
           forma_pagamento: string | null
           id_aluno: number
@@ -263,6 +264,7 @@ export type Database = {
           estado_pai?: string | null
           estorno_em?: string | null
           estorno_valor?: number | null
+          fase_excecao?: number | null
           followup_pausado?: boolean
           forma_pagamento?: string | null
           id_aluno: number
@@ -349,6 +351,7 @@ export type Database = {
           estado_pai?: string | null
           estorno_em?: string | null
           estorno_valor?: number | null
+          fase_excecao?: number | null
           followup_pausado?: boolean
           forma_pagamento?: string | null
           id_aluno?: number
@@ -2962,6 +2965,10 @@ export type Database = {
           success: boolean
         }[]
       }
+      rematricula_2027_admin_fase_excecao: {
+        Args: { p_fase: number; p_id_aluno: number }
+        Returns: Json
+      }
       rematricula_2027_admin_followup_pausar: {
         Args: { _id_aluno: number; _pausado: boolean }
         Returns: boolean
@@ -3113,27 +3120,50 @@ export type Database = {
           turno: string
         }[]
       }
-      rematricula_2027_valor_vigente: {
-        Args: { p_curso: string }
-        Returns: {
-          fase: number
-          fase_fim: string
-          fase_inicio: string
-          valor_avista: number
-          valor_cheio: number
-          valor_parcelado: number
-        }[]
-      }
-      rematricula_2027_valores_curso: {
-        Args: { p_curso: string }
-        Returns: {
-          fase: number
-          fase_fim: string
-          valor_avista: number
-          valor_cheio: number
-          valor_parcelado: number
-        }[]
-      }
+      rematricula_2027_valor_vigente:
+        | {
+            Args: { p_curso: string }
+            Returns: {
+              fase: number
+              fase_fim: string
+              fase_inicio: string
+              valor_avista: number
+              valor_cheio: number
+              valor_parcelado: number
+            }[]
+          }
+        | {
+            Args: { p_curso: string; p_fase?: number }
+            Returns: {
+              fase: number
+              fase_fim: string
+              fase_inicio: string
+              valor_avista: number
+              valor_cheio: number
+              valor_parcelado: number
+            }[]
+          }
+      rematricula_2027_valores_curso:
+        | {
+            Args: { p_curso: string }
+            Returns: {
+              fase: number
+              fase_fim: string
+              valor_avista: number
+              valor_cheio: number
+              valor_parcelado: number
+            }[]
+          }
+        | {
+            Args: { p_curso: string; p_id_aluno?: number }
+            Returns: {
+              fase: number
+              fase_fim: string
+              valor_avista: number
+              valor_cheio: number
+              valor_parcelado: number
+            }[]
+          }
       rematricula_by_codigo_aluno: {
         Args: { p_cod_aluno: number }
         Returns: {
