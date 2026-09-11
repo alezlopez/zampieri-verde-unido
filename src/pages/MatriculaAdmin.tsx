@@ -515,19 +515,30 @@ const MatriculaAdmin = () => {
 
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2">
           {[
-            { label: "Em andamento", valor: totais.andamento },
-            { label: "Concluídas", valor: totais.concluidas },
-            { label: "A conferir", valor: totais.aConferir },
-            { label: "Conferidas", valor: totais.conferidas },
-            { label: "Desistentes", valor: totais.desistentes },
-            { label: "Cancelados", valor: totais.cancelados },
+            { label: "Em andamento", valor: totais.andamento, chave: "andamento" },
+            { label: "Concluídas", valor: totais.concluidas, chave: "concluidas" },
+            { label: "A conferir", valor: totais.aConferir, chave: "a_conferir" },
+            { label: "Conferidas", valor: totais.conferidas, chave: "conferidas" },
+            { label: "Desistentes", valor: totais.desistentes, chave: "desistentes" },
+            { label: "Cancelados", valor: totais.cancelados, chave: "cancelados" },
           ].map((c) => (
-            <div key={c.label} className="rounded-lg border border-border bg-white p-3">
+            <button
+              key={c.label}
+              type="button"
+              onClick={() => setFiltro(filtro === c.chave ? "todos" : c.chave)}
+              aria-pressed={filtro === c.chave}
+              className={`text-left rounded-lg border bg-white p-3 transition-colors hover:border-zampieri-green-dark ${
+                filtro === c.chave
+                  ? "border-zampieri-green-dark ring-1 ring-zampieri-green-dark"
+                  : "border-border"
+              }`}
+            >
               <p className="text-xs text-muted-foreground">{c.label}</p>
               <p className="text-lg font-semibold text-zampieri-green-dark">{c.valor}</p>
-            </div>
+            </button>
           ))}
         </div>
+
 
         {filtro === "conferidas" && (
           <div className="flex flex-wrap gap-2">
