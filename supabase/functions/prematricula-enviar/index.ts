@@ -126,15 +126,19 @@ Deno.serve(async (req) => {
     if (String(form.get("acao") || "") === "reenviar_documento") {
       const cpf = onlyDigits(txt(form.get("cpf"), 20));
       const pmId = txt(form.get("id"), 60);
-      if (!cpfValido(cpf) || !pmId) return json({ error: "dados_invalidos" }, 400);
+      const token = txt(form.get("token"), 120);
+      const porToken = token.length >= 20;
+      if (!porToken && (!cpfValido(cpf) || !pmId)) return json({ error: "dados_invalidos" }, 400);
 
-      const { data: pm, error: erroPm } = await admin0
+      const consulta = admin0
         .from("prematriculas")
-        .select("id, resp_cpf, status, ressalva_documento, resp_nome, resp_email, resp_whatsapp, aluno_nome, protocolo")
-        .eq("id", pmId)
-        .maybeSingle();
+        .select("id, resp_cpf, status, ressalva_documento, resp_nome, resp_email, resp_whatsapp, aluno_nome, protocolo");
+      const { data: pm, error: erroPm } = await (porToken
+        ? consulta.eq("token", token)
+        : consulta.eq("id", pmId)
+      ).maybeSingle();
       if (erroPm) throw erroPm;
-      if (!pm || pm.resp_cpf !== cpf) return json({ error: "nao_encontrado" }, 404);
+      if (!pm || (!porToken && pm.resp_cpf !== cpf)) return json({ error: "nao_encontrado" }, 404);
       if (pm.status !== "aprovado_com_ressalvas") return json({ error: "status_invalido" }, 400);
 
       const campo = pm.ressalva_documento === "laudo" ? "laudo" : "boletim";
