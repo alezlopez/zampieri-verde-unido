@@ -55,6 +55,12 @@ const PreMatricula = () => {
   const [arquivoReenvio, setArquivoReenvio] = useState<File | null>(null);
   const [reenviando, setReenviando] = useState(false);
   const [reenviado, setReenviado] = useState(false);
+  const tokenUrl = useMemo(
+    () => new URLSearchParams(window.location.search).get("t") || "",
+    [],
+  );
+  const [carregandoToken, setCarregandoToken] = useState(tokenUrl.length > 0);
+  const [tokenInvalido, setTokenInvalido] = useState(false);
 
   useEffect(() => {
     document.title = "Pré-matrícula — Colégio Zampieri";
@@ -95,6 +101,29 @@ const PreMatricula = () => {
     };
   }, [form.resp_cpf, etapa]);
 
+  // Link enviado na mensagem: abre direto a tela de reenvio, sem digitar nada.
+  useEffect(() => {
+    if (!tokenUrl) return;
+    let ativo = true;
+    (async () => {
+      try {
+        const { data } = await supabase.functions.invoke("prematricula-enviar", {
+          body: { acao: "consultar_token", t: tokenUrl },
+        });
+        if (!ativo) return;
+        if (data?.ressalva) setRessalva(data.ressalva);
+        else setTokenInvalido(true);
+      } catch {
+        if (ativo) setTokenInvalido(true);
+      } finally {
+        if (ativo) setCarregandoToken(false);
+      }
+    })();
+    return () => {
+      ativo = false;
+    };
+  }, [tokenUrl]);
+
   const enviarReenvio = async () => {
     if (!ressalva || !arquivoReenvio) return;
     setReenviando(true);
@@ -102,7 +131,8 @@ const PreMatricula = () => {
       const fd = new FormData();
       fd.append("acao", "reenviar_documento");
       fd.append("id", ressalva.id);
-      fd.append("cpf", onlyDigits(form.resp_cpf));
+      if (tokenUrl) fd.append("token", tokenUrl);
+      else fd.append("cpf", onlyDigits(form.resp_cpf));
       fd.append("arquivo", arquivoReenvio);
       const { data, error } = await supabase.functions.invoke("prematricula-enviar", { body: fd });
       if (error) throw error;
@@ -261,6 +291,34 @@ const PreMatricula = () => {
     setEmailVerificado,
   };
 
+  if (carregandoToken) {
+    return (
+      <main className="min-h-screen bg-zampieri-cream/30 flex items-center justify-center px-4">
+        <Loader2 className="w-8 h-8 animate-spin text-zampieri-green-dark" />
+      </main>
+    );
+  }
+
+  if (tokenInvalido && !ressalva) {
+    return (
+      <main className="min-h-screen bg-zampieri-cream/30 flex items-center justify-center px-4 py-16">
+        <div className="max-w-md w-full rounded-2xl bg-white border border-border p-8 text-center space-y-4">
+          <AlertCircle className="w-12 h-12 mx-auto text-zampieri-green-dark" />
+          <h1 className="font-serif text-2xl font-bold text-zampieri-green-dark">
+            Link não disponível
+          </h1>
+          <p className="text-sm text-muted-foreground">
+            Este link já foi usado ou não está mais válido. Se ainda falta enviar um documento, fale
+            com a secretaria pelo WhatsApp <strong>(11) 93934-1503</strong>.
+          </p>
+          <Button asChild variant="outline" className="w-full">
+            <a href="/prematricula">Abrir o formulário de pré-matrícula</a>
+          </Button>
+        </div>
+      </main>
+    );
+  }
+
   if (ressalva) {
     const doc = ressalva.ressalva_documento === "laudo" ? "laudo / relatório" : "boletim escolar";
     return (
@@ -312,9 +370,11 @@ const PreMatricula = () => {
                 {reenviando && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
                 Enviar documento
               </Button>
-              <Button variant="ghost" className="w-full" onClick={() => setRessalva(null)}>
-                Não é o meu caso, continuar o formulário
-              </Button>
+              {!tokenUrl && (
+                <Button variant="ghost" className="w-full" onClick={() => setRessalva(null)}>
+                  Não é o meu caso, continuar o formulário
+                </Button>
+              )}
             </>
           )}
         </div>

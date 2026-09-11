@@ -89,6 +89,13 @@ Deno.serve(async (req) => {
       const motivo = acharMotivo(String(body?.motivo_codigo || ""));
       if (!motivo) return json({ error: "motivo_obrigatorio" }, 400);
 
+      const tokenRessalva =
+        pm.token ||
+        crypto.randomUUID().replace(/-/g, "") + crypto.randomUUID().replace(/-/g, "");
+      const linkReenvioDireto = motivo.documento
+        ? `${SITE_URL}/prematricula/reenvio?t=${tokenRessalva}`
+        : `${SITE_URL}/prematricula`;
+
       if (acao === "reprovar") {
         if (!motivo.decisoes.includes("reprovar")) return json({ error: "motivo_invalido" }, 400);
         const { error } = await admin
@@ -130,6 +137,7 @@ Deno.serve(async (req) => {
           solucao_texto: motivo.solucao,
           ressalva_documento: motivo.documento,
           ressalva_em: new Date().toISOString(),
+          token: tokenRessalva,
         })
         .eq("id", id);
       if (error) throw error;
@@ -141,7 +149,7 @@ Deno.serve(async (req) => {
         motivoTexto: motivo.texto,
         solucaoTexto: motivo.solucao,
         documentoPendente: motivo.documento,
-        linkReenvio: `${SITE_URL}/prematricula`,
+        linkReenvio: linkReenvioDireto,
       });
       return json({ ok: true, status: "aprovado_com_ressalvas" });
     }
