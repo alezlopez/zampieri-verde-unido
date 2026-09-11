@@ -149,7 +149,7 @@ Deno.serve(async (req) => {
         motivoTexto: motivo.texto,
         solucaoTexto: motivo.solucao,
         documentoPendente: motivo.documento,
-        linkReenvio: `${SITE_URL}/prematricula`,
+        linkReenvio: linkReenvioDireto,
       });
       return json({ ok: true, status: "aprovado_com_ressalvas" });
     }
