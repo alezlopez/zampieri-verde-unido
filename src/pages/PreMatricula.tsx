@@ -55,6 +55,12 @@ const PreMatricula = () => {
   const [arquivoReenvio, setArquivoReenvio] = useState<File | null>(null);
   const [reenviando, setReenviando] = useState(false);
   const [reenviado, setReenviado] = useState(false);
+  const tokenUrl = useMemo(
+    () => new URLSearchParams(window.location.search).get("t") || "",
+    [],
+  );
+  const [carregandoToken, setCarregandoToken] = useState(tokenUrl.length > 0);
+  const [tokenInvalido, setTokenInvalido] = useState(false);
 
   useEffect(() => {
     document.title = "Pré-matrícula — Colégio Zampieri";
