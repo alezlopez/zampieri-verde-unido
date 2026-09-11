@@ -1,0 +1,2 @@
+ALTER TABLE public.prematriculas DROP CONSTRAINT IF EXISTS prematriculas_status_check;
+ALTER TABLE public.prematriculas ADD CONSTRAINT prematriculas_status_check CHECK (status = ANY (ARRAY['pendente'::text,'aprovado_aguardando_agendamento'::text,'reprovado'::text,'entrevista_agendada'::text,'entrevista_concluida'::text,'aprovado_com_ressalvas'::text,'reenviado_aguardando_analise'::text]));
