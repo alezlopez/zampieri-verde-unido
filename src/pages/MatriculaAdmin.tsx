@@ -326,6 +326,8 @@ const MatriculaAdmin = () => {
       if (filtro === "desistentes") return ac === "desistente" && combinaTexto(m);
       if (filtro === "cancelados") return ac === "cancelado" && combinaTexto(m);
       if (ac !== "ativo") return false;
+      if (filtro === "andamento" && m.status === "concluida") return false;
+      if (filtro === "concluidas" && m.status !== "concluida") return false;
       if (filtro === "a_conferir" && !(m.status === "concluida" && !m.conferida)) return false;
       if (filtro === "conferidas") {
         if (!m.conferida) return false;
@@ -334,7 +336,11 @@ const MatriculaAdmin = () => {
           if (q === null || q < limites.de) return false;
         }
       }
-      if (!["todos", "a_conferir", "conferidas"].includes(filtro) && m.status !== filtro) return false;
+      if (
+        !["todos", "andamento", "concluidas", "a_conferir", "conferidas"].includes(filtro) &&
+        m.status !== filtro
+      )
+        return false;
       return combinaTexto(m);
     });
     if (filtro === "conferidas") {
