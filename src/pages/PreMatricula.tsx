@@ -370,9 +370,11 @@ const PreMatricula = () => {
                 {reenviando && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
                 Enviar documento
               </Button>
-              <Button variant="ghost" className="w-full" onClick={() => setRessalva(null)}>
-                Não é o meu caso, continuar o formulário
-              </Button>
+              {!tokenUrl && (
+                <Button variant="ghost" className="w-full" onClick={() => setRessalva(null)}>
+                  Não é o meu caso, continuar o formulário
+                </Button>
+              )}
             </>
           )}
         </div>
