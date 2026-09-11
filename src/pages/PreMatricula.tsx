@@ -291,6 +291,34 @@ const PreMatricula = () => {
     setEmailVerificado,
   };
 
+  if (carregandoToken) {
+    return (
+      <main className="min-h-screen bg-zampieri-cream/30 flex items-center justify-center px-4">
+        <Loader2 className="w-8 h-8 animate-spin text-zampieri-green-dark" />
+      </main>
+    );
+  }
+
+  if (tokenInvalido && !ressalva) {
+    return (
+      <main className="min-h-screen bg-zampieri-cream/30 flex items-center justify-center px-4 py-16">
+        <div className="max-w-md w-full rounded-2xl bg-white border border-border p-8 text-center space-y-4">
+          <AlertCircle className="w-12 h-12 mx-auto text-zampieri-green-dark" />
+          <h1 className="font-serif text-2xl font-bold text-zampieri-green-dark">
+            Link não disponível
+          </h1>
+          <p className="text-sm text-muted-foreground">
+            Este link já foi usado ou não está mais válido. Se ainda falta enviar um documento, fale
+            com a secretaria pelo WhatsApp <strong>(11) 93934-1503</strong>.
+          </p>
+          <Button asChild variant="outline" className="w-full">
+            <a href="/prematricula">Abrir o formulário de pré-matrícula</a>
+          </Button>
+        </div>
+      </main>
+    );
+  }
+
   if (ressalva) {
     const doc = ressalva.ressalva_documento === "laudo" ? "laudo / relatório" : "boletim escolar";
     return (
