@@ -505,7 +505,10 @@ const MatriculaAdmin = () => {
                   {v}
                 </SelectItem>
               ))}
+              <SelectItem value="andamento">Em andamento</SelectItem>
+              <SelectItem value="concluidas">Concluídas</SelectItem>
               <SelectItem value="a_conferir">A conferir</SelectItem>
+
               <SelectItem value="conferidas">Conferidas</SelectItem>
               <SelectItem value="desistentes">Desistentes</SelectItem>
               <SelectItem value="cancelados">Cancelados</SelectItem>
