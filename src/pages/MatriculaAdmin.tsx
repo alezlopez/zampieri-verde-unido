@@ -326,6 +326,8 @@ const MatriculaAdmin = () => {
       if (filtro === "desistentes") return ac === "desistente" && combinaTexto(m);
       if (filtro === "cancelados") return ac === "cancelado" && combinaTexto(m);
       if (ac !== "ativo") return false;
+      if (filtro === "andamento" && m.status === "concluida") return false;
+      if (filtro === "concluidas" && m.status !== "concluida") return false;
       if (filtro === "a_conferir" && !(m.status === "concluida" && !m.conferida)) return false;
       if (filtro === "conferidas") {
         if (!m.conferida) return false;
@@ -334,7 +336,11 @@ const MatriculaAdmin = () => {
           if (q === null || q < limites.de) return false;
         }
       }
-      if (!["todos", "a_conferir", "conferidas"].includes(filtro) && m.status !== filtro) return false;
+      if (
+        !["todos", "andamento", "concluidas", "a_conferir", "conferidas"].includes(filtro) &&
+        m.status !== filtro
+      )
+        return false;
       return combinaTexto(m);
     });
     if (filtro === "conferidas") {
@@ -499,7 +505,10 @@ const MatriculaAdmin = () => {
                   {v}
                 </SelectItem>
               ))}
+              <SelectItem value="andamento">Em andamento</SelectItem>
+              <SelectItem value="concluidas">Concluídas</SelectItem>
               <SelectItem value="a_conferir">A conferir</SelectItem>
+
               <SelectItem value="conferidas">Conferidas</SelectItem>
               <SelectItem value="desistentes">Desistentes</SelectItem>
               <SelectItem value="cancelados">Cancelados</SelectItem>
@@ -509,19 +518,30 @@ const MatriculaAdmin = () => {
 
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2">
           {[
-            { label: "Em andamento", valor: totais.andamento },
-            { label: "Concluídas", valor: totais.concluidas },
-            { label: "A conferir", valor: totais.aConferir },
-            { label: "Conferidas", valor: totais.conferidas },
-            { label: "Desistentes", valor: totais.desistentes },
-            { label: "Cancelados", valor: totais.cancelados },
+            { label: "Em andamento", valor: totais.andamento, chave: "andamento" },
+            { label: "Concluídas", valor: totais.concluidas, chave: "concluidas" },
+            { label: "A conferir", valor: totais.aConferir, chave: "a_conferir" },
+            { label: "Conferidas", valor: totais.conferidas, chave: "conferidas" },
+            { label: "Desistentes", valor: totais.desistentes, chave: "desistentes" },
+            { label: "Cancelados", valor: totais.cancelados, chave: "cancelados" },
           ].map((c) => (
-            <div key={c.label} className="rounded-lg border border-border bg-white p-3">
+            <button
+              key={c.label}
+              type="button"
+              onClick={() => setFiltro(filtro === c.chave ? "todos" : c.chave)}
+              aria-pressed={filtro === c.chave}
+              className={`text-left rounded-lg border bg-white p-3 transition-colors hover:border-zampieri-green-dark ${
+                filtro === c.chave
+                  ? "border-zampieri-green-dark ring-1 ring-zampieri-green-dark"
+                  : "border-border"
+              }`}
+            >
               <p className="text-xs text-muted-foreground">{c.label}</p>
               <p className="text-lg font-semibold text-zampieri-green-dark">{c.valor}</p>
-            </div>
+            </button>
           ))}
         </div>
+
 
         {filtro === "conferidas" && (
           <div className="flex flex-wrap gap-2">
