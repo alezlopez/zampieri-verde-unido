@@ -88,7 +88,23 @@ Deno.serve(async (req) => {
     // Consulta pelo CPF: existe pré-matrícula aguardando reenvio de documento?
     if (contentType.includes("application/json")) {
       const b = await req.json().catch(() => ({}));
-      if (String(b?.acao || "") !== "consultar_cpf") return json({ error: "acao_invalida" }, 400);
+      const acaoJson = String(b?.acao || "");
+
+      // Consulta pelo token do link enviado na mensagem
+      if (acaoJson === "consultar_token") {
+        const token = txt(b?.t, 120);
+        if (token.length < 20) return json({ ok: true, ressalva: null });
+        const { data, error } = await admin0
+          .from("prematriculas")
+          .select("id, aluno_nome, protocolo, status, motivo_codigo, motivo_texto, solucao_texto, ressalva_documento")
+          .eq("token", token)
+          .eq("status", "aprovado_com_ressalvas")
+          .maybeSingle();
+        if (error) throw error;
+        return json({ ok: true, ressalva: data ?? null });
+      }
+
+      if (acaoJson !== "consultar_cpf") return json({ error: "acao_invalida" }, 400);
       const cpf = onlyDigits(txt(b?.cpf, 20));
       if (!cpfValido(cpf)) return json({ error: "cpf_invalido" }, 400);
       const { data, error } = await admin0
