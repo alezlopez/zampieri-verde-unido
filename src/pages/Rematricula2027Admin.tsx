@@ -61,6 +61,7 @@ interface LinhaAdmin {
   estorno_valor?: number | null;
   estorno_em?: string | null;
   isentar_valor_rematricula?: boolean | null;
+  fase_excecao?: number | null;
 
   qtd_alteracoes: number;
   alteracoes: Alteracao[];
@@ -72,6 +73,7 @@ type Filtro = "todos" | "concluidas" | "a_conferir" | "conferidas" | "assinados"
 const LABEL_CAMPO: Record<string, string> = {
   cpf_aluno: "CPF do aluno",
   isentar_valor_rematricula: "Isenção do valor de rematrícula",
+  fase_excecao: "Fase concedida (exceção)",
   curso_2027: "Curso 2027",
   turno_escolhido: "Turno",
   responsavel_financeiro: "Responsável financeiro",
@@ -526,6 +528,47 @@ const Rematricula2027Admin = () => {
     carregar();
   };
 
+  // ---- Exceção de fase (valor/números de uma fase anterior) ----
+  const [fases, setFases] = useState<
+    { fase: number; inicio: string; fim: string | null }[]
+  >([]);
+  const [salvandoFase, setSalvandoFase] = useState(false);
+
+  useEffect(() => {
+    supabase
+      .from("rematricula_2027_fases")
+      .select("fase, inicio, fim")
+      .order("fase")
+      .then(({ data }) => setFases((data as typeof fases) ?? []));
+  }, []);
+
+  const alterarFaseExcecao = async (valor: string) => {
+    if (!editandoValores) return;
+    setSalvandoFase(true);
+    const fase = valor === "" ? null : Number(valor);
+    const { data, error } = await supabase.rpc("rematricula_2027_admin_fase_excecao", {
+      p_id_aluno: editandoValores.id_aluno,
+      p_fase: fase,
+    });
+    setSalvandoFase(false);
+    const res = data as { ok?: boolean; error?: string } | null;
+    if (error || !res?.ok) {
+      toast.error(
+        res?.error === "processo_em_andamento"
+          ? "O aluno já assinou o contrato ou pagou: não é possível conceder outra fase."
+          : res?.error === "sem_permissao"
+            ? "Sem permissão."
+            : "Não foi possível alterar a fase.",
+      );
+      return;
+    }
+    toast.success(fase ? `Fase ${fase} concedida a este aluno.` : "Exceção removida.");
+    setEditandoValores((atual) => (atual ? { ...atual, fase_excecao: fase } : atual));
+    carregar();
+  };
+
+
+
 
   // ---- Cancelamento da rematrícula (estorno + contrato + reset) ----
   const [cancelando, setCancelando] = useState<LinhaAdmin | null>(null);
@@ -913,6 +956,11 @@ const Rematricula2027Admin = () => {
                             Isento
                           </p>
                         )}
+                        {l.fase_excecao != null && (
+                          <p className="mt-1 inline-block rounded bg-amber-100 px-2 py-0.5 text-xs font-semibold text-amber-900">
+                            Fase {l.fase_excecao} concedida
+                          </p>
+                        )}
                         {l.cancelada && (
                           <p className="mt-1 rounded bg-destructive/10 px-2 py-0.5 text-xs text-destructive">
                             Cancelada
@@ -1273,6 +1321,35 @@ const Rematricula2027Admin = () => {
                   }
                   onCheckedChange={(v) => alternarIsencao(v)}
                 />
+              </div>
+
+              <div className="space-y-1 rounded-lg border border-border p-3">
+                <label className="text-sm font-medium text-zampieri-green-dark">
+                  Conceder valor e números de uma fase anterior
+                </label>
+                <p className="text-xs text-muted-foreground">
+                  Padrão: fase atual. Só é possível conceder para alunos que ainda não assinaram o
+                  contrato nem pagaram.
+                </p>
+                <select
+                  disabled={
+                    salvandoFase ||
+                    editandoValores.contrato_assinado ||
+                    editandoValores.rematricula_concluida ||
+                    !!editandoValores.cancelada
+                  }
+                  value={editandoValores.fase_excecao ?? ""}
+                  onChange={(e) => alterarFaseExcecao(e.target.value)}
+                  className="mt-1 w-full rounded-md border border-input bg-background px-3 py-2 text-sm disabled:opacity-60"
+                >
+                  <option value="">Fase atual (padrão)</option>
+                  {fases.map((f) => (
+                    <option key={f.fase} value={f.fase}>
+                      Fase {f.fase} ({f.inicio.slice(8, 10)}/{f.inicio.slice(5, 7)}
+                      {f.fim ? ` a ${f.fim.slice(8, 10)}/${f.fim.slice(5, 7)}` : ""})
+                    </option>
+                  ))}
+                </select>
               </div>
 
 

@@ -3003,6 +3003,7 @@ export type Database = {
           email_pai: string
           estorno_em: string
           estorno_valor: number
+          fase_excecao: number
           followup_envios: Json
           followup_pausado: boolean
           forma_pagamento: string

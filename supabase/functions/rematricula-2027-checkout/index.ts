@@ -87,9 +87,13 @@ Deno.serve(async (req) => {
       return json({ error: "rematricula_isenta" }, 409);
     }
 
-    // Valor pela fase vigente do calendário de rematrícula
+    // Valor pela fase vigente do calendário — ou pela fase concedida como exceção ao aluno
+    const faseExcecao = aluno.fase_excecao != null ? Number(aluno.fase_excecao) : null;
     const { data: vigente, error: vigenteErr } = await admin
-      .rpc("rematricula_2027_valor_vigente", { p_curso: aluno.curso_2027 })
+      .rpc("rematricula_2027_valor_vigente", {
+        p_curso: aluno.curso_2027,
+        p_fase: faseExcecao,
+      })
       .maybeSingle();
 
     if (vigenteErr) throw vigenteErr;
@@ -103,7 +107,7 @@ Deno.serve(async (req) => {
     // ===== Pagamento já gerado: reaproveitado até expirar, desde que seja da fase atual =====
     const criado = aluno.checkout_criado_em ? new Date(aluno.checkout_criado_em).getTime() : 0;
     const dentroDaJanela = !!criado && Date.now() - criado < CHECKOUT_TTL_MS;
-    const faseVirou = !!criado && !!faseInicioMs && criado < faseInicioMs;
+    const faseVirou = faseExcecao == null && !!criado && !!faseInicioMs && criado < faseInicioMs;
     const valido = dentroDaJanela && !faseVirou;
 
     // Cobrança gerada em fase anterior: cancela para ninguém pagar o valor vencido

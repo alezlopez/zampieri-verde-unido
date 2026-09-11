@@ -48,7 +48,10 @@ export const StepCurso = ({
       const [{ data }, { data: val }] = await Promise.all([
         supabase.rpc("rematricula_2027_turnos", { p_curso_2027: aluno.curso_2027 }),
         supabase
-          .rpc("rematricula_2027_valores_curso", { p_curso: aluno.curso_2027 })
+          .rpc("rematricula_2027_valores_curso", {
+            p_curso: aluno.curso_2027,
+            p_id_aluno: aluno.id_aluno,
+          })
           .maybeSingle(),
       ]);
       setTurnos((data as TurnoDisponivel[]) ?? []);
