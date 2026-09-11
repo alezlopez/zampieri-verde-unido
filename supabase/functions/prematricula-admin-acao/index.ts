@@ -137,6 +137,7 @@ Deno.serve(async (req) => {
           solucao_texto: motivo.solucao,
           ressalva_documento: motivo.documento,
           ressalva_em: new Date().toISOString(),
+          token: tokenRessalva,
         })
         .eq("id", id);
       if (error) throw error;
