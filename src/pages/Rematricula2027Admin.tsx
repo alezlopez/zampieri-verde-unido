@@ -61,6 +61,7 @@ interface LinhaAdmin {
   estorno_valor?: number | null;
   estorno_em?: string | null;
   isentar_valor_rematricula?: boolean | null;
+  fase_excecao?: number | null;
 
   qtd_alteracoes: number;
   alteracoes: Alteracao[];
@@ -72,6 +73,7 @@ type Filtro = "todos" | "concluidas" | "a_conferir" | "conferidas" | "assinados"
 const LABEL_CAMPO: Record<string, string> = {
   cpf_aluno: "CPF do aluno",
   isentar_valor_rematricula: "Isenção do valor de rematrícula",
+  fase_excecao: "Fase concedida (exceção)",
   curso_2027: "Curso 2027",
   turno_escolhido: "Turno",
   responsavel_financeiro: "Responsável financeiro",
@@ -525,6 +527,47 @@ const Rematricula2027Admin = () => {
     );
     carregar();
   };
+
+  // ---- Exceção de fase (valor/números de uma fase anterior) ----
+  const [fases, setFases] = useState<
+    { fase: number; inicio: string; fim: string | null }[]
+  >([]);
+  const [salvandoFase, setSalvandoFase] = useState(false);
+
+  useEffect(() => {
+    supabase
+      .from("rematricula_2027_fases")
+      .select("fase, inicio, fim")
+      .order("fase")
+      .then(({ data }) => setFases((data as typeof fases) ?? []));
+  }, []);
+
+  const alterarFaseExcecao = async (valor: string) => {
+    if (!editandoValores) return;
+    setSalvandoFase(true);
+    const fase = valor === "" ? null : Number(valor);
+    const { data, error } = await supabase.rpc("rematricula_2027_admin_fase_excecao", {
+      p_id_aluno: editandoValores.id_aluno,
+      p_fase: fase,
+    });
+    setSalvandoFase(false);
+    const res = data as { ok?: boolean; error?: string } | null;
+    if (error || !res?.ok) {
+      toast.error(
+        res?.error === "processo_em_andamento"
+          ? "O aluno já assinou o contrato ou pagou: não é possível conceder outra fase."
+          : res?.error === "sem_permissao"
+            ? "Sem permissão."
+            : "Não foi possível alterar a fase.",
+      );
+      return;
+    }
+    toast.success(fase ? `Fase ${fase} concedida a este aluno.` : "Exceção removida.");
+    setEditandoValores((atual) => (atual ? { ...atual, fase_excecao: fase } : atual));
+    carregar();
+  };
+
+
 
 
   // ---- Cancelamento da rematrícula (estorno + contrato + reset) ----
