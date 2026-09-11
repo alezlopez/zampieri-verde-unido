@@ -89,6 +89,13 @@ Deno.serve(async (req) => {
       const motivo = acharMotivo(String(body?.motivo_codigo || ""));
       if (!motivo) return json({ error: "motivo_obrigatorio" }, 400);
 
+      const tokenRessalva =
+        pm.token ||
+        crypto.randomUUID().replace(/-/g, "") + crypto.randomUUID().replace(/-/g, "");
+      const linkReenvioDireto = motivo.documento
+        ? `${SITE_URL}/prematricula/reenvio?t=${tokenRessalva}`
+        : `${SITE_URL}/prematricula`;
+
       if (acao === "reprovar") {
         if (!motivo.decisoes.includes("reprovar")) return json({ error: "motivo_invalido" }, 400);
         const { error } = await admin
