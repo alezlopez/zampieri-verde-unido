@@ -101,6 +101,29 @@ const PreMatricula = () => {
     };
   }, [form.resp_cpf, etapa]);
 
+  // Link enviado na mensagem: abre direto a tela de reenvio, sem digitar nada.
+  useEffect(() => {
+    if (!tokenUrl) return;
+    let ativo = true;
+    (async () => {
+      try {
+        const { data } = await supabase.functions.invoke("prematricula-enviar", {
+          body: { acao: "consultar_token", t: tokenUrl },
+        });
+        if (!ativo) return;
+        if (data?.ressalva) setRessalva(data.ressalva);
+        else setTokenInvalido(true);
+      } catch {
+        if (ativo) setTokenInvalido(true);
+      } finally {
+        if (ativo) setCarregandoToken(false);
+      }
+    })();
+    return () => {
+      ativo = false;
+    };
+  }, [tokenUrl]);
+
   const enviarReenvio = async () => {
     if (!ressalva || !arquivoReenvio) return;
     setReenviando(true);
@@ -108,7 +131,8 @@ const PreMatricula = () => {
       const fd = new FormData();
       fd.append("acao", "reenviar_documento");
       fd.append("id", ressalva.id);
-      fd.append("cpf", onlyDigits(form.resp_cpf));
+      if (tokenUrl) fd.append("token", tokenUrl);
+      else fd.append("cpf", onlyDigits(form.resp_cpf));
       fd.append("arquivo", arquivoReenvio);
       const { data, error } = await supabase.functions.invoke("prematricula-enviar", { body: fd });
       if (error) throw error;
