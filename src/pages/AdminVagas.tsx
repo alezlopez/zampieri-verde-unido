@@ -324,12 +324,40 @@ const AdminVagas = () => {
                           />
                         </div>
 
+                        <div className="flex items-center gap-2">
+                          <Label className="text-xs text-muted-foreground">Novos</Label>
+                          <Input
+                            type="number"
+                            min={0}
+                            max={r.max_vagas}
+                            value={r.vagas_novos}
+                            onChange={(e) =>
+                              setRascunho((p) => ({
+                                ...p,
+                                [v.id]: { ...r, vagas_novos: Number(e.target.value) },
+                              }))
+                            }
+                            className="w-20 h-9"
+                            title="Quantas vagas desta turma podem ser usadas por alunos novos"
+                          />
+                        </div>
+
                         <span className="text-sm text-muted-foreground">
-                          Ocupadas: <strong className="text-foreground">{v.ocupadas}</strong>
+                          Remat.: <strong className="text-foreground">{v.ocupadas_rematricula}</strong>
+                        </span>
+                        <span className="text-sm text-muted-foreground">
+                          Novos: <strong className="text-foreground">{v.ocupadas_matricula}</strong>
                         </span>
                         <span className="text-sm text-muted-foreground">
                           Livres: <strong className="text-foreground">{v.disponiveis}</strong>
+                          {" · "}p/ novos:{" "}
+                          <strong className="text-foreground">{v.disponiveis_novos}</strong>
                         </span>
+                        {v.lista_espera > 0 && (
+                          <span className="rounded-full bg-amber-100 px-2 py-0.5 text-xs font-medium text-amber-800">
+                            {v.lista_espera} na espera
+                          </span>
+                        )}
 
                         <label className="flex items-center gap-2 text-sm text-muted-foreground">
                           <Switch
@@ -339,6 +367,19 @@ const AdminVagas = () => {
                             }
                           />
                           Ativo
+                        </label>
+
+                        <label className="flex items-center gap-2 text-sm text-muted-foreground">
+                          <Switch
+                            checked={r.matricula_habilitada}
+                            onCheckedChange={(val) =>
+                              setRascunho((p) => ({
+                                ...p,
+                                [v.id]: { ...r, matricula_habilitada: val },
+                              }))
+                            }
+                          />
+                          Aberta p/ matrícula
                         </label>
 
                         <div className="ml-auto flex items-center gap-2">
