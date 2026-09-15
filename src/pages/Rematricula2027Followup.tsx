@@ -324,6 +324,34 @@ const Rematricula2027Followup = () => {
       .sort((a, b) => (b.updated_at || "").localeCompare(a.updated_at || ""));
   }, [porEtapa, etapa, busca, soPausados]);
 
+  const porStatusIntencao = useMemo(() => {
+    const mapa: Record<string, LinhaIntencao[]> = {
+      sem_resposta: [],
+      vai_rematricular: [],
+      indeciso: [],
+      nao_vai: [],
+    };
+    intencao
+      .filter((l) => !l.rematricula_concluida && !l.cancelada)
+      .forEach((l) => {
+        (mapa[l.status] ?? mapa.sem_resposta).push(l);
+      });
+    return mapa;
+  }, [intencao]);
+
+  const listaIntencao = useMemo(() => {
+    const termo = busca.trim().toLowerCase();
+    return (porStatusIntencao[statusInt] ?? [])
+      .filter(
+        (l) =>
+          !termo ||
+          l.nome_aluno.toLowerCase().includes(termo) ||
+          String(l.id_aluno).includes(termo),
+      )
+      .sort((a, b) => a.nome_aluno.localeCompare(b.nome_aluno));
+  }, [porStatusIntencao, statusInt, busca]);
+
+
 
   if (authLoading || !podeAcessar("rematricula")) {
     return (
