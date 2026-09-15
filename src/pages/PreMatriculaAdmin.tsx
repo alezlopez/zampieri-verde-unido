@@ -318,6 +318,9 @@ const PreMatriculaAdmin = () => {
                 Desistentes ({totais.desistentes})
               </SelectItem>
               <SelectItem value="cancelados">Cancelados ({totais.cancelados})</SelectItem>
+              <SelectItem value="lista_espera">
+                Lista de espera ({fila.filter((f) => f.status === "aguardando").length})
+              </SelectItem>
             </SelectContent>
           </Select>
         </div>
@@ -326,6 +329,60 @@ const PreMatriculaAdmin = () => {
         {carregando ? (
           <div className="flex justify-center py-16">
             <Loader2 className="w-6 h-6 animate-spin text-zampieri-green-dark" />
+          </div>
+        ) : filtro === "lista_espera" ? (
+          <div className="grid gap-3">
+            {fila.length === 0 && (
+              <p className="rounded-lg border border-border bg-white p-6 text-sm text-muted-foreground">
+                Ninguém na lista de espera.
+              </p>
+            )}
+            {fila.map((f, i) => (
+              <div
+                key={f.id}
+                className="rounded-lg border border-border bg-white p-4 flex flex-wrap items-center gap-3"
+              >
+                <span className="w-8 text-sm font-bold text-muted-foreground">{i + 1}º</span>
+                <div className="min-w-0 flex-1">
+                  <p className="font-semibold text-zampieri-green-dark truncate">{f.aluno_nome}</p>
+                  <p className="text-xs text-muted-foreground">
+                    {f.serie} · {f.turno} · resp. {f.resp_nome ?? "—"}
+                    {f.resp_whatsapp ? ` · ${f.resp_whatsapp}` : ""}
+                  </p>
+                  {f.motivo && (
+                    <p className="text-xs text-muted-foreground">Motivo da saída: {f.motivo}</p>
+                  )}
+                </div>
+                <span className="rounded-full bg-muted px-2.5 py-0.5 text-xs font-medium">
+                  {f.status === "aguardando"
+                    ? "Aguardando"
+                    : f.status === "convocado"
+                      ? "Convocado"
+                      : f.status === "convertido"
+                        ? "Virou matrícula"
+                        : "Saiu da fila"}
+                </span>
+                {f.status === "aguardando" && (
+                  <div className="flex items-center gap-2">
+                    <Button
+                      size="sm"
+                      disabled={filaEmCurso === f.id}
+                      onClick={() => acaoFila("lista_espera_convocar", f)}
+                    >
+                      Convocar
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      disabled={filaEmCurso === f.id}
+                      onClick={() => acaoFila("lista_espera_remover", f)}
+                    >
+                      Remover
+                    </Button>
+                  </div>
+                )}
+              </div>
+            ))}
           </div>
         ) : (
           <div className="grid gap-3">
