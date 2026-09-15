@@ -34,10 +34,30 @@ Deno.serve(async (req) => {
       if (recebido !== esperado) return json({ error: "unauthorized" }, 401);
     }
 
-    const body = await req.json().catch(() => ({} as any));
-    const resposta = String(body.resposta || "").trim();
-    const motivo = body.motivo ? String(body.motivo).trim() : null;
+    // aceita tanto o formato próprio quanto o payload do multiatendimento
+    // ({ phone, button_text, button_payload, customer_name, ... })
+    const raw = await req.json().catch(() => ({} as any));
+    const body = raw?.body && typeof raw.body === "object" ? { ...raw, ...raw.body } : raw;
+
+    const resposta = String(
+      body.resposta || body.button_payload || body.button_text || "",
+    ).trim();
     const motivoTexto = body.motivo_texto ? String(body.motivo_texto).trim() : null;
+
+    // motivo: explícito ou deduzido do texto do botão
+    const normaliza = (v: string) =>
+      v.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+    const rNorm = normaliza(resposta);
+    const motivoDoBotao = rNorm.includes("financ")
+      ? "financeiro"
+      : rNorm.includes("mudanc") || rNorm.includes("cidade") || rNorm.includes("escola")
+      ? "mudanca"
+      : rNorm.includes("insatisf")
+      ? "insatisfacao"
+      : rNorm === "outro" || rNorm === "outros"
+      ? "outro"
+      : null;
+    const motivo = body.motivo ? String(body.motivo).trim() : motivoDoBotao;
 
     const admin = createClient(
       Deno.env.get("SUPABASE_URL")!,
