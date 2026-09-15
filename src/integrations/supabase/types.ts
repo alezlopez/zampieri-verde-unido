@@ -2696,27 +2696,33 @@ export type Database = {
           created_at: string
           curso_2027: string
           id: string
+          matricula_habilitada: boolean
           max_vagas: number
           turno: string
           updated_at: string
+          vagas_novos: number
         }
         Insert: {
           ativo?: boolean
           created_at?: string
           curso_2027: string
           id?: string
+          matricula_habilitada?: boolean
           max_vagas?: number
           turno: string
           updated_at?: string
+          vagas_novos?: number
         }
         Update: {
           ativo?: boolean
           created_at?: string
           curso_2027?: string
           id?: string
+          matricula_habilitada?: boolean
           max_vagas?: number
           turno?: string
           updated_at?: string
+          vagas_novos?: number
         }
         Relationships: []
       }
@@ -2825,6 +2831,7 @@ export type Database = {
           vagas_total: number
         }[]
       }
+      curso_2027_por_serie: { Args: { _serie: string }; Returns: string }
       find_alunos_by_cpf: {
         Args: { p_cpf: string }
         Returns: {
@@ -2952,6 +2959,7 @@ export type Database = {
           similarity: number
         }[]
       }
+      norm_turno: { Args: { _t: string }; Returns: string }
       notificar_admin: {
         Args: {
           _descricao?: string
@@ -3160,10 +3168,16 @@ export type Database = {
           ativo: boolean
           curso_2027: string
           disponiveis: number
+          disponiveis_novos: number
           id: string
+          lista_espera: number
+          matricula_habilitada: boolean
           max_vagas: number
           ocupadas: number
+          ocupadas_matricula: number
+          ocupadas_rematricula: number
           turno: string
+          vagas_novos: number
         }[]
       }
       rematricula_2027_buscar: {
@@ -3468,6 +3482,15 @@ export type Database = {
           isOneToOne: false
           isSetofReturn: true
         }
+      }
+      vagas_2027_ocupacao: {
+        Args: never
+        Returns: {
+          curso_2027: string
+          matr: number
+          remat: number
+          turno: string
+        }[]
       }
       valida_cpf: { Args: { p_cpf: string }; Returns: boolean }
       validar_meia_ingresso: {
