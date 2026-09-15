@@ -115,14 +115,23 @@ const AdminVagas = () => {
     const ativas = vagas.filter((v) => v.ativo);
     return {
       max: ativas.reduce((s, v) => s + v.max_vagas, 0),
-      ocupadas: ativas.reduce((s, v) => s + v.ocupadas, 0),
+      rematricula: ativas.reduce((s, v) => s + v.ocupadas_rematricula, 0),
+      matriculas: ativas.reduce((s, v) => s + v.ocupadas_matricula, 0),
       livres: ativas.reduce((s, v) => s + v.disponiveis, 0),
+      livresNovos: ativas.reduce((s, v) => s + v.disponiveis_novos, 0),
+      espera: ativas.reduce((s, v) => s + v.lista_espera, 0),
     };
   }, [vagas]);
 
   const alterado = (v: Vaga) => {
     const r = rascunho[v.id];
-    return !!r && (r.max_vagas !== v.max_vagas || r.ativo !== v.ativo);
+    return (
+      !!r &&
+      (r.max_vagas !== v.max_vagas ||
+        r.ativo !== v.ativo ||
+        r.matricula_habilitada !== v.matricula_habilitada ||
+        r.vagas_novos !== v.vagas_novos)
+    );
   };
 
   const salvar = async (v: Vaga) => {
@@ -132,10 +141,23 @@ const AdminVagas = () => {
       toast({ title: "Informe um número de vagas válido", variant: "destructive" });
       return;
     }
+    if (!Number.isFinite(r.vagas_novos) || r.vagas_novos < 0 || r.vagas_novos > r.max_vagas) {
+      toast({
+        title: "Vagas para alunos novos inválidas",
+        description: "Precisa ser um número entre 0 e o total da turma.",
+        variant: "destructive",
+      });
+      return;
+    }
     setSalvando(v.id);
     const { error } = await supabase
       .from("vagas_2027")
-      .update({ max_vagas: r.max_vagas, ativo: r.ativo })
+      .update({
+        max_vagas: r.max_vagas,
+        ativo: r.ativo,
+        matricula_habilitada: r.matricula_habilitada,
+        vagas_novos: r.vagas_novos,
+      })
       .eq("id", v.id);
     setSalvando(null);
     if (error) {
