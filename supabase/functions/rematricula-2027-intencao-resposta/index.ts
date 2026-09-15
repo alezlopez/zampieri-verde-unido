@@ -93,19 +93,21 @@ Deno.serve(async (req) => {
     if (!alunoRow) return json({ error: "aluno_nao_encontrado" }, 404);
     const aluno = alunoRow as any;
 
-    // normaliza a resposta vinda do botão
-    const r = resposta.toLowerCase();
+    // normaliza a resposta vinda do botão (sem acentos)
+    const r = rNorm;
     const status = (STATUS_VALIDOS as readonly string[]).includes(r)
       ? r
-      : r.includes("nao_vai") || r.includes("não vou") || r.includes("nao vou")
+      : r.includes("nao_vai") || r.includes("nao vou") || r.includes("nao pretend")
       ? "nao_vai"
-      : r.includes("indec") || r.includes("não decid") || r.includes("nao decid")
+      : r.includes("indec") || r.includes("nao decid") || r.includes("nao sei")
       ? "indeciso"
-      : r.includes("vou") || r.includes("sim")
+      : r.includes("vou") || r === "sim"
       ? "vai_rematricular"
       : null;
 
-    if (!status && !motivo) return json({ error: "resposta_invalida" }, 400);
+    if (!status && !motivo) {
+      return json({ error: "resposta_invalida", recebido: resposta }, 400);
+    }
 
     const patch: Record<string, unknown> = {
       id_aluno: idAluno,
