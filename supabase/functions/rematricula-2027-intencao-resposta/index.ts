@@ -67,7 +67,7 @@ Deno.serve(async (req) => {
     // localizar o aluno por id ou telefone
     let idAluno = Number(body.id_aluno) || null;
     if (!idAluno) {
-      const tel = soDigitos(body.telefone).slice(-11);
+      const tel = soDigitos(body.telefone || body.phone || body.from).slice(-11);
       if (tel.length < 10) return json({ error: "aluno_nao_identificado" }, 400);
       const { data } = await admin
         .from("alunos_rematricula_2027")
