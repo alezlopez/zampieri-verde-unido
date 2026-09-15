@@ -239,11 +239,14 @@ const AdminVagas = () => {
       </header>
 
       <main className="max-w-5xl mx-auto px-4 py-8 space-y-6">
-        <div className="grid gap-3 sm:grid-cols-3">
+        <div className="grid gap-3 sm:grid-cols-3 lg:grid-cols-6">
           {[
             { rotulo: "Vagas totais", valor: totais.max },
-            { rotulo: "Ocupadas", valor: totais.ocupadas },
+            { rotulo: "Rematrículas", valor: totais.rematricula },
+            { rotulo: "Alunos novos", valor: totais.matriculas },
             { rotulo: "Livres", valor: totais.livres },
+            { rotulo: "Livres p/ novos", valor: totais.livresNovos },
+            { rotulo: "Na lista de espera", valor: totais.espera },
           ].map((c) => (
             <div key={c.rotulo} className="rounded-lg border border-border bg-white p-4">
               <p className="text-xs text-muted-foreground">{c.rotulo}</p>
