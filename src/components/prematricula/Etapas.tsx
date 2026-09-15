@@ -354,14 +354,33 @@ export const EtapaAluno = ({ form, erros, set }: Props) => {
         </p>
       )}
     </Campo>
-    <RadioGrupo
-      label="Turno de preferência"
-      nome="turno"
-      opcoes={turnosPorSerie(form.serie_pretendida)}
-      valor={form.turno_preferencia}
-      onChange={(v) => set("turno_preferencia", v)}
-      erro={erros.turno_preferencia}
-    />
+    <div className="space-y-2">
+      <RadioGrupo
+        label="Turno de preferência"
+        nome="turno"
+        opcoes={turnosPorSerie(form.serie_pretendida)}
+        valor={form.turno_preferencia}
+        onChange={(v) => set("turno_preferencia", v)}
+        erro={erros.turno_preferencia}
+      />
+      {form.serie_pretendida && vagas.length > 0 && (
+        <ul className="text-xs space-y-0.5">
+          {turnosPorSerie(form.serie_pretendida).map((t) => {
+            const s = statusTurno(t);
+            if (!s) return null;
+            return (
+              <li key={t} className={s.espera ? "text-amber-700" : "text-muted-foreground"}>
+                {t}: {s.texto}
+              </li>
+            );
+          })}
+        </ul>
+      )}
+      <p className="rounded-md bg-muted/60 px-3 py-2 text-xs text-muted-foreground">
+        O envio da pré-matrícula <strong>não reserva vaga</strong>. A vaga só é garantida na
+        matrícula, após a Entrevista Familiar.
+      </p>
+    </div>
     <RadioGrupo
       label="Tipo de escola"
       nome="tipo_escola"
