@@ -137,16 +137,42 @@ const PreMatriculaAdmin = () => {
 
   const carregar = async () => {
     setCarregando(true);
-    const [{ data: pms }, { data: ags }] = await Promise.all([
+    const [{ data: pms }, { data: ags }, { data: fl }] = await Promise.all([
       supabase.from("prematriculas").select("*").order("created_at", { ascending: false }),
       supabase
         .from("prematricula_agendamentos")
         .select("prematricula_id, inicio, status")
         .eq("status", "agendado"),
+      supabase
+        .from("lista_espera_2027" as any)
+        .select("*")
+        .order("created_at", { ascending: true }),
     ]);
     setLista((pms as Prematricula[]) ?? []);
     setAgendamentos((ags as Agendamento[]) ?? []);
+    setFila((fl as unknown as FilaEspera[]) ?? []);
     setCarregando(false);
+  };
+
+  const acaoFila = async (acao: "lista_espera_convocar" | "lista_espera_remover", f: FilaEspera) => {
+    let motivo = "";
+    if (acao === "lista_espera_remover") {
+      motivo = (prompt("Motivo da saída da lista de espera:") || "").trim();
+      if (!motivo) return;
+    }
+    setFilaEmCurso(f.id);
+    const { data, error } = await supabase.functions.invoke("prematricula-admin-acao", {
+      body: { acao, id: f.id, motivo },
+    });
+    setFilaEmCurso(null);
+    if (error || !data?.ok) {
+      toast({ title: "Não foi possível concluir", variant: "destructive" });
+      return;
+    }
+    toast({
+      title: acao === "lista_espera_convocar" ? "Família convocada" : "Removida da lista de espera",
+    });
+    carregar();
   };
 
   useEffect(() => {
