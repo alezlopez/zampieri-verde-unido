@@ -21,8 +21,21 @@ interface Vaga {
   turno: string;
   max_vagas: number;
   ativo: boolean;
+  matricula_habilitada: boolean;
+  vagas_novos: number;
+  ocupadas_rematricula: number;
+  ocupadas_matricula: number;
   ocupadas: number;
   disponiveis: number;
+  disponiveis_novos: number;
+  lista_espera: number;
+}
+
+interface Rascunho {
+  max_vagas: number;
+  ativo: boolean;
+  matricula_habilitada: boolean;
+  vagas_novos: number;
 }
 
 const TURNOS = ["manhã", "tarde"];
