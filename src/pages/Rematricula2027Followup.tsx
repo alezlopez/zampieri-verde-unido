@@ -363,7 +363,30 @@ const Rematricula2027Followup = () => {
           </Button>
         </header>
 
+        <div className="flex gap-2">
+          {[
+            { id: "etapas" as const, rotulo: "Etapas do processo" },
+            { id: "intencao" as const, rotulo: "Intenção (quem não iniciou)" },
+          ].map((t) => (
+            <button
+              key={t.id}
+              type="button"
+              onClick={() => setAba(t.id)}
+              className={`rounded-full border px-4 py-1.5 text-sm transition-colors ${
+                aba === t.id
+                  ? "border-zampieri-green-dark bg-zampieri-green-dark text-white"
+                  : "border-border bg-white text-muted-foreground hover:border-zampieri-green-dark"
+              }`}
+            >
+              {t.rotulo}
+            </button>
+          ))}
+        </div>
+
+        {aba === "etapas" && (
+        <>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+
           {ETAPAS.map((e) => (
             <button
               key={e.id}
