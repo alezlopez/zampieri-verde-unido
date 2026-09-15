@@ -266,6 +266,10 @@ export const EtapaAluno = ({ form, erros, set }: Props) => {
   const permitidas = seriesPermitidas(nascIso);
   const serieMax = permitidas[permitidas.length - 1];
 
+  const [vagas, setVagas] = useState<
+    { turno: string; matricula_habilitada: boolean; restam_novos: number; lista_espera: boolean }[]
+  >([]);
+
   useEffect(() => {
     if (!nascIso) return;
     if (form.serie_pretendida && !permitidas.includes(form.serie_pretendida)) {
@@ -273,6 +277,30 @@ export const EtapaAluno = ({ form, erros, set }: Props) => {
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [nascIso]);
+
+  useEffect(() => {
+    let ativo = true;
+    if (!form.serie_pretendida) {
+      setVagas([]);
+      return;
+    }
+    supabase
+      .rpc("prematricula_vagas_turnos" as any, { p_serie: form.serie_pretendida })
+      .then(({ data }) => {
+        if (ativo) setVagas((data as typeof vagas) ?? []);
+      });
+    return () => {
+      ativo = false;
+    };
+  }, [form.serie_pretendida]);
+
+  const statusTurno = (turno: string) => {
+    const v = vagas.find((x) => (x.turno || "").toLowerCase().startsWith(turno.toLowerCase().slice(0, 4)));
+    if (!v) return null;
+    if (!v.matricula_habilitada || v.restam_novos <= 0)
+      return { texto: "Sem vaga no momento — entra na lista de espera", espera: true };
+    return { texto: `${v.restam_novos} vaga(s) disponível(is)`, espera: false };
+  };
 
   return (
   <div className="space-y-5">
