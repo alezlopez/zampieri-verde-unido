@@ -1103,6 +1103,68 @@ export type Database = {
           },
         ]
       }
+      lista_espera_2027: {
+        Row: {
+          aluno_nome: string
+          convocado_em: string | null
+          convocado_por: string | null
+          created_at: string
+          curso_2027: string | null
+          id: string
+          motivo: string | null
+          prematricula_id: string | null
+          resp_email: string | null
+          resp_nome: string | null
+          resp_whatsapp: string | null
+          serie: string
+          status: string
+          turno: string
+          updated_at: string
+        }
+        Insert: {
+          aluno_nome: string
+          convocado_em?: string | null
+          convocado_por?: string | null
+          created_at?: string
+          curso_2027?: string | null
+          id?: string
+          motivo?: string | null
+          prematricula_id?: string | null
+          resp_email?: string | null
+          resp_nome?: string | null
+          resp_whatsapp?: string | null
+          serie: string
+          status?: string
+          turno: string
+          updated_at?: string
+        }
+        Update: {
+          aluno_nome?: string
+          convocado_em?: string | null
+          convocado_por?: string | null
+          created_at?: string
+          curso_2027?: string | null
+          id?: string
+          motivo?: string | null
+          prematricula_id?: string | null
+          resp_email?: string | null
+          resp_nome?: string | null
+          resp_whatsapp?: string | null
+          serie?: string
+          status?: string
+          turno?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "lista_espera_2027_prematricula_id_fkey"
+            columns: ["prematricula_id"]
+            isOneToOne: false
+            referencedRelation: "prematriculas"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       matricula_documentos: {
         Row: {
           created_at: string
@@ -2972,6 +3034,17 @@ export type Database = {
         Returns: undefined
       }
       prematricula_norm_nome: { Args: { p_nome: string }; Returns: string }
+      prematricula_vagas_turnos: {
+        Args: { p_serie: string }
+        Returns: {
+          lista_espera: boolean
+          matricula_habilitada: boolean
+          restam_novos: number
+          turno: string
+          usadas_novos: number
+          vagas_novos: number
+        }[]
+      }
       purgar_asaas_webhook_events: { Args: never; Returns: undefined }
       rematricula_2027_abrir: {
         Args: { p_data_nascimento: string; p_id_aluno: number }

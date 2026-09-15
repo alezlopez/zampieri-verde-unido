@@ -266,6 +266,10 @@ export const EtapaAluno = ({ form, erros, set }: Props) => {
   const permitidas = seriesPermitidas(nascIso);
   const serieMax = permitidas[permitidas.length - 1];
 
+  const [vagas, setVagas] = useState<
+    { turno: string; matricula_habilitada: boolean; restam_novos: number; lista_espera: boolean }[]
+  >([]);
+
   useEffect(() => {
     if (!nascIso) return;
     if (form.serie_pretendida && !permitidas.includes(form.serie_pretendida)) {
@@ -273,6 +277,30 @@ export const EtapaAluno = ({ form, erros, set }: Props) => {
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [nascIso]);
+
+  useEffect(() => {
+    let ativo = true;
+    if (!form.serie_pretendida) {
+      setVagas([]);
+      return;
+    }
+    supabase
+      .rpc("prematricula_vagas_turnos" as any, { p_serie: form.serie_pretendida })
+      .then(({ data }) => {
+        if (ativo) setVagas((data as typeof vagas) ?? []);
+      });
+    return () => {
+      ativo = false;
+    };
+  }, [form.serie_pretendida]);
+
+  const statusTurno = (turno: string) => {
+    const v = vagas.find((x) => (x.turno || "").toLowerCase().startsWith(turno.toLowerCase().slice(0, 4)));
+    if (!v) return null;
+    if (!v.matricula_habilitada || v.restam_novos <= 0)
+      return { texto: "Sem vaga no momento — entra na lista de espera", espera: true };
+    return { texto: `${v.restam_novos} vaga(s) disponível(is)`, espera: false };
+  };
 
   return (
   <div className="space-y-5">
@@ -326,14 +354,33 @@ export const EtapaAluno = ({ form, erros, set }: Props) => {
         </p>
       )}
     </Campo>
-    <RadioGrupo
-      label="Turno de preferência"
-      nome="turno"
-      opcoes={turnosPorSerie(form.serie_pretendida)}
-      valor={form.turno_preferencia}
-      onChange={(v) => set("turno_preferencia", v)}
-      erro={erros.turno_preferencia}
-    />
+    <div className="space-y-2">
+      <RadioGrupo
+        label="Turno de preferência"
+        nome="turno"
+        opcoes={turnosPorSerie(form.serie_pretendida)}
+        valor={form.turno_preferencia}
+        onChange={(v) => set("turno_preferencia", v)}
+        erro={erros.turno_preferencia}
+      />
+      {form.serie_pretendida && vagas.length > 0 && (
+        <ul className="text-xs space-y-0.5">
+          {turnosPorSerie(form.serie_pretendida).map((t) => {
+            const s = statusTurno(t);
+            if (!s) return null;
+            return (
+              <li key={t} className={s.espera ? "text-amber-700" : "text-muted-foreground"}>
+                {t}: {s.texto}
+              </li>
+            );
+          })}
+        </ul>
+      )}
+      <p className="rounded-md bg-muted/60 px-3 py-2 text-xs text-muted-foreground">
+        O envio da pré-matrícula <strong>não reserva vaga</strong>. A vaga só é garantida na
+        matrícula, após a Entrevista Familiar.
+      </p>
+    </div>
     <RadioGrupo
       label="Tipo de escola"
       nome="tipo_escola"

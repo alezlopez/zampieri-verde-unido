@@ -21,8 +21,21 @@ interface Vaga {
   turno: string;
   max_vagas: number;
   ativo: boolean;
+  matricula_habilitada: boolean;
+  vagas_novos: number;
+  ocupadas_rematricula: number;
+  ocupadas_matricula: number;
   ocupadas: number;
   disponiveis: number;
+  disponiveis_novos: number;
+  lista_espera: number;
+}
+
+interface Rascunho {
+  max_vagas: number;
+  ativo: boolean;
+  matricula_habilitada: boolean;
+  vagas_novos: number;
 }
 
 const TURNOS = ["manhã", "tarde"];
@@ -34,7 +47,7 @@ const AdminVagas = () => {
   const [vagas, setVagas] = useState<Vaga[]>([]);
   const [carregando, setCarregando] = useState(true);
   const [salvando, setSalvando] = useState<string | null>(null);
-  const [rascunho, setRascunho] = useState<Record<string, { max_vagas: number; ativo: boolean }>>({});
+  const [rascunho, setRascunho] = useState<Record<string, Rascunho>>({});
 
   const [filtroCurso, setFiltroCurso] = useState<string>("todos");
   const [soLotadas, setSoLotadas] = useState(false);
@@ -55,7 +68,17 @@ const AdminVagas = () => {
     const lista = (data as Vaga[]) || [];
     setVagas(lista);
     setRascunho(
-      Object.fromEntries(lista.map((v) => [v.id, { max_vagas: v.max_vagas, ativo: v.ativo }]))
+      Object.fromEntries(
+        lista.map((v) => [
+          v.id,
+          {
+            max_vagas: v.max_vagas,
+            ativo: v.ativo,
+            matricula_habilitada: v.matricula_habilitada,
+            vagas_novos: v.vagas_novos,
+          },
+        ]),
+      )
     );
     setCarregando(false);
   }, [toast]);
@@ -92,14 +115,23 @@ const AdminVagas = () => {
     const ativas = vagas.filter((v) => v.ativo);
     return {
       max: ativas.reduce((s, v) => s + v.max_vagas, 0),
-      ocupadas: ativas.reduce((s, v) => s + v.ocupadas, 0),
+      rematricula: ativas.reduce((s, v) => s + v.ocupadas_rematricula, 0),
+      matriculas: ativas.reduce((s, v) => s + v.ocupadas_matricula, 0),
       livres: ativas.reduce((s, v) => s + v.disponiveis, 0),
+      livresNovos: ativas.reduce((s, v) => s + v.disponiveis_novos, 0),
+      espera: ativas.reduce((s, v) => s + v.lista_espera, 0),
     };
   }, [vagas]);
 
   const alterado = (v: Vaga) => {
     const r = rascunho[v.id];
-    return !!r && (r.max_vagas !== v.max_vagas || r.ativo !== v.ativo);
+    return (
+      !!r &&
+      (r.max_vagas !== v.max_vagas ||
+        r.ativo !== v.ativo ||
+        r.matricula_habilitada !== v.matricula_habilitada ||
+        r.vagas_novos !== v.vagas_novos)
+    );
   };
 
   const salvar = async (v: Vaga) => {
@@ -109,10 +141,23 @@ const AdminVagas = () => {
       toast({ title: "Informe um número de vagas válido", variant: "destructive" });
       return;
     }
+    if (!Number.isFinite(r.vagas_novos) || r.vagas_novos < 0 || r.vagas_novos > r.max_vagas) {
+      toast({
+        title: "Vagas para alunos novos inválidas",
+        description: "Precisa ser um número entre 0 e o total da turma.",
+        variant: "destructive",
+      });
+      return;
+    }
     setSalvando(v.id);
     const { error } = await supabase
       .from("vagas_2027")
-      .update({ max_vagas: r.max_vagas, ativo: r.ativo })
+      .update({
+        max_vagas: r.max_vagas,
+        ativo: r.ativo,
+        matricula_habilitada: r.matricula_habilitada,
+        vagas_novos: r.vagas_novos,
+      })
       .eq("id", v.id);
     setSalvando(null);
     if (error) {
@@ -183,7 +228,7 @@ const AdminVagas = () => {
               Controle de Vagas 2027
             </h1>
             <p className="text-xs text-muted-foreground">
-              Ocupação por curso e turno da rematrícula
+              Ocupação por curso e turno (rematrículas + alunos novos)
             </p>
           </div>
           <Button variant="outline" size="sm" onClick={carregar} disabled={carregando}>
@@ -194,11 +239,14 @@ const AdminVagas = () => {
       </header>
 
       <main className="max-w-5xl mx-auto px-4 py-8 space-y-6">
-        <div className="grid gap-3 sm:grid-cols-3">
+        <div className="grid gap-3 sm:grid-cols-3 lg:grid-cols-6">
           {[
             { rotulo: "Vagas totais", valor: totais.max },
-            { rotulo: "Ocupadas", valor: totais.ocupadas },
+            { rotulo: "Rematrículas", valor: totais.rematricula },
+            { rotulo: "Alunos novos", valor: totais.matriculas },
             { rotulo: "Livres", valor: totais.livres },
+            { rotulo: "Livres p/ novos", valor: totais.livresNovos },
+            { rotulo: "Na lista de espera", valor: totais.espera },
           ].map((c) => (
             <div key={c.rotulo} className="rounded-lg border border-border bg-white p-4">
               <p className="text-xs text-muted-foreground">{c.rotulo}</p>
@@ -247,7 +295,12 @@ const AdminVagas = () => {
                 </div>
                 <div className="divide-y divide-border">
                   {linhas.map((v) => {
-                    const r = rascunho[v.id] || { max_vagas: v.max_vagas, ativo: v.ativo };
+                    const r: Rascunho = rascunho[v.id] || {
+                      max_vagas: v.max_vagas,
+                      ativo: v.ativo,
+                      matricula_habilitada: v.matricula_habilitada,
+                      vagas_novos: v.vagas_novos,
+                    };
                     return (
                       <div
                         key={v.id}
@@ -271,12 +324,40 @@ const AdminVagas = () => {
                           />
                         </div>
 
+                        <div className="flex items-center gap-2">
+                          <Label className="text-xs text-muted-foreground">Novos</Label>
+                          <Input
+                            type="number"
+                            min={0}
+                            max={r.max_vagas}
+                            value={r.vagas_novos}
+                            onChange={(e) =>
+                              setRascunho((p) => ({
+                                ...p,
+                                [v.id]: { ...r, vagas_novos: Number(e.target.value) },
+                              }))
+                            }
+                            className="w-20 h-9"
+                            title="Quantas vagas desta turma podem ser usadas por alunos novos"
+                          />
+                        </div>
+
                         <span className="text-sm text-muted-foreground">
-                          Ocupadas: <strong className="text-foreground">{v.ocupadas}</strong>
+                          Remat.: <strong className="text-foreground">{v.ocupadas_rematricula}</strong>
+                        </span>
+                        <span className="text-sm text-muted-foreground">
+                          Novos: <strong className="text-foreground">{v.ocupadas_matricula}</strong>
                         </span>
                         <span className="text-sm text-muted-foreground">
                           Livres: <strong className="text-foreground">{v.disponiveis}</strong>
+                          {" · "}p/ novos:{" "}
+                          <strong className="text-foreground">{v.disponiveis_novos}</strong>
                         </span>
+                        {v.lista_espera > 0 && (
+                          <span className="rounded-full bg-amber-100 px-2 py-0.5 text-xs font-medium text-amber-800">
+                            {v.lista_espera} na espera
+                          </span>
+                        )}
 
                         <label className="flex items-center gap-2 text-sm text-muted-foreground">
                           <Switch
@@ -286,6 +367,19 @@ const AdminVagas = () => {
                             }
                           />
                           Ativo
+                        </label>
+
+                        <label className="flex items-center gap-2 text-sm text-muted-foreground">
+                          <Switch
+                            checked={r.matricula_habilitada}
+                            onCheckedChange={(val) =>
+                              setRascunho((p) => ({
+                                ...p,
+                                [v.id]: { ...r, matricula_habilitada: val },
+                              }))
+                            }
+                          />
+                          Aberta p/ matrícula
                         </label>
 
                         <div className="ml-auto flex items-center gap-2">

@@ -24,7 +24,9 @@ export type EventoMensagem =
   | "documentos_reenvio"
   | "documentos_aprovados"
   | "contrato_pronto"
-  | "matricula_concluida";
+  | "matricula_concluida"
+  | "lista_espera"
+  | "lista_espera_convocada";
 
 export interface DadosMensagem {
   respNome: string;
@@ -420,6 +422,27 @@ function montarEmail(evento: EventoMensagem, d: DadosMensagem): { subject: strin
           p(`Olá, ${primeiroNome(d.respNome)}!`) +
             p(`O contrato de matrícula de <strong>${d.alunoNome}</strong> está pronto. Após a assinatura, o pagamento é liberado no mesmo link.`) +
             botao(d.linkMatricula || SITE_URL, "Assinar e pagar"),
+        ),
+      };
+    case "lista_espera":
+      return {
+        subject: `Pré-matrícula recebida — lista de espera (${d.alunoNome})`,
+        html: wrapper(
+          "Pré-matrícula na lista de espera",
+          p(`Olá, ${primeiroNome(d.respNome)}!`) +
+            p(`Recebemos a pré-matrícula de <strong>${d.alunoNome}</strong>. Protocolo <strong>${d.protocolo}</strong>.`) +
+            p(`No momento, a turma escolhida (${d.curso ?? ""} — ${d.turno ?? ""}) está com as vagas para alunos novos preenchidas, então o cadastro entrou na <strong>lista de espera</strong>.`) +
+            p("Assim que abrir uma vaga, entramos em contato na ordem da fila. Você não precisa fazer nada agora."),
+        ),
+      };
+    case "lista_espera_convocada":
+      return {
+        subject: `Abriu vaga para ${d.alunoNome}!`,
+        html: wrapper(
+          "Chegou a sua vez",
+          p(`Olá, ${primeiroNome(d.respNome)}!`) +
+            p(`Abriu uma vaga para <strong>${d.alunoNome}</strong> na turma escolhida.`) +
+            p("Nossa equipe vai falar com você para seguir com a matrícula. Se preferir, fale com a gente pelo WhatsApp."),
         ),
       };
     case "matricula_concluida":

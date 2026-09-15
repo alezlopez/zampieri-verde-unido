@@ -336,15 +336,49 @@ Deno.serve(async (req) => {
       await admin.from("prematriculas").update(paths).eq("id", inserido.id);
     }
 
-    await notificar("recebida", {
+    // Disponibilidade da turma para aluno novo (revalidada no servidor)
+    let listaEspera = false;
+    let cursoTurma: string | null = null;
+    try {
+      const [{ data: turnos }, { data: cursoMap }] = await Promise.all([
+        admin.rpc("prematricula_vagas_turnos", { p_serie: serie }),
+        admin.rpc("curso_2027_por_serie", { _serie: serie }),
+      ]);
+      cursoTurma = (cursoMap as string | null) ?? null;
+      const alvo = (turnos as { turno: string; lista_espera: boolean }[] | null)?.find(
+        (t) => (t.turno || "").toLowerCase().startsWith(turno.toLowerCase().slice(0, 4)),
+      );
+      // Sem turma configurada ou turma fechada/lotada => lista de espera
+      listaEspera = !alvo || alvo.lista_espera === true;
+    } catch (e) {
+      console.error("consulta de vagas falhou:", e);
+    }
+
+    if (listaEspera) {
+      const { error: erroFila } = await admin.from("lista_espera_2027").insert({
+        prematricula_id: inserido.id,
+        aluno_nome: alunoNome,
+        resp_nome: respNome,
+        resp_whatsapp: respWhats,
+        resp_email: respEmail,
+        serie,
+        curso_2027: cursoTurma,
+        turno,
+      });
+      if (erroFila) console.error("lista de espera falhou:", erroFila);
+    }
+
+    await notificar(listaEspera ? "lista_espera" : "recebida", {
       respNome,
       respEmail,
       respWhatsapp: respWhats,
       alunoNome,
       protocolo: inserido.protocolo,
+      curso: cursoTurma,
+      turno,
     });
 
-    return json({ ok: true, protocolo: inserido.protocolo });
+    return json({ ok: true, protocolo: inserido.protocolo, lista_espera: listaEspera });
   } catch (e) {
     console.error("prematricula-enviar erro:", e);
     return json({ error: "erro_interno" }, 500);
