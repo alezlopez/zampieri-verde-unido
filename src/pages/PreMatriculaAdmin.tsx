@@ -66,6 +66,18 @@ interface Prematricula {
   acompanhamento_em?: string | null;
 }
 
+interface FilaEspera {
+  id: string;
+  aluno_nome: string;
+  resp_nome: string | null;
+  resp_whatsapp: string | null;
+  serie: string;
+  turno: string;
+  status: string;
+  motivo: string | null;
+  created_at: string;
+}
+
 interface Agendamento {
   prematricula_id: string;
   inicio: string;
