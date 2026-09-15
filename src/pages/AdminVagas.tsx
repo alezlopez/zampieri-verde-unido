@@ -228,7 +228,7 @@ const AdminVagas = () => {
               Controle de Vagas 2027
             </h1>
             <p className="text-xs text-muted-foreground">
-              Ocupação por curso e turno da rematrícula
+              Ocupação por curso e turno (rematrículas + alunos novos)
             </p>
           </div>
           <Button variant="outline" size="sm" onClick={carregar} disabled={carregando}>
