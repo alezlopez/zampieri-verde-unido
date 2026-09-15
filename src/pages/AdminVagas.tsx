@@ -47,7 +47,7 @@ const AdminVagas = () => {
   const [vagas, setVagas] = useState<Vaga[]>([]);
   const [carregando, setCarregando] = useState(true);
   const [salvando, setSalvando] = useState<string | null>(null);
-  const [rascunho, setRascunho] = useState<Record<string, { max_vagas: number; ativo: boolean }>>({});
+  const [rascunho, setRascunho] = useState<Record<string, Rascunho>>({});
 
   const [filtroCurso, setFiltroCurso] = useState<string>("todos");
   const [soLotadas, setSoLotadas] = useState(false);
