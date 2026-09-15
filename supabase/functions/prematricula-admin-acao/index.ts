@@ -39,6 +39,49 @@ Deno.serve(async (req) => {
     const id = String(body?.id || "");
     if (!id) return json({ error: "id_invalido" }, 400);
 
+    // ---- Lista de espera (id = registro da fila) ----
+    if (acao === "lista_espera_convocar" || acao === "lista_espera_remover") {
+      const { data: fila, error: erroFila } = await admin
+        .from("lista_espera_2027")
+        .select("*")
+        .eq("id", id)
+        .maybeSingle();
+      if (erroFila) throw erroFila;
+      if (!fila) return json({ error: "nao_encontrado" }, 404);
+
+      if (acao === "lista_espera_remover") {
+        const motivo = String(body?.motivo || "").trim();
+        if (!motivo) return json({ error: "motivo_obrigatorio" }, 400);
+        const { error } = await admin
+          .from("lista_espera_2027")
+          .update({ status: "desistente", motivo })
+          .eq("id", id);
+        if (error) throw error;
+        return json({ ok: true, status: "desistente" });
+      }
+
+      const { error } = await admin
+        .from("lista_espera_2027")
+        .update({
+          status: "convocado",
+          convocado_em: new Date().toISOString(),
+          convocado_por: user.id,
+        })
+        .eq("id", id);
+      if (error) throw error;
+
+      await notificar("lista_espera_convocada", {
+        respNome: fila.resp_nome ?? "",
+        respEmail: fila.resp_email ?? "",
+        respWhatsapp: fila.resp_whatsapp ?? "",
+        alunoNome: fila.aluno_nome,
+        protocolo: "",
+        curso: fila.curso_2027,
+        turno: fila.turno,
+      });
+      return json({ ok: true, status: "convocado" });
+    }
+
     const { data: pm, error: erroPm } = await admin
       .from("prematriculas")
       .select("*")
