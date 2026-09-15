@@ -43,3 +43,10 @@ verify_jwt = false
 
 [functions.rematricula-2027-followup]
 verify_jwt = false
+
+[functions.rematricula-2027-intencao]
+verify_jwt = false
+
+[functions.rematricula-2027-intencao-resposta]
+verify_jwt = false
+

@@ -2372,6 +2372,100 @@ export type Database = {
           },
         ]
       }
+      rematricula_2027_intencao: {
+        Row: {
+          created_at: string
+          destino: string | null
+          id_aluno: number
+          motivo: string | null
+          motivo_texto: string | null
+          origem: string | null
+          pausado: boolean
+          respondido_em: string | null
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          destino?: string | null
+          id_aluno: number
+          motivo?: string | null
+          motivo_texto?: string | null
+          origem?: string | null
+          pausado?: boolean
+          respondido_em?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          destino?: string | null
+          id_aluno?: number
+          motivo?: string | null
+          motivo_texto?: string | null
+          origem?: string | null
+          pausado?: boolean
+          respondido_em?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "rematricula_2027_intencao_id_aluno_fkey"
+            columns: ["id_aluno"]
+            isOneToOne: true
+            referencedRelation: "alunos_rematricula_2027"
+            referencedColumns: ["id_aluno"]
+          },
+        ]
+      }
+      rematricula_2027_intencao_envios: {
+        Row: {
+          created_at: string
+          destino: string | null
+          enviado_em: string
+          id: string
+          id_aluno: number
+          payload: Json | null
+          sequencia: number
+          sucesso: boolean
+          template: string
+          tipo: string
+        }
+        Insert: {
+          created_at?: string
+          destino?: string | null
+          enviado_em?: string
+          id?: string
+          id_aluno: number
+          payload?: Json | null
+          sequencia?: number
+          sucesso?: boolean
+          template: string
+          tipo: string
+        }
+        Update: {
+          created_at?: string
+          destino?: string | null
+          enviado_em?: string
+          id?: string
+          id_aluno?: number
+          payload?: Json | null
+          sequencia?: number
+          sucesso?: boolean
+          template?: string
+          tipo?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "rematricula_2027_intencao_envios_id_aluno_fkey"
+            columns: ["id_aluno"]
+            isOneToOne: false
+            referencedRelation: "alunos_rematricula_2027"
+            referencedColumns: ["id_aluno"]
+          },
+        ]
+      }
       rematricula_2027_numeros_sorte: {
         Row: {
           created_at: string
@@ -2972,6 +3066,36 @@ export type Database = {
       rematricula_2027_admin_followup_pausar: {
         Args: { _id_aluno: number; _pausado: boolean }
         Returns: boolean
+      }
+      rematricula_2027_admin_intencao_listagem: {
+        Args: never
+        Returns: {
+          cancelada: boolean
+          celular_mae: string
+          celular_pai: string
+          contrato_assinado: boolean
+          contrato_gerado: boolean
+          curso_2027: string
+          curso_atual: string
+          email_mae: string
+          email_pai: string
+          envios: Json
+          id_aluno: number
+          motivo: string
+          motivo_texto: string
+          nome_aluno: string
+          nome_mae: string
+          nome_pai: string
+          pausado: boolean
+          rematricula_concluida: boolean
+          respondido_em: string
+          responsavel_financeiro: string
+          status: string
+        }[]
+      }
+      rematricula_2027_admin_intencao_pausar: {
+        Args: { _id_aluno: number; _pausado: boolean }
+        Returns: undefined
       }
       rematricula_2027_admin_isentar: {
         Args: { p_id_aluno: number; p_isento: boolean }

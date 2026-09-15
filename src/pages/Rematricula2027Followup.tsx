@@ -160,6 +160,52 @@ const Contato = ({
   );
 };
 
+interface EnvioIntencao {
+  tipo: string;
+  sequencia: number;
+  template: string;
+  destino: string | null;
+  sucesso: boolean;
+  enviado_em: string;
+}
+
+interface LinhaIntencao {
+  id_aluno: number;
+  nome_aluno: string;
+  curso_atual: string | null;
+  curso_2027: string | null;
+  nome_pai: string | null;
+  celular_pai: string | null;
+  email_pai: string | null;
+  nome_mae: string | null;
+  celular_mae: string | null;
+  email_mae: string | null;
+  contrato_gerado: boolean;
+  contrato_assinado: boolean;
+  rematricula_concluida: boolean;
+  cancelada: boolean;
+  status: string;
+  motivo: string | null;
+  motivo_texto: string | null;
+  respondido_em: string | null;
+  pausado: boolean;
+  envios: EnvioIntencao[] | null;
+}
+
+const STATUS_INTENCAO: { id: string; titulo: string; cor: string }[] = [
+  { id: "sem_resposta", titulo: "Sem resposta", cor: "bg-muted text-muted-foreground" },
+  { id: "vai_rematricular", titulo: "Vai rematricular", cor: "bg-emerald-100 text-emerald-900" },
+  { id: "indeciso", titulo: "Ainda não decidiu", cor: "bg-amber-100 text-amber-900" },
+  { id: "nao_vai", titulo: "Não vai rematricular", cor: "bg-red-100 text-red-900" },
+];
+
+const MOTIVOS_LABEL: Record<string, string> = {
+  financeiro: "Financeiro",
+  mudanca: "Mudança de cidade/escola",
+  insatisfacao: "Insatisfação",
+  outro: "Outro",
+};
+
 const Rematricula2027Followup = () => {
   const { loading: authLoading , podeAcessar } = useAuth();
   const [linhas, setLinhas] = useState<LinhaFollowup[]>([]);
@@ -168,6 +214,10 @@ const Rematricula2027Followup = () => {
   const [etapa, setEtapa] = useState<Etapa>("nao_pagou");
   const [soPausados, setSoPausados] = useState(false);
   const [enviando, setEnviando] = useState<string | null>(null);
+  const [aba, setAba] = useState<"etapas" | "intencao">("etapas");
+  const [intencao, setIntencao] = useState<LinhaIntencao[]>([]);
+  const [statusInt, setStatusInt] = useState<string>("sem_resposta");
+
 
   useEffect(() => {
     document.title = "Follow-up — Rematrícula 2027";
@@ -175,14 +225,47 @@ const Rematricula2027Followup = () => {
 
   const carregar = async () => {
     setLoading(true);
-    const { data } = await supabase.rpc("rematricula_2027_admin_listagem");
+    const [{ data }, { data: dataInt }] = await Promise.all([
+      supabase.rpc("rematricula_2027_admin_listagem"),
+      supabase.rpc("rematricula_2027_admin_intencao_listagem" as never),
+    ]);
     setLinhas((data as unknown as LinhaFollowup[]) ?? []);
+    setIntencao((dataInt as unknown as LinhaIntencao[]) ?? []);
     setLoading(false);
   };
 
   useEffect(() => {
     if (podeAcessar("rematricula")) carregar();
   }, [podeAcessar("rematricula")]);
+
+  const alternarPausaIntencao = async (l: LinhaIntencao, pausado: boolean) => {
+    setIntencao((prev) =>
+      prev.map((x) => (x.id_aluno === l.id_aluno ? { ...x, pausado } : x)),
+    );
+    const { error } = await supabase.rpc("rematricula_2027_admin_intencao_pausar" as never, {
+      _id_aluno: l.id_aluno,
+      _pausado: pausado,
+    } as never);
+    if (error) {
+      toast({ title: "Não foi possível alterar o envio", variant: "destructive" });
+      carregar();
+    }
+  };
+
+  const enviarIntencao = async (l: LinhaIntencao, tipo: string) => {
+    setEnviando(`int-${l.id_aluno}-${tipo}`);
+    const { data, error } = await supabase.functions.invoke("rematricula-2027-intencao", {
+      body: { modo: "manual", id_aluno: l.id_aluno, tipo, sequencia: 1 },
+    });
+    setEnviando(null);
+    if (error || (data as any)?.error) {
+      toast({ title: "Falha ao enviar a mensagem", variant: "destructive" });
+      return;
+    }
+    toast({ title: "Mensagem enviada", description: l.nome_aluno });
+    carregar();
+  };
+
 
   const alternarPausa = async (l: LinhaFollowup, pausado: boolean) => {
     setLinhas((prev) =>
@@ -241,6 +324,34 @@ const Rematricula2027Followup = () => {
       .sort((a, b) => (b.updated_at || "").localeCompare(a.updated_at || ""));
   }, [porEtapa, etapa, busca, soPausados]);
 
+  const porStatusIntencao = useMemo(() => {
+    const mapa: Record<string, LinhaIntencao[]> = {
+      sem_resposta: [],
+      vai_rematricular: [],
+      indeciso: [],
+      nao_vai: [],
+    };
+    intencao
+      .filter((l) => !l.rematricula_concluida && !l.cancelada)
+      .forEach((l) => {
+        (mapa[l.status] ?? mapa.sem_resposta).push(l);
+      });
+    return mapa;
+  }, [intencao]);
+
+  const listaIntencao = useMemo(() => {
+    const termo = busca.trim().toLowerCase();
+    return (porStatusIntencao[statusInt] ?? [])
+      .filter(
+        (l) =>
+          !termo ||
+          l.nome_aluno.toLowerCase().includes(termo) ||
+          String(l.id_aluno).includes(termo),
+      )
+      .sort((a, b) => a.nome_aluno.localeCompare(b.nome_aluno));
+  }, [porStatusIntencao, statusInt, busca]);
+
+
 
   if (authLoading || !podeAcessar("rematricula")) {
     return (
@@ -280,7 +391,30 @@ const Rematricula2027Followup = () => {
           </Button>
         </header>
 
+        <div className="flex gap-2">
+          {[
+            { id: "etapas" as const, rotulo: "Etapas do processo" },
+            { id: "intencao" as const, rotulo: "Intenção (quem não iniciou)" },
+          ].map((t) => (
+            <button
+              key={t.id}
+              type="button"
+              onClick={() => setAba(t.id)}
+              className={`rounded-full border px-4 py-1.5 text-sm transition-colors ${
+                aba === t.id
+                  ? "border-zampieri-green-dark bg-zampieri-green-dark text-white"
+                  : "border-border bg-white text-muted-foreground hover:border-zampieri-green-dark"
+              }`}
+            >
+              {t.rotulo}
+            </button>
+          ))}
+        </div>
+
+        {aba === "etapas" && (
+        <>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+
           {ETAPAS.map((e) => (
             <button
               key={e.id}
@@ -464,6 +598,145 @@ const Rematricula2027Followup = () => {
             })}
           </div>
         </div>
+        </>
+        )}
+
+        {aba === "intencao" && (
+          <>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+              {STATUS_INTENCAO.map((s) => (
+                <button
+                  key={s.id}
+                  type="button"
+                  onClick={() => setStatusInt(s.id)}
+                  className={`rounded-lg border p-4 text-left transition-colors ${
+                    statusInt === s.id
+                      ? "border-zampieri-green-dark bg-white ring-1 ring-zampieri-green-dark"
+                      : "border-border bg-white hover:border-zampieri-green-dark"
+                  }`}
+                >
+                  <p className="text-xs text-muted-foreground">{s.titulo}</p>
+                  <p className="text-2xl font-bold text-zampieri-green-dark">
+                    {porStatusIntencao[s.id]?.length ?? 0}
+                  </p>
+                </button>
+              ))}
+            </div>
+
+            <div className="rounded-lg border border-border bg-white p-4 space-y-4">
+              <div className="flex flex-wrap items-center justify-between gap-3">
+                <div>
+                  <h2 className="font-semibold text-zampieri-green-dark">
+                    {STATUS_INTENCAO.find((s) => s.id === statusInt)?.titulo}
+                  </h2>
+                  <p className="text-xs text-muted-foreground">
+                    Pergunta de intenção enviada por WhatsApp, com botões de resposta.
+                  </p>
+                </div>
+                <div className="relative min-w-[240px]">
+                  <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+                  <Input
+                    value={busca}
+                    onChange={(e) => setBusca(e.target.value)}
+                    placeholder="Buscar por nome ou ID"
+                    className="pl-9"
+                  />
+                </div>
+              </div>
+
+              {!loading && listaIntencao.length === 0 && (
+                <p className="py-8 text-center text-sm text-muted-foreground">
+                  Nenhum aluno nesta situação.
+                </p>
+              )}
+
+              <div className="space-y-3">
+                {listaIntencao.map((l) => {
+                  const cor = STATUS_INTENCAO.find((s) => s.id === l.status)?.cor ?? "";
+                  const envios = l.envios ?? [];
+                  return (
+                    <div
+                      key={l.id_aluno}
+                      className="rounded-lg border border-border p-3 md:flex md:items-start md:justify-between md:gap-4"
+                    >
+                      <div className="space-y-1.5">
+                        <div className="flex flex-wrap items-center gap-2">
+                          <p className="font-medium text-zampieri-green-dark">{l.nome_aluno}</p>
+                          <span className={`rounded px-2 py-0.5 text-[11px] font-medium ${cor}`}>
+                            {STATUS_INTENCAO.find((s) => s.id === l.status)?.titulo}
+                          </span>
+                          {l.motivo && (
+                            <span className="rounded px-2 py-0.5 text-[11px] font-medium bg-muted text-muted-foreground">
+                              {MOTIVOS_LABEL[l.motivo] ?? l.motivo}
+                            </span>
+                          )}
+                        </div>
+                        <p className="text-xs text-muted-foreground">
+                          ID {l.id_aluno} · {l.curso_atual || "—"} → {l.curso_2027 || "—"}
+                          {l.respondido_em ? ` · respondeu em ${dataHora(l.respondido_em)}` : ""}
+                        </p>
+                        {l.motivo_texto && (
+                          <p className="text-xs text-muted-foreground italic">"{l.motivo_texto}"</p>
+                        )}
+                        <Contato
+                          papel="Mãe"
+                          nome={l.nome_mae}
+                          celular={l.celular_mae}
+                          email={l.email_mae}
+                        />
+                        <Contato
+                          papel="Pai"
+                          nome={l.nome_pai}
+                          celular={l.celular_pai}
+                          email={l.email_pai}
+                        />
+                      </div>
+
+                      <div className="mt-3 md:mt-0 md:text-right space-y-2 shrink-0">
+                        {envios.length > 0 && (
+                          <p className="text-xs text-muted-foreground">
+                            Última mensagem: {dataHora(envios[envios.length - 1].enviado_em)}
+                          </p>
+                        )}
+                        <div className="flex md:justify-end flex-wrap gap-2">
+                          {[
+                            { tipo: "pergunta", rotulo: "Perguntar" },
+                            { tipo: "lembrete", rotulo: "Lembrete" },
+                            { tipo: "motivo", rotulo: "Pedir motivo" },
+                          ].map((b) => (
+                            <Button
+                              key={b.tipo}
+                              size="sm"
+                              variant="outline"
+                              className="h-7 px-2 text-[11px]"
+                              disabled={enviando === `int-${l.id_aluno}-${b.tipo}`}
+                              onClick={() => enviarIntencao(l, b.tipo)}
+                            >
+                              {enviando === `int-${l.id_aluno}-${b.tipo}` ? (
+                                <Loader2 className="w-3 h-3 mr-1 animate-spin" />
+                              ) : (
+                                <Send className="w-3 h-3 mr-1" />
+                              )}
+                              {b.rotulo}
+                            </Button>
+                          ))}
+                        </div>
+                        <label className="flex md:justify-end items-center gap-2 text-xs text-muted-foreground">
+                          <Switch
+                            checked={!!l.pausado}
+                            onCheckedChange={(v) => alternarPausaIntencao(l, v)}
+                          />
+                          Pausar envios
+                        </label>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          </>
+        )}
+
       </div>
     </main>
   );
