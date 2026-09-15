@@ -287,10 +287,14 @@ const Matricula = () => {
 
   const m = estado.matricula;
   const concluida = m.status === "concluida";
+  const docsPendentes = estado.documentos.some(
+    (d) => d.status === "pendente" || d.status === "rejeitado",
+  );
   const docsAprovados =
-    ["documentos_aprovados", "contrato_gerado", "contrato_assinado", "concluida"].includes(m.status) ||
-    m.contrato_gerado;
-  const podeEditarDocs = !concluida && !m.contrato_assinado && !docsAprovados;
+    (["documentos_aprovados", "contrato_gerado", "contrato_assinado", "concluida"].includes(m.status) ||
+      m.contrato_gerado) &&
+    !docsPendentes;
+  const podeEditarDocs = !concluida && !m.contrato_assinado;
 
   const etapaAtual = concluida
     ? 4
