@@ -160,6 +160,52 @@ const Contato = ({
   );
 };
 
+interface EnvioIntencao {
+  tipo: string;
+  sequencia: number;
+  template: string;
+  destino: string | null;
+  sucesso: boolean;
+  enviado_em: string;
+}
+
+interface LinhaIntencao {
+  id_aluno: number;
+  nome_aluno: string;
+  curso_atual: string | null;
+  curso_2027: string | null;
+  nome_pai: string | null;
+  celular_pai: string | null;
+  email_pai: string | null;
+  nome_mae: string | null;
+  celular_mae: string | null;
+  email_mae: string | null;
+  contrato_gerado: boolean;
+  contrato_assinado: boolean;
+  rematricula_concluida: boolean;
+  cancelada: boolean;
+  status: string;
+  motivo: string | null;
+  motivo_texto: string | null;
+  respondido_em: string | null;
+  pausado: boolean;
+  envios: EnvioIntencao[] | null;
+}
+
+const STATUS_INTENCAO: { id: string; titulo: string; cor: string }[] = [
+  { id: "sem_resposta", titulo: "Sem resposta", cor: "bg-muted text-muted-foreground" },
+  { id: "vai_rematricular", titulo: "Vai rematricular", cor: "bg-emerald-100 text-emerald-900" },
+  { id: "indeciso", titulo: "Ainda não decidiu", cor: "bg-amber-100 text-amber-900" },
+  { id: "nao_vai", titulo: "Não vai rematricular", cor: "bg-red-100 text-red-900" },
+];
+
+const MOTIVOS_LABEL: Record<string, string> = {
+  financeiro: "Financeiro",
+  mudanca: "Mudança de cidade/escola",
+  insatisfacao: "Insatisfação",
+  outro: "Outro",
+};
+
 const Rematricula2027Followup = () => {
   const { loading: authLoading , podeAcessar } = useAuth();
   const [linhas, setLinhas] = useState<LinhaFollowup[]>([]);
@@ -168,6 +214,10 @@ const Rematricula2027Followup = () => {
   const [etapa, setEtapa] = useState<Etapa>("nao_pagou");
   const [soPausados, setSoPausados] = useState(false);
   const [enviando, setEnviando] = useState<string | null>(null);
+  const [aba, setAba] = useState<"etapas" | "intencao">("etapas");
+  const [intencao, setIntencao] = useState<LinhaIntencao[]>([]);
+  const [statusInt, setStatusInt] = useState<string>("sem_resposta");
+
 
   useEffect(() => {
     document.title = "Follow-up — Rematrícula 2027";
