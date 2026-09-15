@@ -243,6 +243,13 @@ Deno.serve(async (req) => {
       );
       if (erroMat) console.error("falha ao criar matrícula:", erroMat);
 
+      // Se estava na lista de espera, sai da fila como convertido
+      await admin
+        .from("lista_espera_2027")
+        .update({ status: "convertido" })
+        .eq("prematricula_id", id)
+        .in("status", ["aguardando", "convocado"]);
+
       await notificar("concluida", {
         ...base,
         descontoPercentual: desconto,
