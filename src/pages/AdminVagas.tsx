@@ -68,7 +68,17 @@ const AdminVagas = () => {
     const lista = (data as Vaga[]) || [];
     setVagas(lista);
     setRascunho(
-      Object.fromEntries(lista.map((v) => [v.id, { max_vagas: v.max_vagas, ativo: v.ativo }]))
+      Object.fromEntries(
+        lista.map((v) => [
+          v.id,
+          {
+            max_vagas: v.max_vagas,
+            ativo: v.ativo,
+            matricula_habilitada: v.matricula_habilitada,
+            vagas_novos: v.vagas_novos,
+          },
+        ]),
+      )
     );
     setCarregando(false);
   }, [toast]);
