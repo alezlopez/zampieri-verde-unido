@@ -34,10 +34,30 @@ Deno.serve(async (req) => {
       if (recebido !== esperado) return json({ error: "unauthorized" }, 401);
     }
 
-    const body = await req.json().catch(() => ({} as any));
-    const resposta = String(body.resposta || "").trim();
-    const motivo = body.motivo ? String(body.motivo).trim() : null;
+    // aceita tanto o formato próprio quanto o payload do multiatendimento
+    // ({ phone, button_text, button_payload, customer_name, ... })
+    const raw = await req.json().catch(() => ({} as any));
+    const body = raw?.body && typeof raw.body === "object" ? { ...raw, ...raw.body } : raw;
+
+    const resposta = String(
+      body.resposta || body.button_payload || body.button_text || "",
+    ).trim();
     const motivoTexto = body.motivo_texto ? String(body.motivo_texto).trim() : null;
+
+    // motivo: explícito ou deduzido do texto do botão
+    const normaliza = (v: string) =>
+      v.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+    const rNorm = normaliza(resposta);
+    const motivoDoBotao = rNorm.includes("financ")
+      ? "financeiro"
+      : rNorm.includes("mudanc") || rNorm.includes("cidade") || rNorm.includes("escola")
+      ? "mudanca"
+      : rNorm.includes("insatisf")
+      ? "insatisfacao"
+      : rNorm === "outro" || rNorm === "outros"
+      ? "outro"
+      : null;
+    const motivo = body.motivo ? String(body.motivo).trim() : motivoDoBotao;
 
     const admin = createClient(
       Deno.env.get("SUPABASE_URL")!,
@@ -47,7 +67,7 @@ Deno.serve(async (req) => {
     // localizar o aluno por id ou telefone
     let idAluno = Number(body.id_aluno) || null;
     if (!idAluno) {
-      const tel = soDigitos(body.telefone).slice(-11);
+      const tel = soDigitos(body.telefone || body.phone || body.from).slice(-11);
       if (tel.length < 10) return json({ error: "aluno_nao_identificado" }, 400);
       const { data } = await admin
         .from("alunos_rematricula_2027")
@@ -73,19 +93,21 @@ Deno.serve(async (req) => {
     if (!alunoRow) return json({ error: "aluno_nao_encontrado" }, 404);
     const aluno = alunoRow as any;
 
-    // normaliza a resposta vinda do botão
-    const r = resposta.toLowerCase();
+    // normaliza a resposta vinda do botão (sem acentos)
+    const r = rNorm;
     const status = (STATUS_VALIDOS as readonly string[]).includes(r)
       ? r
-      : r.includes("nao_vai") || r.includes("não vou") || r.includes("nao vou")
+      : r.includes("nao_vai") || r.includes("nao vou") || r.includes("nao pretend")
       ? "nao_vai"
-      : r.includes("indec") || r.includes("não decid") || r.includes("nao decid")
+      : r.includes("indec") || r.includes("nao decid") || r.includes("nao sei")
       ? "indeciso"
-      : r.includes("vou") || r.includes("sim")
+      : r.includes("vou") || r === "sim"
       ? "vai_rematricular"
       : null;
 
-    if (!status && !motivo) return json({ error: "resposta_invalida" }, 400);
+    if (!status && !motivo) {
+      return json({ error: "resposta_invalida", recebido: resposta }, 400);
+    }
 
     const patch: Record<string, unknown> = {
       id_aluno: idAluno,
