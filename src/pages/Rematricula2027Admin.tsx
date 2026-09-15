@@ -1335,9 +1335,9 @@ const Rematricula2027Admin = () => {
                   disabled={
                     salvandoFase ||
                     editandoValores.contrato_assinado ||
-                    editandoValores.rematricula_concluida ||
-                    !!editandoValores.cancelada
+                    editandoValores.rematricula_concluida
                   }
+
                   value={editandoValores.fase_excecao ?? ""}
                   onChange={(e) => alterarFaseExcecao(e.target.value)}
                   className="mt-1 w-full rounded-md border border-input bg-background px-3 py-2 text-sm disabled:opacity-60"
