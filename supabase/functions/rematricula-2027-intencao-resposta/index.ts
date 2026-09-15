@@ -64,10 +64,13 @@ Deno.serve(async (req) => {
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
     );
 
+    // telefone de quem clicou (para responder exatamente a essa pessoa)
+    const telefoneClique = soDigitos(body.telefone || body.phone || body.from) || null;
+
     // localizar o aluno por id ou telefone
     let idAluno = Number(body.id_aluno) || null;
     if (!idAluno) {
-      const tel = soDigitos(body.telefone || body.phone || body.from).slice(-11);
+      const tel = (telefoneClique || "").slice(-11);
       if (tel.length < 10) return json({ error: "aluno_nao_identificado" }, 400);
       const { data } = await admin
         .from("alunos_rematricula_2027")
@@ -113,6 +116,7 @@ Deno.serve(async (req) => {
       id_aluno: idAluno,
       respondido_em: new Date().toISOString(),
       origem: "whatsapp",
+      destino: telefoneClique,
     };
     if (status) patch.status = status;
     if (motivo) patch.motivo = MOTIVOS[motivo] ? motivo : "outro";
@@ -129,6 +133,7 @@ Deno.serve(async (req) => {
         tipo: "link",
         params: [aluno.nome_aluno],
         link: LINK_REMATRICULA,
+        telefone: telefoneClique,
       });
       await admin.from("rematricula_2027_intencao_envios").upsert(
         {
@@ -161,6 +166,7 @@ Deno.serve(async (req) => {
         aluno,
         tipo: "motivo",
         params: [aluno.nome_aluno],
+        telefone: telefoneClique,
       });
       await admin.from("rematricula_2027_intencao_envios").upsert(
         {

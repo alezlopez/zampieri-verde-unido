@@ -37,14 +37,44 @@ export const MOTIVOS: Record<string, string> = {
   outro: "Outro",
 };
 
+/** Normaliza para E.164 brasileiro (só dígitos, com 55). */
+export function e164BR(v: string): string {
+  let d = String(v ?? "").replace(/\D/g, "");
+  if (d.length > 11 && d.startsWith("55")) d = d.slice(2);
+  d = d.slice(-11);
+  return d ? `55${d}` : "";
+}
+
+/** Identifica se o telefone é do pai ou da mãe do aluno. */
+export function papelPorTelefone(
+  aluno: AlunoFollowup,
+  telefone: string,
+): { nome: string; telefone: string; telefone_original: string; papel: string } | null {
+  const alvo = e164BR(telefone);
+  if (!alvo) return null;
+  const cand = [
+    { nome: aluno.nome_pai || "", tel: aluno.celular_pai || aluno.telefone_pai || "", papel: "pai" },
+    { nome: aluno.nome_mae || "", tel: aluno.celular_mae || aluno.telefone_mae || "", papel: "mae" },
+  ];
+  for (const c of cand) {
+    if (c.tel && e164BR(c.tel) === alvo) {
+      return { nome: c.nome, telefone: alvo, telefone_original: c.tel, papel: c.papel };
+    }
+  }
+  return { nome: "", telefone: alvo, telefone_original: telefone, papel: "desconhecido" };
+}
+
 export async function enviarIntencao(opts: {
   aluno: AlunoFollowup;
   tipo: TipoIntencao;
   sequencia?: number;
   params: string[];
   link?: string | null;
+  /** Responde exatamente para quem clicou, em vez do responsável financeiro. */
+  telefone?: string | null;
 }): Promise<{ sucesso: boolean; destino: string | null; payload: unknown }> {
-  const dest = destinatario(opts.aluno);
+  const dest = (opts.telefone && papelPorTelefone(opts.aluno, opts.telefone)) ||
+    destinatario(opts.aluno);
   if (!dest.telefone) {
     return { sucesso: false, destino: null, payload: { erro: "sem_telefone" } };
   }
