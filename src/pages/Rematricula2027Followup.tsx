@@ -547,6 +547,145 @@ const Rematricula2027Followup = () => {
             })}
           </div>
         </div>
+        </>
+        )}
+
+        {aba === "intencao" && (
+          <>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+              {STATUS_INTENCAO.map((s) => (
+                <button
+                  key={s.id}
+                  type="button"
+                  onClick={() => setStatusInt(s.id)}
+                  className={`rounded-lg border p-4 text-left transition-colors ${
+                    statusInt === s.id
+                      ? "border-zampieri-green-dark bg-white ring-1 ring-zampieri-green-dark"
+                      : "border-border bg-white hover:border-zampieri-green-dark"
+                  }`}
+                >
+                  <p className="text-xs text-muted-foreground">{s.titulo}</p>
+                  <p className="text-2xl font-bold text-zampieri-green-dark">
+                    {porStatusIntencao[s.id]?.length ?? 0}
+                  </p>
+                </button>
+              ))}
+            </div>
+
+            <div className="rounded-lg border border-border bg-white p-4 space-y-4">
+              <div className="flex flex-wrap items-center justify-between gap-3">
+                <div>
+                  <h2 className="font-semibold text-zampieri-green-dark">
+                    {STATUS_INTENCAO.find((s) => s.id === statusInt)?.titulo}
+                  </h2>
+                  <p className="text-xs text-muted-foreground">
+                    Pergunta de intenção enviada por WhatsApp, com botões de resposta.
+                  </p>
+                </div>
+                <div className="relative min-w-[240px]">
+                  <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+                  <Input
+                    value={busca}
+                    onChange={(e) => setBusca(e.target.value)}
+                    placeholder="Buscar por nome ou ID"
+                    className="pl-9"
+                  />
+                </div>
+              </div>
+
+              {!loading && listaIntencao.length === 0 && (
+                <p className="py-8 text-center text-sm text-muted-foreground">
+                  Nenhum aluno nesta situação.
+                </p>
+              )}
+
+              <div className="space-y-3">
+                {listaIntencao.map((l) => {
+                  const cor = STATUS_INTENCAO.find((s) => s.id === l.status)?.cor ?? "";
+                  const envios = l.envios ?? [];
+                  return (
+                    <div
+                      key={l.id_aluno}
+                      className="rounded-lg border border-border p-3 md:flex md:items-start md:justify-between md:gap-4"
+                    >
+                      <div className="space-y-1.5">
+                        <div className="flex flex-wrap items-center gap-2">
+                          <p className="font-medium text-zampieri-green-dark">{l.nome_aluno}</p>
+                          <span className={`rounded px-2 py-0.5 text-[11px] font-medium ${cor}`}>
+                            {STATUS_INTENCAO.find((s) => s.id === l.status)?.titulo}
+                          </span>
+                          {l.motivo && (
+                            <span className="rounded px-2 py-0.5 text-[11px] font-medium bg-muted text-muted-foreground">
+                              {MOTIVOS_LABEL[l.motivo] ?? l.motivo}
+                            </span>
+                          )}
+                        </div>
+                        <p className="text-xs text-muted-foreground">
+                          ID {l.id_aluno} · {l.curso_atual || "—"} → {l.curso_2027 || "—"}
+                          {l.respondido_em ? ` · respondeu em ${dataHora(l.respondido_em)}` : ""}
+                        </p>
+                        {l.motivo_texto && (
+                          <p className="text-xs text-muted-foreground italic">"{l.motivo_texto}"</p>
+                        )}
+                        <Contato
+                          papel="Mãe"
+                          nome={l.nome_mae}
+                          celular={l.celular_mae}
+                          email={l.email_mae}
+                        />
+                        <Contato
+                          papel="Pai"
+                          nome={l.nome_pai}
+                          celular={l.celular_pai}
+                          email={l.email_pai}
+                        />
+                      </div>
+
+                      <div className="mt-3 md:mt-0 md:text-right space-y-2 shrink-0">
+                        {envios.length > 0 && (
+                          <p className="text-xs text-muted-foreground">
+                            Última mensagem: {dataHora(envios[envios.length - 1].enviado_em)}
+                          </p>
+                        )}
+                        <div className="flex md:justify-end flex-wrap gap-2">
+                          {[
+                            { tipo: "pergunta", rotulo: "Perguntar" },
+                            { tipo: "lembrete", rotulo: "Lembrete" },
+                            { tipo: "motivo", rotulo: "Pedir motivo" },
+                          ].map((b) => (
+                            <Button
+                              key={b.tipo}
+                              size="sm"
+                              variant="outline"
+                              className="h-7 px-2 text-[11px]"
+                              disabled={enviando === `int-${l.id_aluno}-${b.tipo}`}
+                              onClick={() => enviarIntencao(l, b.tipo)}
+                            >
+                              {enviando === `int-${l.id_aluno}-${b.tipo}` ? (
+                                <Loader2 className="w-3 h-3 mr-1 animate-spin" />
+                              ) : (
+                                <Send className="w-3 h-3 mr-1" />
+                              )}
+                              {b.rotulo}
+                            </Button>
+                          ))}
+                        </div>
+                        <label className="flex md:justify-end items-center gap-2 text-xs text-muted-foreground">
+                          <Switch
+                            checked={!!l.pausado}
+                            onCheckedChange={(v) => alternarPausaIntencao(l, v)}
+                          />
+                          Pausar envios
+                        </label>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          </>
+        )}
+
       </div>
     </main>
   );
