@@ -295,7 +295,12 @@ const AdminVagas = () => {
                 </div>
                 <div className="divide-y divide-border">
                   {linhas.map((v) => {
-                    const r = rascunho[v.id] || { max_vagas: v.max_vagas, ativo: v.ativo };
+                    const r: Rascunho = rascunho[v.id] || {
+                      max_vagas: v.max_vagas,
+                      ativo: v.ativo,
+                      matricula_habilitada: v.matricula_habilitada,
+                      vagas_novos: v.vagas_novos,
+                    };
                     return (
                       <div
                         key={v.id}
