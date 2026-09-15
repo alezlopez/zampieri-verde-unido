@@ -225,14 +225,47 @@ const Rematricula2027Followup = () => {
 
   const carregar = async () => {
     setLoading(true);
-    const { data } = await supabase.rpc("rematricula_2027_admin_listagem");
+    const [{ data }, { data: dataInt }] = await Promise.all([
+      supabase.rpc("rematricula_2027_admin_listagem"),
+      supabase.rpc("rematricula_2027_admin_intencao_listagem" as never),
+    ]);
     setLinhas((data as unknown as LinhaFollowup[]) ?? []);
+    setIntencao((dataInt as unknown as LinhaIntencao[]) ?? []);
     setLoading(false);
   };
 
   useEffect(() => {
     if (podeAcessar("rematricula")) carregar();
   }, [podeAcessar("rematricula")]);
+
+  const alternarPausaIntencao = async (l: LinhaIntencao, pausado: boolean) => {
+    setIntencao((prev) =>
+      prev.map((x) => (x.id_aluno === l.id_aluno ? { ...x, pausado } : x)),
+    );
+    const { error } = await supabase.rpc("rematricula_2027_admin_intencao_pausar" as never, {
+      _id_aluno: l.id_aluno,
+      _pausado: pausado,
+    } as never);
+    if (error) {
+      toast({ title: "Não foi possível alterar o envio", variant: "destructive" });
+      carregar();
+    }
+  };
+
+  const enviarIntencao = async (l: LinhaIntencao, tipo: string) => {
+    setEnviando(`int-${l.id_aluno}-${tipo}`);
+    const { data, error } = await supabase.functions.invoke("rematricula-2027-intencao", {
+      body: { modo: "manual", id_aluno: l.id_aluno, tipo, sequencia: 1 },
+    });
+    setEnviando(null);
+    if (error || (data as any)?.error) {
+      toast({ title: "Falha ao enviar a mensagem", variant: "destructive" });
+      return;
+    }
+    toast({ title: "Mensagem enviada", description: l.nome_aluno });
+    carregar();
+  };
+
 
   const alternarPausa = async (l: LinhaFollowup, pausado: boolean) => {
     setLinhas((prev) =>
