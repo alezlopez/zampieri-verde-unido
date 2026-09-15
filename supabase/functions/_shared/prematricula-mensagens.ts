@@ -24,7 +24,9 @@ export type EventoMensagem =
   | "documentos_reenvio"
   | "documentos_aprovados"
   | "contrato_pronto"
-  | "matricula_concluida";
+  | "matricula_concluida"
+  | "lista_espera"
+  | "lista_espera_convocada";
 
 export interface DadosMensagem {
   respNome: string;
