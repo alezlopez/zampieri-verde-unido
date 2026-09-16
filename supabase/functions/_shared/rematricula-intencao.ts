@@ -70,6 +70,8 @@ export async function enviarIntencao(opts: {
   sequencia?: number;
   params: string[];
   link?: string | null;
+  /** Prefixa o nome do responsável que vai receber a mensagem como {{1}}. */
+  incluirResponsavel?: boolean;
   /** Responde exatamente para quem clicou, em vez do responsável financeiro. */
   telefone?: string | null;
 }): Promise<{ sucesso: boolean; destino: string | null; payload: unknown }> {
@@ -79,8 +81,11 @@ export async function enviarIntencao(opts: {
     return { sucesso: false, destino: null, payload: { erro: "sem_telefone" } };
   }
 
+  const primeiroNome = (dest.nome || "").trim().split(/\s+/)[0] || "Responsável";
+  const params = opts.incluirResponsavel ? [primeiroNome, ...opts.params] : opts.params;
+
   const body_params: Record<string, string> = {};
-  opts.params.forEach((p, i) => (body_params[String(i + 1)] = p));
+  params.forEach((p, i) => (body_params[String(i + 1)] = p));
 
   const linkFinal = opts.link ?? LINK_REMATRICULA;
   const corte = linkFinal.lastIndexOf("/") + 1;
