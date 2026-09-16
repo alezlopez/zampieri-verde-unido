@@ -187,6 +187,7 @@ Deno.serve(async (req) => {
         tipo,
         sequencia: seq,
         params: [l.nome_aluno, prazo],
+        incluirResponsavel: true,
       });
       await registrar(admin, l.id_aluno, tipo, seq, TEMPLATE_INTENCAO[tipo], env);
       resultado.enviados++;
