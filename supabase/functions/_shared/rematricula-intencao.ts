@@ -100,7 +100,7 @@ export async function enviarIntencao(opts: {
     language: "pt_BR",
     to: dest.telefone,
     telefone_original: dest.telefone_original,
-    params: opts.params,
+    params,
     body_params,
     button_url_param: linkFinal.slice(corte) || null,
     link_base: linkFinal.slice(0, corte),
