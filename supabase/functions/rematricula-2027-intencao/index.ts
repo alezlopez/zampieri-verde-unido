@@ -116,6 +116,7 @@ Deno.serve(async (req) => {
         tipo,
         sequencia: seq,
         params: [aluno.nome_aluno, prazo],
+        incluirResponsavel: true,
       });
       await registrar(admin, idAluno, tipo, seq, TEMPLATE_INTENCAO[tipo], env);
       return json({ ok: env.sucesso, destino: env.destino, template: TEMPLATE_INTENCAO[tipo] });
