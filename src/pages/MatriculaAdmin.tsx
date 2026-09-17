@@ -893,11 +893,23 @@ const MatriculaAdmin = () => {
                               <SelectValue placeholder="Selecione %" />
                             </SelectTrigger>
                             <SelectContent className="bg-background z-50">
-                              {descontosPorSerie(aberta.prematricula?.serie_pretendida).map((n) => (
-                                <SelectItem key={n} value={String(n)}>
-                                  {n}%
-                                </SelectItem>
-                              ))}
+                              {Array.from(
+                                new Set([
+                                  ...Array.from({ length: 13 }, (_, i) => i * 5),
+                                  ...(form.percentual_desconto && !isNaN(Number(form.percentual_desconto))
+                                    ? [Number(form.percentual_desconto)]
+                                    : []),
+                                  ...(aberta.prematricula?.desconto_percentual != null
+                                    ? [Number(aberta.prematricula.desconto_percentual)]
+                                    : []),
+                                ]),
+                              )
+                                .sort((a, b) => a - b)
+                                .map((n) => (
+                                  <SelectItem key={n} value={String(n)}>
+                                    {n}%
+                                  </SelectItem>
+                                ))}
                             </SelectContent>
                           </Select>
                         ) : (
