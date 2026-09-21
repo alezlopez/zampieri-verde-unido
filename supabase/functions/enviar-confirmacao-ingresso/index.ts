@@ -1,5 +1,6 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
 import { corsHeaders } from "../_shared/cors.ts";
+import { botao, emailLayout, MARCA } from "../_shared/email-brand.ts";
 
 const RESEND_API = "https://api.resend.com/emails";
 const FROM = "Colégio Zampieri <eventos@colegiozampieri.com.br>";

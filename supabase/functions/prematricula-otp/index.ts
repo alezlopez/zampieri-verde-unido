@@ -2,6 +2,7 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
 import { corsHeaders } from "../_shared/cors.ts";
 import { enviarWhatsappOtp, gerarCodigo, onlyDigits, telefoneE164 } from "../_shared/otp.ts";
 import { FROM_EMAIL } from "../_shared/prematricula-mensagens.ts";
+import { codigo as blocoCodigo, emailLayout, paragrafo } from "../_shared/email-brand.ts";
 
 const json = (body: unknown, status = 200) =>
   new Response(JSON.stringify(body), {
