@@ -276,22 +276,10 @@ async function enviarWhatsapp(evento: EventoMensagem, d: DadosMensagem) {
 
 
 
-const wrapper = (titulo: string, corpo: string) => `
-  <div style="font-family:Arial,Helvetica,sans-serif;max-width:560px;margin:0 auto;padding:24px">
-    <h2 style="color:#0F3D24;margin:0 0 12px">${titulo}</h2>
-    ${corpo}
-    <p style="color:#777;font-size:12px;margin-top:24px;border-top:1px solid #E3EAE1;padding-top:16px">
-      Dúvidas? Fale com a gente no WhatsApp
-      <a href="https://wa.me/${WHATSAPP_SUPORTE}" style="color:#0F3D24">(11) 93934-1503</a>.
-    </p>
-  </div>`;
+const wrapper = (titulo: string, corpo: string) =>
+  emailLayout({ titulo, corpo, etiqueta: "Matrículas", whatsapp: WHATSAPP_SUPORTE });
 
-const p = (t: string) => `<p style="color:#444;font-size:14px;line-height:1.6;margin:0 0 12px">${t}</p>`;
-
-const botao = (href: string, texto: string) => `
-  <p style="margin:20px 0">
-    <a href="${href}" style="background:#0F3D24;color:#ffffff;text-decoration:none;padding:12px 22px;border-radius:8px;display:inline-block;font-weight:bold">${texto}</a>
-  </p>`;
+const p = (t: string) => paragrafo(t);
 
 /** Assunto + HTML de cada e-mail. Substituir pelos textos definitivos quando chegarem. */
 function montarEmail(evento: EventoMensagem, d: DadosMensagem): { subject: string; html: string } {
