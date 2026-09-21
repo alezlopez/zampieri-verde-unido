@@ -184,10 +184,10 @@ Deno.serve(async (req) => {
       ${linhaAgg("Total", s.total)}`;
     }).join("");
 
-    const html = `
-    <div style="font-family:Arial,sans-serif;max-width:700px;margin:0 auto;color:#222;">
-      <h2 style="color:${corPrim};margin:0 0 4px;">Resumo de Vendas - ${label}</h2>
-      <p style="color:#666;margin:0 0 20px;">Ingressos e produtos ativos - gerado as 20h (BRT)</p>
+    const corpoHtml = `
+    <div style="font-family:Arial,sans-serif;color:#33372F;">
+      <p style="color:#6B7166;margin:0 0 20px;">Ingressos e produtos ativos - gerado as 20h (BRT)</p>
+
 
       <h3 style="color:${corPrim};border-bottom:2px solid ${corPrim};padding-bottom:4px;">Totais Gerais</h3>
       <table style="width:100%;border-collapse:collapse;font-size:13px;margin-bottom:20px;">
