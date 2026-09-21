@@ -1,5 +1,6 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
 import { corsHeaders } from "../_shared/cors.ts";
+import { emailLayout, MARCA } from "../_shared/email-brand.ts";
 
 const RESEND_URL = "https://api.resend.com";
 const DESTINATARIO = "alexandre.zampieri@colegiozampieri.com.br";
@@ -150,8 +151,8 @@ Deno.serve(async (req) => {
       });
     }
 
-    const corPrim = "#0a7a3b";
-    const corSec = "#e6f4ec";
+    const corPrim = MARCA.verdeEscuro;
+    const corSec = MARCA.creme;
     const linhaAgg = (lbl: string, a: Agg) => `
       <tr>
         <td style="padding:6px 10px;border-bottom:1px solid #eee;">${lbl}</td>
@@ -184,10 +185,10 @@ Deno.serve(async (req) => {
       ${linhaAgg("Total", s.total)}`;
     }).join("");
 
-    const html = `
-    <div style="font-family:Arial,sans-serif;max-width:700px;margin:0 auto;color:#222;">
-      <h2 style="color:${corPrim};margin:0 0 4px;">Resumo de Vendas - ${label}</h2>
-      <p style="color:#666;margin:0 0 20px;">Ingressos e produtos ativos - gerado as 20h (BRT)</p>
+    const corpoHtml = `
+    <div style="font-family:Arial,sans-serif;color:#33372F;">
+      <p style="color:#6B7166;margin:0 0 20px;">Ingressos e produtos ativos - gerado as 20h (BRT)</p>
+
 
       <h3 style="color:${corPrim};border-bottom:2px solid ${corPrim};padding-bottom:4px;">Totais Gerais</h3>
       <table style="width:100%;border-collapse:collapse;font-size:13px;margin-bottom:20px;">
@@ -216,6 +217,13 @@ Deno.serve(async (req) => {
         Valores liquidos pendentes (quando indicados) correspondem a vendas pagas cujo calculo de taxa ainda nao foi processado.
       </p>
     </div>`;
+
+    const html = emailLayout({
+      etiqueta: "Relatórios",
+      titulo: `Resumo de Vendas — ${label}`,
+      corpo: corpoHtml,
+      largura: 720,
+    });
 
     const subject = `Resumo de vendas - ${label}`;
     const resp = await fetch(`${RESEND_URL}/emails`, {

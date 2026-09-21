@@ -1,4 +1,5 @@
 // OTP de WhatsApp é enviado DIRETO pela Cloud API da Meta (sem webhook n8n).
+import { codigo as blocoCodigo, emailLayout, paragrafo } from "./email-brand.ts";
 
 export const corsHeadersOtp = {
   "Access-Control-Allow-Origin": "*",
@@ -91,19 +92,17 @@ export async function enviarEmailOtp(email: string, codigo: string, nomeAluno: s
       from: "Colégio Zampieri <eventos@colegiozampieri.com.br>",
       to: [email],
       subject: `Seu código de verificação: ${codigo}`,
-      html: `
-        <div style="font-family:Arial,Helvetica,sans-serif;max-width:520px;margin:0 auto;padding:24px">
-          <h2 style="color:#0F3D24;margin:0 0 8px">Código de verificação</h2>
-          <p style="color:#444;font-size:14px;margin:0 0 20px">
-            Use o código abaixo para continuar a rematrícula 2027 de <strong>${nomeAluno}</strong>.
-          </p>
-          <div style="background:#F3F7F2;border:1px solid #D8E4D6;border-radius:12px;padding:20px;text-align:center">
-            <span style="font-size:34px;letter-spacing:8px;font-weight:bold;color:#0F3D24">${codigo}</span>
-          </div>
-          <p style="color:#777;font-size:12px;margin-top:20px">
-            O código expira em 10 minutos. Se você não solicitou, ignore este e-mail.
-          </p>
-        </div>`,
+      html: emailLayout({
+        etiqueta: "Rematrícula 2027",
+        titulo: "Código de verificação",
+        corpo: paragrafo(
+          `Use o código abaixo para continuar a rematrícula 2027 de <strong>${nomeAluno}</strong>.`,
+        ) +
+          blocoCodigo(codigo) +
+          paragrafo(
+            `<span style="font-size:13px;color:#6B7166">O código expira em 10 minutos. Se você não solicitou, ignore este e-mail.</span>`,
+          ),
+      }),
     }),
   });
   const texto = await res.text();

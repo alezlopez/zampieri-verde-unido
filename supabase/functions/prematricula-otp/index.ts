@@ -2,6 +2,7 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
 import { corsHeaders } from "../_shared/cors.ts";
 import { enviarWhatsappOtp, gerarCodigo, onlyDigits, telefoneE164 } from "../_shared/otp.ts";
 import { FROM_EMAIL } from "../_shared/prematricula-mensagens.ts";
+import { codigo as blocoCodigo, emailLayout, paragrafo } from "../_shared/email-brand.ts";
 
 const json = (body: unknown, status = 200) =>
   new Response(JSON.stringify(body), {
@@ -44,15 +45,17 @@ function alvo(body: Record<string, unknown>) {
 async function enviarEmailOtp(email: string, codigo: string) {
   const key = Deno.env.get("RESEND_API_KEY");
   if (!key) throw new Error("RESEND_API_KEY ausente");
-  const html = `
-  <div style="font-family:Arial,Helvetica,sans-serif;max-width:520px;margin:0 auto;padding:24px">
-    <h2 style="color:#0F3D24;margin:0 0 12px">Confirmação de e-mail</h2>
-    <p style="color:#444;font-size:14px;line-height:1.6">
-      Use o código abaixo para confirmar seu e-mail na pré-matrícula do Colégio Zampieri:
-    </p>
-    <p style="font-size:32px;letter-spacing:10px;font-weight:bold;color:#0F3D24;margin:20px 0">${codigo}</p>
-    <p style="color:#777;font-size:12px">O código vale por 10 minutos. Se não foi você, ignore este e-mail.</p>
-  </div>`;
+  const html = emailLayout({
+    etiqueta: "Pré-matrícula",
+    titulo: "Confirmação de e-mail",
+    corpo: paragrafo(
+      "Use o código abaixo para confirmar seu e-mail na pré-matrícula do Colégio Zampieri:",
+    ) +
+      blocoCodigo(codigo) +
+      paragrafo(
+        `<span style="font-size:13px;color:#6B7166">O código vale por 10 minutos. Se não foi você, ignore este e-mail.</span>`,
+      ),
+  });
   const res = await fetch("https://api.resend.com/emails", {
     method: "POST",
     headers: { Authorization: `Bearer ${key}`, "Content-Type": "application/json" },
