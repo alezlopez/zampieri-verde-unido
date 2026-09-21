@@ -7,6 +7,7 @@
  */
 
 import { enviarTemplateWebhook } from "./whatsapp-webhook.ts";
+import { botao, emailLayout, paragrafo } from "./email-brand.ts";
 
 export const SITE_URL = "https://colegiozampieri.com.br";
 export const FROM_EMAIL = "Colégio Zampieri <noreply@colegiozampieri.com.br>";
