@@ -150,8 +150,8 @@ Deno.serve(async (req) => {
       });
     }
 
-    const corPrim = "#0a7a3b";
-    const corSec = "#e6f4ec";
+    const corPrim = MARCA.verdeEscuro;
+    const corSec = MARCA.creme;
     const linhaAgg = (lbl: string, a: Agg) => `
       <tr>
         <td style="padding:6px 10px;border-bottom:1px solid #eee;">${lbl}</td>
@@ -216,6 +216,13 @@ Deno.serve(async (req) => {
         Valores liquidos pendentes (quando indicados) correspondem a vendas pagas cujo calculo de taxa ainda nao foi processado.
       </p>
     </div>`;
+
+    const html = emailLayout({
+      etiqueta: "Relatórios",
+      titulo: `Resumo de Vendas — ${label}`,
+      corpo: corpoHtml,
+      largura: 720,
+    });
 
     const subject = `Resumo de vendas - ${label}`;
     const resp = await fetch(`${RESEND_URL}/emails`, {
