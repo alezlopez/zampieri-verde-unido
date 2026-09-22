@@ -3,7 +3,7 @@
 // - modo manual: o painel reenvia uma mensagem específica.
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import {
-  CADENCIA_DIAS,
+  cadenciaDe,
   CasoFollowup,
   enviarFollowupMatricula,
   EtapaMatricula,
@@ -64,11 +64,13 @@ function sequenciaDevida(c: CasoFollowup, etapa: EtapaMatricula): number | null 
   }
   if (etapa === "faltou") return jaEnviou(c, etapa, 1) ? null : 1;
 
-  // Etapas diárias: 1 dia, 3 dias e 6 dias desde a última atividade.
+  // Etapas diárias: cadência em dias desde a última atividade
+  // (agendar começa em 3 dias, pois a aprovação já avisa a família).
+  const cadencia = cadenciaDe(etapa);
   const dias = diasDesde(ultimaAtividade(c, etapa));
   if (dias === null) return null;
   for (const seq of [3, 2, 1]) {
-    if (dias >= CADENCIA_DIAS[seq] && !jaEnviou(c, etapa, seq)) return seq;
+    if (dias >= cadencia[seq] && !jaEnviou(c, etapa, seq)) return seq;
   }
   return null;
 }
