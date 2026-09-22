@@ -1209,6 +1209,53 @@ export type Database = {
           },
         ]
       }
+      matricula_followup_envios: {
+        Row: {
+          created_at: string
+          destino: string | null
+          enviado_em: string
+          etapa: string
+          id: string
+          payload: Json | null
+          prematricula_id: string
+          sequencia: number
+          sucesso: boolean
+          template: string
+        }
+        Insert: {
+          created_at?: string
+          destino?: string | null
+          enviado_em?: string
+          etapa: string
+          id?: string
+          payload?: Json | null
+          prematricula_id: string
+          sequencia?: number
+          sucesso?: boolean
+          template: string
+        }
+        Update: {
+          created_at?: string
+          destino?: string | null
+          enviado_em?: string
+          etapa?: string
+          id?: string
+          payload?: Json | null
+          prematricula_id?: string
+          sequencia?: number
+          sucesso?: boolean
+          template?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "matricula_followup_envios_prematricula_id_fkey"
+            columns: ["prematricula_id"]
+            isOneToOne: false
+            referencedRelation: "prematriculas"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       matriculas: {
         Row: {
           acompanhamento: string
@@ -1854,6 +1901,7 @@ export type Database = {
           dificuldade_socializacao: string | null
           entrevista_concluida_em: string | null
           escola_atual: string | null
+          followup_pausado: boolean
           id: string
           laudo_path: string | null
           medicacao_detalhe: string | null
@@ -1907,6 +1955,7 @@ export type Database = {
           dificuldade_socializacao?: string | null
           entrevista_concluida_em?: string | null
           escola_atual?: string | null
+          followup_pausado?: boolean
           id?: string
           laudo_path?: string | null
           medicacao_detalhe?: string | null
@@ -1960,6 +2009,7 @@ export type Database = {
           dificuldade_socializacao?: string | null
           entrevista_concluida_em?: string | null
           escola_atual?: string | null
+          followup_pausado?: boolean
           id?: string
           laudo_path?: string | null
           medicacao_detalhe?: string | null
@@ -3020,6 +3070,11 @@ export type Database = {
           metadata: Json
           similarity: number
         }[]
+      }
+      matricula_followup_listagem: { Args: never; Returns: Json }
+      matricula_followup_pausar: {
+        Args: { _id: string; _pausado: boolean }
+        Returns: boolean
       }
       norm_turno: { Args: { _t: string }; Returns: string }
       notificar_admin: {
