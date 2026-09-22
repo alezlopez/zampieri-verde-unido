@@ -3071,6 +3071,7 @@ export type Database = {
           similarity: number
         }[]
       }
+      matricula_followup_cron_lista: { Args: never; Returns: Json }
       matricula_followup_listagem: { Args: never; Returns: Json }
       matricula_followup_pausar: {
         Args: { _id: string; _pausado: boolean }
