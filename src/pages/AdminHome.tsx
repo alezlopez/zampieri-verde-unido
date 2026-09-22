@@ -60,6 +60,12 @@ const blocos: Bloco[] = [
         href: "/matricula/admin",
         icone: FileSignature,
       },
+      {
+        titulo: "Follow-up de matrículas",
+        descricao: "Quem não agendou, faltou à entrevista ou parou nos documentos.",
+        href: "/matricula/followup",
+        icone: BarChart3,
+      },
     ],
   },
   {
