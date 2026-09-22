@@ -25,6 +25,15 @@ export const TEMPLATES: Record<EtapaMatricula, (seq: number) => string> = {
 /** Dias desde a última atividade para cada sequência das etapas diárias. */
 export const CADENCIA_DIAS: Record<number, number> = { 1: 1, 2: 3, 3: 6 };
 
+/**
+ * A aprovação da pré-matrícula já dispara uma mensagem convidando a agendar,
+ * então a cobrança de agendamento só começa 3 dias depois.
+ */
+export const CADENCIA_AGENDAR: Record<number, number> = { 1: 3, 2: 6, 3: 9 };
+
+export const cadenciaDe = (etapa: EtapaMatricula): Record<number, number> =>
+  etapa === "agendar" ? CADENCIA_AGENDAR : CADENCIA_DIAS;
+
 export const ETAPAS_DIARIAS: EtapaMatricula[] = ["agendar", "documentos", "contrato"];
 
 export interface CasoFollowup {
