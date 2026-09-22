@@ -70,8 +70,8 @@ const ETAPAS: { id: Etapa; titulo: string; descricao: string; msgs: number }[] =
   {
     id: "lembrete",
     titulo: "Entrevista marcada",
-    descricao: "Lembretes 1 dia antes e 2 horas antes",
-    msgs: 2,
+    descricao: "Lembrete 1 dia antes (só se agendou com 3+ dias de antecedência)",
+    msgs: 1,
   },
   {
     id: "faltou",
