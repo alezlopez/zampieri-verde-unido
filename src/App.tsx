@@ -44,6 +44,7 @@ import PreMatriculaAdmin from "./pages/PreMatriculaAdmin";
 import PreMatriculaAgenda from "./pages/PreMatriculaAgenda";
 import Matricula from "./pages/Matricula";
 import MatriculaAdmin from "./pages/MatriculaAdmin";
+import MatriculaFollowup from "./pages/MatriculaFollowup";
 import InformativoMatricula from "./pages/InformativoMatricula";
 import Renegociacao from "./pages/Renegociacao";
 import RenegociacaoAdmin from "./pages/RenegociacaoAdmin";
