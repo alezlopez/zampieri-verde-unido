@@ -57,8 +57,14 @@ async function registrar(
 function sequenciaDevida(c: CasoFollowup, etapa: EtapaMatricula): number | null {
   if (etapa === "lembrete") {
     if (!c.entrevista_inicio) return null;
+    // Ao agendar a família já recebe um aviso: só lembra quem marcou
+    // com pelo menos 3 dias de antecedência.
+    const marcadoEm = c.agendado_em || c.updated_at || c.created_at;
+    if (!marcadoEm) return null;
+    const antecedencia =
+      (new Date(c.entrevista_inicio).getTime() - new Date(marcadoEm).getTime()) / 86400000;
+    if (antecedencia < 3) return null;
     const horas = (new Date(c.entrevista_inicio).getTime() - Date.now()) / 3600000;
-    if (horas <= 2 && horas > 0 && !jaEnviou(c, etapa, 2)) return 2;
     if (horas <= 26 && horas > 2 && !jaEnviou(c, etapa, 1)) return 1;
     return null;
   }
