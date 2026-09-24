@@ -43,6 +43,7 @@ interface Props {
   setTelefoneVerificado?: (t: string | null) => void;
   emailVerificado?: string | null;
   setEmailVerificado?: (e: string | null) => void;
+  respUsados?: { tipo: string | null; nome: string | null }[];
 }
 
 const ACEITOS = ".pdf,.jpg,.jpeg,.png";
@@ -193,18 +194,27 @@ export const EtapaResponsavel = ({
   setTelefoneVerificado,
   emailVerificado,
   setEmailVerificado,
+  respUsados = [],
 }: Props) => (
   <div className="space-y-5">
     <SecaoTitulo>Informações do Responsável</SecaoTitulo>
+    {respUsados.length > 0 && (
+      <div className="rounded-lg border border-amber-300 bg-amber-50 p-3 text-sm text-foreground">
+        Já houve uma tentativa de pré-matrícula deste aluno com{" "}
+        {respUsados
+          .map((u) => `${u.nome ?? "outro responsável"}${u.tipo ? ` (${u.tipo === "mae" ? "mãe" : "pai"})` : ""}`)
+          .join(" e ")}
+        . Continue com o outro responsável, usando o CPF dele(a).
+      </div>
+    )}
     <Campo label="O responsável é" erro={erros.resp_tipo}>
       <Select value={form.resp_tipo} onValueChange={(v) => set("resp_tipo", v)}>
         <SelectTrigger>
           <SelectValue placeholder="Selecione" />
         </SelectTrigger>
         <SelectContent>
-          <SelectItem value="mae">Mãe</SelectItem>
-          <SelectItem value="pai">Pai</SelectItem>
-          
+          <SelectItem value="mae" disabled={respUsados.some((u) => u.tipo === "mae")}>Mãe</SelectItem>
+          <SelectItem value="pai" disabled={respUsados.some((u) => u.tipo === "pai")}>Pai</SelectItem>
         </SelectContent>
       </Select>
     </Campo>

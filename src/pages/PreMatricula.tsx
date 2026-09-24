@@ -200,17 +200,52 @@ const PreMatricula = () => {
     return Object.keys(e).length === 0;
   };
 
+  const aplicarTentativas = (
+    tentativas: { resp_tipo: string | null; primeiro_nome: string | null; mesmo_cpf: boolean }[],
+  ) => {
+    const usados = tentativas.map((t) => ({ tipo: t.resp_tipo, nome: t.primeiro_nome }));
+    setRespUsados(usados);
+    const tipos = new Set(usados.map((u) => u.tipo).filter(Boolean));
+    if (tipos.has("mae") && tipos.has("pai")) {
+      setSemTentativas(true);
+      return false;
+    }
+    const conflito =
+      tentativas.some((t) => t.mesmo_cpf) || (!!form.resp_tipo && tipos.has(form.resp_tipo));
+    if (conflito) {
+      set("resp_tipo", "");
+      set("resp_cpf", "");
+      setTelefoneVerificado(null);
+      setEmailVerificado(null);
+      setEtapa(0);
+      toast({
+        title: "Use o outro responsável",
+        description: "Já houve uma tentativa com este responsável. Continue com o CPF do outro responsável.",
+      });
+      return false;
+    }
+    return true;
+  };
+
   const checarAluno = async () => {
     const nasc = brToIso(form.aluno_nascimento);
     if (!nasc) return true;
     setChecando(true);
     try {
       const { data } = await supabase.functions.invoke("prematricula-otp", {
-        body: { acao: "checar_aluno", aluno_nome: form.aluno_nome, aluno_nascimento: nasc },
+        body: {
+          acao: "checar_aluno",
+          aluno_nome: form.aluno_nome,
+          aluno_nascimento: nasc,
+          resp_cpf: onlyDigits(form.resp_cpf),
+        },
       });
       if (data?.existe) {
         setDuplicado({ protocolo: data.protocolo ?? null });
         return false;
+      }
+      if (Array.isArray(data?.tentativas) && data.tentativas.length > 0) {
+        return aplicarTentativas(data.tentativas);
       }
       return true;
     } catch {
