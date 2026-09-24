@@ -44,6 +44,8 @@ const PreMatricula = () => {
   const [emailVerificado, setEmailVerificado] = useState<string | null>(null);
   const [duplicado, setDuplicado] = useState<{ protocolo: string | null } | null>(null);
   const [checando, setChecando] = useState(false);
+  const [respUsados, setRespUsados] = useState<{ tipo: string | null; nome: string | null }[]>([]);
+  const [semTentativas, setSemTentativas] = useState(false);
   const [ressalva, setRessalva] = useState<{
     id: string;
     aluno_nome: string;
@@ -324,7 +326,28 @@ const PreMatricula = () => {
     setTelefoneVerificado,
     emailVerificado,
     setEmailVerificado,
+    respUsados,
   };
+
+  if (semTentativas) {
+    return (
+      <main className="min-h-screen bg-zampieri-cream/30 flex items-center justify-center px-4 py-16">
+        <div className="max-w-md w-full rounded-2xl bg-white border border-border p-8 text-center space-y-4">
+          <AlertCircle className="w-12 h-12 mx-auto text-zampieri-green-dark" />
+          <h1 className="font-serif text-2xl font-bold text-zampieri-green-dark">
+            Não é possível nova tentativa
+          </h1>
+          <p className="text-sm text-muted-foreground">
+            Já houve pré-matrícula de <strong>{form.aluno_nome}</strong> com os dois responsáveis.
+            Fale com a secretaria pelo WhatsApp <strong>(11) 93934-1503</strong>.
+          </p>
+          <Button asChild variant="outline" className="w-full">
+            <a href="/">Voltar ao site</a>
+          </Button>
+        </div>
+      </main>
+    );
+  }
 
   if (carregandoToken) {
     return (
