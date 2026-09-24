@@ -209,6 +209,7 @@ export type Database = {
           tem_mae: string
           tem_pai: string
           turno_escolhido: string | null
+          turno_escolhido_em: string | null
           updated_at: string | null
           valor_cheio: number | null
           valor_com_desconto: number
@@ -296,6 +297,7 @@ export type Database = {
           tem_mae?: string
           tem_pai?: string
           turno_escolhido?: string | null
+          turno_escolhido_em?: string | null
           updated_at?: string | null
           valor_cheio?: number | null
           valor_com_desconto: number
@@ -383,6 +385,7 @@ export type Database = {
           tem_mae?: string
           tem_pai?: string
           turno_escolhido?: string | null
+          turno_escolhido_em?: string | null
           updated_at?: string | null
           valor_cheio?: number | null
           valor_com_desconto?: number
@@ -3327,6 +3330,7 @@ export type Database = {
           rotulo: string
         }[]
       }
+      rematricula_2027_liberar_vagas_expiradas: { Args: never; Returns: number }
       rematricula_2027_numeros_consultar: {
         Args: { p_data_nascimento: string; p_termo: string }
         Returns: {
