@@ -91,18 +91,26 @@ Deno.serve(async (req) => {
       if (nome.length < 3 || !/^\d{4}-\d{2}-\d{2}$/.test(nasc)) {
         return json({ error: "dados_invalidos" }, 400);
       }
-      const { data, error } = await admin
+      const cpf = String(body?.resp_cpf ?? "").replace(/\D/g, "");
+      const { data: lista, error } = await admin
         .from("prematriculas")
-        .select("protocolo, created_at")
+        .select("protocolo, created_at, status, resp_cpf, resp_tipo, resp_nome")
         .eq("aluno_chave", normNome(nome))
-        .eq("aluno_nascimento", nasc)
-        .maybeSingle();
+        .eq("aluno_nascimento", nasc);
       if (error) throw error;
+      const INATIVOS = ["reprovado", "cancelado", "desistente"];
+      const ativa = (lista ?? []).find((p) => !INATIVOS.includes(p.status));
+      const tentativas = (lista ?? []).map((p) => ({
+        resp_tipo: p.resp_tipo ?? null,
+        primeiro_nome: String(p.resp_nome ?? "").trim().split(/\s+/)[0] || null,
+        mesmo_cpf: !!cpf && String(p.resp_cpf ?? "").replace(/\D/g, "") === cpf,
+      }));
       return json({
         ok: true,
-        existe: !!data,
-        protocolo: data?.protocolo ?? null,
-        criado_em: data?.created_at ?? null,
+        existe: !!ativa,
+        protocolo: ativa?.protocolo ?? null,
+        criado_em: ativa?.created_at ?? null,
+        tentativas: ativa ? [] : tentativas,
       });
     }
 
