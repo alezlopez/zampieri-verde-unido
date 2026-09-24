@@ -281,6 +281,10 @@ const PreMatricula = () => {
       if (laudo) fd.append("laudo", laudo);
 
       const { data, error } = await supabase.functions.invoke("prematricula-enviar", { body: fd });
+      if (data?.error === "responsavel_ja_utilizado") {
+        aplicarTentativas([{ resp_tipo: form.resp_tipo || null, primeiro_nome: null, mesmo_cpf: true }]);
+        return;
+      }
       if (data?.error === "aluno_duplicado") {
         setDuplicado({ protocolo: data.protocolo ?? null });
         return;
