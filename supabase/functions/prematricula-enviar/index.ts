@@ -221,23 +221,24 @@ Deno.serve(async (req) => {
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
     );
 
-    // 1) Um aluno, uma pré-matrícula
-    const { data: existente, error: erroDup } = await admin
+    // 1) Uma pré-matrícula ativa por aluno; após reprovação, só com outro responsável (CPF)
+    const { data: anteriores, error: erroDup } = await admin
       .from("prematriculas")
-      .select("protocolo, created_at")
+      .select("protocolo, created_at, status, resp_cpf")
       .eq("aluno_chave", normNome(alunoNome))
-      .eq("aluno_nascimento", alunoNasc)
-      .maybeSingle();
+      .eq("aluno_nascimento", alunoNasc);
     if (erroDup) throw erroDup;
-    if (existente) {
+    const INATIVOS = ["reprovado", "cancelado", "desistente"];
+    const ativa = (anteriores ?? []).find((p) => !INATIVOS.includes(p.status));
+    if (ativa) {
       return json(
-        {
-          error: "aluno_duplicado",
-          protocolo: existente.protocolo,
-          criado_em: existente.created_at,
-        },
+        { error: "aluno_duplicado", protocolo: ativa.protocolo, criado_em: ativa.created_at },
         409,
       );
+    }
+    const cpfLimpo = String(respCpf).replace(/\D/g, "");
+    if ((anteriores ?? []).some((p) => String(p.resp_cpf ?? "").replace(/\D/g, "") === cpfLimpo)) {
+      return json({ error: "responsavel_ja_utilizado" }, 409);
     }
 
     // 2) WhatsApp e e-mail confirmados por código nos últimos 30 minutos

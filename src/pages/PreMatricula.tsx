@@ -44,6 +44,8 @@ const PreMatricula = () => {
   const [emailVerificado, setEmailVerificado] = useState<string | null>(null);
   const [duplicado, setDuplicado] = useState<{ protocolo: string | null } | null>(null);
   const [checando, setChecando] = useState(false);
+  const [respUsados, setRespUsados] = useState<{ tipo: string | null; nome: string | null }[]>([]);
+  const [semTentativas, setSemTentativas] = useState(false);
   const [ressalva, setRessalva] = useState<{
     id: string;
     aluno_nome: string;
@@ -200,17 +202,52 @@ const PreMatricula = () => {
     return Object.keys(e).length === 0;
   };
 
+  const aplicarTentativas = (
+    tentativas: { resp_tipo: string | null; primeiro_nome: string | null; mesmo_cpf: boolean }[],
+  ) => {
+    const usados = tentativas.map((t) => ({ tipo: t.resp_tipo, nome: t.primeiro_nome }));
+    setRespUsados(usados);
+    const tipos = new Set(usados.map((u) => u.tipo).filter(Boolean));
+    if (tipos.has("mae") && tipos.has("pai")) {
+      setSemTentativas(true);
+      return false;
+    }
+    const conflito =
+      tentativas.some((t) => t.mesmo_cpf) || (!!form.resp_tipo && tipos.has(form.resp_tipo));
+    if (conflito) {
+      set("resp_tipo", "");
+      set("resp_cpf", "");
+      setTelefoneVerificado(null);
+      setEmailVerificado(null);
+      setEtapa(0);
+      toast({
+        title: "Use o outro responsável",
+        description: "Já houve uma tentativa com este responsável. Continue com o CPF do outro responsável.",
+      });
+      return false;
+    }
+    return true;
+  };
+
   const checarAluno = async () => {
     const nasc = brToIso(form.aluno_nascimento);
     if (!nasc) return true;
     setChecando(true);
     try {
       const { data } = await supabase.functions.invoke("prematricula-otp", {
-        body: { acao: "checar_aluno", aluno_nome: form.aluno_nome, aluno_nascimento: nasc },
+        body: {
+          acao: "checar_aluno",
+          aluno_nome: form.aluno_nome,
+          aluno_nascimento: nasc,
+          resp_cpf: onlyDigits(form.resp_cpf),
+        },
       });
       if (data?.existe) {
         setDuplicado({ protocolo: data.protocolo ?? null });
         return false;
+      }
+      if (Array.isArray(data?.tentativas) && data.tentativas.length > 0) {
+        return aplicarTentativas(data.tentativas);
       }
       return true;
     } catch {
@@ -244,6 +281,10 @@ const PreMatricula = () => {
       if (laudo) fd.append("laudo", laudo);
 
       const { data, error } = await supabase.functions.invoke("prematricula-enviar", { body: fd });
+      if (data?.error === "responsavel_ja_utilizado") {
+        aplicarTentativas([{ resp_tipo: form.resp_tipo || null, primeiro_nome: null, mesmo_cpf: true }]);
+        return;
+      }
       if (data?.error === "aluno_duplicado") {
         setDuplicado({ protocolo: data.protocolo ?? null });
         return;
@@ -289,7 +330,28 @@ const PreMatricula = () => {
     setTelefoneVerificado,
     emailVerificado,
     setEmailVerificado,
+    respUsados,
   };
+
+  if (semTentativas) {
+    return (
+      <main className="min-h-screen bg-zampieri-cream/30 flex items-center justify-center px-4 py-16">
+        <div className="max-w-md w-full rounded-2xl bg-white border border-border p-8 text-center space-y-4">
+          <AlertCircle className="w-12 h-12 mx-auto text-zampieri-green-dark" />
+          <h1 className="font-serif text-2xl font-bold text-zampieri-green-dark">
+            Não é possível nova tentativa
+          </h1>
+          <p className="text-sm text-muted-foreground">
+            Já houve pré-matrícula de <strong>{form.aluno_nome}</strong> com os dois responsáveis.
+            Fale com a secretaria pelo WhatsApp <strong>(11) 93934-1503</strong>.
+          </p>
+          <Button asChild variant="outline" className="w-full">
+            <a href="/">Voltar ao site</a>
+          </Button>
+        </div>
+      </main>
+    );
+  }
 
   if (carregandoToken) {
     return (
