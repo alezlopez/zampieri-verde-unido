@@ -1,6 +1,6 @@
 import { createClient } from "npm:@supabase/supabase-js@2";
 import { corsHeaders } from "../_shared/cors.ts";
-import { getOrCreateCustomer, createCheckout, createPayment, getPayment, getPixQrCode, deletePayment } from "../_shared/asaas.ts";
+import { getOrCreateCustomer, updateCustomer, createCheckout, createPayment, getPayment, getPixQrCode, deletePayment } from "../_shared/asaas.ts";
 import { rematriculaLiberada } from "../_shared/rematricula-abertura.ts";
 
 const CHECKOUT_MINUTES = 1440; // 24h (máximo aceito pelo Asaas)
@@ -214,6 +214,11 @@ Deno.serve(async (req) => {
       customerId = customer?.id ?? null;
     }
     if (!customerId) return json({ error: "Falha ao criar cliente no Asaas" }, 502);
+    // Checkout do Asaas exige e-mail no cliente: garante antes de cobrar
+    if (email) {
+      try { await updateCustomer(customerId, { email, ...(celular ? { mobilePhone: celular } : {}) }); }
+      catch (e) { console.warn("[asaas] updateCustomer email:", (e as Error).message); }
+    }
 
     const origin = safeOrigin(req, body?.origin);
     const successUrl = `${origin}/rematricula2027?pagamento=sucesso&aluno=${idAluno}`;

@@ -1,6 +1,6 @@
 import { createClient } from "npm:@supabase/supabase-js@2";
 import { corsHeaders } from "../_shared/cors.ts";
-import { getOrCreateCustomer, createCheckout } from "../_shared/asaas.ts";
+import { getOrCreateCustomer, updateCustomer, createCheckout } from "../_shared/asaas.ts";
 
 const CHECKOUT_TTL_MS = 60 * 60 * 1000; // 60 min
 const FALLBACK_ORIGIN = "https://colegiozampieri.com.br";
@@ -138,6 +138,11 @@ Deno.serve(async (req) => {
       customerId = customer?.id ?? null;
     }
     if (!customerId) return json({ error: "Falha ao criar cliente no Asaas" }, 502);
+    // Checkout do Asaas exige e-mail no cliente: garante antes de cobrar
+    if (email) {
+      try { await updateCustomer(customerId, { email, ...(celular ? { mobilePhone: celular } : {}) }); }
+      catch (e) { console.warn("[asaas] updateCustomer email:", (e as Error).message); }
+    }
 
     const { data: registro, error: regErr } = await admin
       .from("renegociacao_2027_checkouts")
