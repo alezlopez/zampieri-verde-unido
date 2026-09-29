@@ -78,15 +78,32 @@ export async function ensureCustomerAddress(customer: any) {
   }
 }
 
+// Telefone da secretaria usado quando o comprador não tem celular cadastrado:
+// o checkout do Asaas exige phone/mobilePhone no customer.
+const FALLBACK_PHONE = "11939341503";
+
 export async function getOrCreateCustomer(input: {
   name: string;
   cpfCnpj: string;
   email?: string;
   mobilePhone?: string;
 }) {
+  let phone = (input.mobilePhone || "").replace(/\D/g, "");
+  if (phone.startsWith("55") && phone.length > 11) phone = phone.slice(2);
+  if (phone.length < 10) phone = "";
   const found = await findCustomerByCpf(input.cpfCnpj);
-  if (found) return await ensureCustomerAddress(found);
-  return await createCustomer(input);
+  if (found) {
+    const c = await ensureCustomerAddress(found);
+    const fields: Record<string, unknown> = {};
+    if (!c?.mobilePhone && !c?.phone) fields.mobilePhone = phone || FALLBACK_PHONE;
+    if (!c?.email && input.email) fields.email = input.email;
+    if (Object.keys(fields).length) {
+      try { return await updateCustomer(c.id, fields); }
+      catch (e) { console.warn("[asaas] update phone/email:", (e as Error).message); }
+    }
+    return c;
+  }
+  return await createCustomer({ ...input, mobilePhone: phone || FALLBACK_PHONE });
 }
 
 export type AsaasBilling = "PIX" | "CREDIT_CARD" | "BOLETO" | "UNDEFINED";
