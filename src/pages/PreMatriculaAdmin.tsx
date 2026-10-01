@@ -183,13 +183,16 @@ const PreMatriculaAdmin = () => {
     agendamentos.find((a) => a.prematricula_id === id)?.inicio ?? null;
 
   const filtradas = useMemo(() => {
-    const t = busca.trim().toLowerCase();
+    const norm = (s: string | null | undefined) =>
+      (s ?? "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+    const t = norm(busca.trim());
+    const dig = t.replace(/\D/g, "");
     const combinaTexto = (p: Prematricula) =>
       !t ||
-      p.aluno_nome.toLowerCase().includes(t) ||
-      p.resp_nome.toLowerCase().includes(t) ||
-      p.protocolo.toLowerCase().includes(t) ||
-      p.resp_cpf.includes(t.replace(/\D/g, ""));
+      norm(p.aluno_nome).includes(t) ||
+      norm(p.resp_nome).includes(t) ||
+      norm(p.protocolo).includes(t) ||
+      (dig.length > 0 && (p.resp_cpf ?? "").includes(dig));
 
     return lista.filter((p) => {
       const ac = p.acompanhamento ?? "ativo";
