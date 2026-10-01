@@ -195,8 +195,8 @@ const PreMatriculaAdmin = () => {
       const ac = p.acompanhamento ?? "ativo";
       if (filtro === "desistentes") return ac === "desistente" && combinaTexto(p);
       if (filtro === "cancelados") return ac === "cancelado" && combinaTexto(p);
-      // Desistentes e cancelados saem das listas normais.
-      if (ac !== "ativo") return false;
+      // Desistentes saem das listas normais; cancelados continuam visíveis (com etiqueta).
+      if (ac === "desistente") return false;
       if (filtro !== "todos" && p.status !== filtro) return false;
       // Entrevista concluída já migra para "Matrículas em andamento":
       // só aparece aqui via filtro específico ou busca por texto.
