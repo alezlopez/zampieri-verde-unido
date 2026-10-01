@@ -136,8 +136,14 @@ const PreMatricula = () => {
       if (tokenUrl) fd.append("token", tokenUrl);
       else fd.append("cpf", onlyDigits(form.resp_cpf));
       fd.append("arquivo", arquivoReenvio);
-      const { data, error } = await supabase.functions.invoke("prematricula-enviar", { body: fd });
-      if (error) throw error;
+      const resp = await supabase.functions.invoke("prematricula-enviar", { body: fd });
+      let data = resp.data;
+      const error = resp.error;
+      // Em respostas 4xx o SDK não preenche "data": lê o corpo do erro
+      if (!data && error && (error as { context?: Response }).context) {
+        data = await (error as { context: Response }).context.json().catch(() => null);
+      }
+      if (error && !data) throw error;
       if (!data?.ok) throw new Error(data?.error || "falha");
       setReenviado(true);
     } catch (err) {
@@ -280,7 +286,13 @@ const PreMatricula = () => {
       if (boletim) fd.append("boletim", boletim);
       if (laudo) fd.append("laudo", laudo);
 
-      const { data, error } = await supabase.functions.invoke("prematricula-enviar", { body: fd });
+      const resp = await supabase.functions.invoke("prematricula-enviar", { body: fd });
+      let data = resp.data;
+      const error = resp.error;
+      // Em respostas 4xx o SDK não preenche "data": lê o corpo do erro
+      if (!data && error && (error as { context?: Response }).context) {
+        data = await (error as { context: Response }).context.json().catch(() => null);
+      }
       if (data?.error === "responsavel_ja_utilizado") {
         aplicarTentativas([{ resp_tipo: form.resp_tipo || null, primeiro_nome: null, mesmo_cpf: true }]);
         return;
@@ -303,7 +315,7 @@ const PreMatricula = () => {
         });
         return;
       }
-      if (error) throw error;
+      if (error && !data) throw error;
       if (!data?.ok) throw new Error(data?.error || "falha");
       setProtocolo(data.protocolo as string);
     } catch (err) {
