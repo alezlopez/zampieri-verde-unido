@@ -14,7 +14,7 @@ interface Props {
 }
 
 export const RequireAdmin = ({ children, allow = "admin", setor }: Props) => {
-  const { isAdmin, canScan, setores, loading } = useAuth();
+  const { user, isAdmin, canScan, setores, loading } = useAuth();
   const location = useLocation();
 
   if (loading) {
@@ -31,6 +31,16 @@ export const RequireAdmin = ({ children, allow = "admin", setor }: Props) => {
       ? canScan || setores.length > 0
       : isAdmin;
 
+
+  if (!permitido && user) {
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center gap-4 p-6 text-center">
+        <p className="text-lg font-medium">Seu usuário não tem acesso a esta área.</p>
+        <p className="text-sm text-muted-foreground">Peça à administração para liberar o setor correspondente.</p>
+        <Link to="/admin" className="rounded-full bg-zampieri-green-dark px-4 py-2 text-sm text-white">Voltar ao painel</Link>
+      </div>
+    );
+  }
 
   if (!permitido) {
     return (
