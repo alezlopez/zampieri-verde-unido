@@ -10,7 +10,7 @@ export type Database = {
   // Allows to automatically instantiate createClient with right options
   // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
   __InternalSupabase: {
-    PostgrestVersion: "12.2.3 (519615d)"
+    PostgrestVersion: "12.2.3"
   }
   public: {
     Tables: {
@@ -3635,6 +3635,48 @@ export type Database = {
           message: string
           success: boolean
         }[]
+      }
+      whatszampieri_lead_update: {
+        Args: {
+          p_lost_reason?: string
+          p_note?: string
+          p_phone: string
+          p_pre_enrollment_id?: string
+          p_stage: string
+        }
+        Returns: undefined
+      }
+      whatszampieri_pre_stage: {
+        Args: { p_acompanhamento: string; p_status: string }
+        Returns: string
+      }
+      whatszampieri_push_stage: {
+        Args: {
+          p_force?: boolean
+          p_lost_reason?: string
+          p_note?: string
+          p_phone: string
+          p_pre_enrollment_id?: string
+          p_stage: string
+        }
+        Returns: undefined
+      }
+      whatszampieri_resync_all: { Args: never; Returns: number }
+      whatszampieri_stage_from_matricula: {
+        Args: {
+          p_acompanhamento: string
+          p_contrato_assinado: boolean
+          p_status: string
+        }
+        Returns: string
+      }
+      whatszampieri_stage_from_prematricula: {
+        Args: { p_status: string }
+        Returns: string
+      }
+      whatszampieri_sync_phone: {
+        Args: { p_phone: string }
+        Returns: undefined
       }
     }
     Enums: {
