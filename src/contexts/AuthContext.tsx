@@ -1,10 +1,9 @@
 import React, { createContext, useContext, useEffect, useState } from "react";
 import { User, Session } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
+import { allowedSetores, createPermissionRequestGuard, SETORES, type Setor } from "@/lib/auth-permissions";
 
-export type Setor = "eventos" | "produtos" | "portaria" | "matricula" | "rematricula";
-
-export const SETORES: Setor[] = ["eventos", "produtos", "portaria", "matricula", "rematricula"];
+export { SETORES, type Setor } from "@/lib/auth-permissions";
 
 interface AuthContextType {
   user: User | null;
@@ -26,12 +25,6 @@ const AuthContext = createContext<AuthContextType>({} as AuthContextType);
 
 export const useAuth = () => useContext(AuthContext);
 
-// Fixed admin emails
-const ADMIN_EMAILS = [
-  "secretaria@colegiozampieri.com.br",
-  "diretoria@colegiozampieri.com.br",
-];
-
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
@@ -46,7 +39,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setSetores([]);
   };
 
-  const checkRoles = async (userId: string) => {
+  const checkRoles = async (userId: string, isCurrent: () => boolean) => {
     try {
       const [adminRes, confRes, ...setorRes] = await Promise.all([
         supabase.rpc("has_role", { _user_id: userId, _role: "admin" }),
@@ -55,11 +48,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           supabase.rpc("has_setor" as any, { _user_id: userId, _setor: s })
         ),
       ]);
-      setIsAdmin(!!adminRes.data);
-      setIsConferente(!!confRes.data);
-      setSetores(SETORES.filter((_, i) => !!setorRes[i]?.data));
+      if (!isCurrent()) return;
+      setIsAdmin(adminRes.data === true && !adminRes.error);
+      setIsConferente(confRes.data === true && !confRes.error);
+      setSetores(allowedSetores(setorRes));
     } catch {
-      limparPerfis();
+      if (isCurrent()) limparPerfis();
+    } finally {
+      if (isCurrent()) setLoading(false);
     }
   };
 
@@ -67,38 +63,45 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
 
   useEffect(() => {
+    const requests = createPermissionRequestGuard();
+    let authEventReceived = false;
+    const applySession = (nextSession: Session | null) => {
+      const isCurrent = requests.begin();
+      setSession(nextSession);
+      setUser(nextSession?.user ?? null);
+      if (nextSession?.user) {
+        setLoading(true);
+        // Supabase calls must run outside the auth callback's lock.
+        setTimeout(() => {
+          if (isCurrent()) void checkRoles(nextSession.user.id, isCurrent);
+        }, 0);
+      } else {
+        limparPerfis();
+        setLoading(false);
+      }
+    };
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (event, session) => {
+      (event, session) => {
+        authEventReceived = true;
         if (event === 'TOKEN_REFRESHED' && !session) {
           console.warn('Token refresh failed, clearing stale session');
-          supabase.auth.signOut();
-          setSession(null);
-          setUser(null);
-          limparPerfis();
-          setLoading(false);
+          applySession(null);
+          setTimeout(() => void supabase.auth.signOut(), 0);
           return;
         }
-        setSession(session);
-        setUser(session?.user ?? null);
-        if (session?.user) {
-          setTimeout(() => checkRoles(session.user.id), 0);
-        } else {
-          limparPerfis();
-        }
-        setLoading(false);
+        applySession(session);
       }
     );
 
     supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session);
-      setUser(session?.user ?? null);
-      if (session?.user) {
-        checkRoles(session.user.id);
-      }
-      setLoading(false);
+      if (!authEventReceived) applySession(session);
     });
 
-    return () => subscription.unsubscribe();
+    return () => {
+      authEventReceived = true;
+      requests.invalidate();
+      subscription.unsubscribe();
+    };
   }, []);
 
   const signIn = async (email: string, password: string) => {
