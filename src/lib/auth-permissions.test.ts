@@ -1,3 +1,4 @@
+/// <reference types="node" />
 import { describe, test } from "node:test";
 import assert from "node:assert/strict";
 import { allowedSetores, createPermissionRequestGuard } from "./auth-permissions";
