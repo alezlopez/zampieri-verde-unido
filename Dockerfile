@@ -7,8 +7,8 @@ WORKDIR /app
 # Copia os arquivos de dependência
 COPY package*.json ./
 
-# Instala as dependências
-RUN npm install
+# Instala as dependências exatamente como no package-lock.json
+RUN npm ci --no-audit --no-fund
 
 # Copia o restante do código
 COPY . .
