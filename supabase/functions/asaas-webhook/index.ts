@@ -124,13 +124,15 @@ Deno.serve(async (req) => {
 
       const rowIds: number[] = (reg.row_ids ?? []).map(Number);
       const pagoAgora = newStatus === "pago";
-      const estornado = newStatus === "estornado" || newStatus === "cancelado";
+      // Só desfaz a baixa de um checkout que de fato pagou: PAYMENT_DELETED de um checkout
+      // abandonado não pode reabrir débitos quitados por outro checkout ou por baixa manual.
+      const estornado = (newStatus === "estornado" || newStatus === "cancelado") && reg.status === "pago";
 
       if (pagoAgora || estornado) {
         const valorTotal = Number(reg.valor_total ?? 0);
         const rateio = rowIds.length ? Number((valorTotal / rowIds.length).toFixed(2)) : 0;
 
-        await admin.from("devedores_2027").update(
+        let upd = admin.from("devedores_2027").update(
           pagoAgora
             ? {
               pago: true,
@@ -147,6 +149,8 @@ Deno.serve(async (req) => {
               forma_pagamento: null,
             },
         ).in("row_id", rowIds).eq("id_aluno", reg.id_aluno);
+        if (!pagoAgora) upd = upd.eq("asaas_checkout_id", reg.asaas_checkout_id);
+        await upd;
 
         await admin.from("renegociacao_2027_checkouts").update({
           status: pagoAgora ? "pago" : "cancelado",
