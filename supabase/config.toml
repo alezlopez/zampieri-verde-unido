@@ -53,3 +53,66 @@ verify_jwt = false
 
 [functions.matricula-followup]
 verify_jwt = false
+
+[functions.admin-usuarios]
+verify_jwt = false
+
+[functions.asaas-create-checkout]
+verify_jwt = false
+
+[functions.asaas-sync-payment]
+verify_jwt = false
+
+[functions.atualizar-taxa-manual]
+verify_jwt = false
+
+[functions.backfill-financeiro]
+verify_jwt = false
+
+[functions.backfill-produtos-financeiro]
+verify_jwt = false
+
+[functions.cancelar-ingresso]
+verify_jwt = false
+
+[functions.cancelar-pendentes]
+verify_jwt = false
+
+[functions.checkout-evento-combo]
+verify_jwt = false
+
+[functions.enviar-confirmacao-ingresso]
+verify_jwt = false
+
+[functions.matricula-admin]
+verify_jwt = false
+
+[functions.matricula-portal]
+verify_jwt = false
+
+[functions.produtos-create-checkout]
+verify_jwt = false
+
+[functions.relatorio-produtos]
+verify_jwt = false
+
+[functions.relatorio-vendas]
+verify_jwt = false
+
+[functions.rematricula-2027-admin-cancelar]
+verify_jwt = false
+
+[functions.rematricula-2027-email-conclusao]
+verify_jwt = false
+
+[functions.rematricula-2027-isentar]
+verify_jwt = false
+
+[functions.teste-webhook-template]
+verify_jwt = false
+
+[functions.whatsapp-diagnostico]
+verify_jwt = false
+
+[functions.zapsign-verificar-assinatura]
+verify_jwt = false
