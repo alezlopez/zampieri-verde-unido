@@ -49,7 +49,7 @@ jobs:
         run: |
           supabase migration list --remote
           supabase db push --remote --dry-run
-          supabase db push --remote
+          supabase db push --remote --yes
 
       - name: Edge functions
         env:
@@ -70,7 +70,7 @@ jobs:
 
           if [ "$todas" = "true" ]; then
             echo "Publicando todas as edge functions"
-            supabase functions deploy --project-ref "$PROJECT_REF"
+            supabase functions deploy --remote="$PROJECT_REF" --yes
             exit 0
           fi
 
@@ -82,6 +82,6 @@ jobs:
           for fn in $fns; do
             if [ -f "supabase/functions/$fn/index.ts" ]; then
               echo "Publicando $fn"
-              supabase functions deploy "$fn" --project-ref "$PROJECT_REF"
+              supabase functions deploy "$fn" --remote="$PROJECT_REF" --yes
             fi
           done
