@@ -47,9 +47,9 @@ jobs:
       # então um histórico divergente para o deploy em vez de reaplicar SQL.
       - name: Migrations
         run: |
-          supabase migration list
-          supabase db push --dry-run
-          supabase db push
+          supabase migration list --linked
+          supabase db push --linked --dry-run
+          supabase db push --linked
 
       - name: Edge functions
         env:
