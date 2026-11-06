@@ -36,9 +36,11 @@ jobs:
         with:
           fetch-depth: 0
 
+      # Versão fixa: atualizações da CLI já mudaram comandos e quebraram o deploy.
+      # Para atualizar, troque aqui e rode o workflow manualmente para conferir.
       - uses: supabase/setup-cli@v1
         with:
-          version: latest
+          version: 3.0.0
 
       - name: Vincular projeto
         run: supabase link --project-ref "$PROJECT_REF"
@@ -53,13 +55,16 @@ jobs:
 
       - name: Edge functions
         env:
+          EVENTO: ${{ github.event_name }}
           BEFORE: ${{ github.event.before }}
-          TODAS: ${{ github.event_name == 'workflow_dispatch' && inputs.todas_functions }}
+          TODAS: ${{ inputs.todas_functions }}
         run: |
           todas=false
-          if [ "$TODAS" = "true" ] || [ -z "$BEFORE" ] || ! git cat-file -e "$BEFORE^{commit}" 2>/dev/null; then
+          alteradas=""
+          if [ "$EVENTO" = "workflow_dispatch" ]; then
+            todas="$TODAS"
+          elif ! git cat-file -e "$BEFORE^{commit}" 2>/dev/null; then
             todas=true
-            alteradas=""
           else
             alteradas=$(git diff --name-only "$BEFORE" "$GITHUB_SHA" -- supabase/functions supabase/config.toml)
             # código compartilhado ou configuração (verify_jwt) afetam todas as functions
