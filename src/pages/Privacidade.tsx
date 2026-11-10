@@ -66,7 +66,7 @@ const Privacidade = () => {
               </ol>
 
               <p>
-                Além disso, usamos cookies quando você visita nosso portal para armazenar suas preferências pessoais quando navega na Internet. O Colégio compromete-se a colaborar com as autoridades.
+                Além disso, usamos cookies quando você visita nosso portal, tanto para armazenar suas preferências pessoais quanto para medir o alcance das nossas campanhas de divulgação, conforme as seções 2 e 3. O Colégio compromete-se a colaborar com as autoridades.
               </p>
 
               <p>A coleta destes dados ocorre quando VOCÊ insere as suas informações voluntariamente no Portal, via cadastro, bem como na interação com as ferramentas existentes de coleta de dados de navegação, frequência de acesso ou quando VOCÊ realiza contato direto por meio dos canais disponíveis via Portal.</p>
@@ -86,7 +86,7 @@ const Privacidade = () => {
                 <li>Alimentar o banco de dados do Colégio Zampieri</li>
               </ol>
 
-              <p>A base de dados formada por meio da coleta de dados no Portal é de propriedade e responsabilidade do Colégio Zampieri e não será compartilhada, vendida, cedida, transferida, informada ou alugada a terceiros.</p>
+              <p>A base de dados formada por meio da coleta de dados no Portal é de propriedade e responsabilidade do Colégio Zampieri e não será vendida ou alugada a terceiros. O compartilhamento de dados com terceiros ocorre somente nas hipóteses descritas na seção 3.</p>
 
               {/* Seção 2 - Dados sensíveis */}
               <h3 className="text-base md:text-lg font-serif font-semibold text-zampieri-green-dark">1.2 Dados sensíveis</h3>
@@ -114,8 +114,16 @@ const Privacidade = () => {
                 Cookies são pequenos arquivos de texto baixados automaticamente em seu dispositivo quando você acessa e navega por um site. Eles servem, basicamente, para que seja possível identificar dispositivos, atividades e preferências de usuários.
               </p>
               <p>
-                Os cookies do site são aqueles enviados ao computador ou dispositivo do usuário e administrador exclusivamente pelo site. As informações coletadas por meio destes cookies são utilizadas para melhorar e personalizar a experiência do usuário.
+                Utilizamos dois tipos de cookies:
               </p>
+              <ul className="list-disc pl-5 space-y-1">
+                <li>
+                  <strong>Cookies do próprio site</strong>, usados para manter sua sessão, lembrar suas preferências e melhorar a sua experiência de navegação.
+                </li>
+                <li>
+                  <strong>Cookies de medição de publicidade da Meta</strong> (Pixel da Meta, empresa responsável pelo Facebook e pelo Instagram), como os cookies <code>_fbp</code> e <code>_fbc</code>, que identificam o navegador e a origem da visita para medir o resultado das nossas campanhas, conforme a seção 3.1. Esses cookies não são utilizados nas áreas administrativas do site nem em páginas acessadas por links com códigos de acesso.
+                </li>
+              </ul>
               <p>
                 O usuário poderá se opor ao registro de cookies pelo site, bastando que desative esta opção no seu próprio navegador. A desativação dos cookies, no entanto, pode afetar a disponibilidade de algumas ferramentas e funcionalidades do site.
               </p>
@@ -125,6 +133,32 @@ const Privacidade = () => {
               <p>
                 O Colégio Zampieri não compartilha com terceiros, sem autorização expressa, dados sensíveis, como dados de saúde e frequência de seus alunos, exceto com os seus responsáveis legais. Informações que não permitem a identificação pessoal, especialmente dados navegacionais, poderão ser compartilhadas com terceiros para a emissão de relatórios.
               </p>
+              <h3 className="text-base md:text-lg font-serif font-semibold text-zampieri-green-dark">3.1 Meta (Facebook e Instagram)</h3>
+              <p>
+                Para divulgar o Colégio Zampieri e medir o resultado das nossas campanhas no Facebook e no Instagram, compartilhamos com a Meta Platforms os seguintes dados:
+              </p>
+              <ul className="list-disc pl-5 space-y-1">
+                <li>
+                  <strong>Durante a navegação:</strong> as páginas do site visitadas (sem códigos de acesso ou de identificação de alunos), o endereço IP, informações do navegador e do dispositivo e os identificadores dos cookies descritos na seção 2.
+                </li>
+                <li>
+                  <strong>No envio da pré-matrícula:</strong> o e-mail e o número de WhatsApp do responsável que preencheu o formulário, convertidos antes do envio em um código irreversível (criptografia SHA-256), e o segmento escolar de interesse (Educação Infantil, 1º ano, Ensino Fundamental I, Ensino Fundamental II ou Ensino Médio).
+                </li>
+              </ul>
+              <p>
+                Nenhum dado do aluno — como nome, data de nascimento, informações de saúde, histórico escolar ou documentos — é compartilhado com a Meta.
+              </p>
+              <p>
+                A Meta utiliza esses dados para associar a visita ou a pré-matrícula a uma conta do Facebook ou do Instagram, medir a eficácia dos anúncios e exibir anúncios do Colégio a pessoas com interesse semelhante, nos termos da{" "}
+                <a href="https://www.facebook.com/privacy/policy/" target="_blank" rel="noopener noreferrer" className="text-zampieri-green-dark underline">
+                  Política de Privacidade da Meta
+                </a>
+                .
+              </p>
+              <p>
+                Você pode se opor a esse compartilhamento bloqueando cookies de terceiros no seu navegador, ajustando as preferências de anúncios e de atividade fora das tecnologias da Meta na sua conta do Facebook ou do Instagram, ou solicitando a exclusão dos seus dados pelo contato indicado na seção 10.
+              </p>
+
               <p>
                 Os dados obtidos somente poderão ser acessados por profissionais devidamente autorizados pelo Colégio, respeitando os princípios de proporcionalidade e necessidade, relevância para os objetivos do Colégio, bem como o compromisso de confidencialidade e preservação da privacidade dos dados pessoais.
               </p>
@@ -177,7 +211,7 @@ const Privacidade = () => {
               {/* Seção 11 - Alterações */}
               <h2 className="text-lg md:text-xl font-bold text-zampieri-green-dark !mt-8">9. Alterações nesta política</h2>
               <p>
-                A presente versão desta Política de Privacidade foi atualizada pela última vez em: <strong>06/10/2021</strong>.
+                A presente versão desta Política de Privacidade foi atualizada pela última vez em: <strong>10/11/2026</strong>.
               </p>
               <p>
                 Reservamo-nos o direito de modificar, a qualquer momento, as presentes normas, especialmente para adaptá-las às eventuais alterações feitas em nosso site. Sempre que houver uma modificação, nossos usuários serão notificados acerca da mudança.
