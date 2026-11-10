@@ -2,6 +2,9 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
 import { corsHeaders } from "../_shared/cors.ts";
 import { notificar } from "../_shared/prematricula-mensagens.ts";
 import { telefoneE164 } from "../_shared/otp.ts";
+import { sendMetaLead } from "../_shared/metaCapi.ts";
+
+declare const EdgeRuntime: { waitUntil: (p: Promise<unknown>) => void } | undefined;
 
 const json = (body: unknown, status = 200) =>
   new Response(JSON.stringify(body), {
@@ -40,6 +43,17 @@ const SERIES = [
   "2ª série do Ensino Médio",
   "3ª série do Ensino Médio",
 ];
+
+// Mesmos segmentos do Lead disparado pelo pixel no formulário
+const segmentoDaSerie = (serie: string) => {
+  if (serie.startsWith("Infantil")) return "infantil";
+  if (serie.includes("Ensino Médio")) return "medio";
+  const ano = Number(serie.match(/^(\d)º ano/)?.[1]);
+  if (ano === 1) return "1ano";
+  if (ano >= 2 && ano <= 5) return "fund1";
+  if (ano >= 6 && ano <= 9) return "fund2";
+  return "";
+};
 
 /** Idade completa em 31/03 do ano de referência */
 const idadeEm31Marco = (nascIso: string, ano = ANO_LETIVO_REFERENCIA) => {
@@ -378,6 +392,19 @@ Deno.serve(async (req) => {
       curso: cursoTurma,
       turno,
     });
+
+    // Lead para a API de Conversões em segundo plano: falha do Meta não afeta a pré-matrícula
+    const envioMeta = sendMetaLead(req, {
+      eventId: txt(form.get("meta_event_id"), 100) || null,
+      email: respEmail,
+      telefone: respWhats,
+      fbp: txt(form.get("fbp"), 200) || null,
+      fbc: txt(form.get("fbc"), 500) || null,
+      pageUrl: txt(form.get("page_url"), 2000) || null,
+      contentName: listaEspera ? "lista-espera" : "pre-matricula",
+      segmento: segmentoDaSerie(serie),
+    }).catch((e) => console.error("meta capi Lead falhou:", (e as Error).message));
+    if (typeof EdgeRuntime !== "undefined") EdgeRuntime.waitUntil(envioMeta);
 
     return json({ ok: true, protocolo: inserido.protocolo, lista_espera: listaEspera });
   } catch (e) {
