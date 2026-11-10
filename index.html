@@ -21,28 +21,31 @@
     <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400;1,600&family=Lato:wght@300;400;700&display=swap" rel="stylesheet" />
       <!-- Meta Pixel Code -->
     <script>
-    !function(f,b,e,v,n,t,s)
-    {if(f.fbq)return;n=f.fbq=function(){n.callMethod?
-    n.callMethod.apply(n,arguments):n.queue.push(arguments)};
-    if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';
-    n.queue=[];t=b.createElement(e);t.async=!0;
-    t.src=v;s=b.getElementsByTagName(e)[0];
-    s.parentNode.insertBefore(t,s)}(window, document,'script',
-    'https://connect.facebook.net/en_US/fbevents.js');
-    // Páginas de admin e endereços com token ou código de aluno não vão para o Meta,
-    // porque o pixel envia a URL completa. MetaPixelPageView usa a mesma regra nas trocas de rota.
-    window.zampieriPixelPodeRastrear = function (loc) {
-      var rotaInterna = /(^|\/)(admin|followup)(\/|$)|^\/prematricula\/agenda|^\/comprovante\/|^\/eventos\/ingresso\/|^\/reset-password/i;
-      var params = new URLSearchParams(loc.search);
-      return !rotaInterna.test(loc.pathname) && !params.has('t') && !params.has('aluno') && !/token/i.test(loc.hash);
-    };
-    // O SPA dispara um PageView por rota (MetaPixelPageView); o pixel não deve rastrear
-    // a navegação sozinho nem descartar os PageViews seguintes ao primeiro.
-    fbq.disablePushState = true;
-    fbq.allowDuplicatePageViews = true;
-    fbq('set', 'autoConfig', false, '2622804238032555');
-    fbq('init', '2622804238032555');
-    if (window.zampieriPixelPodeRastrear(location)) fbq('track', 'PageView');
+    // Só o site oficial envia eventos: prévias (Lovable), testes locais e cópias ficam de fora.
+    if (/(^|\.)colegiozampieri\.com\.br$/.test(location.hostname)) {
+      !function(f,b,e,v,n,t,s)
+      {if(f.fbq)return;n=f.fbq=function(){n.callMethod?
+      n.callMethod.apply(n,arguments):n.queue.push(arguments)};
+      if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';
+      n.queue=[];t=b.createElement(e);t.async=!0;
+      t.src=v;s=b.getElementsByTagName(e)[0];
+      s.parentNode.insertBefore(t,s)}(window, document,'script',
+      'https://connect.facebook.net/en_US/fbevents.js');
+      // Páginas de admin e endereços com token ou código de aluno não vão para o Meta,
+      // porque o pixel envia a URL completa. MetaPixelPageView usa a mesma regra nas trocas de rota.
+      window.zampieriPixelPodeRastrear = function (loc) {
+        var rotaInterna = /(^|\/)(admin|followup)(\/|$)|^\/prematricula\/agenda|^\/comprovante\/|^\/eventos\/ingresso\/|^\/reset-password/i;
+        var params = new URLSearchParams(loc.search);
+        return !rotaInterna.test(loc.pathname) && !params.has('t') && !params.has('aluno') && !/token/i.test(loc.hash);
+      };
+      // O SPA dispara um PageView por rota (MetaPixelPageView); o pixel não deve rastrear
+      // a navegação sozinho nem descartar os PageViews seguintes ao primeiro.
+      fbq.disablePushState = true;
+      fbq.allowDuplicatePageViews = true;
+      fbq('set', 'autoConfig', false, '2622804238032555');
+      fbq('init', '2622804238032555');
+      if (window.zampieriPixelPodeRastrear(location)) fbq('track', 'PageView');
+    }
     </script>
     <!-- End Meta Pixel Code -->
   </head>
