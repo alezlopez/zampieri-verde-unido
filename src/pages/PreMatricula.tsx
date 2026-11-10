@@ -22,6 +22,17 @@ import {
 
 type Erros = Partial<Record<keyof PreMatriculaForm | "boletim", string>>;
 
+// Segmento enviado ao Meta no evento Lead, a partir da série escolhida
+const segmentoDaSerie = (serie: string) => {
+  if (serie.startsWith("Infantil")) return "infantil";
+  if (serie.includes("Ensino Médio")) return "medio";
+  const ano = Number(serie.match(/^(\d)º ano/)?.[1]);
+  if (ano === 1) return "1ano";
+  if (ano >= 2 && ano <= 5) return "fund1";
+  if (ano >= 6 && ano <= 9) return "fund2";
+  return "";
+};
+
 const obrigatoriosPorEtapa: Record<number, (keyof PreMatriculaForm)[]> = {
   0: ["resp_tipo", "resp_nome", "resp_email", "resp_cpf", "resp_whatsapp"],
   1: ["aluno_nome", "aluno_nascimento", "serie_pretendida", "turno_preferencia", "tipo_escola"],
@@ -273,6 +284,11 @@ const PreMatricula = () => {
   const enviar = async () => {
     setEnviando(true);
     try {
+      // Mesmo ID no Lead do pixel e no envio ao servidor, para o Meta deduplicar o evento
+      const eventId =
+        typeof crypto.randomUUID === "function"
+          ? crypto.randomUUID()
+          : `${Date.now()}-${Math.random().toString(36).slice(2)}`;
       const fd = new FormData();
       fd.append(
         "dados",
@@ -285,6 +301,7 @@ const PreMatricula = () => {
       );
       if (boletim) fd.append("boletim", boletim);
       if (laudo) fd.append("laudo", laudo);
+      fd.append("meta_event_id", eventId);
 
       const resp = await supabase.functions.invoke("prematricula-enviar", { body: fd });
       let data = resp.data;
@@ -317,6 +334,15 @@ const PreMatricula = () => {
       }
       if (error && !data) throw error;
       if (!data?.ok) throw new Error(data?.error || "falha");
+      window.fbq?.(
+        "track",
+        "Lead",
+        {
+          content_name: data.lista_espera ? "lista-espera" : "pre-matricula",
+          segmento: segmentoDaSerie(form.serie_pretendida),
+        },
+        { eventID: eventId },
+      );
       setProtocolo(data.protocolo as string);
     } catch (err) {
       console.error(err);
