@@ -48,6 +48,7 @@ import MatriculaFollowup from "./pages/MatriculaFollowup";
 import InformativoMatricula from "./pages/InformativoMatricula";
 import Renegociacao from "./pages/Renegociacao";
 import RenegociacaoAdmin from "./pages/RenegociacaoAdmin";
+import { MetaPixelPageView } from "./components/MetaPixelPageView";
 
 
 const queryClient = new QueryClient();
@@ -58,6 +59,7 @@ const App = () => (
       <Toaster />
       <Sonner />
       <BrowserRouter>
+        <MetaPixelPageView />
         <AuthProvider>
           <Routes>
             <Route path="/" element={<Index />} />
