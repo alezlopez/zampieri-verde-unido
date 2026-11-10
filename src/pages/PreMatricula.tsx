@@ -22,6 +22,9 @@ import {
 
 type Erros = Partial<Record<keyof PreMatriculaForm | "boletim", string>>;
 
+const getCookie = (n: string) =>
+  document.cookie.split("; ").find((c) => c.startsWith(n + "="))?.split("=")[1];
+
 // Segmento enviado ao Meta no evento Lead, a partir da série escolhida
 const segmentoDaSerie = (serie: string) => {
   if (serie.startsWith("Infantil")) return "infantil";
@@ -302,6 +305,12 @@ const PreMatricula = () => {
       if (boletim) fd.append("boletim", boletim);
       if (laudo) fd.append("laudo", laudo);
       fd.append("meta_event_id", eventId);
+      // Cookies do pixel e URL para a API de Conversões do Meta (só vão se existirem)
+      const fbp = getCookie("_fbp");
+      const fbc = getCookie("_fbc");
+      if (fbp) fd.append("fbp", fbp);
+      if (fbc) fd.append("fbc", fbc);
+      fd.append("page_url", window.location.href);
 
       const resp = await supabase.functions.invoke("prematricula-enviar", { body: fd });
       let data = resp.data;
