@@ -161,7 +161,8 @@ Deno.serve(async (req) => {
     if (regErr) throw regErr;
 
     const origin = safeOrigin(req, body?.origin);
-    const successUrl = `${origin}/renegociacao?pagamento=sucesso&aluno=${idAluno}`;
+    // Obrigado na rematrícula: quem quitou tudo já segue dali para a rematrícula 2027
+    const successUrl = `${origin}/rematricula2027?renegociacao=paga`;
 
     const checkout = await createCheckout({
       customer: customerId,

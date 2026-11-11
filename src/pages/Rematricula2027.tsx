@@ -21,6 +21,7 @@ import {
 } from "@/components/rematricula/types";
 import { brToIso, isValidCpf, isoToBr, maskCep, maskCpf, maskTelefone, onlyDigits, rematriculaLiberada } from "@/components/rematricula/utils";
 import { RematriculaEmBreve } from "@/components/rematricula/EmBreve";
+import { ObrigadoRenegociacao } from "@/components/renegociacao/ObrigadoRenegociacao";
 import { erroDaFunction, mensagemAmigavel } from "@/lib/mensagensErro";
 
 type Fase = "busca" | "bloqueado" | "canal" | "codigo" | "aluno" | "mae" | "pai" | "curso" | "sucesso";
@@ -89,6 +90,8 @@ const Rematricula2027 = () => {
   const [verificando, setVerificando] = useState(false);
 
   const aguardandoPagamento = new URLSearchParams(window.location.search).get("pagamento") === "sucesso";
+  // Retorno do pagamento de débitos (renegociação) pelo Asaas
+  const voltouDaRenegociacao = new URLSearchParams(window.location.search).get("renegociacao") === "paga";
 
   const carregarStatus = useCallback(
     async (idAluno: number, iso: string) => {
@@ -295,6 +298,7 @@ const Rematricula2027 = () => {
       </header>
 
       <main className="container mx-auto px-4 py-6 max-w-2xl">
+        {voltouDaRenegociacao && fase === "busca" && <ObrigadoRenegociacao />}
         {etapaAtual > 0 && (
           <div className="mb-5">
             <div className="flex items-center justify-between text-xs text-muted-foreground mb-2">
