@@ -3,6 +3,7 @@ import { Loader2, Mail, MessageCircle, ShieldCheck } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { AlunoResumo } from "./types";
+import { erroDaFunction, mensagemAmigavel } from "@/lib/mensagensErro";
 
 export interface CanalOtp {
   chave: string;
@@ -56,10 +57,13 @@ export const StepCanal = ({ aluno, onVoltar, onEnviado, finalidade = "login" }: 
     setEnviando(false);
     const res = data as { success?: boolean; error?: string } | null;
     if (error || !res?.success) {
+      const codigo = await erroDaFunction(error, data);
       setErro(
-        res?.error === "muitas_tentativas"
+        codigo === "muitas_tentativas"
           ? "Muitos códigos enviados. Aguarde alguns minutos e tente novamente."
-          : "Não conseguimos enviar o código agora. Tente outro canal ou fale com a secretaria.",
+          : codigo
+            ? mensagemAmigavel(codigo)
+            : "Não conseguimos enviar o código agora. Tente outro canal ou fale com a secretaria.",
       );
       return;
     }

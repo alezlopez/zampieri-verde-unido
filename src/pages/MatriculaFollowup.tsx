@@ -18,6 +18,7 @@ import { Switch } from "@/components/ui/switch";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "@/hooks/use-toast";
+import { erroDaFunction, mensagemAmigavel } from "@/lib/mensagensErro";
 
 type Etapa = "agendar" | "lembrete" | "faltou" | "documentos" | "contrato";
 
@@ -172,7 +173,11 @@ const MatriculaFollowup = () => {
     });
     setEnviando(null);
     if (error || (data as any)?.error || (data as any)?.ok === false) {
-      toast({ title: "Falha ao enviar a mensagem", variant: "destructive" });
+      toast({
+        title: "Falha ao enviar a mensagem",
+        description: mensagemAmigavel((await erroDaFunction(error, data)) || "falha_envio"),
+        variant: "destructive",
+      });
       return;
     }
     toast({ title: `Mensagem ${sequencia} enviada`, description: c.aluno_nome });

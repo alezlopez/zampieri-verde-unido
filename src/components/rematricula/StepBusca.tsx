@@ -6,6 +6,7 @@ import { Label } from "@/components/ui/label";
 import { supabase } from "@/integrations/supabase/client";
 import { maskCpf, maskTelefone, onlyDigits } from "./utils";
 import { AlunoResumo } from "./types";
+import { mensagemAmigavel } from "@/lib/mensagensErro";
 
 interface Props {
   onSelecionar: (aluno: AlunoResumo) => void;
@@ -51,7 +52,7 @@ export const StepBusca = ({ onSelecionar }: Props) => {
       setErro(
         msg.includes("muitas_tentativas")
           ? "Muitas consultas seguidas. Aguarde alguns minutos e tente novamente."
-          : "Não foi possível consultar agora. Tente novamente em instantes.",
+          : mensagemAmigavel(error),
       );
       return;
     }

@@ -16,6 +16,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Switch } from "@/components/ui/switch";
+import { erroDaFunction, mensagemAmigavel } from "@/lib/mensagensErro";
 
 interface Alteracao {
   campo: string;
@@ -516,7 +517,7 @@ const Rematricula2027Admin = () => {
     setSalvandoIsencao(false);
     const res = data as { ok?: boolean; mensagem?: string; concluida?: boolean } | null;
     if (error || !res?.ok) {
-      toast.error(res?.mensagem || "Não foi possível alterar a isenção.");
+      toast.error(res?.mensagem || mensagemAmigavel(await erroDaFunction(error, data)));
       return;
     }
     toast.success(
@@ -593,7 +594,7 @@ const Rematricula2027Admin = () => {
       | { ok?: boolean; estornado?: number; contrato_cancelado?: boolean; avisos?: string[]; error?: string }
       | null;
     if (error || !res?.ok) {
-      toast.error(res?.error === "forbidden" ? "Sem permissão." : "Não foi possível cancelar agora.");
+      toast.error(mensagemAmigavel(await erroDaFunction(error, data)));
       return;
     }
     const partes = [

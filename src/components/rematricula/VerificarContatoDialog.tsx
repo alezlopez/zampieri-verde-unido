@@ -11,6 +11,7 @@ import {
 } from "@/components/ui/dialog";
 import { supabase } from "@/integrations/supabase/client";
 import { mensagemErroOtp } from "./StepCodigo";
+import { erroDaFunction, mensagemAmigavel } from "@/lib/mensagensErro";
 
 interface Props {
   aberto: boolean;
@@ -59,14 +60,15 @@ export const VerificarContatoDialog = ({
     setLoading(false);
     const res = data as { success?: boolean; error?: string } | null;
     if (error || !res?.success) {
+      const codigo = await erroDaFunction(error, data);
       setErro(
-        res?.error === "destino_invalido"
+        codigo === "destino_invalido"
           ? canal === "whatsapp"
             ? "Telefone inválido. Confira o número com DDD."
             : "E-mail inválido. Confira o endereço."
-          : res?.error === "muitas_tentativas"
+          : codigo === "muitas_tentativas"
           ? "Muitos códigos enviados. Aguarde alguns minutos."
-          : "Não conseguimos enviar o código agora. Tente novamente.",
+          : mensagemAmigavel(codigo || "envio_falhou"),
       );
       return;
     }

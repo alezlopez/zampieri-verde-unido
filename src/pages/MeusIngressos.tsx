@@ -10,6 +10,7 @@ import { ArrowLeft, Ticket, LogOut, ExternalLink, Eye, Package, QrCode, CheckCir
 import { toast } from "sonner";
 import { EventosHeader } from "@/components/EventosHeader";
 import { Footer } from "@/components/Footer";
+import { mensagemDaFunction } from "@/lib/mensagensErro";
 
 interface IngressoComEvento {
   id: string;
@@ -111,7 +112,7 @@ const MeusIngressos = () => {
       window.open(url, "_blank");
       toast.success("Novo link de pagamento gerado");
     } catch (e: any) {
-      toast.error("Falha ao gerar novo link", { description: e.message || String(e) });
+      toast.error("Falha ao gerar novo link", { description: await mensagemDaFunction(e, null) });
     } finally {
       setRegenIngId(null);
     }
@@ -134,7 +135,7 @@ const MeusIngressos = () => {
       window.open(url, "_blank");
       toast.success("Novo link de pagamento gerado");
     } catch (e: any) {
-      toast.error("Falha ao gerar novo link", { description: e.message || String(e) });
+      toast.error("Falha ao gerar novo link", { description: await mensagemDaFunction(e, null) });
     } finally {
       setRegenPedId(null);
     }

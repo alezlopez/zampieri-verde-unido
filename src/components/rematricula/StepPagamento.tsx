@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { CreditCard, Copy, Loader2, Lock, QrCode, RefreshCw, CheckCircle2, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
+import { mensagemAmigavel } from "@/lib/mensagensErro";
 
 export interface StatusRematricula {
   contrato_assinado: boolean;
@@ -321,7 +322,7 @@ export const StepPagamento = ({
           : code === "ja_pago"
             ? "Esta rematrícula já consta como paga."
             : code
-              ? `Não foi possível abrir o pagamento: ${code}`
+              ? mensagemAmigavel(code)
               : "Não foi possível abrir o pagamento. Tente novamente em instantes.",
       );
       return;

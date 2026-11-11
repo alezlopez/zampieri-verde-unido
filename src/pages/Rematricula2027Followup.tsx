@@ -17,6 +17,7 @@ import { Switch } from "@/components/ui/switch";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "@/hooks/use-toast";
+import { erroDaFunction, mensagemAmigavel } from "@/lib/mensagensErro";
 
 interface EnvioFollowup {
   etapa: string;
@@ -259,7 +260,11 @@ const Rematricula2027Followup = () => {
     });
     setEnviando(null);
     if (error || (data as any)?.error) {
-      toast({ title: "Falha ao enviar a mensagem", variant: "destructive" });
+      toast({
+        title: "Falha ao enviar a mensagem",
+        description: mensagemAmigavel((await erroDaFunction(error, data)) || "falha_envio"),
+        variant: "destructive",
+      });
       return;
     }
     toast({ title: "Mensagem enviada", description: l.nome_aluno });
@@ -276,7 +281,7 @@ const Rematricula2027Followup = () => {
       _pausado: pausado,
     });
     if (error) {
-      toast({ title: "Não foi possível alterar o follow-up", variant: "destructive" });
+      toast({ title: "Não foi possível alterar o follow-up", description: mensagemAmigavel(error), variant: "destructive" });
       carregar();
     }
   };
@@ -290,7 +295,11 @@ const Rematricula2027Followup = () => {
     });
     setEnviando(null);
     if (error || (data as any)?.error) {
-      toast({ title: "Falha ao enviar a mensagem", variant: "destructive" });
+      toast({
+        title: "Falha ao enviar a mensagem",
+        description: mensagemAmigavel((await erroDaFunction(error, data)) || "falha_envio"),
+        variant: "destructive",
+      });
       return;
     }
     toast({ title: `Mensagem ${sequencia} enviada`, description: l.nome_aluno });

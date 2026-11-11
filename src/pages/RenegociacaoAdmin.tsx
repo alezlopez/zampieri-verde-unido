@@ -7,6 +7,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { brl, dataBr, type Debito } from "@/components/renegociacao/StepDebitos";
+import { mensagemDaFunction } from "@/lib/mensagensErro";
 
 interface LinhaAluno {
   id_aluno: number;
@@ -34,7 +35,7 @@ const RenegociacaoAdmin = () => {
     setLoading(true);
     const { data, error } = await supabase.rpc("renegociacao_2027_admin_listagem");
     if (error) {
-      toast({ title: "Erro ao carregar", description: error.message, variant: "destructive" });
+      toast({ title: "Erro ao carregar", description: await mensagemDaFunction(error, null), variant: "destructive" });
     } else {
       setLinhas((data as unknown as LinhaAluno[]) ?? []);
     }
@@ -57,7 +58,7 @@ const RenegociacaoAdmin = () => {
       p_id_aluno: idAluno,
     });
     if (error) {
-      toast({ title: "Erro", description: error.message, variant: "destructive" });
+      toast({ title: "Erro", description: await mensagemDaFunction(error, null), variant: "destructive" });
       setDebitos([]);
     } else {
       setDebitos(((data as unknown as Debito[]) ?? []).map((d) => ({ ...d, row_id: Number(d.row_id) })));
@@ -75,7 +76,7 @@ const RenegociacaoAdmin = () => {
         p_pago: true,
       });
       if (error) {
-        falhou = error.message;
+        falhou = await mensagemDaFunction(error, null);
         break;
       }
     }

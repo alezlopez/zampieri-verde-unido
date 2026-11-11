@@ -11,6 +11,8 @@ import { ArrowLeft, CheckCircle2, XCircle, AlertTriangle, ScanLine, Search } fro
 import { toast } from "@/hooks/use-toast";
 import { EventosHeader } from "@/components/EventosHeader";
 import { Footer } from "@/components/Footer";
+import { mensagemDaFunction } from "@/lib/mensagensErro";
+import { mensagemAmigavel } from "@/lib/mensagensErro";
 
 interface IngressoScanned {
   id: string;
@@ -106,7 +108,7 @@ const ScannerIngressos = () => {
       const { data, error: err } = await supabase.rpc("get_comprovante_produto", { p_qr_token: token });
       const row = Array.isArray(data) ? data[0] : data;
       if (err) {
-        setError(`Erro ao consultar produto: ${err.message}`);
+        setError(`Erro ao consultar produto: ${await mensagemDaFunction(err, null)}`);
         return;
       }
       if (!row) {
@@ -187,7 +189,7 @@ const ScannerIngressos = () => {
     setMarking(true);
     const { data, error: err } = await supabase.rpc("marcar_ingresso_utilizado", { p_id: ingresso.id });
     if (err) {
-      toast({ title: "Erro ao marcar ingresso", description: err.message, variant: "destructive" });
+      toast({ title: "Erro ao marcar ingresso", description: await mensagemDaFunction(err, null), variant: "destructive" });
       setMarking(false);
       return;
     }
@@ -205,7 +207,7 @@ const ScannerIngressos = () => {
       } else if (msg === "forbidden") {
         toast({ title: "Sem permissão", variant: "destructive" });
       } else {
-        toast({ title: "Não foi possível validar", description: msg ?? "", variant: "destructive" });
+        toast({ title: "Não foi possível validar", description: mensagemAmigavel(msg), variant: "destructive" });
       }
       setMarking(false);
       return;
@@ -222,7 +224,7 @@ const ScannerIngressos = () => {
     setMarking(true);
     const { data, error: err } = await supabase.rpc("validar_meia_ingresso", { p_id: ingresso.id });
     if (err) {
-      toast({ title: "Erro ao validar documento", description: err.message, variant: "destructive" });
+      toast({ title: "Erro ao validar documento", description: await mensagemDaFunction(err, null), variant: "destructive" });
       setMarking(false);
       return;
     }
@@ -233,7 +235,7 @@ const ScannerIngressos = () => {
         setIngresso({ ...ingresso, meia_validada_portaria: true, meia_validada_em: row?.meia_validada_em ?? ingresso.meia_validada_em, meia_validada_por: row?.meia_validada_por ?? ingresso.meia_validada_por });
         if (row?.meia_validada_por) fetchValidadores([row.meia_validada_por]);
       } else {
-        toast({ title: "Não foi possível validar", description: row?.message ?? "", variant: "destructive" });
+        toast({ title: "Não foi possível validar", description: await mensagemDaFunction(row, null) ?? "", variant: "destructive" });
       }
       setMarking(false);
       return;
@@ -249,7 +251,7 @@ const ScannerIngressos = () => {
     setMarking(true);
     const { data, error: err } = await supabase.rpc("marcar_produto_retirado", { p_qr_token: produto.qr_token });
     if (err) {
-      toast({ title: "Erro ao retirar produto", description: err.message, variant: "destructive" });
+      toast({ title: "Erro ao retirar produto", description: await mensagemDaFunction(err, null), variant: "destructive" });
       setMarking(false);
       return;
     }
@@ -259,7 +261,7 @@ const ScannerIngressos = () => {
         toast({ title: "Produto JÁ RETIRADO", description: row?.retirado_em ? new Date(row.retirado_em).toLocaleString("pt-BR") : "—", variant: "destructive" });
         setProduto({ ...produto, status: "retirado", retirado_em: row?.retirado_em ?? produto.retirado_em });
       } else {
-        toast({ title: "Não foi possível retirar", description: row?.message ?? "", variant: "destructive" });
+        toast({ title: "Não foi possível retirar", description: await mensagemDaFunction(row, null) ?? "", variant: "destructive" });
       }
       setMarking(false);
       return;

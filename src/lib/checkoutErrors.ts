@@ -1,3 +1,5 @@
+import { mensagemAmigavel } from "@/lib/mensagensErro";
+
 // Centraliza tradução de erros técnicos de checkout/reserva em mensagens amigáveis.
 
 export interface FriendlyError {
@@ -83,7 +85,7 @@ export function friendlyCheckoutError(err: unknown, fallbackTitle = "Não foi po
 
   return {
     title: fallbackTitle,
-    description: "Tente novamente. Se o problema persistir, contate o suporte.",
+    description: mensagemAmigavel(err),
   };
 }
 

@@ -12,6 +12,7 @@ import { ArrowLeft, Minus, Plus, Clock } from "lucide-react";
 import { EventosHeader } from "@/components/EventosHeader";
 import { Footer } from "@/components/Footer";
 import { friendlyCheckoutError } from "@/lib/checkoutErrors";
+import { erroDaFunction } from "@/lib/mensagensErro";
 
 interface Produto {
   id: string; nome: string; descricao: string | null; imagem_url: string | null;
@@ -177,7 +178,7 @@ const Produtos = () => {
     });
     setSubmitting(false);
     if (error || !data?.checkout_url) {
-      const fe = friendlyCheckoutError((data as any)?.error || error, "Erro ao gerar checkout");
+      const fe = friendlyCheckoutError((await erroDaFunction(error, data)) || error, "Erro ao gerar checkout");
       toast({ title: fe.title, description: fe.description, variant: "destructive" });
       return;
     }

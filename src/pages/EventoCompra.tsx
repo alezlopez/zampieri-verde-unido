@@ -16,6 +16,8 @@ import { Label } from "@/components/ui/label";
 import { EventosHeader } from "@/components/EventosHeader";
 import { Footer } from "@/components/Footer";
 import { friendlyCheckoutError } from "@/lib/checkoutErrors";
+import { mensagemDaFunction } from "@/lib/mensagensErro";
+import { erroDaFunction } from "@/lib/mensagensErro";
 
 const LATO = "'Lato', sans-serif";
 
@@ -515,7 +517,7 @@ const EventoCompra = () => {
           { onConflict: "user_id" }
         );
       if (upErr) {
-        toast({ title: "Não foi possível salvar seus dados", description: upErr.message, variant: "destructive" });
+        toast({ title: "Não foi possível salvar seus dados", description: await mensagemDaFunction(upErr, null), variant: "destructive" });
         return;
       }
       compradorExternoLocal = {
@@ -698,7 +700,7 @@ const EventoCompra = () => {
       );
 
       if (checkoutErr || (checkoutData as any)?.error) {
-        const fe = friendlyCheckoutError((checkoutData as any)?.error || checkoutErr);
+        const fe = friendlyCheckoutError((await erroDaFunction(checkoutErr, checkoutData)) || checkoutErr);
         toast({
           title: "Ingressos reservados, mas o checkout falhou",
           description: `${fe.description} Acesse "Meus Ingressos" para tentar novamente.`,

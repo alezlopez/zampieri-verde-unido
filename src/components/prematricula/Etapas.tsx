@@ -28,6 +28,7 @@ import {
   seriesPermitidas,
   turnosPorSerie,
 } from "./types";
+import { erroDaFunction, mensagemAmigavel } from "@/lib/mensagensErro";
 
 type Erros = Partial<Record<keyof PreMatriculaForm | "boletim", string>>;
 
@@ -86,9 +87,10 @@ const VerificacaoContato = ({
   const podeEnviar = isEmail ? isValidEmail(valor) : valor.length >= 10;
   const rotulo = isEmail ? "e-mail" : "WhatsApp";
 
-  const falhar = (code?: string) =>
+  const falhar = (code?: string | null) =>
     toast({
       title: ERROS_OTP[code || ""] || "Não foi possível continuar",
+      description: ERROS_OTP[code || ""] ? undefined : mensagemAmigavel(code),
       variant: "destructive",
     });
 
@@ -101,7 +103,7 @@ const VerificacaoContato = ({
       const { data, error } = await supabase.functions.invoke("prematricula-otp", {
         body: corpo({ acao: "enviar" }),
       });
-      if (error || !data?.ok) return falhar(data?.error);
+      if (error || !data?.ok) return falhar(await erroDaFunction(error, data));
       setEnviado(true);
       setEspera(60);
       toast({ title: `Código enviado por ${rotulo}` });
@@ -116,7 +118,7 @@ const VerificacaoContato = ({
       const { data, error } = await supabase.functions.invoke("prematricula-otp", {
         body: corpo({ acao: "validar", codigo: onlyDigits(codigo) }),
       });
-      if (error || !data?.ok) return falhar(data?.error);
+      if (error || !data?.ok) return falhar(await erroDaFunction(error, data));
       onVerificado(valor);
       toast({ title: isEmail ? "E-mail confirmado!" : "WhatsApp confirmado!" });
     } finally {

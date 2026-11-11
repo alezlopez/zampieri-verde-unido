@@ -15,6 +15,7 @@ import { useToast } from "@/hooks/use-toast";
 import GuiaEnvio from "@/components/matricula/GuiaEnvio";
 import FormDadosContrato from "@/components/matricula/FormDadosContrato";
 import RoadmapEtapas from "@/components/matricula/RoadmapEtapas";
+import { erroDaFunction, mensagemAmigavel } from "@/lib/mensagensErro";
 
 
 interface DocEstado {
@@ -106,7 +107,7 @@ const Matricula = () => {
         body: { acao, token, ...extra },
       });
       if (error || data?.error) {
-        return { erro: (data?.error as string) || "erro", data };
+        return { erro: (await erroDaFunction(error, data)) || "erro", data };
       }
       return { data };
     },
@@ -151,7 +152,7 @@ const Matricula = () => {
     if (e) {
       toast({
         title: "Não foi possível enviar",
-        description: e === "formato_invalido" ? "Envie PDF, JPG ou PNG." : "Tente novamente.",
+        description: e === "formato_invalido" ? "Envie PDF, JPG ou PNG." : mensagemAmigavel(e),
         variant: "destructive",
       });
       return;
@@ -185,7 +186,7 @@ const Matricula = () => {
     });
     setAcaoEmCurso(false);
     if (e || !data?.checkout_url) {
-      toast({ title: "Não foi possível abrir o pagamento", variant: "destructive" });
+      toast({ title: "Não foi possível abrir o pagamento", description: mensagemAmigavel(e || "checkout_sem_link"), variant: "destructive" });
       return;
     }
     window.location.href = data.checkout_url as string;
@@ -196,7 +197,7 @@ const Matricula = () => {
     const { erro: e, data } = await chamar("aguardando_escola", { tipo, marcar });
     setEnviando(null);
     if (e) {
-      toast({ title: "Não foi possível atualizar", variant: "destructive" });
+      toast({ title: "Não foi possível atualizar", description: mensagemAmigavel(e), variant: "destructive" });
       return;
     }
     setEstado(data as Estado);
@@ -232,7 +233,7 @@ const Matricula = () => {
             ? "Confira os campos obrigatórios."
             : e === "valores_pendentes"
               ? "A secretaria ainda não liberou os valores."
-              : "Tente novamente.",
+              : mensagemAmigavel(e),
         variant: "destructive",
       });
       return;
@@ -266,17 +267,25 @@ const Matricula = () => {
   }
 
   if (erro || !estado) {
+    // Só o link ruim é "link inválido"; falha de rede ou do servidor pede nova tentativa
+    const linkRuim = !erro || ["token_invalido", "nao_encontrado", "nao_encontrada", "not_found"].includes(erro);
     return (
       <div className="min-h-screen flex items-center justify-center bg-zampieri-cream/30 px-4">
         <div className="max-w-md w-full rounded-xl border border-border bg-white p-8 text-center">
           <AlertCircle className="w-10 h-10 mx-auto text-amber-500" />
           <h1 className="font-serif text-xl font-bold text-zampieri-green-dark mt-4">
-            Link inválido ou expirado
+            {linkRuim ? "Link inválido ou expirado" : "Não foi possível abrir a matrícula"}
           </h1>
           <p className="text-sm text-muted-foreground mt-2">
-            Use o link enviado por WhatsApp ou e-mail após a Entrevista Familiar. Se precisar de
-            ajuda, fale com a nossa equipe.
+            {linkRuim
+              ? "Use o link enviado por WhatsApp ou e-mail após a Entrevista Familiar. Se precisar de ajuda, fale com a nossa equipe."
+              : mensagemAmigavel(erro)}
           </p>
+          {!linkRuim && (
+            <Button variant="outline" className="mt-5 mr-2" onClick={() => window.location.reload()}>
+              Tentar novamente
+            </Button>
+          )}
           <Button asChild className="mt-5 bg-zampieri-green-dark hover:bg-zampieri-green">
             <a href="https://wa.me/5511939341503">Falar no WhatsApp</a>
           </Button>

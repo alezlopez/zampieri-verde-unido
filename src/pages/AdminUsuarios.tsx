@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useToast } from "@/hooks/use-toast";
+import { erroDaFunction, mensagemAmigavel } from "@/lib/mensagensErro";
 
 const PAPEIS: { valor: string; rotulo: string; descricao: string }[] = [
   { valor: "admin", rotulo: "Administrador", descricao: "Acesso total a todas as áreas" },
@@ -36,7 +37,12 @@ interface Usuario {
 
 const chamar = async (body: Record<string, unknown>) => {
   const { data, error } = await supabase.functions.invoke("admin-usuarios", { body });
-  if (error && !data) throw new Error("falha_rede");
+  if (error) {
+    // 4xx chega em error.context; sem corpo é falha de rede
+    const codigo = await erroDaFunction(error, data);
+    if (!codigo) throw error;
+    return { error: codigo } as { ok?: boolean; error?: string; usuarios?: Usuario[] };
+  }
   return data as { ok?: boolean; error?: string; usuarios?: Usuario[] };
 };
 
@@ -51,7 +57,7 @@ const AdminUsuarios = () => {
   const [novosPapeis, setNovosPapeis] = useState<string[]>([]);
 
   const falhar = (code?: string) =>
-    toast({ title: ERROS[code || ""] || "Não foi possível concluir", variant: "destructive" });
+    toast({ title: "Não foi possível concluir", description: ERROS[code || ""] || mensagemAmigavel(code), variant: "destructive" });
 
   const carregar = useCallback(async () => {
     setCarregando(true);

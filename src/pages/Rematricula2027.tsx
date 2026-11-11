@@ -21,6 +21,7 @@ import {
 } from "@/components/rematricula/types";
 import { brToIso, isValidCpf, isoToBr, maskCep, maskCpf, maskTelefone, onlyDigits, rematriculaLiberada } from "@/components/rematricula/utils";
 import { RematriculaEmBreve } from "@/components/rematricula/EmBreve";
+import { erroDaFunction, mensagemAmigavel } from "@/lib/mensagensErro";
 
 type Fase = "busca" | "bloqueado" | "canal" | "codigo" | "aluno" | "mae" | "pai" | "curso" | "sucesso";
 
@@ -208,9 +209,8 @@ const Rematricula2027 = () => {
     } | null;
 
     if (error || resultado?.success === false || !resultado?.sign_url) {
-      setErroContrato(
-        resultado?.detalhe || resultado?.error || "Não foi possível gerar o contrato agora. Tente novamente.",
-      );
+      const codigo = resultado?.detalhe || (await erroDaFunction(error, contrato));
+      setErroContrato(codigo ? mensagemAmigavel(codigo) : "Não foi possível gerar o contrato agora. Tente novamente.");
       return;
     }
 
@@ -266,7 +266,9 @@ const Rematricula2027 = () => {
           ? `CPF inválido em ${msg.split(":")[1]?.replace("cpf_", "").replace("_", " ") ?? "um dos campos"}. Confira os dados.`
           : msg.startsWith("email_invalido")
           ? `E-mail inválido em ${msg.split(":")[1]?.replace("email_", "").replace("_", " ") ?? "um dos campos"}. Confira os dados.`
-          : "Não foi possível salvar agora. Tente novamente em instantes."
+          : msg === "nao_autorizado"
+          ? "Não encontramos o aluno com essa data de nascimento. Volte e confira os dados."
+          : mensagemAmigavel(msg || error)
       );
       return;
     }

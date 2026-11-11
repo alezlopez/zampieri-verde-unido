@@ -15,6 +15,7 @@ import { EventosHeader } from "@/components/EventosHeader";
 import { Footer } from "@/components/Footer";
 import { TaxaManualDialog } from "@/components/TaxaManualDialog";
 import { CancelarIngressoDialog } from "@/components/CancelarIngressoDialog";
+import { mensagemDaFunction } from "@/lib/mensagensErro";
 
 type Linha = {
   id: string;
@@ -123,7 +124,7 @@ const ProdutosRelatorio = () => {
       if (error) throw error;
       setData(resp as Resposta);
     } catch (e: any) {
-      toast({ title: "Erro ao carregar relatório", description: e.message || String(e), variant: "destructive" });
+      toast({ title: "Erro ao carregar relatório", description: await mensagemDaFunction(e, null), variant: "destructive" });
     } finally {
       setLoading(false);
     }
@@ -146,7 +147,7 @@ const ProdutosRelatorio = () => {
       });
       fetchRelatorio();
     } catch (e: any) {
-      toast({ title: "Erro na sincronização", description: e.message || String(e), variant: "destructive" });
+      toast({ title: "Erro na sincronização", description: await mensagemDaFunction(e, null), variant: "destructive" });
     } finally {
       setBackfillLoading(false);
     }

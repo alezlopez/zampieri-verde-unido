@@ -6,6 +6,7 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { mensagemDaFunction } from "@/lib/mensagensErro";
 
 interface Regra {
   id: string;
@@ -65,7 +66,7 @@ const PreMatriculaAgenda = () => {
     if (r1.error || r2.error) {
       toast({
         title: "Erro ao carregar a agenda",
-        description: r1.error?.message || r2.error?.message,
+        description: await mensagemDaFunction(r1.error || r2.error, null),
         variant: "destructive",
       });
     }
@@ -103,7 +104,7 @@ const PreMatriculaAgenda = () => {
       .eq("id", id);
     setSalvando(null);
     if (error) {
-      toast({ title: "Não foi possível salvar", description: error.message, variant: "destructive" });
+      toast({ title: "Não foi possível salvar", description: await mensagemDaFunction(error, null), variant: "destructive" });
       return;
     }
     toast({ title: "Horários atualizados" });
@@ -126,7 +127,7 @@ const PreMatriculaAgenda = () => {
       .select("id, dia_semana, hora_inicio, hora_fim, duracao_min, capacidade, ativo");
     setSalvando(null);
     if (error) {
-      toast({ title: "Não foi possível criar", description: error.message, variant: "destructive" });
+      toast({ title: "Não foi possível criar", description: await mensagemDaFunction(error, null), variant: "destructive" });
       return;
     }
     setRegras((prev) => [...prev, ...((data as Regra[]) || [])].sort((a, b) => a.dia_semana - b.dia_semana));
@@ -137,7 +138,7 @@ const PreMatriculaAgenda = () => {
     if (!ids.length) return;
     const { error } = await supabase.from("prematricula_agenda_regras").delete().in("id", ids);
     if (error) {
-      toast({ title: "Não foi possível remover", description: error.message, variant: "destructive" });
+      toast({ title: "Não foi possível remover", description: await mensagemDaFunction(error, null), variant: "destructive" });
       return;
     }
     setRegras((prev) => prev.filter((r) => !ids.includes(r.id)));
@@ -153,7 +154,7 @@ const PreMatriculaAgenda = () => {
       .single();
     setSalvando(null);
     if (error) {
-      toast({ title: "Não foi possível bloquear", description: error.message, variant: "destructive" });
+      toast({ title: "Não foi possível bloquear", description: await mensagemDaFunction(error, null), variant: "destructive" });
       return;
     }
     setBloqueios((prev) => [...prev, data as Bloqueio].sort((a, b) => a.data.localeCompare(b.data)));
@@ -164,7 +165,7 @@ const PreMatriculaAgenda = () => {
   const removerBloqueio = async (id: string) => {
     const { error } = await supabase.from("prematricula_agenda_bloqueios").delete().eq("id", id);
     if (error) {
-      toast({ title: "Não foi possível remover", description: error.message, variant: "destructive" });
+      toast({ title: "Não foi possível remover", description: await mensagemDaFunction(error, null), variant: "destructive" });
       return;
     }
     setBloqueios((prev) => prev.filter((b) => b.id !== id));

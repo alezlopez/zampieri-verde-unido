@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { brToIso, isValidCpf, isValidEmail, onlyDigits } from "@/components/rematricula/utils";
+import { mensagemAmigavel } from "@/lib/mensagensErro";
 import {
   EtapaAluno,
   EtapaConsentimento,
@@ -164,7 +165,7 @@ const PreMatricula = () => {
       console.error(err);
       toast({
         title: "Não foi possível enviar o arquivo",
-        description: "Use PDF, JPG ou PNG de até 10 MB e tente novamente.",
+        description: mensagemAmigavel(err),
         variant: "destructive",
       });
     } finally {
@@ -357,7 +358,7 @@ const PreMatricula = () => {
       console.error(err);
       toast({
         title: "Não foi possível enviar",
-        description: "Confira os dados e os arquivos anexados e tente novamente.",
+        description: mensagemAmigavel(err),
         variant: "destructive",
       });
     } finally {

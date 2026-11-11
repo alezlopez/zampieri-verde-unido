@@ -14,6 +14,7 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
 import { EventosHeader } from "@/components/EventosHeader";
 import { Footer } from "@/components/Footer";
+import { mensagemDaFunction } from "@/lib/mensagensErro";
 
 interface Evento {
   id: string;
@@ -369,7 +370,7 @@ const EventosAdmin = () => {
     const path = `eventos/${Date.now()}_${Math.random().toString(36).slice(2)}.${ext}`;
     const { error } = await supabase.storage.from("zampieri").upload(path, file);
     if (error) {
-      toast({ title: "Erro no upload da imagem", description: error.message, variant: "destructive" });
+      toast({ title: "Erro no upload da imagem", description: await mensagemDaFunction(error, null), variant: "destructive" });
       return null;
     }
     const { data } = supabase.storage.from("zampieri").getPublicUrl(path);
@@ -439,7 +440,7 @@ const EventosAdmin = () => {
     if (editingId) {
       const { error } = await supabase.from("eventos").update(payload).eq("id", editingId);
       if (error) {
-        toast({ title: "Erro ao atualizar", description: error.message, variant: "destructive" });
+        toast({ title: "Erro ao atualizar", description: await mensagemDaFunction(error, null), variant: "destructive" });
         setUploading(false);
         return;
       }
@@ -456,7 +457,7 @@ const EventosAdmin = () => {
     } else {
       const { data: novo, error } = await supabase.from("eventos").insert(payload).select("id").single();
       if (error) {
-        toast({ title: "Erro ao criar", description: error.message, variant: "destructive" });
+        toast({ title: "Erro ao criar", description: await mensagemDaFunction(error, null), variant: "destructive" });
         setUploading(false);
         return;
       }
@@ -489,7 +490,7 @@ const EventosAdmin = () => {
 
         const { error: vErr } = await supabase.from("evento_produtos").insert(rows);
         if (vErr) {
-          toast({ title: "Aviso: produtos não vinculados", description: vErr.message, variant: "destructive" });
+          toast({ title: "Aviso: produtos não vinculados", description: await mensagemDaFunction(vErr, null), variant: "destructive" });
         }
       }
     }
@@ -636,7 +637,7 @@ const EventosAdmin = () => {
 
       const { error } = await supabase.from("ingressos").insert(records);
       if (error) {
-        toast({ title: "Erro ao criar ingressos", description: error.message, variant: "destructive" });
+        toast({ title: "Erro ao criar ingressos", description: await mensagemDaFunction(error, null), variant: "destructive" });
         setSavingManual(false);
         return;
       }
@@ -648,7 +649,7 @@ const EventosAdmin = () => {
       if (ings) setIngressos(ings);
       fetchEventos();
     } catch (err: any) {
-      toast({ title: "Erro inesperado", description: err.message, variant: "destructive" });
+      toast({ title: "Erro inesperado", description: await mensagemDaFunction(err, null), variant: "destructive" });
     } finally {
       setSavingManual(false);
     }
@@ -669,7 +670,7 @@ const EventosAdmin = () => {
       toast({ title: "Checkout gerado", description: data?.checkout_url ? "Link disponível." : "Concluído." });
       await refreshIngressos(eventoId);
     } catch (e: any) {
-      toast({ title: "Erro ao gerar checkout", description: e.message || String(e), variant: "destructive" });
+      toast({ title: "Erro ao gerar checkout", description: await mensagemDaFunction(e, null), variant: "destructive" });
     } finally {
       setSyncingId(null);
     }
@@ -686,7 +687,7 @@ const EventosAdmin = () => {
       await refreshIngressos(eventoId);
       fetchEventos();
     } catch (e: any) {
-      toast({ title: "Erro ao reconciliar", description: e.message || String(e), variant: "destructive" });
+      toast({ title: "Erro ao reconciliar", description: await mensagemDaFunction(e, null), variant: "destructive" });
     } finally {
       setSyncingId(null);
     }

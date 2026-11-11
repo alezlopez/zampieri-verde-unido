@@ -4,6 +4,7 @@ import { CalendarCheck, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { erroDaFunction, mensagemAmigavel } from "@/lib/mensagensErro";
 
 interface Slot {
   inicio: string;
@@ -63,7 +64,12 @@ const PreMatriculaAgendar = () => {
       });
       setCarregando(false);
       if (error || !data?.ok) {
-        setErro("Não encontramos este agendamento. Confira o link recebido.");
+        const codigo = await erroDaFunction(error, data);
+        setErro(
+          !codigo || codigo === "token_invalido"
+            ? "Não encontramos este agendamento. Confira o link recebido."
+            : mensagemAmigavel(codigo),
+        );
         return;
       }
       setInfo(data as Info);
@@ -88,9 +94,11 @@ const PreMatriculaAgendar = () => {
     });
     setSalvando(false);
     if (error || !data?.ok) {
+      const codigo = await erroDaFunction(error, data);
+      const ocupado = codigo === "horario_indisponivel";
       toast({
-        title: "Horário indisponível",
-        description: "Esse horário acabou de ser preenchido. Escolha outro, por favor.",
+        title: ocupado ? "Horário indisponível" : "Não foi possível agendar",
+        description: ocupado ? "Esse horário acabou de ser preenchido. Escolha outro, por favor." : mensagemAmigavel(codigo || error),
         variant: "destructive",
       });
       const { data: novo } = await supabase.functions.invoke("prematricula-agenda", {

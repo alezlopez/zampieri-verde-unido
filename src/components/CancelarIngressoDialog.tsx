@@ -6,6 +6,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { Loader2, AlertTriangle } from "lucide-react";
+import { mensagemDaFunction } from "@/lib/mensagensErro";
 
 interface Props {
   open: boolean;
@@ -58,7 +59,7 @@ export const CancelarIngressoDialog = ({ open, onOpenChange, tipo, id, resumo, o
       setConfirmando(false);
       onDone?.();
     } catch (e: any) {
-      toast({ title: "Erro ao cancelar", description: e.message || String(e), variant: "destructive" });
+      toast({ title: "Erro ao cancelar", description: await mensagemDaFunction(e, null), variant: "destructive" });
     } finally {
       setLoading(false);
     }

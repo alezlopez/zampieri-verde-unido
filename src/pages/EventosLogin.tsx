@@ -10,6 +10,7 @@ import { Eye, EyeOff, ArrowLeft, MailWarning } from "lucide-react";
 import { EventosHeader } from "@/components/EventosHeader";
 import { Footer } from "@/components/Footer";
 import { validatePasswordStrength, translatePasswordError, PASSWORD_REQUIREMENTS_TEXT } from "@/lib/passwordValidation";
+import { erroDaFunction, mensagemAmigavel } from "@/lib/mensagensErro";
 
 const maskEmail = (email: string): string => {
   const [local, domain] = email.split("@");
@@ -83,7 +84,7 @@ const EventosLogin = () => {
           toast({ title: "Aguarde um momento", description: "Tente reenviar em alguns instantes.", variant: "destructive" });
           setResendCooldown(60);
         } else {
-          toast({ title: "Erro ao reenviar", description: error.message, variant: "destructive" });
+          toast({ title: "Não foi possível reenviar", description: mensagemAmigavel(error), variant: "destructive" });
         }
       } else {
         toast({
@@ -108,7 +109,11 @@ const EventosLogin = () => {
       if (!isAdminLogin && forgotCpf) {
         const { data, error } = await supabase.rpc("find_email_by_cpf", { p_cpf: forgotCpf.replace(/\D/g, "") });
         if (error || !data || data.length === 0) {
-          toast({ title: "CPF não encontrado", description: "Verifique se o CPF está cadastrado na escola.", variant: "destructive" });
+          toast({
+            title: "CPF não encontrado",
+            description: "Use o CPF do pai, da mãe ou do responsável cadastrado na escola (não o do aluno).",
+            variant: "destructive",
+          });
           setLoading(false);
           return;
         }
@@ -128,7 +133,7 @@ const EventosLogin = () => {
       });
 
       if (error) {
-        toast({ title: "Erro", description: error.message, variant: "destructive" });
+        toast({ title: "Não foi possível enviar o link", description: mensagemAmigavel(error), variant: "destructive" });
       } else {
         toast({ title: "E-mail enviado!", description: `Link de redefinição enviado para ${masked}` });
         setIsForgotPassword(false);
@@ -149,7 +154,7 @@ const EventosLogin = () => {
       if (isAdminLogin) {
         const { error } = await signIn(adminEmail, password);
         if (error) {
-          toast({ title: "Erro no login", description: error.message, variant: "destructive" });
+          toast({ title: "Não foi possível entrar", description: mensagemAmigavel(error), variant: "destructive" });
         } else {
           toast({ title: "Login realizado com sucesso!" });
           // Se o usuário for apenas conferente (não admin), envia direto ao scanner
@@ -185,8 +190,9 @@ const EventosLogin = () => {
             // CPF não está em alunos_26 → oferece cadastro externo
             setShowExternoForm(true);
             toast({
-              title: "CPF não encontrado entre alunos",
-              description: "Crie uma conta como comprador externo para participar dos eventos abertos ao público.",
+              title: "CPF não encontrado entre os responsáveis",
+              description:
+                "Se você é pai, mãe ou responsável de aluno, use o seu CPF (não o do aluno). Se não é da escola, crie uma conta de comprador externo abaixo.",
             });
           } else if (msg.includes("already registered") || msg.includes("user already") || msg.includes("já cadastrado")) {
             const { data } = await supabase.rpc("find_email_by_cpf", { p_cpf: cpf.replace(/\D/g, "") });
@@ -196,7 +202,7 @@ const EventosLogin = () => {
               toast({ title: "Conta já existe", description: "Faça login ou recupere sua senha.", variant: "destructive" });
             }
           } else {
-            toast({ title: "Erro no cadastro", description: error.message, variant: "destructive" });
+            toast({ title: "Não foi possível cadastrar", description: mensagemAmigavel(error, "cpf"), variant: "destructive" });
           }
         } else if (needsConfirmation) {
           const masked = email ? maskEmail(email) : "seu e-mail";
@@ -224,7 +230,7 @@ const EventosLogin = () => {
             if (ctxRow?.origem === "externo" && ctxRow.email) {
               const r = await signIn(ctxRow.email, password);
               if (r.error) {
-                toast({ title: "Erro no login", description: r.error.message, variant: "destructive" });
+                toast({ title: "Não foi possível entrar", description: mensagemAmigavel(r.error, "cpf"), variant: "destructive" });
               } else {
                 toast({ title: "Login realizado!" });
                 navigate("/eventos");
@@ -232,12 +238,13 @@ const EventosLogin = () => {
             } else {
               setShowExternoForm(true);
               toast({
-                title: "CPF não cadastrado",
-                description: "Crie uma conta como comprador externo abaixo.",
+                title: "CPF não encontrado entre os responsáveis",
+                description:
+                  "Se você é pai, mãe ou responsável de aluno, use o seu CPF (não o do aluno). Se não é da escola, crie uma conta de comprador externo abaixo.",
               });
             }
           } else {
-            toast({ title: "Erro no login", description: error.message, variant: "destructive" });
+            toast({ title: "Não foi possível entrar", description: mensagemAmigavel(error, "cpf"), variant: "destructive" });
           }
         } else {
           toast({ title: "Login realizado com sucesso!" });
@@ -275,12 +282,12 @@ const EventosLogin = () => {
         },
       });
       if (error || (data && (data as any).error)) {
-        const msg = (data as any)?.error || error?.message || "Falha ao criar conta";
+        const msg = (await erroDaFunction(error, data)) || mensagemAmigavel(error);
         const friendlyPw = translatePasswordError(msg);
         if (friendlyPw) {
           toast({ title: "Senha não atende aos requisitos", description: friendlyPw, variant: "destructive" });
         } else {
-          toast({ title: "Erro no cadastro", description: msg, variant: "destructive" });
+          toast({ title: "Não foi possível cadastrar", description: mensagemAmigavel(msg), variant: "destructive" });
         }
         return;
       }
@@ -294,7 +301,7 @@ const EventosLogin = () => {
         navigate("/eventos");
       }
     } catch (err: any) {
-      toast({ title: "Erro", description: err.message || "Falha inesperada", variant: "destructive" });
+      toast({ title: "Não foi possível criar a conta", description: mensagemAmigavel(err), variant: "destructive" });
     } finally {
       setLoading(false);
     }

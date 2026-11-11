@@ -6,6 +6,7 @@ import { Label } from "@/components/ui/label";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { Loader2 } from "lucide-react";
+import { mensagemDaFunction } from "@/lib/mensagensErro";
 
 interface Props {
   open: boolean;
@@ -48,7 +49,7 @@ export const TaxaManualDialog = ({
       onSaved?.();
       onOpenChange(false);
     } catch (e: any) {
-      toast({ title: "Erro", description: e.message || "Não foi possível salvar", variant: "destructive" });
+      toast({ title: "Erro", description: await mensagemDaFunction(e, null), variant: "destructive" });
     } finally {
       setLoading(false);
     }

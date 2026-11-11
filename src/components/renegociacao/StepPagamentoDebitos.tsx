@@ -10,6 +10,7 @@ import {
 } from "@/components/ui/select";
 import { supabase } from "@/integrations/supabase/client";
 import { brl, Debito } from "./StepDebitos";
+import { erroDaFunction, mensagemAmigavel } from "@/lib/mensagensErro";
 
 type Forma = "pix" | "cartao_avista" | "cartao_parcelado";
 
@@ -54,11 +55,8 @@ export const StepPagamentoDebitos = ({
     const res = data as { checkout_url?: string; error?: string } | null;
     if (error || !res?.checkout_url) {
       setLoading(false);
-      setErro(
-        res?.error === "debitos_ja_pagos"
-          ? "Estes débitos já constam como pagos. Atualize a página."
-          : "Não foi possível gerar o pagamento agora. Tente novamente em instantes.",
-      );
+      const codigo = await erroDaFunction(error, data);
+      setErro(codigo ? mensagemAmigavel(codigo) : "Não foi possível gerar o pagamento agora. Tente novamente em instantes.");
       return;
     }
     window.location.href = res.checkout_url;

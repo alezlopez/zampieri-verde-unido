@@ -9,6 +9,7 @@ import { Eye, EyeOff, ArrowLeft, CheckCircle } from "lucide-react";
 import { EventosHeader } from "@/components/EventosHeader";
 import { Footer } from "@/components/Footer";
 import { validatePasswordStrength, translatePasswordError, PASSWORD_REQUIREMENTS_TEXT } from "@/lib/passwordValidation";
+import { mensagemAmigavel } from "@/lib/mensagensErro";
 
 const ResetPassword = () => {
   const [password, setPassword] = useState("");
@@ -57,7 +58,7 @@ const ResetPassword = () => {
         const friendlyPw = translatePasswordError(error.message);
         toast({
           title: friendlyPw ? "Senha não atende aos requisitos" : "Erro",
-          description: friendlyPw || error.message,
+          description: friendlyPw || mensagemAmigavel(error),
           variant: "destructive",
         });
       } else {

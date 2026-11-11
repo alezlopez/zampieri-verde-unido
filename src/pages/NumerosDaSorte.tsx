@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { supabase } from "@/integrations/supabase/client";
 import { maskCpf, maskTelefone, maskDataBr, brToIso, onlyDigits } from "@/components/rematricula/utils";
+import { mensagemAmigavel } from "@/lib/mensagensErro";
 
 type Tipo = "telefone" | "cpf";
 
@@ -64,7 +65,7 @@ const NumerosDaSorte = () => {
       setErro(
         msg.includes("muitas_tentativas")
           ? "Muitas consultas seguidas. Aguarde alguns minutos e tente novamente."
-          : "Não foi possível consultar agora. Tente novamente em instantes.",
+          : mensagemAmigavel(error),
       );
       return;
     }

@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
+import { mensagemAmigavel } from "@/lib/mensagensErro";
 
 const maskEmail = (email: string): string => {
   const [local, domain] = email.split("@");
@@ -48,7 +49,7 @@ const AdminLogin = () => {
     try {
       const { error } = await signIn(email.trim(), password);
       if (error) {
-        toast({ title: "Erro no login", description: error.message, variant: "destructive" });
+        toast({ title: "Não foi possível entrar", description: mensagemAmigavel(error), variant: "destructive" });
         return;
       }
       const { data: { user: authed } } = await supabase.auth.getUser();
@@ -99,7 +100,7 @@ const AdminLogin = () => {
     });
     setLoading(false);
     if (error) {
-      toast({ title: "Erro", description: error.message, variant: "destructive" });
+      toast({ title: "Não foi possível enviar o link", description: mensagemAmigavel(error), variant: "destructive" });
     } else {
       toast({
         title: "E-mail enviado!",

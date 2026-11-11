@@ -13,6 +13,7 @@ import { useToast } from "@/hooks/use-toast";
 import { ArrowLeft, Plus, Pencil, Trash2, Package, Layers } from "lucide-react";
 import { EventosHeader } from "@/components/EventosHeader";
 import { Footer } from "@/components/Footer";
+import { mensagemDaFunction } from "@/lib/mensagensErro";
 
 interface Produto {
   id: string;
@@ -95,7 +96,7 @@ const ProdutosAdmin = () => {
     const { error } = editing.id
       ? await supabase.from("produtos").update(payload).eq("id", editing.id)
       : await supabase.from("produtos").insert(payload);
-    if (error) { toast({ title: "Erro ao salvar", description: error.message, variant: "destructive" }); return; }
+    if (error) { toast({ title: "Erro ao salvar", description: await mensagemDaFunction(error, null), variant: "destructive" }); return; }
     toast({ title: "Salvo!" });
     setEditing(null);
     loadAll();
@@ -104,7 +105,7 @@ const ProdutosAdmin = () => {
   const removeProduto = async (id: string) => {
     if (!confirm("Excluir produto e todas as variações?")) return;
     const { error } = await supabase.from("produtos").delete().eq("id", id);
-    if (error) { toast({ title: "Erro", description: error.message, variant: "destructive" }); return; }
+    if (error) { toast({ title: "Erro", description: await mensagemDaFunction(error, null), variant: "destructive" }); return; }
     loadAll();
   };
 
@@ -125,7 +126,7 @@ const ProdutosAdmin = () => {
     const { error } = editingVar.id
       ? await supabase.from("produto_variacoes").update(payload).eq("id", editingVar.id)
       : await supabase.from("produto_variacoes").insert(payload);
-    if (error) { toast({ title: "Erro ao salvar variação", description: error.message, variant: "destructive" }); return; }
+    if (error) { toast({ title: "Erro ao salvar variação", description: await mensagemDaFunction(error, null), variant: "destructive" }); return; }
     setEditingVar(null);
     loadAll();
   };
@@ -133,7 +134,7 @@ const ProdutosAdmin = () => {
   const removeVariacao = async (id: string) => {
     if (!confirm("Excluir variação?")) return;
     const { error } = await supabase.from("produto_variacoes").delete().eq("id", id);
-    if (error) { toast({ title: "Erro", description: error.message, variant: "destructive" }); return; }
+    if (error) { toast({ title: "Erro", description: await mensagemDaFunction(error, null), variant: "destructive" }); return; }
     loadAll();
   };
 

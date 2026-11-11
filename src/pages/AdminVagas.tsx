@@ -14,6 +14,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
+import { mensagemDaFunction } from "@/lib/mensagensErro";
 
 interface Vaga {
   id: string;
@@ -61,7 +62,7 @@ const AdminVagas = () => {
     setCarregando(true);
     const { data, error } = await supabase.rpc("rematricula_2027_admin_vagas" as any);
     if (error) {
-      toast({ title: "Não foi possível carregar as vagas", description: error.message, variant: "destructive" });
+      toast({ title: "Não foi possível carregar as vagas", description: await mensagemDaFunction(error, null), variant: "destructive" });
       setCarregando(false);
       return;
     }
@@ -161,7 +162,7 @@ const AdminVagas = () => {
       .eq("id", v.id);
     setSalvando(null);
     if (error) {
-      toast({ title: "Não foi possível salvar", description: error.message, variant: "destructive" });
+      toast({ title: "Não foi possível salvar", description: await mensagemDaFunction(error, null), variant: "destructive" });
       return;
     }
     toast({ title: "Vagas atualizadas" });
@@ -175,7 +176,7 @@ const AdminVagas = () => {
     const { error } = await supabase.from("vagas_2027").delete().eq("id", v.id);
     setSalvando(null);
     if (error) {
-      toast({ title: "Não foi possível remover", description: error.message, variant: "destructive" });
+      toast({ title: "Não foi possível remover", description: await mensagemDaFunction(error, null), variant: "destructive" });
       return;
     }
     toast({ title: "Turma removida" });
@@ -203,7 +204,7 @@ const AdminVagas = () => {
       .insert({ curso_2027: curso, turno: novoTurno, max_vagas: max, ativo: true });
     setCriando(false);
     if (error) {
-      toast({ title: "Não foi possível criar", description: error.message, variant: "destructive" });
+      toast({ title: "Não foi possível criar", description: await mensagemDaFunction(error, null), variant: "destructive" });
       return;
     }
     toast({ title: "Turma criada" });

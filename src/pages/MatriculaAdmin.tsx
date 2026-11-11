@@ -20,6 +20,7 @@ import {
 } from "@/components/ui/select";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { erroDaFunction, mensagemAmigavel } from "@/lib/mensagensErro";
 
 interface Doc {
   tipo: string;
@@ -262,7 +263,7 @@ const MatriculaAdmin = () => {
     const { data, error } = await supabase.functions.invoke("matricula-admin", {
       body: { acao, ...extra },
     });
-    if (error || data?.error) return { erro: (data?.error as string) || "erro", data };
+    if (error || data?.error) return { erro: (await erroDaFunction(error, data)) || "erro", data };
     return { data };
   };
 
@@ -413,7 +414,7 @@ const MatriculaAdmin = () => {
     const { erro } = await chamar(acao, { id: aberta.id, ...extra });
     setAcaoEmCurso(false);
     if (erro) {
-      toast({ title: "Não foi possível concluir", description: erro, variant: "destructive" });
+      toast({ title: "Não foi possível concluir", description: mensagemAmigavel(erro), variant: "destructive" });
       return;
     }
     toast({ title: "Pronto!" });
@@ -427,7 +428,7 @@ const MatriculaAdmin = () => {
     const { erro } = await chamar(valor ? "conferir" : "desconferir", { id: m.id });
     setAcaoEmCurso(false);
     if (erro) {
-      toast({ title: "Não foi possível concluir", description: erro, variant: "destructive" });
+      toast({ title: "Não foi possível concluir", description: mensagemAmigavel(erro), variant: "destructive" });
       return;
     }
     carregar();

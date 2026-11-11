@@ -23,6 +23,7 @@ import { useToast } from "@/hooks/use-toast";
 import { isoToBr, maskCpf, maskTelefone } from "@/components/rematricula/utils";
 import { STATUS_LABEL, descontosPorSerie } from "@/components/prematricula/types";
 import { MOTIVOS, acharMotivo } from "@/components/prematricula/motivos";
+import { erroDaFunction, mensagemAmigavel } from "@/lib/mensagensErro";
 
 interface Prematricula {
   id: string;
@@ -166,7 +167,11 @@ const PreMatriculaAdmin = () => {
     });
     setFilaEmCurso(null);
     if (error || !data?.ok) {
-      toast({ title: "Não foi possível concluir", variant: "destructive" });
+      toast({
+        title: "Não foi possível concluir",
+        description: mensagemAmigavel(await erroDaFunction(error, data)),
+        variant: "destructive",
+      });
       return;
     }
     toast({
@@ -226,7 +231,7 @@ const PreMatriculaAdmin = () => {
     if (error || !data?.ok) {
       toast({
         title: "Não foi possível concluir",
-        description: "Tente novamente em instantes.",
+        description: mensagemAmigavel(await erroDaFunction(error, data)),
         variant: "destructive",
       });
       return;
@@ -249,7 +254,11 @@ const PreMatriculaAdmin = () => {
     });
     setAcaoEmCurso(false);
     if (error || !data?.ok) {
-      toast({ title: "Não foi possível carregar os horários", variant: "destructive" });
+      toast({
+        title: "Não foi possível carregar os horários",
+        description: mensagemAmigavel(await erroDaFunction(error, data)),
+        variant: "destructive",
+      });
       return;
     }
     setSlots((data.slots as { inicio: string; texto: string }[]) ?? []);
@@ -273,7 +282,12 @@ const PreMatriculaAdmin = () => {
       body: { acao: "arquivo_url", id: aberta.id, campo },
     });
     if (error || !data?.url) {
-      toast({ title: "Arquivo indisponível", variant: "destructive" });
+      const codigo = await erroDaFunction(error, data);
+      toast({
+        title: "Arquivo indisponível",
+        description: codigo ? mensagemAmigavel(codigo) : "O arquivo não foi encontrado.",
+        variant: "destructive",
+      });
       return;
     }
     window.open(data.url as string, "_blank", "noopener");
