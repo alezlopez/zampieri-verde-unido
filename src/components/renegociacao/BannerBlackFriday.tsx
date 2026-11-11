@@ -2,7 +2,7 @@ import { ArrowDown } from "lucide-react";
 
 // Último instante em que o banner aparece (horário de Brasília). Depois disso ele some sozinho.
 // O desconto em si vem dos valores importados em devedores_2027, não desta data.
-export const FIM_BLACK_FRIDAY = new Date("2026-11-30T23:59:59-03:00");
+export const FIM_BLACK_FRIDAY = new Date("2026-11-27T23:59:59-03:00");
 
 export const blackFridayAtiva = (agora = new Date()) => agora <= FIM_BLACK_FRIDAY;
 
