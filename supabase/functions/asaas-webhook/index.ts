@@ -4,6 +4,9 @@ import { recomputeIngressosFinancials } from "../_shared/financeiro.ts";
 import { getCheckout } from "../_shared/asaas.ts";
 import { notificar } from "../_shared/prematricula-mensagens.ts";
 import { enviarTemplateWebhook } from "../_shared/whatsapp-webhook.ts";
+import { avisarFinanceiroRenegociacaoPaga } from "../_shared/renegociacao-email.ts";
+
+declare const EdgeRuntime: { waitUntil: (p: Promise<unknown>) => void } | undefined;
 
 const STATUS_MAP: Record<string, string> = {
   PAYMENT_CONFIRMED: "pago",
@@ -152,12 +155,29 @@ Deno.serve(async (req) => {
         if (!pagoAgora) upd = upd.eq("asaas_checkout_id", reg.asaas_checkout_id);
         await upd;
 
-        await admin.from("renegociacao_2027_checkouts").update({
-          status: pagoAgora ? "pago" : "cancelado",
-          asaas_payment_id: installmentId || paymentId,
-        }).eq("id", reg.id);
+        // Troca condicional: só a primeira confirmação muda o status, então o aviso ao
+        // financeiro sai uma vez mesmo com PAYMENT_CONFIRMED/RECEIVED e parcelas repetidos.
+        let primeiraConfirmacao = false;
+        if (pagoAgora) {
+          const { data: virou } = await admin.from("renegociacao_2027_checkouts").update({
+            status: "pago",
+            asaas_payment_id: installmentId || paymentId,
+          }).eq("id", reg.id).neq("status", "pago").select("id");
+          primeiraConfirmacao = (virou?.length ?? 0) > 0;
+        } else {
+          await admin.from("renegociacao_2027_checkouts").update({
+            status: "cancelado",
+            asaas_payment_id: installmentId || paymentId,
+          }).eq("id", reg.id);
+        }
 
         await admin.rpc("renegociacao_2027_recalcular_liberacao", { p_id_aluno: reg.id_aluno });
+
+        if (primeiraConfirmacao) {
+          const aviso = avisarFinanceiroRenegociacaoPaga(admin, reg, installmentId || paymentId)
+            .catch((e) => console.error("aviso renegociação paga falhou:", (e as Error).message));
+          if (typeof EdgeRuntime !== "undefined") EdgeRuntime.waitUntil(aviso);
+        }
       }
 
       return new Response(JSON.stringify({ ok: true, renegociacao: reg.id, status: newStatus }), {
