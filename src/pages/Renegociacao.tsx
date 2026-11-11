@@ -198,7 +198,8 @@ const Renegociacao = () => {
                   Débitos quitados!
                 </h2>
                 <p className="text-sm text-muted-foreground mt-1">
-                  Sua rematrícula 2027 está liberada. Você já pode continuar o processo.
+                  Sua rematrícula 2027 está liberada. Os débitos pagos aqui não incluem a rematrícula: conclua e
+                  pague a rematrícula em colegiozampieri.com.br/rematricula2027.
                 </p>
               </div>
               <Button asChild className="bg-zampieri-green-dark hover:bg-zampieri-green w-full sm:w-auto">

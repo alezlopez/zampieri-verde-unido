@@ -3,6 +3,7 @@ import { AlertTriangle, Loader2, ReceiptText } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { supabase } from "@/integrations/supabase/client";
+import { AvisoRematricula } from "@/components/renegociacao/AvisoRematricula";
 
 export interface Debito {
   row_id: number;
@@ -92,6 +93,8 @@ export const StepDebitos = ({
           </p>
         </div>
       </div>
+
+      <AvisoRematricula />
 
       {abertos.length > 0 && (
         <div className="flex items-center justify-between">

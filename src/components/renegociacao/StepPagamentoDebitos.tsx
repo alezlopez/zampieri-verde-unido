@@ -11,6 +11,7 @@ import {
 import { supabase } from "@/integrations/supabase/client";
 import { brl, Debito, descontoPct, valorAtualizado } from "./StepDebitos";
 import { erroDaFunction, mensagemAmigavel } from "@/lib/mensagensErro";
+import { AvisoRematricula } from "@/components/renegociacao/AvisoRematricula";
 
 type Forma = "pix" | "cartao_avista" | "cartao_parcelado";
 
@@ -126,6 +127,8 @@ export const StepPagamentoDebitos = ({
           </Select>
         </div>
       )}
+
+      <AvisoRematricula />
 
       {erro && <p className="text-sm text-destructive">{erro}</p>}
 
