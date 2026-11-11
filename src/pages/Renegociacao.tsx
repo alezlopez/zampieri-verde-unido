@@ -16,6 +16,7 @@ import {
   type Debito,
 } from "@/components/renegociacao/StepDebitos";
 import { StepPagamentoDebitos } from "@/components/renegociacao/StepPagamentoDebitos";
+import { BannerBlackFriday, blackFridayAtiva } from "@/components/renegociacao/BannerBlackFriday";
 
 type Fase = "busca" | "canal" | "codigo" | "debitos" | "pagamento" | "processando" | "quitado";
 
@@ -96,6 +97,7 @@ const Renegociacao = () => {
       </header>
 
       <main className="container mx-auto px-4 py-6 max-w-2xl">
+        {fase === "busca" && blackFridayAtiva() && <BannerBlackFriday />}
         <section className="bg-white rounded-xl border border-border p-5 md:p-6 shadow-sm">
           {fase === "busca" && (
             <StepBusca
