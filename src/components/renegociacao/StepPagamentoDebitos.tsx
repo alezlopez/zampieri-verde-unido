@@ -9,7 +9,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { supabase } from "@/integrations/supabase/client";
-import { brl, Debito } from "./StepDebitos";
+import { brl, Debito, descontoPct, valorAtualizado } from "./StepDebitos";
 import { erroDaFunction, mensagemAmigavel } from "@/lib/mensagensErro";
 
 type Forma = "pix" | "cartao_avista" | "cartao_parcelado";
@@ -37,6 +37,8 @@ export const StepPagamentoDebitos = ({
   const escolhidos = debitos.filter((d) => selecionados.includes(d.row_id) && !d.pago);
   const totalAvista = escolhidos.reduce((a, d) => a + Number(d.valor_a_vista || 0), 0);
   const totalParcelado = escolhidos.reduce((a, d) => a + Number(d.valor_parcelado || 0), 0);
+  const totalAtualizado = escolhidos.reduce((a, d) => a + valorAtualizado(d), 0);
+  const desconto = (v: number) => (descontoPct(v, totalAtualizado) > 0 ? ` · ${descontoPct(v, totalAtualizado)}% de desconto` : "");
   const n = Number(parcelas);
 
   const pagar = async () => {
@@ -63,12 +65,12 @@ export const StepPagamentoDebitos = ({
   };
 
   const opcoes: { id: Forma; titulo: string; valor: string; icone: typeof QrCode }[] = [
-    { id: "pix", titulo: "PIX à vista", valor: brl(totalAvista), icone: QrCode },
-    { id: "cartao_avista", titulo: "Cartão à vista", valor: brl(totalAvista), icone: CreditCard },
+    { id: "pix", titulo: "PIX à vista", valor: `${brl(totalAvista)}${desconto(totalAvista)}`, icone: QrCode },
+    { id: "cartao_avista", titulo: "Cartão à vista", valor: `${brl(totalAvista)}${desconto(totalAvista)}`, icone: CreditCard },
     {
       id: "cartao_parcelado",
-      titulo: "Cartão parcelado",
-      valor: `${n}x de ${brl(totalParcelado / n)} (${brl(totalParcelado)})`,
+      titulo: "Cartão parcelado em até 12x",
+      valor: `${n}x de ${brl(totalParcelado / n)} (${brl(totalParcelado)}${desconto(totalParcelado)})`,
       icone: CreditCard,
     },
   ];
@@ -78,7 +80,7 @@ export const StepPagamentoDebitos = ({
       <div>
         <h2 className="font-serif text-xl font-bold text-zampieri-green-dark">Forma de pagamento</h2>
         <p className="text-sm text-muted-foreground mt-1">
-          {escolhidos.length} mensalidade(s) selecionada(s).
+          {escolhidos.length} mensalidade(s) selecionada(s) · débito atualizado {brl(totalAtualizado)}
         </p>
       </div>
 

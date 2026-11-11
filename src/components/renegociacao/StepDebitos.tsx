@@ -13,12 +13,21 @@ export interface Debito {
   multa: number | null;
   valor_a_vista: number | null;
   valor_parcelado: number | null;
+  valor_atualizado: number | null;
   pago: boolean;
   pago_em: string | null;
 }
 
 export const brl = (v: number | null | undefined) =>
   (Number(v) || 0).toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
+
+/** Débito atualizado (principal + juros + multa) */
+export const valorAtualizado = (d: Debito) =>
+  Number(d.valor_atualizado ?? Number(d.valor_principal || 0) + Number(d.juros || 0) + Number(d.multa || 0));
+
+/** Desconto de uma oferta sobre o débito atualizado, em % inteiro */
+export const descontoPct = (oferta: number, atualizado: number) =>
+  atualizado > 0 && oferta < atualizado ? Math.round((1 - oferta / atualizado) * 100) : 0;
 
 export const dataBr = (iso: string | null) => {
   if (!iso) return "-";
@@ -48,6 +57,9 @@ export const StepDebitos = ({
   const abertos = useMemo(() => debitos.filter((d) => !d.pago), [debitos]);
   const pagos = useMemo(() => debitos.filter((d) => d.pago), [debitos]);
 
+  const totalAtualizado = abertos
+    .filter((d) => selecionados.includes(d.row_id))
+    .reduce((acc, d) => acc + valorAtualizado(d), 0);
   const totalAvista = abertos
     .filter((d) => selecionados.includes(d.row_id))
     .reduce((acc, d) => acc + Number(d.valor_a_vista || 0), 0);
@@ -114,11 +126,14 @@ export const StepDebitos = ({
                   <span className="text-sm font-semibold text-zampieri-green-dark">
                     {d.evento || "Mensalidade"} • venc. {dataBr(d.vencimento)}
                   </span>
-                  <span className="text-sm font-bold text-foreground">{brl(d.valor_a_vista)}</span>
+                  <span className="text-sm font-bold text-foreground">{brl(valorAtualizado(d))}</span>
                 </span>
                 <span className="block text-xs text-muted-foreground mt-1">
-                  Principal {brl(d.valor_principal)} + juros {brl(d.juros)} + multa {brl(d.multa)} ·
-                  parcelado {brl(d.valor_parcelado)}
+                  Débito atualizado: principal {brl(d.valor_principal)} + juros {brl(d.juros)} + multa{" "}
+                  {brl(d.multa)}
+                </span>
+                <span className="block text-xs text-zampieri-green-dark mt-1">
+                  À vista {brl(d.valor_a_vista)} · parcelado {brl(d.valor_parcelado)}
                 </span>
               </span>
             </button>
@@ -154,11 +169,21 @@ export const StepDebitos = ({
 
       <div className="rounded-lg border border-border p-4 space-y-1">
         <div className="flex justify-between text-sm">
-          <span className="text-muted-foreground">Total à vista (PIX ou cartão)</span>
+          <span className="text-muted-foreground">Débito atualizado</span>
+          <span className="font-medium text-foreground">{brl(totalAtualizado)}</span>
+        </div>
+        <div className="flex justify-between text-sm">
+          <span className="text-muted-foreground">
+            À vista no PIX ou cartão
+            {descontoPct(totalAvista, totalAtualizado) > 0 && ` (${descontoPct(totalAvista, totalAtualizado)}% de desconto)`}
+          </span>
           <span className="font-bold text-zampieri-green-dark">{brl(totalAvista)}</span>
         </div>
         <div className="flex justify-between text-sm">
-          <span className="text-muted-foreground">Total parcelado no cartão</span>
+          <span className="text-muted-foreground">
+            Parcelado em até 12x no cartão
+            {descontoPct(totalParcelado, totalAtualizado) > 0 && ` (${descontoPct(totalParcelado, totalAtualizado)}% de desconto)`}
+          </span>
           <span className="font-medium text-foreground">{brl(totalParcelado)}</span>
         </div>
       </div>

@@ -204,7 +204,8 @@ const RenegociacaoAdmin = () => {
                                   {d.evento || "Mensalidade"} · venc. {dataBr(d.vencimento)}
                                 </span>
                                 <span className="block text-xs text-muted-foreground">
-                                  à vista {brl(d.valor_a_vista)} · parcelado {brl(d.valor_parcelado)}
+                                  atualizado {brl(d.valor_atualizado)} · à vista {brl(d.valor_a_vista)} · parcelado{" "}
+                                  {brl(d.valor_parcelado)}
                                 </span>
                               </span>
                               <span
