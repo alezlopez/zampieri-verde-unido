@@ -15,6 +15,7 @@ import {
   ShoppingBag,
   ShieldCheck,
   Users,
+  Images,
 } from "lucide-react";
 import { useAuth, Setor } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
@@ -143,6 +144,20 @@ const blocos: Bloco[] = [
         descricao: "Pedidos, retiradas e conciliação financeira.",
         href: "/eventos/admin/produtos/relatorio",
         icone: BarChart3,
+      },
+    ],
+  },
+  {
+    titulo: "Fotos",
+    subtitulo: "Álbuns de fotos e vídeos dos eventos",
+    setor: "fotos",
+    icone: Images,
+    itens: [
+      {
+        titulo: "Álbuns de fotos",
+        descricao: "Criar álbuns, enviar fotos e vídeos do Instagram.",
+        href: "/fotos/admin",
+        icone: Images,
       },
     ],
   },

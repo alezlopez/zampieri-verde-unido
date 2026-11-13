@@ -49,6 +49,9 @@ import InformativoMatricula from "./pages/InformativoMatricula";
 import Renegociacao from "./pages/Renegociacao";
 import RenegociacaoAdmin from "./pages/RenegociacaoAdmin";
 import { MetaPixelPageView } from "./components/MetaPixelPageView";
+import Fotos from "./pages/Fotos";
+import FotosAlbum from "./pages/FotosAlbum";
+import FotosAdmin from "./pages/FotosAdmin";
 
 
 const queryClient = new QueryClient();
@@ -110,6 +113,9 @@ const App = () => (
 
 
 
+            <Route path="/fotos" element={<Fotos />} />
+            <Route path="/fotos/admin" element={<RequireAdmin setor="fotos"><FotosAdmin /></RequireAdmin>} />
+            <Route path="/fotos/:slug" element={<FotosAlbum />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>

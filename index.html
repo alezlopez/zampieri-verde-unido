@@ -33,7 +33,7 @@
       // Páginas de admin e endereços com token ou código de aluno não vão para o Meta,
       // porque o pixel envia a URL completa. MetaPixelPageView usa a mesma regra nas trocas de rota.
       window.zampieriPixelPodeRastrear = function (loc) {
-        var rotaInterna = /(^|\/)(admin|followup)(\/|$)|^\/prematricula\/agenda|^\/comprovante\/|^\/eventos\/ingresso\/|^\/reset-password/i;
+        var rotaInterna = /(^|\/)(admin|followup)(\/|$)|^\/prematricula\/agenda|^\/comprovante\/|^\/eventos\/ingresso\/|^\/reset-password|^\/fotos(\/|$)/i;
         var params = new URLSearchParams(loc.search);
         return !rotaInterna.test(loc.pathname) && !params.has('t') && !params.has('aluno') && !/token/i.test(loc.hash);
       };

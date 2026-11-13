@@ -14,6 +14,7 @@ const PAPEIS = [
   "eventos",
   "portaria",
   "produtos",
+  "fotos",
   "conferente",
 ] as const;
 

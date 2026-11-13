@@ -1,4 +1,4 @@
-export const SETORES = ["eventos", "produtos", "portaria", "matricula", "rematricula"] as const;
+export const SETORES = ["eventos", "produtos", "portaria", "matricula", "rematricula", "fotos"] as const;
 export type Setor = (typeof SETORES)[number];
 
 // A newer session invalidates every outstanding permission response.

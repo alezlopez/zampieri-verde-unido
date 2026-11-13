@@ -14,6 +14,7 @@ const PAPEIS: { valor: string; rotulo: string; descricao: string }[] = [
   { valor: "rematricula", rotulo: "Rematrícula", descricao: "Rematrículas 2027 e follow-up" },
   { valor: "eventos", rotulo: "Eventos", descricao: "Eventos, ingressos e relatórios" },
   { valor: "produtos", rotulo: "Produtos", descricao: "Catálogo, estoque e pedidos" },
+  { valor: "fotos", rotulo: "Fotos", descricao: "Álbuns de fotos dos eventos" },
   { valor: "portaria", rotulo: "Portaria", descricao: "Scanner de ingressos e retiradas" },
   { valor: "conferente", rotulo: "Conferente", descricao: "Somente conferência na portaria" },
 ];
