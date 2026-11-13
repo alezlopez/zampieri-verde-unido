@@ -312,6 +312,9 @@ Deno.serve(async (req) => {
         observacoes_saude: txt(d.observacoes_saude, 1000) || null,
         consentimento_veracidade: true,
         consentimento_privacidade: true,
+        utm_source: txt(form.get("utm_source"), 200) || null,
+        utm_campaign: txt(form.get("utm_campaign"), 200) || null,
+        utm_content: txt(form.get("utm_content"), 200) || null,
       })
       .select("id, protocolo")
       .single();

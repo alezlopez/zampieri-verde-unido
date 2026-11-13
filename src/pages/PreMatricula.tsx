@@ -5,6 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { brToIso, isValidCpf, isValidEmail, onlyDigits } from "@/components/rematricula/utils";
 import { mensagemAmigavel } from "@/lib/mensagensErro";
+import { utmsGuardadas } from "@/lib/utm";
 import {
   EtapaAluno,
   EtapaConsentimento,
@@ -312,6 +313,8 @@ const PreMatricula = () => {
       if (fbp) fd.append("fbp", fbp);
       if (fbc) fd.append("fbc", fbc);
       fd.append("page_url", window.location.href);
+      // Campanha de origem, guardada quando a pessoa chegou ao site
+      for (const [campo, valor] of Object.entries(utmsGuardadas())) if (valor) fd.append(campo, valor);
 
       const resp = await supabase.functions.invoke("prematricula-enviar", { body: fd });
       let data = resp.data;
