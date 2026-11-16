@@ -1,10 +1,10 @@
 import { useEffect, useMemo, useState } from "react";
-import fotoOntem from "@/assets/foto_ontem.jpg.asset.json";
-import fotoHoje from "@/assets/foto_hoje.jpg.asset.json";
-import fotoPlayground from "@/assets/foto_playground.jpg.asset.json";
-import fotoLab from "@/assets/foto_lab.jpg.asset.json";
-import fotoRecreio from "@/assets/foto_recreio.jpg.asset.json";
-import fotoLanche from "@/assets/foto_lanche.jpg.asset.json";
+import fotoOntem from "@/assets/foto_ontem.jpg";
+import fotoHoje from "@/assets/foto_hoje.jpg";
+import fotoPlayground from "@/assets/foto_playground.jpg";
+import fotoLab from "@/assets/foto_lab.jpg";
+import fotoRecreio from "@/assets/foto_recreio.jpg";
+import fotoLanche from "@/assets/foto_lanche.jpg";
 
 const LOGO =
   "https://lzdhrtcugqnqmyapgmbs.supabase.co/storage/v1/object/public/zampieri/fotos/Logotipo.png";
@@ -12,12 +12,12 @@ const LOGO =
 const CTA = "https://colegiozampieri.com.br/prematricula";
 
 const FOTOS = {
-  ontem: fotoOntem.url,
-  hoje: fotoHoje.url,
-  playground: fotoPlayground.url,
-  lab: fotoLab.url,
-  recreio: fotoRecreio.url,
-  lanche: fotoLanche.url,
+  ontem: fotoOntem,
+  hoje: fotoHoje,
+  playground: fotoPlayground,
+  lab: fotoLab,
+  recreio: fotoRecreio,
+  lanche: fotoLanche,
 };
 
 
