@@ -2,7 +2,7 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
 import { corsHeaders } from "../_shared/cors.ts";
 import { notificar } from "../_shared/prematricula-mensagens.ts";
 import { telefoneE164 } from "../_shared/otp.ts";
-import { sendMetaLead } from "../_shared/metaCapi.ts";
+import { sendMetaEvent } from "../_shared/metaCapi.ts";
 
 declare const EdgeRuntime: { waitUntil: (p: Promise<unknown>) => void } | undefined;
 
@@ -396,8 +396,9 @@ Deno.serve(async (req) => {
       turno,
     });
 
-    // Lead para a API de Conversões em segundo plano: falha do Meta não afeta a pré-matrícula
-    const envioMeta = sendMetaLead(req, {
+    // Pré-matrícula completa = CompleteRegistration (o Lead agora é o formulário curto da
+    // página /informativomatricula). Em segundo plano: falha do Meta não afeta a pré-matrícula.
+    const envioMeta = sendMetaEvent(req, "CompleteRegistration", {
       eventId: txt(form.get("meta_event_id"), 100) || null,
       email: respEmail,
       telefone: respWhats,
@@ -406,7 +407,7 @@ Deno.serve(async (req) => {
       pageUrl: txt(form.get("page_url"), 2000) || null,
       contentName: listaEspera ? "lista-espera" : "pre-matricula",
       segmento: segmentoDaSerie(serie),
-    }).catch((e) => console.error("meta capi Lead falhou:", (e as Error).message));
+    }).catch((e) => console.error("meta capi CompleteRegistration falhou:", (e as Error).message));
     if (typeof EdgeRuntime !== "undefined") EdgeRuntime.waitUntil(envioMeta);
 
     return json({ ok: true, protocolo: inserido.protocolo, lista_espera: listaEspera });

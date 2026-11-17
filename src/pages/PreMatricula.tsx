@@ -349,7 +349,7 @@ const PreMatricula = () => {
       if (!data?.ok) throw new Error(data?.error || "falha");
       window.fbq?.(
         "track",
-        "Lead",
+        "CompleteRegistration",
         {
           content_name: data.lista_espera ? "lista-espera" : "pre-matricula",
           segmento: segmentoDaSerie(form.serie_pretendida),

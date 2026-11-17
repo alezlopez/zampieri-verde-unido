@@ -116,3 +116,6 @@ verify_jwt = false
 
 [functions.zapsign-verificar-assinatura]
 verify_jwt = false
+
+[functions.lead-site]
+verify_jwt = false

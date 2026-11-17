@@ -1,10 +1,12 @@
 /**
- * API de Conversões do Meta (CAPI): envia pelo servidor o mesmo Lead que o pixel
+ * API de Conversões do Meta (CAPI): envia pelo servidor o mesmo evento que o pixel
  * dispara no navegador. O event_id igual ao eventID do pixel faz o Meta deduplicar.
  */
 
 // Versão estável mais recente da Graph API (confirmada em nov/2026)
 const GRAPH_API_VERSION = "v27.0";
+
+export type MetaEvento = "Lead" | "CompleteRegistration" | "Contact" | "Schedule";
 
 export interface MetaLeadParams {
   eventId?: string | null;
@@ -38,7 +40,7 @@ const telefoneMeta = (tel: string) => {
   return d.length === 10 || d.length === 11 ? `55${d}` : d;
 };
 
-export async function sendMetaLead(req: Request, params: MetaLeadParams): Promise<void> {
+export async function sendMetaEvent(req: Request, evento: MetaEvento, params: MetaLeadParams): Promise<void> {
   const token = Deno.env.get("META_CAPI_TOKEN");
   const pixelId = Deno.env.get("META_PIXEL_ID");
   const testCode = Deno.env.get("META_TEST_EVENT_CODE");
@@ -60,7 +62,7 @@ export async function sendMetaLead(req: Request, params: MetaLeadParams): Promis
     access_token: token,
     data: [
       {
-        event_name: "Lead",
+        event_name: evento,
         event_time: Math.floor(Date.now() / 1000),
         event_id: params.eventId,
         action_source: "website",
@@ -78,6 +80,9 @@ export async function sendMetaLead(req: Request, params: MetaLeadParams): Promis
     body: JSON.stringify(body),
   });
   if (!res.ok) {
-    console.error(`meta capi Lead status=${res.status} resposta=${(await res.text()).slice(0, 500)}`);
+    console.error(`meta capi ${evento} status=${res.status} resposta=${(await res.text()).slice(0, 500)}`);
   }
 }
+
+/** Compatibilidade: Lead. */
+export const sendMetaLead = (req: Request, params: MetaLeadParams) => sendMetaEvent(req, "Lead", params);
