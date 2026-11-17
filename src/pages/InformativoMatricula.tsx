@@ -1,25 +1,15 @@
 import { useEffect, useMemo, useState } from "react";
+import { CalendarCheck, ChevronDown, MapPin, MessageCircle, Phone } from "lucide-react";
 import fotoOntem from "@/assets/foto_ontem.jpg";
 import fotoHoje from "@/assets/foto_hoje.jpg";
 import fotoPlayground from "@/assets/foto_playground.jpg";
 import fotoLab from "@/assets/foto_lab.jpg";
 import fotoRecreio from "@/assets/foto_recreio.jpg";
 import fotoLanche from "@/assets/foto_lanche.jpg";
+import { LeadDialog, MAPS_URL, ModoLead } from "@/components/informativo/LeadDialog";
 
 const LOGO =
   "https://lzdhrtcugqnqmyapgmbs.supabase.co/storage/v1/object/public/zampieri/fotos/Logotipo.png";
-
-const CTA = "https://colegiozampieri.com.br/prematricula";
-
-const FOTOS = {
-  ontem: fotoOntem,
-  hoje: fotoHoje,
-  playground: fotoPlayground,
-  lab: fotoLab,
-  recreio: fotoRecreio,
-  lanche: fotoLanche,
-};
-
 
 const C = {
   verdeEscuro: "#0F3D24",
@@ -30,19 +20,65 @@ const C = {
   douradoClaro: "#D4A017",
   creme: "#F5F0E8",
   branco: "#FAF8F4",
+  whats: "#1FA855",
 };
 
 const brl = (v: number) =>
   v.toLocaleString("pt-BR", { style: "currency", currency: "BRL", minimumFractionDigits: 2 });
+const brl0 = (v: number) => v.toLocaleString("pt-BR", { style: "currency", currency: "BRL", maximumFractionDigits: 0 });
 
-type Etapa = { id: string; nome: string; mensalidade: number; descontoMax: number; taxa: number };
+type Etapa = { id: string; nome: string; mensalidade: number; descontoMax: number; taxa: number; serie: string };
 
 const ETAPAS: Etapa[] = [
-  { id: "pre", nome: "Pré (Educação Infantil)", mensalidade: 1500, descontoMax: 60, taxa: 1500 },
-  { id: "1", nome: "1º Ano", mensalidade: 890, descontoMax: 30, taxa: 890 },
-  { id: "2a5", nome: "2º ao 5º Ano", mensalidade: 1000, descontoMax: 30, taxa: 1000 },
-  { id: "6a9", nome: "6º ao 9º Ano", mensalidade: 1110, descontoMax: 30, taxa: 1110 },
-  { id: "em", nome: "Ensino Médio", mensalidade: 1150, descontoMax: 30, taxa: 1150 },
+  { id: "pre", nome: "Pré (Educação Infantil)", mensalidade: 1500, descontoMax: 60, taxa: 1500, serie: "Infantil 5 (Pré-Escola)" },
+  { id: "1", nome: "1º Ano", mensalidade: 890, descontoMax: 30, taxa: 890, serie: "1º ano" },
+  { id: "2a5", nome: "2º ao 5º Ano", mensalidade: 1000, descontoMax: 30, taxa: 1000, serie: "2º ano" },
+  { id: "6a9", nome: "6º ao 9º Ano", mensalidade: 1110, descontoMax: 30, taxa: 1110, serie: "6º ano" },
+  { id: "em", nome: "Ensino Médio", mensalidade: 1150, descontoMax: 30, taxa: 1150, serie: "1ª série do Ensino Médio" },
+];
+
+/** Cards por segmento. O id é a âncora usada nos anúncios (ex.: /informativomatricula#fund2). */
+const SEGMENTOS = [
+  {
+    id: "infantil",
+    nome: "Educação Infantil",
+    series: "Pré (Infantil 5)",
+    turno: "Tarde",
+    taxa: [1500],
+    desconto: 60,
+    mensalidade: 1500,
+    serie: "Infantil 5 (Pré-Escola)",
+  },
+  {
+    id: "fund1",
+    nome: "Fundamental I",
+    series: "1º ao 5º ano",
+    turno: "Tarde ou manhã",
+    taxa: [890, 1000],
+    desconto: 30,
+    mensalidade: 890,
+    serie: "1º ano",
+  },
+  {
+    id: "fund2",
+    nome: "Fundamental II",
+    series: "6º ao 9º ano",
+    turno: "Tarde ou manhã",
+    taxa: [1110],
+    desconto: 30,
+    mensalidade: 1110,
+    serie: "6º ano",
+  },
+  {
+    id: "medio",
+    nome: "Ensino Médio",
+    series: "1ª à 3ª série",
+    turno: "Tarde ou manhã",
+    taxa: [1150],
+    desconto: 30,
+    mensalidade: 1150,
+    serie: "1ª série do Ensino Médio",
+  },
 ];
 
 const MENSALIDADES: [string, number][] = [
@@ -76,52 +112,52 @@ const PROVAS = [
   ["3ª", "geração de famílias"],
 ];
 
-const CONQUISTAS = [
-  "Salas modernizadas",
-  "Laboratório Maker",
-  "Parque e quadra renovados",
-];
+const CONQUISTAS = ["Salas modernizadas", "Laboratório Maker", "Parque e quadra renovados"];
 const FUTURO = ["Energia solar", "Reforma da fachada", "Água de reuso"];
 
 const PASSOS = [
   {
-    t: "Pré-matrícula",
-    d: "Você preenche o formulário online com os dados da família e do aluno. Leva poucos minutos.",
+    t: "Conversa ou visita",
+    d: "Fale com a secretaria pelo WhatsApp ou agende uma visita para conhecer a escola pessoalmente.",
   },
   {
-    t: "Análise e aprovação",
-    d: "A secretaria faz a análise e define o desconto de admissão da sua família.",
+    t: "Entrevista familiar",
+    d: "Um encontro para conhecermos sua família e o aluno. É nela que definimos o desconto de admissão.",
   },
   {
-    t: "Documentação",
-    d: "Envio e aprovação dos documentos, tudo online, pelo portal da família.",
+    t: "Pré-matrícula online",
+    d: "A secretaria envia o link do formulário com os dados da família e do aluno. Leva poucos minutos.",
   },
   {
-    t: "Contrato assinado",
-    d: "Assinatura digital do contrato e matrícula concluída. Sem visita obrigatória.",
+    t: "Documentos e contrato digital",
+    d: "Envio dos documentos pelo portal da família e assinatura digital do contrato. Matrícula concluída.",
   },
 ];
 
 const FAQ = [
   {
-    q: "A matrícula é confirmada na hora?",
-    a: "Não. A pré-matrícula é o primeiro passo: depois dela, a secretaria faz a análise da família e do aluno antes da confirmação da vaga.",
-  },
-  {
     q: "O que exatamente é gratuito?",
-    a: "A taxa de matrícula 2027 — que normalmente equivale ao valor de uma mensalidade da série. As mensalidades e o material didático seguem a tabela oficial.",
+    a: "A taxa de matrícula 2027, que normalmente equivale a uma mensalidade da série. Mensalidades e material didático seguem a tabela de valores desta página.",
   },
   {
-    q: "Essa condição vale para qualquer série?",
-    a: "Sim, vale para novos alunos da Educação Infantil ao Ensino Médio, enquanto houver vaga na turma escolhida.",
+    q: "Como é definido o desconto na mensalidade?",
+    a: "Na entrevista familiar, conforme a série e a disponibilidade de vagas na turma. O desconto de admissão vai até 60% na Educação Infantil e até 30% do 1º ano ao Ensino Médio.",
   },
   {
-    q: "Preciso morar perto da escola?",
-    a: "Não. O colégio fica na Zona Sul de São Paulo e recebe famílias de vários bairros da região.",
+    q: "Quais turnos vocês oferecem?",
+    a: "Manhã e tarde do 1º ano ao Ensino Médio. A Educação Infantil funciona à tarde. As turmas da tarde têm mais vagas para 2027.",
   },
   {
-    q: "Por que as vagas são limitadas?",
-    a: "Porque trabalhamos com turmas pequenas de propósito, para garantir acompanhamento próximo de cada aluno. Não é escassez artificial: é limite pedagógico.",
+    q: "Quando a vaga fica garantida?",
+    a: "Depois da entrevista familiar, com a pré-matrícula enviada e o contrato assinado. Até lá, a vaga depende da disponibilidade da turma.",
+  },
+  {
+    q: "O material didático está incluído na mensalidade?",
+    a: "Não. O material é um valor à parte, por série, como mostra a tabela de valores.",
+  },
+  {
+    q: "Onde fica a escola?",
+    a: "Na Rua dos Acarapévas, 80, Balneário São Francisco, Zona Sul de São Paulo. O mapa está no fim desta página.",
   },
 ];
 
@@ -133,44 +169,55 @@ const Tricolor = () => (
   </div>
 );
 
-const Botao = ({
-  children,
-  className = "",
-}: {
-  children: React.ReactNode;
-  className?: string;
-}) => (
-  <a
-    href={CTA}
-    className={`inline-flex items-center justify-center rounded-lg font-bold shadow-lg transition-transform hover:scale-[1.02] ${className}`}
-    style={{ background: C.douradoClaro, color: C.verdeEscuro }}
-  >
-    {children}
-  </a>
-);
-
-const Moldura = ({
-  children,
-  className = "",
-}: {
-  children: React.ReactNode;
-  className?: string;
-}) => (
-  <div
-    className={`rounded-xl overflow-hidden ${className}`}
-    style={{ border: `3px solid ${C.dourado}` }}
-  >
+const Moldura = ({ children, className = "" }: { children: React.ReactNode; className?: string }) => (
+  <div className={`rounded-xl overflow-hidden ${className}`} style={{ border: `3px solid ${C.dourado}` }}>
     {children}
   </div>
 );
 
+const BotaoVisita = ({ onClick, className = "", children = "Agende uma visita" }: { onClick: () => void; className?: string; children?: React.ReactNode }) => (
+  <button
+    type="button"
+    onClick={onClick}
+    className={`inline-flex items-center justify-center gap-2 rounded-lg font-bold shadow-lg transition-transform hover:scale-[1.02] ${className}`}
+    style={{ background: C.douradoClaro, color: C.verdeEscuro }}
+  >
+    <CalendarCheck className="w-5 h-5 shrink-0" aria-hidden="true" />
+    {children}
+  </button>
+);
+
+const BotaoWhats = ({ onClick, className = "" }: { onClick: () => void; className?: string }) => (
+  <button
+    type="button"
+    onClick={onClick}
+    className={`inline-flex items-center justify-center gap-2 rounded-lg font-bold shadow-lg transition-transform hover:scale-[1.02] text-white ${className}`}
+    style={{ background: C.whats }}
+  >
+    <MessageCircle className="w-5 h-5 shrink-0" aria-hidden="true" />
+    WhatsApp
+  </button>
+);
+
+const Recolhivel = ({ titulo, children }: { titulo: string; children: React.ReactNode }) => (
+  <details className="group bg-white rounded-2xl shadow-sm border overflow-hidden" style={{ borderColor: `${C.dourado}33` }}>
+    <summary className="flex items-center justify-between gap-3 cursor-pointer list-none px-5 py-4 font-bold [&::-webkit-details-marker]:hidden">
+      {titulo}
+      <ChevronDown className="w-5 h-5 shrink-0 transition-transform group-open:rotate-180" aria-hidden="true" />
+    </summary>
+    {children}
+  </details>
+);
+
 export default function InformativoMatricula() {
   const titulo = "font-['Playfair_Display',serif]";
+  const [dialogo, setDialogo] = useState<{ modo: ModoLead; serie?: string } | null>(null);
+  const abrir = (modo: ModoLead, serie?: string) => setDialogo({ modo, serie });
 
   useEffect(() => {
-    document.title = "Matrículas 2027 · Colégio Zampieri — sem taxa de matrícula";
+    document.title = "Matrículas 2027 · Colégio Zampieri — taxa de matrícula grátis";
     const desc =
-      "Matrículas 2027 no Colégio Zampieri: 46 anos de tradição na Zona Sul de SP, taxa de matrícula grátis e desconto de admissão. Simule sua economia.";
+      "Matrículas 2027 abertas no Colégio Zampieri, Zona Sul de SP: taxa de matrícula grátis e desconto de admissão. Da Educação Infantil ao Ensino Médio. Agende uma visita.";
     let meta = document.querySelector('meta[name="description"]');
     if (!meta) {
       meta = document.createElement("meta");
@@ -178,19 +225,20 @@ export default function InformativoMatricula() {
       document.head.appendChild(meta);
     }
     meta.setAttribute("content", desc);
+
+    // Âncoras dos anúncios (#infantil, #fund1, #fund2, #medio): a página é montada depois do
+    // carregamento, então o navegador não rola sozinho até a seção.
+    const id = decodeURIComponent(window.location.hash.slice(1));
+    if (id) requestAnimationFrame(() => document.getElementById(id)?.scrollIntoView({ block: "start" }));
   }, []);
 
   const [etapaId, setEtapaId] = useState(ETAPAS[3].id);
   const etapa = useMemo(() => ETAPAS.find((e) => e.id === etapaId)!, [etapaId]);
   const [desconto, setDesconto] = useState(etapa.descontoMax);
-
-  useEffect(() => {
-    setDesconto(etapa.descontoMax);
-  }, [etapa]);
+  useEffect(() => setDesconto(etapa.descontoMax), [etapa]);
 
   const comDesconto = etapa.mensalidade * (1 - desconto / 100);
-  const economiaMensal = etapa.mensalidade - comDesconto;
-  const economiaAno = economiaMensal * 12;
+  const economiaAno = (etapa.mensalidade - comDesconto) * 12;
   const economiaTotal = economiaAno + etapa.taxa;
 
   return (
@@ -201,61 +249,99 @@ export default function InformativoMatricula() {
       />
       <Tricolor />
 
-      {/* 1. Header */}
-      <header className="sticky top-0 z-50 shadow-md" style={{ background: C.verdeEscuro }}>
+      {/* Cabeçalho */}
+      <header className="sticky top-0 z-40 shadow-md" style={{ background: C.verdeEscuro }}>
         <div className="container mx-auto px-4 py-3 flex items-center justify-between gap-3">
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-3 min-w-0">
             <img src={LOGO} alt="Colégio Zampieri" className="h-11 md:h-12 w-auto" />
-            <div className="text-white leading-tight">
+            <div className="text-white leading-tight hidden min-[380px]:block">
               <p className={`${titulo} text-base md:text-lg font-bold`}>Colégio Zampieri</p>
               <p className="text-[11px] md:text-xs" style={{ color: C.douradoClaro }}>
                 Matrículas 2027
               </p>
             </div>
           </div>
-          <Botao className="text-xs md:text-sm px-4 py-2.5 md:px-6 md:py-3">
-            Iniciar pré-matrícula
-          </Botao>
+          <BotaoVisita onClick={() => abrir("visita")} className="text-xs md:text-sm px-4 py-2.5 md:px-6 md:py-3" />
         </div>
       </header>
 
-      {/* 2. Barra de urgência */}
-      <div style={{ background: C.vinho }} className="text-white text-center text-xs md:text-sm px-4 py-2.5 font-semibold">
-        ⏳ Vagas limitadas por turma em 2027 — famílias já aguardam em lista de espera
-      </div>
-
-      {/* 3. Hero */}
+      {/* Topo */}
       <section
-        className="relative overflow-hidden text-white py-16 md:py-24"
-        style={{
-          background: `radial-gradient(circle at 20% 0%, ${C.verdeMedio} 0%, ${C.verdeEscuro} 60%)`,
-        }}
+        className="relative overflow-hidden text-white py-14 md:py-24"
+        style={{ background: `radial-gradient(circle at 20% 0%, ${C.verdeMedio} 0%, ${C.verdeEscuro} 60%)` }}
       >
         <div className="container mx-auto px-4 max-w-4xl text-center">
           <p className="text-xs md:text-sm tracking-wide mb-5" style={{ color: C.douradoClaro }}>
-            46 anos de tradição · Educação Infantil ao Ensino Médio · Zona Sul de São Paulo
+            46 anos de tradição · Zona Sul de São Paulo
           </p>
           <h1 className={`${titulo} text-3xl md:text-5xl font-bold leading-tight mb-5`}>
-            46 anos formando famílias. Agora, sem taxa de matrícula para 2027.
+            Matrículas 2027 abertas.{" "}
+            <span style={{ color: C.douradoClaro }}>Taxa de matrícula grátis.</span>
           </h1>
-          <p className="text-white/80 text-base md:text-xl leading-relaxed mb-8">
-            Desde 1980 na Zona Sul de São Paulo. Conheça o Colégio Zampieri e veja quanto sua
-            família economiza no primeiro ano.
+          <p className="text-white/85 text-base md:text-xl leading-relaxed mb-8">
+            Da Educação Infantil ao Médio · vagas no período da tarde
           </p>
-          <Botao className="text-base md:text-lg px-8 py-4">Iniciar pré-matrícula 2027</Botao>
-          <p className="text-white/60 text-xs md:text-sm mt-4">
-            Sem compromisso · Nossa equipe entra em contato após o envio
-          </p>
+          <div className="flex flex-col sm:flex-row gap-3 justify-center">
+            <BotaoVisita onClick={() => abrir("visita")} className="text-base md:text-lg px-8 py-4" />
+            <BotaoWhats onClick={() => abrir("whatsapp")} className="text-base md:text-lg px-8 py-4" />
+          </div>
         </div>
       </section>
 
-      {/* 4. Ontem e Hoje */}
-      <section className="py-14 md:py-20">
+      {/* Cards por segmento */}
+      <section id="segmentos" className="py-14 md:py-20 scroll-mt-20">
+        <div className="container mx-auto px-4 max-w-6xl">
+          <h2 className={`${titulo} text-2xl md:text-4xl font-bold text-center mb-3`}>Escolha a etapa do seu filho</h2>
+          <p className="text-center text-sm md:text-base opacity-80 mb-10">
+            Condições para novos alunos em 2027.
+          </p>
+          <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-5">
+            {SEGMENTOS.map((s) => (
+              <article
+                key={s.id}
+                id={s.id}
+                className="scroll-mt-24 bg-white rounded-2xl shadow-md border flex flex-col overflow-hidden"
+                style={{ borderColor: `${C.dourado}44` }}
+              >
+                <div className="px-5 py-4 text-white" style={{ background: C.verdeEscuro }}>
+                  <h3 className={`${titulo} text-xl font-bold`}>{s.nome}</h3>
+                  <p className="text-xs" style={{ color: C.douradoClaro }}>{s.series}</p>
+                </div>
+                <ul className="px-5 py-4 space-y-3 text-sm flex-1">
+                  <li>
+                    <span className="block text-[11px] font-black tracking-widest opacity-60">TURNO</span>
+                    <span className="font-bold">{s.turno}</span>
+                    {s.turno !== "Tarde" && <span className="block text-xs opacity-70">mais vagas à tarde</span>}
+                  </li>
+                  <li>
+                    <span className="block text-[11px] font-black tracking-widest opacity-60">TAXA DE MATRÍCULA</span>
+                    <span className="line-through opacity-60">{s.taxa.map(brl0).join(" a ")}</span>{" "}
+                    <span className="font-black text-base" style={{ color: C.vinho }}>por R$ 0</span>
+                  </li>
+                  <li>
+                    <span className="block text-[11px] font-black tracking-widest opacity-60">MENSALIDADE</span>
+                    <span className="font-bold">com até {s.desconto}% de desconto</span>
+                    <span className="block text-xs opacity-70">tabela a partir de {brl0(s.mensalidade)}</span>
+                  </li>
+                </ul>
+                <div className="px-5 pb-5">
+                  <BotaoVisita onClick={() => abrir("visita", s.serie)} className="w-full text-sm px-4 py-3">
+                    Agendar visita
+                  </BotaoVisita>
+                </div>
+              </article>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Ontem e hoje */}
+      <section className="pb-14 md:pb-20">
         <div className="container mx-auto px-4 max-w-4xl">
           <div className="grid grid-cols-2 gap-4 md:gap-6">
             {[
-              { src: FOTOS.ontem, tag: "ONTEM", alt: "foto_ontem.jpg — aluno de uniforme vermelho, arquivo histórico" },
-              { src: FOTOS.hoje, tag: "HOJE", alt: "foto_hoje.jpg — alunos com moletom Zampieri atualmente" },
+              { src: fotoOntem, tag: "ONTEM", alt: "Alunos do Colégio Zampieri de uniforme vermelho, em foto antiga no parque" },
+              { src: fotoHoje, tag: "HOJE", alt: "Alunos do Colégio Zampieri em sala de aula atualmente" },
             ].map((f) => (
               <div key={f.tag} className="relative">
                 <Moldura>
@@ -271,54 +357,43 @@ export default function InformativoMatricula() {
             ))}
           </div>
           <div className="text-center mt-8 md:mt-10">
-            <p className={`${titulo} text-2xl md:text-3xl font-bold`}>
-              Desde 1980, famílias confiam em nós.
-            </p>
-            <p className="text-lg md:text-xl mt-1" style={{ color: C.verdeClaro }}>
-              Em 2027, você vem com a gente?
-            </p>
+            <p className={`${titulo} text-2xl md:text-3xl font-bold`}>Desde 1980, famílias confiam em nós.</p>
+            <p className="text-lg md:text-xl mt-1" style={{ color: C.verdeClaro }}>Em 2027, você vem com a gente?</p>
           </div>
         </div>
       </section>
 
-      {/* 5. Prova social */}
+      {/* Números */}
       <section style={{ background: C.verdeEscuro }} className="py-10 md:py-14 text-white">
         <div className="container mx-auto px-4 grid grid-cols-2 md:grid-cols-4 gap-6 text-center max-w-5xl">
           {PROVAS.map(([n, l]) => (
             <div key={l}>
-              <div className={`${titulo} text-3xl md:text-4xl font-bold`} style={{ color: C.douradoClaro }}>
-                {n}
-              </div>
+              <div className={`${titulo} text-3xl md:text-4xl font-bold`} style={{ color: C.douradoClaro }}>{n}</div>
               <p className="text-white/70 text-xs md:text-sm mt-1">{l}</p>
             </div>
           ))}
         </div>
       </section>
 
-      {/* 6. Investimento contínuo */}
+      {/* Estrutura */}
       <section style={{ background: C.creme }} className="py-14 md:py-20">
         <div className="container mx-auto px-4 max-w-4xl">
-          <h2 className={`${titulo} text-2xl md:text-4xl font-bold text-center mb-3`}>
-            Uma escola que não para de evoluir
-          </h2>
+          <h2 className={`${titulo} text-2xl md:text-4xl font-bold text-center mb-3`}>Uma escola que não para de evoluir</h2>
           <p className="text-center text-sm md:text-base opacity-80 max-w-2xl mx-auto mb-8">
-            Todo ano reinvestimos na estrutura para que cada aluno estude num espaço melhor do que
-            no ano anterior. Veja parte do que já entregamos — e o que vem por aí.
+            Todo ano reinvestimos na estrutura. Venha ver de perto.
           </p>
-
           <Moldura className="mb-10">
             <div className="grid grid-cols-2 gap-[3px]" style={{ background: C.dourado }}>
               {[
-                { src: FOTOS.playground, alt: "foto_playground.jpg — parque do colégio" },
-                { src: FOTOS.lab, alt: "foto_lab.jpg — laboratório maker" },
-                { src: FOTOS.recreio, alt: "foto_recreio.jpg — área de recreio" },
-                { src: FOTOS.lanche, alt: "foto_lanche.jpg — espaço de lanche" },
+                { src: fotoPlayground, alt: "Parque do colégio" },
+                { src: fotoLab, alt: "Laboratório Maker" },
+                { src: fotoRecreio, alt: "Área de recreio" },
+                { src: fotoLanche, alt: "Espaço de lanche" },
               ].map((f) => (
-                <img key={f.src} src={f.src} alt={f.alt} loading="lazy" className="w-full aspect-square object-cover" />
+                <img key={f.alt} src={f.src} alt={f.alt} loading="lazy" className="w-full aspect-square object-cover" />
               ))}
             </div>
           </Moldura>
-
           <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
             {CONQUISTAS.map((c) => (
               <div key={c} className="bg-white rounded-xl p-5 shadow-sm border" style={{ borderColor: `${C.dourado}33` }}>
@@ -328,66 +403,33 @@ export default function InformativoMatricula() {
             ))}
             {FUTURO.map((c) => (
               <div key={c} className="rounded-xl p-5 border border-dashed" style={{ borderColor: C.verdeClaro, background: "#ffffff80" }}>
-                <span className="text-[10px] font-black tracking-widest mr-2" style={{ color: C.verdeClaro }}>
-                  EM BREVE
-                </span>
+                <span className="text-[10px] font-black tracking-widest mr-2" style={{ color: C.verdeClaro }}>EM BREVE</span>
                 <span className="font-bold block mt-1">{c}</span>
               </div>
             ))}
           </div>
-
           <div className="mt-8 rounded-2xl p-6 md:p-8 text-white" style={{ background: C.verdeMedio }}>
             <h3 className={`${titulo} text-xl font-bold mb-2`}>Por que as vagas são limitadas?</h3>
             <p className="text-white/85 leading-relaxed text-sm md:text-base">
-              Porque cada turma tem um número máximo de alunos definido pelo projeto pedagógico.
-              Turmas pequenas permitem acompanhamento próximo, professor presente e comunicação
-              direta com a família. Não é escassez artificial — é o limite que garante a qualidade
-              que nos trouxe até aqui.
+              Cada turma tem um número máximo de alunos definido pelo projeto pedagógico. Turmas pequenas permitem
+              acompanhamento próximo, professor presente e comunicação direta com a família.
             </p>
           </div>
         </div>
       </section>
 
-      {/* 7. Matrícula grátis */}
-      <section
-        className="text-white py-14 md:py-20"
-        style={{
-          background: C.verdeEscuro,
-          borderTop: `6px solid ${C.dourado}`,
-          borderBottom: `6px solid ${C.dourado}`,
-        }}
-      >
-        <div className="container mx-auto px-4 max-w-3xl text-center">
-          <span
-            className="inline-block text-[11px] font-black tracking-widest px-4 py-1.5 rounded-full mb-5"
-            style={{ background: C.vinho }}
-          >
-            CONDIÇÃO EXCLUSIVA 2027
-          </span>
-          <h2 className={`${titulo} text-2xl md:text-4xl font-bold mb-4`}>
-            Taxa de matrícula:{" "}
-            <span className="line-through opacity-60 font-normal">de R$ 890 a R$ 1.500</span>{" "}
-            <span style={{ color: C.douradoClaro }}>R$ 0</span>
-          </h2>
-          <p className="text-white/80 leading-relaxed">
-            A taxa de matrícula normalmente equivale ao valor de uma mensalidade da série. Para
-            novos alunos em 2027, ela é zero. Além disso, sua família ainda pode receber o desconto
-            de admissão na mensalidade — simule abaixo quanto isso representa no ano.
-          </p>
-        </div>
-      </section>
-
-      {/* 8. Simulador */}
-      <section style={{ background: C.creme }} className="py-14 md:py-20">
+      {/* Simulador */}
+      <section id="simulador" className="py-14 md:py-20 scroll-mt-20">
         <div className="container mx-auto px-4 max-w-3xl">
-          <h2 className={`${titulo} text-2xl md:text-4xl font-bold text-center mb-8`}>
-            Simule a economia da sua família
-          </h2>
+          <h2 className={`${titulo} text-2xl md:text-4xl font-bold text-center mb-3`}>Simule a economia da sua família</h2>
+          <p className="text-center text-sm md:text-base opacity-80 max-w-2xl mx-auto mb-8">
+            Além da taxa de matrícula grátis, novos alunos podem ter desconto de admissão na mensalidade: até 60% na
+            Educação Infantil e até 30% do 1º ano ao Ensino Médio. O percentual da sua família é definido na entrevista
+            familiar, conforme a série e a disponibilidade de vagas na turma.
+          </p>
 
           <div className="bg-white rounded-2xl shadow-lg p-6 md:p-8 border" style={{ borderColor: `${C.dourado}33` }}>
-            <label className="block text-sm font-bold mb-2" htmlFor="etapa">
-              Etapa de ensino
-            </label>
+            <label className="block text-sm font-bold mb-2" htmlFor="etapa">Etapa de ensino</label>
             <select
               id="etapa"
               value={etapaId}
@@ -396,9 +438,7 @@ export default function InformativoMatricula() {
               style={{ borderColor: `${C.verdeClaro}66` }}
             >
               {ETAPAS.map((e) => (
-                <option key={e.id} value={e.id}>
-                  {e.nome}
-                </option>
+                <option key={e.id} value={e.id}>{e.nome}</option>
               ))}
             </select>
 
@@ -421,171 +461,177 @@ export default function InformativoMatricula() {
               <div className="rounded-xl p-5" style={{ background: C.creme }}>
                 <p className="text-xs font-bold opacity-70 mb-1">Mensalidade</p>
                 <p className="line-through opacity-60">{brl(etapa.mensalidade)}</p>
-                <p className={`${titulo} text-2xl font-bold`} style={{ color: C.verdeMedio }}>
-                  {brl(comDesconto)}
-                </p>
+                <p className={`${titulo} text-2xl font-bold`} style={{ color: C.verdeMedio }}>{brl(comDesconto)}</p>
               </div>
               <div className="rounded-xl p-5" style={{ background: C.creme }}>
                 <p className="text-xs font-bold opacity-70 mb-1">Taxa de matrícula</p>
                 <p className="line-through opacity-60">{brl(etapa.taxa)}</p>
-                <p className={`${titulo} text-2xl font-bold`} style={{ color: C.verdeMedio }}>
-                  R$ 0,00
-                </p>
-              </div>
-              <div className="rounded-xl p-5 border" style={{ borderColor: `${C.dourado}55` }}>
-                <p className="text-xs font-bold opacity-70 mb-1">Economia na mensalidade (12 meses)</p>
-                <p className="text-xl font-bold">{brl(economiaAno)}</p>
-              </div>
-              <div className="rounded-xl p-5 border" style={{ borderColor: `${C.dourado}55` }}>
-                <p className="text-xs font-bold opacity-70 mb-1">Economia da taxa de matrícula</p>
-                <p className="text-xl font-bold">{brl(etapa.taxa)}</p>
+                <p className={`${titulo} text-2xl font-bold`} style={{ color: C.verdeMedio }}>R$ 0,00</p>
               </div>
             </div>
 
             <div className="mt-6 rounded-xl p-6 text-center" style={{ background: `${C.vinho}0f` }}>
-              <p className="text-xs font-black tracking-widest mb-1" style={{ color: C.vinho }}>
-                ECONOMIA TOTAL NO PRIMEIRO ANO
-              </p>
-              <p className={`${titulo} text-3xl md:text-5xl font-bold`} style={{ color: C.vinho }}>
-                {brl(economiaTotal)}
+              <p className="text-xs font-black tracking-widest mb-1" style={{ color: C.vinho }}>ECONOMIA NO PRIMEIRO ANO</p>
+              <p className={`${titulo} text-3xl md:text-5xl font-bold`} style={{ color: C.vinho }}>{brl(economiaTotal)}</p>
+              <p className="text-xs opacity-70 mt-2">
+                {brl(economiaAno)} nas 12 mensalidades + {brl(etapa.taxa)} da taxa de matrícula
               </p>
             </div>
 
             <p className="text-xs opacity-70 mt-4">
-              Simulação com o desconto máximo possível. O percentual final depende da análise de
-              crédito (passo 2 do processo).
+              Simulação. O desconto da sua família é definido na entrevista familiar.
             </p>
           </div>
 
           <div className="text-center mt-8">
-            <Botao className="text-base px-8 py-4">Quero garantir essa condição</Botao>
+            <BotaoVisita onClick={() => abrir("formulario", etapa.serie)} className="text-base px-8 py-4">
+              Quero saber o desconto da minha família
+            </BotaoVisita>
           </div>
         </div>
       </section>
 
-      {/* 9. Como funciona */}
-      <section className="py-14 md:py-20">
+      {/* Como funciona */}
+      <section style={{ background: C.creme }} className="py-14 md:py-20">
         <div className="container mx-auto px-4 max-w-4xl">
-          <h2 className={`${titulo} text-2xl md:text-4xl font-bold text-center mb-3`}>
-            Como funciona
-          </h2>
-          <p className="text-center text-sm opacity-75 mb-10">
-            Todo o processo é 100% online, sem visita obrigatória.
-          </p>
-          <div className="grid sm:grid-cols-2 gap-5">
+          <h2 className={`${titulo} text-2xl md:text-4xl font-bold text-center mb-10`}>Como funciona</h2>
+          <ol className="grid sm:grid-cols-2 gap-5">
             {PASSOS.map((p, i) => (
-              <div key={p.t} className="rounded-xl p-6 shadow-sm bg-white border" style={{ borderColor: `${C.dourado}22` }}>
+              <li key={p.t} className="rounded-xl p-6 shadow-sm bg-white border" style={{ borderColor: `${C.dourado}22` }}>
                 <div
                   className={`${titulo} w-10 h-10 rounded-full flex items-center justify-center font-bold text-white mb-3`}
                   style={{ background: C.verdeMedio }}
+                  aria-hidden="true"
                 >
                   {i + 1}
                 </div>
                 <h3 className={`${titulo} text-lg font-bold mb-1`}>{p.t}</h3>
                 <p className="text-sm opacity-80 leading-relaxed">{p.d}</p>
-              </div>
+              </li>
             ))}
+          </ol>
+          <div className="text-center mt-8">
+            <BotaoVisita onClick={() => abrir("visita")} className="text-base px-8 py-4" />
           </div>
         </div>
       </section>
 
-      {/* 10. Valores 2027 */}
-      <section style={{ background: C.creme }} className="py-14 md:py-20">
-        <div className="container mx-auto px-4 max-w-4xl">
-          <h2 className={`${titulo} text-2xl md:text-4xl font-bold text-center mb-8`}>
-            Valores 2027
-          </h2>
-          <div className="grid md:grid-cols-2 gap-6">
+      {/* Valores */}
+      <section className="py-14 md:py-20">
+        <div className="container mx-auto px-4 max-w-3xl">
+          <h2 className={`${titulo} text-2xl md:text-4xl font-bold text-center mb-8`}>Valores 2027</h2>
+          <div className="space-y-4">
             {[
-              { t: "Mensalidades", dados: MENSALIDADES },
+              { t: "Mensalidades (tabela, sem desconto)", dados: MENSALIDADES },
               { t: "Material didático", dados: MATERIAIS },
             ].map((tab) => (
-              <div key={tab.t} className="bg-white rounded-2xl shadow-md overflow-hidden border" style={{ borderColor: `${C.dourado}22` }}>
-                <div className="px-5 py-4 text-white" style={{ background: C.verdeEscuro }}>
-                  <h3 className={`${titulo} font-bold`}>{tab.t}</h3>
-                </div>
+              <Recolhivel key={tab.t} titulo={tab.t}>
                 <table className="w-full text-sm">
                   <tbody>
                     {tab.dados.map(([s, v]) => (
-                      <tr key={s} className="border-t" style={{ borderColor: `${C.creme}` }}>
+                      <tr key={s} className="border-t" style={{ borderColor: C.creme }}>
                         <td className="px-5 py-3">{s}</td>
                         <td className="px-5 py-3 text-right font-bold">{brl(v)}</td>
                       </tr>
                     ))}
                   </tbody>
                 </table>
-              </div>
+              </Recolhivel>
             ))}
           </div>
-          <p className="text-xs opacity-70 mt-4 text-center">
-            Tabela completa de referência — os mesmos valores usados na simulação acima.
-          </p>
         </div>
       </section>
 
-      {/* 11. FAQ */}
-      <section className="py-14 md:py-20">
+      {/* Perguntas frequentes */}
+      <section style={{ background: C.creme }} className="py-14 md:py-20">
         <div className="container mx-auto px-4 max-w-3xl">
-          <h2 className={`${titulo} text-2xl md:text-4xl font-bold text-center mb-8`}>
-            Perguntas frequentes
-          </h2>
-          <div className="space-y-4">
+          <h2 className={`${titulo} text-2xl md:text-4xl font-bold text-center mb-8`}>Perguntas frequentes</h2>
+          <div className="space-y-3">
             {FAQ.map((f) => (
-              <div key={f.q} className="rounded-xl p-5 bg-white shadow-sm border" style={{ borderColor: `${C.dourado}22` }}>
-                <h3 className="font-bold mb-1">{f.q}</h3>
-                <p className="text-sm opacity-80 leading-relaxed">{f.a}</p>
-              </div>
+              <Recolhivel key={f.q} titulo={f.q}>
+                <p className="px-5 pb-5 text-sm opacity-80 leading-relaxed">{f.a}</p>
+              </Recolhivel>
             ))}
           </div>
         </div>
       </section>
 
-      {/* 12. CTA final */}
+      {/* Final */}
       <section
-        className="text-white py-16 md:py-20 text-center"
+        className="text-white py-16 md:py-20"
         style={{ background: `linear-gradient(135deg, ${C.verdeMedio}, ${C.verdeEscuro})` }}
       >
-        <div className="container mx-auto px-4 max-w-2xl">
-          <h2 className={`${titulo} text-2xl md:text-4xl font-bold mb-4`}>
-            Comece a conhecer o Zampieri hoje
-          </h2>
-          <p className="text-white/80 mb-8 leading-relaxed">
-            As vagas por turma são limitadas e já existem famílias na lista de espera. Envie sua
-            pré-matrícula e garanta a análise da sua família para 2027.
-          </p>
-          <Botao className="text-base md:text-lg px-10 py-4">Iniciar pré-matrícula 2027</Botao>
+        <div className="container mx-auto px-4 max-w-5xl">
+          <div className="text-center max-w-2xl mx-auto">
+            <h2 className={`${titulo} text-2xl md:text-4xl font-bold mb-4`}>Venha conhecer o Zampieri</h2>
+            <p className="text-white/80 mb-8 leading-relaxed">
+              As vagas por turma são limitadas. Agende uma visita ou fale agora com a secretaria.
+            </p>
+            <div className="flex flex-col sm:flex-row gap-3 justify-center">
+              <BotaoVisita onClick={() => abrir("visita")} className="text-base md:text-lg px-8 py-4" />
+              <BotaoWhats onClick={() => abrir("whatsapp")} className="text-base md:text-lg px-8 py-4" />
+            </div>
+          </div>
+
+          <div className="grid md:grid-cols-2 gap-6 mt-12 items-stretch">
+            <div className="rounded-2xl overflow-hidden border border-white/20 min-h-[260px] bg-white/5">
+              <iframe
+                title="Mapa: Colégio Zampieri, Rua dos Acarapévas, 80"
+                src="https://www.google.com/maps?q=Col%C3%A9gio%20Zampieri%2C%20Rua%20dos%20Acarap%C3%A9vas%2C%2080%2C%20S%C3%A3o%20Paulo&output=embed"
+                loading="lazy"
+                referrerPolicy="no-referrer-when-downgrade"
+                className="w-full h-full min-h-[260px] border-0"
+              />
+            </div>
+            <div className="space-y-4 text-sm md:text-base self-center">
+              <p className="flex gap-3">
+                <MapPin className="w-5 h-5 shrink-0 mt-0.5" style={{ color: C.douradoClaro }} aria-hidden="true" />
+                <span>
+                  Rua dos Acarapévas, 80 — Balneário São Francisco, São Paulo/SP
+                  <a href={MAPS_URL} target="_blank" rel="noreferrer" className="block font-bold underline mt-1">Como chegar</a>
+                </span>
+              </p>
+              <p className="flex gap-3">
+                <Phone className="w-5 h-5 shrink-0 mt-0.5" style={{ color: C.douradoClaro }} aria-hidden="true" />
+                <a href="tel:+551155601473" className="hover:underline">(11) 5560-1473</a>
+              </p>
+              <p className="flex gap-3">
+                <MessageCircle className="w-5 h-5 shrink-0 mt-0.5" style={{ color: C.douradoClaro }} aria-hidden="true" />
+                <button type="button" onClick={() => abrir("whatsapp")} className="hover:underline text-left">
+                  (11) 93934-1503 (WhatsApp)
+                </button>
+              </p>
+            </div>
+          </div>
         </div>
       </section>
 
-      {/* 13. Footer */}
+      {/* Rodapé */}
       <footer style={{ background: C.verdeEscuro }} className="text-white">
         <Tricolor />
-        <div className="container mx-auto px-4 py-10 grid md:grid-cols-2 gap-6 items-center">
+        <div className="container mx-auto px-4 py-8 flex flex-col md:flex-row gap-4 items-center justify-between">
           <div className="flex items-center gap-3">
             <img src={LOGO} alt="Colégio Zampieri" className="h-12 w-auto" />
             <div>
               <p className={`${titulo} font-bold`}>Colégio Zampieri</p>
-              <p className="text-xs" style={{ color: C.douradoClaro }}>
-                Tradição em Educação · Desde 1980
-              </p>
+              <p className="text-xs" style={{ color: C.douradoClaro }}>Tradição em Educação · Desde 1980</p>
             </div>
           </div>
-          <div className="text-sm text-white/75 space-y-1 md:text-right">
-            <p>Rua dos Acarapévas, 80 — Balneário São Francisco, São Paulo/SP</p>
-            <p>
-              <a href="tel:+551155601473" className="hover:text-white">(11) 5560-1473</a>
-            </p>
-            <p>
-              <a href="mailto:secretaria@colegiozampieri.com.br" className="hover:text-white">
-                secretaria@colegiozampieri.com.br
-              </a>
-            </p>
-          </div>
+          <a href="mailto:secretaria@colegiozampieri.com.br" className="text-sm text-white/75 hover:text-white">
+            secretaria@colegiozampieri.com.br
+          </a>
         </div>
         <div className="border-t border-white/10 py-4 text-center text-xs text-white/50">
-          © 2026 Colégio Zampieri · Todos os direitos reservados
+          © 2026 Colégio Zampieri · <a href="/privacidade" className="underline">Política de privacidade</a>
         </div>
       </footer>
+
+      <LeadDialog
+        aberto={!!dialogo}
+        modo={dialogo?.modo ?? "visita"}
+        serieInicial={dialogo?.serie}
+        aoFechar={() => setDialogo(null)}
+      />
     </div>
   );
 }

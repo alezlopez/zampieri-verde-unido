@@ -44,6 +44,12 @@ const blocos: Bloco[] = [
     icone: ClipboardList,
     itens: [
       {
+        titulo: "Leads do site e visitas",
+        descricao: "Contatos da página de matrículas, origem dos anúncios e agenda de visitas.",
+        href: "/matricula/leads",
+        icone: CalendarClock,
+      },
+      {
         titulo: "Pré-matrículas",
         descricao: "Analisar cadastros, agendar e concluir entrevistas.",
         href: "/prematricula/admin",
