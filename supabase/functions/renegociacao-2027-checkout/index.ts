@@ -1,6 +1,7 @@
 import { createClient } from "npm:@supabase/supabase-js@2";
 import { corsHeaders } from "../_shared/cors.ts";
 import { getOrCreateCustomer, updateCustomer, createCheckout } from "../_shared/asaas.ts";
+import { valoresRenegociacao } from "../_shared/renegociacao-desconto.ts";
 
 const CHECKOUT_TTL_MS = 60 * 60 * 1000; // 60 min
 const FALLBACK_ORIGIN = "https://colegiozampieri.com.br";
@@ -69,25 +70,28 @@ Deno.serve(async (req) => {
     if (alunoErr) throw alunoErr;
     if (!aluno) return json({ error: "Aluno não encontrado" }, 404);
 
-    // Débitos selecionados, sempre revalidados no servidor
+    // Todos os débitos do aluno: o desconto depende de pagar todos os abertos juntos
     const { data: debitos, error: debErr } = await admin
       .from("devedores_2027")
-      .select("row_id, evento, vencimento, valor_a_vista, valor_parcelado, pago")
-      .eq("id_aluno", idAluno)
-      .in("row_id", rowIds);
+      .select("row_id, evento, vencimento, valor_principal, juros, multa, valor_atualizado, pago")
+      .eq("id_aluno", idAluno);
 
     if (debErr) throw debErr;
 
-    const abertos = (debitos ?? []).filter((d) => !d.pago);
+    const todosAbertos = (debitos ?? []).filter((d) => !d.pago);
+    const abertos = todosAbertos.filter((d) => rowIds.includes(Number(d.row_id)));
     if (abertos.length === 0) return json({ error: "debitos_ja_pagos" }, 409);
     if (abertos.length !== rowIds.length) {
       return json({ error: "selecao_invalida" }, 409);
     }
 
-    const valorTotal = abertos.reduce(
-      (acc, d) => acc + Number((isParcelado ? d.valor_parcelado : d.valor_a_vista) ?? 0),
+    const totalAtualizado = abertos.reduce(
+      (acc, d) =>
+        acc + Number(d.valor_atualizado ?? Number(d.valor_principal || 0) + Number(d.juros || 0) + Number(d.multa || 0)),
       0,
     );
+    const valores = valoresRenegociacao(totalAtualizado, todosAbertos.length, abertos.length);
+    const valorTotal = isParcelado ? valores.parcelado : valores.avista;
     if (!isFinite(valorTotal) || valorTotal <= 0) {
       return json({ error: "valor_invalido" }, 400);
     }
@@ -109,7 +113,9 @@ Deno.serve(async (req) => {
       anterior?.checkout_url && !body?.force_regenerate &&
       anterior.forma_pagamento === forma && Number(anterior.parcelas || 1) === parcelas &&
       JSON.stringify([...(anterior.row_ids ?? [])].map(Number).sort((a, b) => a - b)) ===
-        JSON.stringify(rowIdsOrdenados)
+        JSON.stringify(rowIdsOrdenados) &&
+      // Só reaproveita se o valor ainda for o mesmo (regra de desconto ou débitos podem ter mudado)
+      Math.abs(Number(anterior.valor_total) - valorTotal) < 0.01
     ) {
       return json({ checkout_url: anterior.checkout_url, reused: true, valor: Number(anterior.valor_total) });
     }

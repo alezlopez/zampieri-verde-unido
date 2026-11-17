@@ -14,6 +14,7 @@ import {
   LoadingDebitos,
   StepDebitos,
   type Debito,
+  valorAtualizado,
 } from "@/components/renegociacao/StepDebitos";
 import { StepPagamentoDebitos } from "@/components/renegociacao/StepPagamentoDebitos";
 import { BannerBlackFriday, blackFridayAtiva } from "@/components/renegociacao/BannerBlackFriday";
@@ -76,7 +77,7 @@ const Renegociacao = () => {
 
   const totalAberto = (debitos ?? [])
     .filter((d) => !d.pago)
-    .reduce((a, d) => a + Number(d.valor_a_vista || 0), 0);
+    .reduce((a, d) => a + valorAtualizado(d), 0);
 
   return (
     <div className="min-h-screen bg-zampieri-cream/30">

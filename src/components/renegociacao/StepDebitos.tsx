@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { supabase } from "@/integrations/supabase/client";
 import { AvisoRematricula } from "@/components/renegociacao/AvisoRematricula";
+import { valoresRenegociacao } from "@/lib/renegociacaoDesconto";
 
 export interface Debito {
   row_id: number;
@@ -61,12 +62,12 @@ export const StepDebitos = ({
   const totalAtualizado = abertos
     .filter((d) => selecionados.includes(d.row_id))
     .reduce((acc, d) => acc + valorAtualizado(d), 0);
-  const totalAvista = abertos
-    .filter((d) => selecionados.includes(d.row_id))
-    .reduce((acc, d) => acc + Number(d.valor_a_vista || 0), 0);
-  const totalParcelado = abertos
-    .filter((d) => selecionados.includes(d.row_id))
-    .reduce((acc, d) => acc + Number(d.valor_parcelado || 0), 0);
+  const nSelecionados = abertos.filter((d) => selecionados.includes(d.row_id)).length;
+  const valores = valoresRenegociacao(totalAtualizado, abertos.length, nSelecionados);
+  const totalAvista = valores.avista;
+  const totalParcelado = valores.parcelado;
+  const totalTodos = abertos.reduce((acc, d) => acc + valorAtualizado(d), 0);
+  const valoresTodos = valoresRenegociacao(totalTodos, abertos.length, abertos.length);
 
   const alternar = (rowId: number) =>
     onSelecionar(
@@ -135,9 +136,6 @@ export const StepDebitos = ({
                   Débito atualizado: principal {brl(d.valor_principal)} + juros {brl(d.juros)} + multa{" "}
                   {brl(d.multa)}
                 </span>
-                <span className="block text-xs text-zampieri-green-dark mt-1">
-                  À vista {brl(d.valor_a_vista)} · parcelado {brl(d.valor_parcelado)}
-                </span>
               </span>
             </button>
           );
@@ -157,6 +155,16 @@ export const StepDebitos = ({
               </li>
             ))}
           </ul>
+        </div>
+      )}
+
+      {abertos.length > 1 && (
+        <div className="rounded-lg border border-zampieri-gold/60 bg-zampieri-cream/70 p-3 text-xs text-foreground space-y-1">
+          <p>
+            <strong>Pagando os {abertos.length} débitos juntos:</strong> 30% de desconto à vista ({brl(valoresTodos.avista)}) ou
+            10% no parcelado em até 12x ({brl(valoresTodos.parcelado)}).
+          </p>
+          <p>Pagando só parte: 15% de desconto à vista; parcelado pelo valor atualizado.</p>
         </div>
       )}
 

@@ -12,6 +12,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { brl, Debito, descontoPct, valorAtualizado } from "./StepDebitos";
 import { erroDaFunction, mensagemAmigavel } from "@/lib/mensagensErro";
 import { AvisoRematricula } from "@/components/renegociacao/AvisoRematricula";
+import { valoresRenegociacao } from "@/lib/renegociacaoDesconto";
 
 type Forma = "pix" | "cartao_avista" | "cartao_parcelado";
 
@@ -36,9 +37,9 @@ export const StepPagamentoDebitos = ({
   const [erro, setErro] = useState<string | null>(null);
 
   const escolhidos = debitos.filter((d) => selecionados.includes(d.row_id) && !d.pago);
-  const totalAvista = escolhidos.reduce((a, d) => a + Number(d.valor_a_vista || 0), 0);
-  const totalParcelado = escolhidos.reduce((a, d) => a + Number(d.valor_parcelado || 0), 0);
   const totalAtualizado = escolhidos.reduce((a, d) => a + valorAtualizado(d), 0);
+  const nAbertos = debitos.filter((d) => !d.pago).length;
+  const { avista: totalAvista, parcelado: totalParcelado } = valoresRenegociacao(totalAtualizado, nAbertos, escolhidos.length);
   const desconto = (v: number) => (descontoPct(v, totalAtualizado) > 0 ? ` · ${descontoPct(v, totalAtualizado)}% de desconto` : "");
   const n = Number(parcelas);
 
