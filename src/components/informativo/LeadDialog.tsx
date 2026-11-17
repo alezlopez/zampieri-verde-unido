@@ -268,7 +268,7 @@ export const LeadDialog = ({ aberto, modo, serieInicial, aoFechar }: Props) => {
                       >
                         <input type="radio" name="turno" value={t} className="sr-only" checked={turno === t} disabled={!disponivel} onChange={() => setTurno(t)} />
                         {t}
-                        {t === "Tarde" && <span className="block text-[10px] font-normal opacity-80">mais vagas</span>}
+                        <span className="block text-[10px] font-normal opacity-80">{t === "Tarde" ? "mais vagas" : "vagas limitadas"}</span>
                       </label>
                     );
                   })}
