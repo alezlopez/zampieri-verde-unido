@@ -15,6 +15,7 @@ import {
   ShoppingBag,
   ShieldCheck,
   Users,
+  KeyRound,
   Images,
 } from "lucide-react";
 import { useAuth, Setor } from "@/contexts/AuthContext";
@@ -301,6 +302,25 @@ const AdminHome = () => {
                     </p>
                     <p className="text-sm text-muted-foreground">
                       Criar contas administrativas e definir os setores de acesso.
+                    </p>
+                  </div>
+                </div>
+              </Link>
+              <Link
+                to="/admin/responsaveis"
+                className="group rounded-lg border border-border bg-white p-4 transition-colors hover:border-zampieri-green-dark"
+              >
+                <div className="flex items-start gap-3">
+                  <span className="rounded-md bg-zampieri-cream p-2 text-zampieri-green-dark">
+                    <KeyRound className="w-5 h-5" />
+                  </span>
+                  <div className="min-w-0">
+                    <p className="font-semibold text-zampieri-green-dark flex items-center gap-1">
+                      Responsáveis e acesso
+                      <ArrowRight className="w-3.5 h-3.5 opacity-0 transition-opacity group-hover:opacity-100" />
+                    </p>
+                    <p className="text-sm text-muted-foreground">
+                      Corrigir CPF, e-mail e telefone dos pais e gerar senha temporária.
                     </p>
                   </div>
                 </div>

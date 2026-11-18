@@ -51,6 +51,8 @@ import RenegociacaoAdmin from "./pages/RenegociacaoAdmin";
 import { MetaPixelPageView } from "./components/MetaPixelPageView";
 import Fotos from "./pages/Fotos";
 import LeadsSiteAdmin from "./pages/LeadsSiteAdmin";
+import AdminResponsaveis from "./pages/AdminResponsaveis";
+import { TrocaSenhaObrigatoria } from "./components/TrocaSenhaObrigatoria";
 import FotosAlbum from "./pages/FotosAlbum";
 import FotosAdmin from "./pages/FotosAdmin";
 
@@ -65,6 +67,7 @@ const App = () => (
       <BrowserRouter>
         <MetaPixelPageView />
         <AuthProvider>
+          <TrocaSenhaObrigatoria />
           <Routes>
             <Route path="/" element={<Index />} />
             <Route path="/MapadaSuaProximaGrandeAventura" element={<MapadaSuaProximaGrandeAventura />} />
@@ -114,6 +117,7 @@ const App = () => (
 
 
 
+            <Route path="/admin/responsaveis" element={<RequireAdmin><AdminResponsaveis /></RequireAdmin>} />
             <Route path="/matricula/leads" element={<RequireAdmin setor="matricula"><LeadsSiteAdmin /></RequireAdmin>} />
             <Route path="/fotos" element={<Fotos />} />
             <Route path="/fotos/admin" element={<RequireAdmin setor="fotos"><FotosAdmin /></RequireAdmin>} />
