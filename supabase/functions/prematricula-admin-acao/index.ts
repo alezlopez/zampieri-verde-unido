@@ -3,6 +3,7 @@ import { corsHeaders } from "../_shared/cors.ts";
 import { SITE_URL, formatarDataHora, notificar } from "../_shared/prematricula-mensagens.ts";
 import { gerarSlots } from "../_shared/prematricula-slots.ts";
 import { acharMotivo } from "../_shared/prematricula-motivos.ts";
+import { avisarAgendaInterna } from "../_shared/aviso-agenda.ts";
 
 const json = (body: unknown, status = 200) =>
   new Response(JSON.stringify(body), {
@@ -353,6 +354,18 @@ Deno.serve(async (req) => {
       if (erroUp) throw erroUp;
 
       await notificar("agendada", { ...base, dataEntrevista: escolhido.texto });
+      avisarAgendaInterna({
+        tipo: "entrevista",
+        reagendada: pm.status === "entrevista_agendada",
+        inicio: escolhido.inicio,
+        responsavel: pm.resp_nome,
+        telefone: pm.resp_whatsapp,
+        aluno: pm.aluno_nome,
+        serie: pm.serie_pretendida,
+        turno: pm.turno_preferencia,
+        origem: `Pré-matrícula · protocolo ${pm.protocolo} · agendada pela secretaria`,
+        painel: "/prematricula/agenda",
+      });
       return json({ ok: true, status: "entrevista_agendada" });
     }
 

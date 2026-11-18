@@ -10,6 +10,7 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
 import { corsHeaders } from "../_shared/cors.ts";
 import { sendMetaEvent } from "../_shared/metaCapi.ts";
 import { gerarSlotsVisita } from "../_shared/visita-slots.ts";
+import { avisarAgendaInterna, origemDoLead } from "../_shared/aviso-agenda.ts";
 
 declare const EdgeRuntime: { waitUntil: (p: Promise<unknown>) => void } | undefined;
 
@@ -176,7 +177,7 @@ Deno.serve(async (req) => {
 
       const { data: lead } = await admin
         .from("leads_site")
-        .select("id, nome, whatsapp, serie, turno, ref, created_at, fbp, fbc")
+        .select("id, nome, whatsapp, serie, turno, ref, created_at, fbp, fbc, fbclid, gclid, utm_source, utm_campaign")
         .eq("id", leadId)
         .maybeSingle();
       // Só o lead recém-criado nesta visita à página pode agendar (o id não fica exposto depois)
@@ -226,6 +227,18 @@ Deno.serve(async (req) => {
           p_note: `Visita à escola agendada pelo site: ${escolhido.texto} (${lead.serie}). Ref ${lead.ref}`,
         }),
       );
+
+      avisarAgendaInterna({
+        tipo: "visita",
+        reagendada: !!atual,
+        inicio: escolhido.inicio,
+        responsavel: lead.nome,
+        telefone: lead.whatsapp,
+        serie: lead.serie,
+        turno: lead.turno,
+        origem: origemDoLead(lead),
+        painel: "/matricula/leads",
+      });
 
       espera(
         sendMetaEvent(req, "Schedule", {

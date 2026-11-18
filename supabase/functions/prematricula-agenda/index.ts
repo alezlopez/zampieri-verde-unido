@@ -2,6 +2,7 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
 import { corsHeaders } from "../_shared/cors.ts";
 import { formatarDataHora, notificar } from "../_shared/prematricula-mensagens.ts";
 import { gerarSlots } from "../_shared/prematricula-slots.ts";
+import { avisarAgendaInterna } from "../_shared/aviso-agenda.ts";
 
 const json = (body: unknown, status = 200) =>
   new Response(JSON.stringify(body), {
@@ -25,7 +26,7 @@ Deno.serve(async (req) => {
 
     const { data: pm, error: erroPm } = await admin
       .from("prematriculas")
-      .select("id, protocolo, resp_nome, resp_email, resp_whatsapp, aluno_nome, status")
+      .select("id, protocolo, resp_nome, resp_email, resp_whatsapp, aluno_nome, status, serie_pretendida, turno_preferencia")
       .eq("token", token)
       .maybeSingle();
     if (erroPm) throw erroPm;
@@ -94,6 +95,19 @@ Deno.serve(async (req) => {
         alunoNome: pm.aluno_nome,
         protocolo: pm.protocolo,
         dataEntrevista: escolhido.texto,
+      });
+
+      avisarAgendaInterna({
+        tipo: "entrevista",
+        reagendada: reagendando,
+        inicio: escolhido.inicio,
+        responsavel: pm.resp_nome,
+        telefone: pm.resp_whatsapp,
+        aluno: pm.aluno_nome,
+        serie: pm.serie_pretendida,
+        turno: pm.turno_preferencia,
+        origem: `Pré-matrícula · protocolo ${pm.protocolo} · agendada pela família`,
+        painel: "/prematricula/agenda",
       });
 
       return json({
