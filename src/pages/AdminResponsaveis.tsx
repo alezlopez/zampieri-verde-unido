@@ -85,7 +85,7 @@ const FormResponsavel = ({
   const [salvando, setSalvando] = useState(false);
   const [confirmarAcesso, setConfirmarAcesso] = useState(false);
   const [gerando, setGerando] = useState(false);
-  const [acesso, setAcesso] = useState<{ senha: string; cpf: string; email: string; criada: boolean } | null>(null);
+  const [acesso, setAcesso] = useState<{ senha: string; cpf: string; email: string; criada: boolean; emailEnviado: boolean } | null>(null);
 
   const alterado =
     form.nome !== inicial.nome ||
@@ -124,7 +124,7 @@ const FormResponsavel = ({
       toast.error(await mensagemDaFunction(error, data));
       return;
     }
-    setAcesso({ senha: data.senha, cpf: data.cpf, email: data.email, criada: data.criada });
+    setAcesso({ senha: data.senha, cpf: data.cpf, email: data.email, criada: data.criada, emailEnviado: !!data.email_enviado });
     aoSalvar();
   };
 
@@ -214,8 +214,8 @@ const FormResponsavel = ({
             <AlertDialogTitle>Gerar acesso temporário?</AlertDialogTitle>
             <AlertDialogDescription>
               {conta
-                ? `A senha atual de ${inicial.email} deixa de funcionar. ${c.rotulo === "Mãe" ? "A mãe" : "O pai"} entra com o CPF e a senha temporária e cria uma senha nova no primeiro acesso.`
-                : `Será criada uma conta para ${inicial.email}. ${c.rotulo === "Mãe" ? "A mãe" : "O pai"} entra com o CPF e a senha temporária e cria uma senha nova no primeiro acesso.`}
+                ? `A senha atual de ${inicial.email} deixa de funcionar e a nova senha temporária é enviada para este e-mail. ${c.rotulo === "Mãe" ? "A mãe" : "O pai"} entra com o CPF e cria uma senha nova no primeiro acesso.`
+                : `Será criada uma conta para ${inicial.email} e a senha temporária é enviada para este e-mail. ${c.rotulo === "Mãe" ? "A mãe" : "O pai"} entra com o CPF e cria uma senha nova no primeiro acesso.`}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -230,9 +230,18 @@ const FormResponsavel = ({
           <DialogHeader>
             <DialogTitle>Acesso temporário {acesso?.criada ? "criado" : "gerado"}</DialogTitle>
             <DialogDescription>
-              Esta senha aparece só agora. Envie para a família; ao entrar, ela cria a senha definitiva.
+              Esta senha aparece só agora. Ao entrar, a família cria a senha definitiva.
             </DialogDescription>
           </DialogHeader>
+          {acesso?.emailEnviado ? (
+            <p className="rounded-lg bg-zampieri-green-dark/10 p-3 text-sm text-zampieri-green-dark">
+              E-mail com a senha enviado para <strong>{acesso.email}</strong>.
+            </p>
+          ) : (
+            <p role="alert" className="rounded-lg bg-amber-50 border border-amber-300 p-3 text-sm text-amber-900">
+              O e-mail não foi enviado. Mande a senha pelo WhatsApp com o botão abaixo.
+            </p>
+          )}
           <div className="rounded-lg bg-zampieri-cream p-4 space-y-1 text-sm">
             <p>CPF: <strong>{acesso && mascaraCpf(acesso.cpf)}</strong></p>
             <p>

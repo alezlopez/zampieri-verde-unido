@@ -9,6 +9,7 @@
  */
 import { createClient, SupabaseClient } from "npm:@supabase/supabase-js@2";
 import { corsHeaders } from "../_shared/cors.ts";
+import { FROM_EMAIL } from "../_shared/prematricula-mensagens.ts";
 
 const json = (body: unknown, status = 200) =>
   new Response(JSON.stringify(body), { status, headers: { ...corsHeaders, "Content-Type": "application/json" } });
@@ -44,6 +45,33 @@ const senhaTemporaria = () => {
   const n = (i: number) => nums[b[i] % nums.length];
   // Atende à política de senha do projeto: minúscula, maiúscula, número e caractere especial
   return `Zp${l(0)}${l(1)}${l(2)}@${n(3)}${n(4)}${n(5)}${n(6)}`;
+};
+
+/** E-mail com a senha temporária (template "acesso-temporario" publicado no Resend). */
+const enviarEmailAcesso = async (para: string, nome: string, cpf: string, senha: string) => {
+  const key = Deno.env.get("RESEND_API_KEY");
+  if (!key) return "sem_resend";
+  const res = await fetch("https://api.resend.com/emails", {
+    method: "POST",
+    headers: { Authorization: `Bearer ${key}`, "Content-Type": "application/json" },
+    body: JSON.stringify({
+      from: FROM_EMAIL,
+      to: [para],
+      subject: "Seu acesso ao site do Colégio Zampieri",
+      template: {
+        id: "acesso-temporario",
+        variables: {
+          NOME: nome.split(/\s+/)[0] || "família",
+          CPF_FINAL: `${cpf.slice(6, 9)}-${cpf.slice(9)}`,
+          SENHA: senha,
+        },
+      },
+    }),
+  });
+  if (res.ok) return null;
+  // Nunca registra a senha: só o status e a resposta do Resend
+  console.error(`email acesso temporario status=${res.status} resposta=${(await res.text()).slice(0, 300)}`);
+  return "falha_envio";
 };
 
 interface Linha {
@@ -247,8 +275,10 @@ Deno.serve(async (req) => {
         depois: { email, conta_criada: criada },
       });
 
-      // A senha só volta nesta resposta: não é gravada em lugar nenhum
-      return json({ ok: true, senha, email, cpf, criada });
+      const erroEmail = await enviarEmailAcesso(email, nome, cpf, senha).catch(() => "falha_envio");
+
+      // A senha só volta nesta resposta e no e-mail da família: não é gravada em lugar nenhum
+      return json({ ok: true, senha, email, cpf, criada, email_enviado: !erroEmail });
     }
 
     return json({ error: "acao_invalida" }, 400);
