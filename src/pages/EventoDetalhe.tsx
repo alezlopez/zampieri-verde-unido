@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
+import { usePerfilComprador } from "@/hooks/usePerfilComprador";
 import { Calendar, MapPin, Users, Ticket, ArrowLeft, LogOut, Package, Sparkles } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -48,6 +49,7 @@ const EventoDetalhe = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { user, isAdmin, signOut } = useAuth();
+  const perfil = usePerfilComprador(user);
   const [evento, setEvento] = useState<Evento | null>(null);
   const [loading, setLoading] = useState(true);
   const [tipoComprador, setTipoComprador] = useState<"aluno" | "externo" | null>(null);
@@ -101,18 +103,8 @@ const EventoDetalhe = () => {
     loadProdutos();
   }, [id]);
 
-  useEffect(() => {
-    const resolve = async () => {
-      if (!user) { setTipoComprador(null); return; }
-      const { data } = await supabase
-        .from("compradores_externos")
-        .select("id")
-        .eq("user_id", user.id)
-        .maybeSingle();
-      setTipoComprador(data ? "externo" : "aluno");
-    };
-    resolve();
-  }, [user]);
+  // Responsável de aluno ou externo (decidido no banco; ver usePerfilComprador)
+  useEffect(() => setTipoComprador(perfil.tipo), [perfil.tipo]);
 
   useEffect(() => {
     if (evento) {

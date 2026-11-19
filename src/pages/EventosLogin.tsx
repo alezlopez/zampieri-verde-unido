@@ -36,6 +36,22 @@ const EventosLogin = () => {
 
   // Cadastro externo (não-aluno)
   const [showExternoForm, setShowExternoForm] = useState(false);
+  const [responsavelSemEmail, setResponsavelSemEmail] = useState(false);
+
+  /**
+   * CPF de pai/mãe que está no cadastro do aluno, mas sem e-mail: não oferece o cadastro de comprador
+   * externo (ficaria sem acesso aos eventos só para alunos); orienta a falar com a secretaria.
+   */
+  const ehResponsavelSemEmail = async () => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { data } = await supabase.rpc("cpf_responsavel_sem_email" as any, { p_cpf: cpf.replace(/\D/g, "") });
+    if (data === true) {
+      setShowExternoForm(false);
+      setResponsavelSemEmail(true);
+      return true;
+    }
+    return false;
+  };
   const [externoNome, setExternoNome] = useState("");
   const [externoEmail, setExternoEmail] = useState("");
   const [externoCelular, setExternoCelular] = useState("");
@@ -147,6 +163,7 @@ const EventosLogin = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setResponsavelSemEmail(false);
     setLoading(true);
     clearUnconfirmed();
 
@@ -187,6 +204,7 @@ const EventosLogin = () => {
           if (friendlyPw) {
             toast({ title: "Senha não atende aos requisitos", description: friendlyPw, variant: "destructive" });
           } else if (msg.includes("não encontrado") || msg.includes("nao encontrado")) {
+            if (await ehResponsavelSemEmail()) return;
             // CPF não está em alunos_26 → oferece cadastro externo
             setShowExternoForm(true);
             toast({
@@ -235,7 +253,7 @@ const EventosLogin = () => {
                 toast({ title: "Login realizado!" });
                 navigate("/eventos");
               }
-            } else {
+            } else if (!(await ehResponsavelSemEmail())) {
               setShowExternoForm(true);
               toast({
                 title: "CPF não encontrado entre os responsáveis",
@@ -472,6 +490,24 @@ const EventosLogin = () => {
                       {loading ? "Aguarde..." : isAdminLogin ? "Entrar" : isRegister ? "Cadastrar" : "Entrar"}
                     </Button>
                   </form>
+
+                  {responsavelSemEmail && !isAdminLogin && (
+                    <div role="alert" className="mt-6 p-4 border border-zampieri-gold/60 bg-zampieri-cream rounded-lg space-y-2">
+                      <p className="text-sm font-semibold text-zampieri-green-dark">Seu CPF está no cadastro do aluno, mas sem e-mail</p>
+                      <p className="text-sm text-muted-foreground">
+                        Para liberar seu acesso, a secretaria precisa cadastrar o seu e-mail. Não crie uma conta de comprador
+                        externo: ela não dá acesso aos eventos exclusivos para alunos.
+                      </p>
+                      <a
+                        href={`https://wa.me/5511939341503?text=${encodeURIComponent("Olá! Sou responsável de aluno e preciso cadastrar meu e-mail para acessar o site de eventos.")}`}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="inline-block text-sm font-semibold text-zampieri-green-dark underline"
+                      >
+                        Falar com a secretaria no WhatsApp
+                      </a>
+                    </div>
+                  )}
 
                   {showExternoForm && !isAdminLogin && (
                     <div className="mt-6 p-4 border border-zampieri-gold/40 bg-zampieri-cream rounded-lg">

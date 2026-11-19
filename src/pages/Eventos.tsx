@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
+import { usePerfilComprador } from "@/hooks/usePerfilComprador";
 import { Calendar, MapPin, Users, Ticket, LogOut, Package, ArrowRight } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -33,6 +34,7 @@ const Eventos = () => {
   const [tipoComprador, setTipoComprador] = useState<"aluno" | "externo" | null>(null);
   const [hasProdutos, setHasProdutos] = useState(false);
   const { user, isAdmin, signOut } = useAuth();
+  const perfil = usePerfilComprador(user);
 
   useEffect(() => {
     const fetchEventos = async () => {
@@ -59,18 +61,8 @@ const Eventos = () => {
   }, []);
 
   // Resolve tipo de comprador para filtrar/avisar
-  useEffect(() => {
-    const resolve = async () => {
-      if (!user) { setTipoComprador(null); return; }
-      const { data } = await supabase
-        .from("compradores_externos")
-        .select("id")
-        .eq("user_id", user.id)
-        .maybeSingle();
-      setTipoComprador(data ? "externo" : "aluno");
-    };
-    resolve();
-  }, [user]);
+  // Responsável de aluno ou externo (decidido no banco; ver usePerfilComprador)
+  useEffect(() => setTipoComprador(perfil.tipo), [perfil.tipo]);
 
   const podeComprar = (e: Evento) => {
     if (e.publico_alvo === "aberto_ao_publico") return true;

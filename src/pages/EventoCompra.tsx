@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
+import { usePerfilComprador } from "@/hooks/usePerfilComprador";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -84,6 +85,7 @@ const emptyConvidado = (): Convidado => ({
 const EventoCompra = () => {
   const { id } = useParams<{ id: string }>();
   const { user, loading: authLoading } = useAuth();
+  const perfil = usePerfilComprador(user);
   const navigate = useNavigate();
   const { toast } = useToast();
 
@@ -177,7 +179,6 @@ const EventoCompra = () => {
         .eq("user_id", user.id)
         .maybeSingle();
       if (data) {
-        setTipoComprador("externo");
         if (data.nome && !nomeComprador) setNomeComprador(data.nome);
         setCompradorExternoData({
           cpf: data.cpf || undefined,
@@ -185,8 +186,6 @@ const EventoCompra = () => {
           celular: data.celular || undefined,
           data_nascimento: data.data_nascimento || undefined,
         });
-      } else {
-        setTipoComprador("aluno");
       }
     };
     detect();
@@ -358,6 +357,12 @@ const EventoCompra = () => {
     checkExistentes();
   }, [user, id]);
 
+  // Responsável de aluno ou externo (decidido no banco): cadastro de externo feito por engano por pai/mãe
+  // não bloqueia mais a compra de eventos só para alunos
+  useEffect(() => {
+    if (perfil.tipo) setTipoComprador(perfil.tipo);
+  }, [perfil.tipo]);
+
   // Fetch alunos by CPF, fallback to email (apenas se for aluno)
   useEffect(() => {
     const fetchAlunos = async () => {
@@ -368,8 +373,9 @@ const EventoCompra = () => {
       }
       let foundAlunos: Aluno[] = [];
 
-      if (user?.user_metadata?.cpf) {
-        const cpf = (user.user_metadata.cpf as string).replace(/\D/g, "");
+      const cpfBusca = perfil.cpfResponsavel || (user?.user_metadata?.cpf as string | undefined) || null;
+      if (cpfBusca) {
+        const cpf = cpfBusca.replace(/\D/g, "");
         const { data } = await supabase.rpc("find_alunos_by_cpf", { p_cpf: cpf });
         if (data) {
           foundAlunos = data.filter((a: any) => a.codigo_aluno && a.nome_aluno) as Aluno[];
@@ -387,7 +393,7 @@ const EventoCompra = () => {
       setLoadingAlunos(false);
     };
     if (user && tipoComprador) fetchAlunos();
-  }, [user, tipoComprador]);
+  }, [user, tipoComprador, perfil.cpfResponsavel]);
 
   const toggleAluno = (codigo: string) => {
     setAlunosSelecionados((prev) =>

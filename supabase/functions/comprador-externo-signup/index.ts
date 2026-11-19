@@ -32,6 +32,15 @@ Deno.serve(async (req) => {
       });
     }
 
+    // CPF de pai/mãe no cadastro de alunos, mesmo sem e-mail: não vira comprador externo (ficaria sem acesso
+    // aos eventos só para alunos). A secretaria cadastra o e-mail e gera o acesso em /admin/responsaveis.
+    const { data: semEmail } = await admin.rpc("cpf_responsavel_sem_email", { p_cpf: cpf });
+    if (semEmail === true) {
+      return new Response(JSON.stringify({
+        error: "Este CPF está no cadastro do aluno, mas sem e-mail. Fale com a secretaria pelo WhatsApp (11) 93934-1503 para liberar seu acesso.",
+      }), { status: 409, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    }
+
     // CPF já é aluno?
     const { data: ctx } = await admin.rpc("find_user_context_by_cpf", { p_cpf: cpf });
     if (ctx && ctx[0]?.origem === "aluno") {
