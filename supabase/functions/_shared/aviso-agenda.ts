@@ -48,17 +48,35 @@ export const origemDoLead = (l: {
   gclid?: string | null;
   utm_medium?: string | null;
 }) => {
-  const fonte = (l.utm_source || "").toLowerCase();
-  const canal = l.fbclid || l.fbc || /^(fb|facebook|ig|instagram|meta)/.test(fonte)
-    ? "Anúncio Meta"
-    : l.gclid || /google/.test(fonte)
-    ? "Anúncio Google"
-    : fonte === "whatsapp" && l.utm_medium === "secretaria"
-    ? "WhatsApp (link da secretaria)"
-    : fonte
-    ? `Campanha (${l.utm_source})`
-    : "Site (sem campanha)";
+  const canal = canalDoLead(l);
   return l.utm_campaign ? `${canal} · campanha ${l.utm_campaign}` : canal;
+};
+
+/** Mesma regra do painel (src/pages/LeadsSiteAdmin.tsx, função canal). */
+const canalDoLead = (l: {
+  utm_source?: string | null;
+  utm_medium?: string | null;
+  fbclid?: string | null;
+  fbc?: string | null;
+  gclid?: string | null;
+}) => {
+  const fonte = (l.utm_source || "").toLowerCase();
+  const meio = (l.utm_medium || "").toLowerCase();
+  const meta = /^(fb|facebook|ig|instagram|meta)/.test(fonte);
+  const google = /google/.test(fonte);
+  if (fonte === "whatsapp" && meio === "secretaria") return "WhatsApp (link da secretaria)";
+  // UTM explícita de tráfego orgânico vale mais que o fbclid que o Instagram/Facebook anexam a qualquer link
+  if (/^(bio|organic|organico|social|post|stories|story|reels|perfil|link_?in_?bio)/.test(meio)) {
+    return `Orgânico: ${l.utm_source || "sem fonte"} (${l.utm_medium})`;
+  }
+  if (/^(cpc|ppc|cpm|paid|pago|ads?|anuncio|display)/.test(meio)) {
+    return meta ? "Anúncio Meta" : google ? "Anúncio Google" : `Anúncio (${l.utm_source || "sem fonte"})`;
+  }
+  // Sem utm_medium: links de anúncio antigos e cliques com fbclid/gclid
+  if (l.fbclid || l.fbc || meta) return "Anúncio Meta";
+  if (l.gclid || google) return "Anúncio Google";
+  if (fonte) return `Campanha (${l.utm_source})`;
+  return "Site (sem campanha)";
 };
 
 async function enviar(a: AvisoAgenda) {

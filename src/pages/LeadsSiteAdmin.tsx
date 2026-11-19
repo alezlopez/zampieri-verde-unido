@@ -68,9 +68,20 @@ const telefone = (d: string) => (d.length === 11 ? `(${d.slice(0, 2)}) ${d.slice
 /** De onde veio: anúncio do Meta (fbclid/_fbc ou utm), do Google (gclid ou utm) ou orgânico. */
 const canal = (l: Pick<Lead, "fbclid" | "fbc" | "gclid" | "utm_source" | "utm_medium">) => {
   const fonte = (l.utm_source || "").toLowerCase();
-  if (l.fbclid || l.fbc || /^(fb|facebook|ig|instagram|meta)/.test(fonte)) return "Anúncio Meta";
-  if (l.gclid || /google/.test(fonte)) return "Anúncio Google";
-  if (fonte === "whatsapp" && (l.utm_medium || "") === "secretaria") return "WhatsApp (link da secretaria)";
+  const meio = (l.utm_medium || "").toLowerCase();
+  const meta = /^(fb|facebook|ig|instagram|meta)/.test(fonte);
+  const google = /google/.test(fonte);
+  if (fonte === "whatsapp" && meio === "secretaria") return "WhatsApp (link da secretaria)";
+  // UTM explícita de tráfego orgânico vale mais que o fbclid que o Instagram/Facebook anexam a qualquer link
+  if (/^(bio|organic|organico|social|post|stories|story|reels|perfil|link_?in_?bio)/.test(meio)) {
+    return `Orgânico: ${l.utm_source || "sem fonte"} (${l.utm_medium})`;
+  }
+  if (/^(cpc|ppc|cpm|paid|pago|ads?|anuncio|display)/.test(meio)) {
+    return meta ? "Anúncio Meta" : google ? "Anúncio Google" : `Anúncio (${l.utm_source || "sem fonte"})`;
+  }
+  // Sem utm_medium: links de anúncio antigos e cliques com fbclid/gclid
+  if (l.fbclid || l.fbc || meta) return "Anúncio Meta";
+  if (l.gclid || google) return "Anúncio Google";
   if (fonte) return `Campanha (${l.utm_source})`;
   return "Orgânico / direto";
 };
