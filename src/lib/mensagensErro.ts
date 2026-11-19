@@ -105,6 +105,7 @@ const CODIGOS: Record<string, string> = {
   codigo_obrigatorio: "Informe o código do aluno.",
   falha_conta: "Não foi possível atualizar a conta de acesso. Tente novamente.",
   parametros_invalidos: "Não foi possível concluir. Recarregue a página e tente novamente.",
+  visita_nao_encontrada: "Esta visita já foi cancelada ou alterada. Atualize a lista.",
   horario_indisponivel: "Este horário acabou de ser ocupado. Escolha outro horário.",
   etapa_encerrada: "Esta etapa já foi encerrada.",
   etapa_indisponivel: "Esta etapa ainda não está disponível.",

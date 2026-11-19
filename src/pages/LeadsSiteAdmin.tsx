@@ -5,7 +5,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { mensagemAmigavel } from "@/lib/mensagensErro";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { mensagemAmigavel, mensagemDaFunction } from "@/lib/mensagensErro";
 
 // Tabelas novas ainda não estão nos tipos gerados do Supabase
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -349,6 +350,72 @@ const LeadsSiteAdmin = () => {
   );
 };
 
+const LINK_REMARCAR = "https://colegiozampieri.com.br/informativomatricula?remarcar=1";
+const dataLonga = (iso: string) =>
+  new Intl.DateTimeFormat("pt-BR", { dateStyle: "full", timeStyle: "short", timeZone: "America/Sao_Paulo" }).format(new Date(iso));
+
+interface Cancelada {
+  id: string;
+  inicio: string;
+  nome: string | null;
+  whatsapp: string | null;
+  serie: string | null;
+  aviso_enviado: boolean;
+}
+
+/** Mesmo texto do template de WhatsApp, para enviar à mão se o automático não sair. */
+const mensagemCancelamento = (c: Cancelada) =>
+  `Olá, ${(c.nome || "").trim().split(/\s+/)[0] || ""}! Precisamos cancelar a sua visita ao Colégio Zampieri marcada para ${dataLonga(c.inicio)}. ` +
+  `Nesse dia não teremos atendimento. Pedimos desculpas! Para escolher outro dia e horário, acesse: ${LINK_REMARCAR}`;
+
+const cancelarVisitas = async (body: Record<string, unknown>) => {
+  const { data, error } = await supabase.functions.invoke("admin-visitas", { body });
+  if (error || !data?.ok) {
+    toast.error(await mensagemDaFunction(error, data));
+    return null;
+  }
+  return data.canceladas as Cancelada[];
+};
+
+/** Resultado do cancelamento: quem foi avisado e o link de WhatsApp com a mensagem pronta. */
+const ResultadoCancelamento = ({ lista, aoFechar }: { lista: Cancelada[] | null; aoFechar: () => void }) => (
+  <Dialog open={!!lista} onOpenChange={(v) => !v && aoFechar()}>
+    <DialogContent className="max-h-[90vh] overflow-y-auto">
+      <DialogHeader>
+        <DialogTitle>{lista?.length === 1 ? "Visita cancelada" : `${lista?.length ?? 0} visitas canceladas`}</DialogTitle>
+        <DialogDescription>
+          Os horários voltaram a ficar livres. A mensagem automática pede para a família remarcar pelo site. Se alguém não
+          receber, use o botão para mandar a mesma mensagem pelo WhatsApp.
+        </DialogDescription>
+      </DialogHeader>
+      {lista?.length === 0 ? (
+        <p className="text-sm">Não havia visitas agendadas nesse dia.</p>
+      ) : (
+        <ul className="divide-y text-sm">
+          {lista?.map((c) => (
+            <li key={c.id} className="py-3 space-y-1">
+              <p className="font-medium">{c.nome} · {dataHora(c.inicio)}</p>
+              <p className={c.aviso_enviado ? "text-zampieri-green-dark text-xs" : "text-amber-700 text-xs font-medium"}>
+                {c.aviso_enviado ? "Mensagem automática enviada para o WhatsApp." : "Mensagem automática não enviada."}
+              </p>
+              {c.whatsapp && (
+                <a
+                  href={`https://wa.me/55${c.whatsapp}?text=${encodeURIComponent(mensagemCancelamento(c))}`}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="inline-flex items-center gap-1 text-xs font-semibold text-zampieri-green-dark underline"
+                >
+                  <MessageCircle className="w-3 h-3" /> Mandar a mensagem pelo WhatsApp
+                </a>
+              )}
+            </li>
+          ))}
+        </ul>
+      )}
+    </DialogContent>
+  </Dialog>
+);
+
 /** Próximas visitas (e as de ontem, para marcar presença). */
 const VisitasLista = () => {
   const [lista, setLista] = useState<(Visita & { lead: Pick<Lead, "nome" | "whatsapp" | "serie" | "turno"> | null })[]>([]);
@@ -370,10 +437,24 @@ const VisitasLista = () => {
     carregar();
   }, [carregar]);
 
+  const [paraCancelar, setParaCancelar] = useState<(typeof lista)[number] | null>(null);
+  const [avisar, setAvisar] = useState(true);
+  const [cancelando, setCancelando] = useState(false);
+  const [resultado, setResultado] = useState<Cancelada[] | null>(null);
+
   const marcar = async (id: string, status: Visita["status"]) => {
-    if (status === "cancelada" && !confirm("Cancelar esta visita? O horário volta a ficar livre no site.")) return;
     const { error } = await tabela("visitas").update({ status }).eq("id", id);
     if (error) return toast.error(mensagemAmigavel(error));
+    carregar();
+  };
+
+  const confirmarCancelamento = async () => {
+    if (!paraCancelar) return;
+    setCancelando(true);
+    const r = await cancelarVisitas({ acao: "cancelar", visita_id: paraCancelar.id, avisar });
+    setCancelando(false);
+    setParaCancelar(null);
+    if (r) setResultado(r);
     carregar();
   };
 
@@ -401,10 +482,43 @@ const VisitasLista = () => {
           <div className="flex gap-1">
             <Button size="sm" variant="outline" onClick={() => marcar(v.id, "realizada")} disabled={v.status === "realizada"}>Realizada</Button>
             <Button size="sm" variant="outline" onClick={() => marcar(v.id, "faltou")} disabled={v.status === "faltou"}>Faltou</Button>
-            <Button size="sm" variant="ghost" className="text-destructive" onClick={() => marcar(v.id, "cancelada")}>Cancelar</Button>
+            <Button
+              size="sm"
+              variant="ghost"
+              className="text-destructive"
+              disabled={v.status !== "agendada"}
+              onClick={() => {
+                setAvisar(true);
+                setParaCancelar(v);
+              }}
+            >
+              Cancelar
+            </Button>
           </div>
         </li>
       ))}
+      <Dialog open={!!paraCancelar} onOpenChange={(o) => !o && setParaCancelar(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Cancelar esta visita?</DialogTitle>
+            <DialogDescription>
+              {paraCancelar && `${paraCancelar.lead?.nome} · ${dataLonga(paraCancelar.inicio)}. O horário volta a ficar livre no site.`}
+            </DialogDescription>
+          </DialogHeader>
+          <label className="flex items-start gap-2 text-sm cursor-pointer">
+            <input type="checkbox" checked={avisar} onChange={(e) => setAvisar(e.target.checked)} className="mt-1" />
+            <span>Avisar a família pelo WhatsApp que a visita foi cancelada e que ela precisa remarcar pelo site.</span>
+          </label>
+          <div className="flex justify-end gap-2">
+            <Button variant="outline" onClick={() => setParaCancelar(null)}>Voltar</Button>
+            <Button onClick={confirmarCancelamento} disabled={cancelando} className="bg-destructive hover:bg-destructive/90 text-white">
+              {cancelando && <Loader2 className="w-4 h-4 mr-1 animate-spin" />}
+              Cancelar visita
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+      <ResultadoCancelamento lista={resultado} aoFechar={() => setResultado(null)} />
     </ul>
   );
 };
@@ -451,12 +565,30 @@ const AgendaVisitas = () => {
     carregar();
   };
 
+  const [resultado, setResultado] = useState<Cancelada[] | null>(null);
+  const [pendenteDia, setPendenteDia] = useState<{ data: string; total: number } | null>(null);
+  const [cancelandoDia, setCancelandoDia] = useState(false);
+
   const adicionarBloqueio = async () => {
     if (!novoBloqueio.data) return toast.error("Escolha a data.");
-    const { error } = await tabela("visita_agenda_bloqueios").insert({ data: novoBloqueio.data, motivo: novoBloqueio.motivo || null });
+    const data = novoBloqueio.data;
+    const { error } = await tabela("visita_agenda_bloqueios").insert({ data, motivo: novoBloqueio.motivo || null });
     if (error) return toast.error(error.code === "23505" ? "Esta data já está bloqueada." : mensagemAmigavel(error));
     setNovoBloqueio({ data: "", motivo: "" });
     carregar();
+    // Visitas já marcadas no dia bloqueado (ex.: feriado esquecido) continuam valendo até serem canceladas
+    const { data: c } = await supabase.functions.invoke("admin-visitas", { body: { acao: "contar_dia", data } });
+    if (c?.ok && c.total > 0) setPendenteDia({ data, total: c.total });
+    else toast.success("Dia bloqueado.");
+  };
+
+  const cancelarDia = async () => {
+    if (!pendenteDia) return;
+    setCancelandoDia(true);
+    const r = await cancelarVisitas({ acao: "cancelar_dia", data: pendenteDia.data, avisar: true });
+    setCancelandoDia(false);
+    setPendenteDia(null);
+    if (r) setResultado(r);
   };
 
   const removerBloqueio = async (b: Bloqueio) => {
@@ -561,6 +693,27 @@ const AgendaVisitas = () => {
           </Button>
         </div>
       </section>
+      <Dialog open={!!pendenteDia} onOpenChange={(o) => !o && setPendenteDia(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>
+              {pendenteDia?.total === 1 ? "Há 1 visita marcada nesse dia" : `Há ${pendenteDia?.total} visitas marcadas nesse dia`}
+            </DialogTitle>
+            <DialogDescription>
+              O dia {pendenteDia?.data.split("-").reverse().join("/")} foi bloqueado para novas visitas, mas quem já marcou
+              continua agendado. Quer cancelar essas visitas e avisar as famílias pelo WhatsApp para remarcarem?
+            </DialogDescription>
+          </DialogHeader>
+          <div className="flex justify-end gap-2">
+            <Button variant="outline" onClick={() => setPendenteDia(null)}>Manter as visitas</Button>
+            <Button onClick={cancelarDia} disabled={cancelandoDia} className="bg-destructive hover:bg-destructive/90 text-white">
+              {cancelandoDia && <Loader2 className="w-4 h-4 mr-1 animate-spin" />}
+              Cancelar e avisar
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+      <ResultadoCancelamento lista={resultado} aoFechar={() => setResultado(null)} />
     </div>
   );
 };

@@ -155,7 +155,8 @@ Deno.serve(async (req) => {
         }),
       );
 
-      espera(
+      // Remarcação de visita cancelada pela escola não é Lead novo
+      if (body?.remarcar !== true) espera(
         sendMetaEvent(req, origem === "whatsapp" ? "Contact" : "Lead", {
           eventId: registro.meta_event_id,
           telefone: whatsapp,

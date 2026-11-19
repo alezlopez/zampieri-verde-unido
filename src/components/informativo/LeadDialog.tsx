@@ -70,10 +70,12 @@ interface Props {
   aberto: boolean;
   modo: ModoLead;
   serieInicial?: string;
+  /** Família remarcando uma visita cancelada pela escola: não conta como Lead novo no Meta. */
+  remarcar?: boolean;
   aoFechar: () => void;
 }
 
-export const LeadDialog = ({ aberto, modo, serieInicial, aoFechar }: Props) => {
+export const LeadDialog = ({ aberto, modo, serieInicial, remarcar, aoFechar }: Props) => {
   const [etapa, setEtapa] = useState<Etapa>("dados");
   const [nome, setNome] = useState("");
   const [whats, setWhats] = useState("");
@@ -141,6 +143,7 @@ export const LeadDialog = ({ aberto, modo, serieInicial, aoFechar }: Props) => {
         serie,
         turno,
         empresa,
+        remarcar: !!remarcar,
         utm: utmsGuardadas(),
         meta_event_id: eventId,
         fbp,
@@ -153,7 +156,7 @@ export const LeadDialog = ({ aberto, modo, serieInicial, aoFechar }: Props) => {
     setEnviando(false);
 
     const ok = !error && data?.ok;
-    if (ok && !data.repetido) {
+    if (ok && !data.repetido && !remarcar) {
       pixel(modo === "whatsapp" ? "Contact" : "Lead", {
         content_name: modo === "whatsapp" ? "whatsapp" : modo === "visita" ? "agendar-visita" : "formulario-curto",
         segmento: segmentoDaSerie(serie),
@@ -212,7 +215,14 @@ export const LeadDialog = ({ aberto, modo, serieInicial, aoFechar }: Props) => {
     return [...m.entries()];
   }, [slots]);
 
-  const cab = TITULOS[modo];
+  const cab =
+    remarcar && modo === "visita"
+      ? {
+          ...TITULOS.visita,
+          t: "Remarque sua visita",
+          d: "Sua visita anterior foi cancelada pela escola. Preencha e escolha um novo dia e horário.",
+        }
+      : TITULOS[modo];
   const campo = "w-full rounded-lg border border-[#2D7A4E66] px-4 py-3 bg-white text-[#0F3D24] focus:outline-none focus:ring-2 focus:ring-[#D4A017]";
   const botaoPrincipal =
     "w-full inline-flex items-center justify-center gap-2 rounded-lg font-bold px-6 py-3.5 bg-[#D4A017] text-[#0F3D24] hover:brightness-105 disabled:opacity-60";

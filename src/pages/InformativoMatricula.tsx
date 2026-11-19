@@ -211,7 +211,7 @@ const Recolhivel = ({ titulo, children }: { titulo: string; children: React.Reac
 
 export default function InformativoMatricula() {
   const titulo = "font-['Playfair_Display',serif]";
-  const [dialogo, setDialogo] = useState<{ modo: ModoLead; serie?: string } | null>(null);
+  const [dialogo, setDialogo] = useState<{ modo: ModoLead; serie?: string; remarcar?: boolean } | null>(null);
   const abrir = (modo: ModoLead, serie?: string) => setDialogo({ modo, serie });
 
   useEffect(() => {
@@ -230,6 +230,9 @@ export default function InformativoMatricula() {
     // carregamento, então o navegador não rola sozinho até a seção.
     const id = decodeURIComponent(window.location.hash.slice(1));
     if (id) requestAnimationFrame(() => document.getElementById(id)?.scrollIntoView({ block: "start" }));
+
+    // Link "remarcar" da mensagem de visita cancelada: abre o agendamento direto
+    if (new URLSearchParams(window.location.search).get("remarcar") === "1") setDialogo({ modo: "visita", remarcar: true });
   }, []);
 
   const [etapaId, setEtapaId] = useState(ETAPAS[3].id);
@@ -630,6 +633,7 @@ export default function InformativoMatricula() {
         aberto={!!dialogo}
         modo={dialogo?.modo ?? "visita"}
         serieInicial={dialogo?.serie}
+        remarcar={dialogo?.remarcar}
         aoFechar={() => setDialogo(null)}
       />
     </div>

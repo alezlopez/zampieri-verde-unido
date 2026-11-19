@@ -122,3 +122,6 @@ verify_jwt = false
 
 [functions.admin-responsaveis]
 verify_jwt = false
+
+[functions.admin-visitas]
+verify_jwt = false
