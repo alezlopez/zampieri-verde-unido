@@ -124,7 +124,13 @@ const FormResponsavel = ({
       toast.error(await mensagemDaFunction(error, data));
       return;
     }
+    // Recarregar os dados recria este formulário e apagaria a janela da senha:
+    // a atualização fica para quando a janela for fechada (fecharAcesso).
     setAcesso({ senha: data.senha, cpf: data.cpf, email: data.email, criada: data.criada, emailEnviado: !!data.email_enviado });
+  };
+
+  const fecharAcesso = () => {
+    setAcesso(null);
     aoSalvar();
   };
 
@@ -225,8 +231,8 @@ const FormResponsavel = ({
         </AlertDialogContent>
       </AlertDialog>
 
-      <Dialog open={!!acesso} onOpenChange={(v) => !v && setAcesso(null)}>
-        <DialogContent>
+      <Dialog open={!!acesso} onOpenChange={(v) => !v && fecharAcesso()}>
+        <DialogContent onInteractOutside={(e) => e.preventDefault()} onEscapeKeyDown={(e) => e.preventDefault()}>
           <DialogHeader>
             <DialogTitle>Acesso temporário {acesso?.criada ? "criado" : "gerado"}</DialogTitle>
             <DialogDescription>
@@ -245,13 +251,16 @@ const FormResponsavel = ({
           <div className="rounded-lg bg-zampieri-cream p-4 space-y-1 text-sm">
             <p>CPF: <strong>{acesso && mascaraCpf(acesso.cpf)}</strong></p>
             <p>
-              Senha temporária: <strong className="font-mono text-lg tracking-wider">{acesso?.senha}</strong>
+              Senha temporária: <strong className="font-mono text-lg tracking-wider select-all">{acesso?.senha}</strong>
             </p>
             <p className="text-muted-foreground">Login em {URL_LOGIN}</p>
           </div>
           <pre className="whitespace-pre-wrap rounded-lg border p-3 text-xs bg-white">{mensagem}</pre>
           <div className="flex flex-wrap gap-2">
-            <Button onClick={() => copiar(mensagem)} className="bg-zampieri-green-dark hover:bg-zampieri-green-dark/90">
+            <Button onClick={() => acesso && copiar(acesso.senha)} className="bg-zampieri-green-dark hover:bg-zampieri-green-dark/90">
+              <Copy className="w-4 h-4 mr-1" /> Copiar senha
+            </Button>
+            <Button variant="outline" onClick={() => copiar(mensagem)}>
               <Copy className="w-4 h-4 mr-1" /> Copiar mensagem
             </Button>
             {form.telefone && (
@@ -261,6 +270,9 @@ const FormResponsavel = ({
                 </a>
               </Button>
             )}
+          </div>
+          <div className="flex justify-end">
+            <Button variant="ghost" onClick={fecharAcesso}>Fechar</Button>
           </div>
         </DialogContent>
       </Dialog>
