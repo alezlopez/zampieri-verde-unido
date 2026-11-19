@@ -37,7 +37,7 @@ const ETAPAS: Etapa[] = [
   { id: "em", nome: "Ensino Médio", mensalidade: 1150, descontoMax: 30, taxa: 1150, serie: "1ª série do Ensino Médio" },
 ];
 
-/** Cards por segmento. O id é a âncora usada nos anúncios (ex.: /informativomatricula#fund2). */
+/** Cards por segmento. O id é a âncora usada nos anúncios (#infantil, #1ano, #fund1, #fund2, #medio). */
 const SEGMENTOS = [
   {
     id: "infantil",
@@ -50,14 +50,24 @@ const SEGMENTOS = [
     serie: "Infantil 5 (Pré-Escola)",
   },
   {
-    id: "fund1",
-    nome: "Fundamental I",
-    series: "1º ao 5º ano",
+    id: "1ano",
+    nome: "1º ano",
+    series: "Fundamental I",
     turno: "Tarde ou manhã",
-    taxa: [890, 1000],
+    taxa: [890],
     desconto: 30,
     mensalidade: 890,
     serie: "1º ano",
+  },
+  {
+    id: "fund1",
+    nome: "Fundamental I",
+    series: "2º ao 5º ano",
+    turno: "Tarde ou manhã",
+    taxa: [1000],
+    desconto: 30,
+    mensalidade: 1000,
+    serie: "2º ano",
   },
   {
     id: "fund2",
@@ -226,7 +236,7 @@ export default function InformativoMatricula() {
     }
     meta.setAttribute("content", desc);
 
-    // Âncoras dos anúncios (#infantil, #fund1, #fund2, #medio): a página é montada depois do
+    // Âncoras dos anúncios (#infantil, #1ano, #fund1, #fund2, #medio): a página é montada depois do
     // carregamento, então o navegador não rola sozinho até a seção.
     const id = decodeURIComponent(window.location.hash.slice(1));
     if (id) requestAnimationFrame(() => document.getElementById(id)?.scrollIntoView({ block: "start" }));
@@ -298,7 +308,7 @@ export default function InformativoMatricula() {
           <p className="text-center text-sm md:text-base opacity-80 mb-10">
             Condições para novos alunos em 2027.
           </p>
-          <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-5">
+          <div className="grid sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-5">
             {SEGMENTOS.map((s) => (
               <article
                 key={s.id}
@@ -324,7 +334,7 @@ export default function InformativoMatricula() {
                   <li>
                     <span className="block text-[11px] font-black tracking-widest opacity-60">MENSALIDADE</span>
                     <span className="font-bold">com até {s.desconto}% de desconto</span>
-                    <span className="block text-xs opacity-70">tabela a partir de {brl0(s.mensalidade)}</span>
+                    <span className="block text-xs opacity-70">valor de tabela: {brl0(s.mensalidade)}</span>
                   </li>
                 </ul>
                 <div className="px-5 pb-5">
