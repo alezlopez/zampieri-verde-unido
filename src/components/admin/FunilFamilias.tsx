@@ -18,7 +18,7 @@ interface Familia {
   serie: string | null;
   turno: string | null;
   primeiro_contato: string;
-  entrada: "visita" | "whatsapp" | "formulario" | "pre_direta";
+  entrada: "visita" | "whatsapp" | "formulario" | "pre_direta" | "whatsapp_conversa";
   utm_source: string | null;
   utm_medium: string | null;
   utm_campaign: string | null;
@@ -71,6 +71,7 @@ const ENTRADAS: Record<Familia["entrada"], string> = {
   whatsapp: "Site · botão WhatsApp",
   formulario: "Site · quero saber o desconto",
   pre_direta: "Direto na pré-matrícula",
+  whatsapp_conversa: "Conversa no WhatsApp",
 };
 const ROTULO_COMO = Object.fromEntries(COMO_CONHECEU) as Record<string, string>;
 

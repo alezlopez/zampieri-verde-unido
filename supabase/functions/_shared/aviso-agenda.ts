@@ -64,9 +64,14 @@ const canalDoLead = (l: {
   const meio = (l.utm_medium || "").toLowerCase();
   const meta = /^(fb|facebook|ig|instagram|meta)/.test(fonte);
   const google = /google/.test(fonte);
-  // Links do atendimento (secretaria, WhatsZampieri) e das automações de WhatsApp
+  // Anúncio de clique para WhatsApp do Meta (origem registrada pelo WhatsZampieri)
+  if (meio === "ctwa") return "Anúncio Meta (WhatsApp)";
+  // Links do atendimento (secretaria, WhatsZampieri), automações e conversas iniciadas no WhatsApp
   if (fonte === "whatsapp") {
-    return meio === "automacao" ? "WhatsApp (automação)" : meio ? "WhatsApp (atendimento)" : "WhatsApp";
+    if (meio === "automacao") return "WhatsApp (automação)";
+    if (meio === "conversa") return "WhatsApp (conversa)";
+    if (meio === "link") return "WhatsApp (link com código)";
+    return meio ? "WhatsApp (atendimento)" : "WhatsApp";
   }
   // UTM explícita de tráfego orgânico vale mais que o fbclid que o Instagram/Facebook anexam a qualquer link
   if (/^(bio|organic|organico|social|post|stories|story|reels|perfil|link_?in_?bio)/.test(meio)) {

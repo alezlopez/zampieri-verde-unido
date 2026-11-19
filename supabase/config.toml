@@ -125,3 +125,6 @@ verify_jwt = false
 
 [functions.admin-visitas]
 verify_jwt = false
+
+[functions.lead-whatsapp]
+verify_jwt = false

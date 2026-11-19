@@ -69,7 +69,7 @@ const LeadsSiteAdmin = () => (
     <div className="container mx-auto px-4 py-8 max-w-7xl">
       <h1 className="font-serif text-3xl font-bold text-zampieri-green-dark">Leads e funil de matrículas</h1>
       <p className="text-sm text-muted-foreground mb-6">
-        Uma linha por família, de qualquer porta de entrada (site, WhatsApp, direto na pré-matrícula). A etapa se atualiza sozinha
+        Uma linha por família, de qualquer porta de entrada (site, conversa no WhatsApp, direto na pré-matrícula). A etapa se atualiza sozinha
         com as visitas, pré-matrículas e matrículas.
       </p>
 
