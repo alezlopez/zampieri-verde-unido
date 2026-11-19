@@ -156,7 +156,7 @@ Deno.serve(async (req) => {
       );
 
       // Remarcação de visita cancelada pela escola não é Lead novo
-      if (body?.remarcar !== true) espera(
+      if (body?.remarcar !== true && body?.sem_lead !== true) espera(
         sendMetaEvent(req, origem === "whatsapp" ? "Contact" : "Lead", {
           eventId: registro.meta_event_id,
           telefone: whatsapp,
@@ -178,7 +178,7 @@ Deno.serve(async (req) => {
 
       const { data: lead } = await admin
         .from("leads_site")
-        .select("id, nome, whatsapp, serie, turno, ref, created_at, fbp, fbc, fbclid, gclid, utm_source, utm_campaign")
+        .select("id, nome, whatsapp, serie, turno, ref, created_at, fbp, fbc, fbclid, gclid, utm_source, utm_medium, utm_campaign")
         .eq("id", leadId)
         .maybeSingle();
       // Só o lead recém-criado nesta visita à página pode agendar (o id não fica exposto depois)

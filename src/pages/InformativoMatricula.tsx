@@ -7,6 +7,7 @@ import fotoLab from "@/assets/foto_lab.jpg";
 import fotoRecreio from "@/assets/foto_recreio.jpg";
 import fotoLanche from "@/assets/foto_lanche.jpg";
 import { LeadDialog, MAPS_URL, ModoLead } from "@/components/informativo/LeadDialog";
+import { capturarUtms } from "@/lib/utm";
 
 const LOGO =
   "https://lzdhrtcugqnqmyapgmbs.supabase.co/storage/v1/object/public/zampieri/fotos/Logotipo.png";
@@ -221,7 +222,7 @@ const Recolhivel = ({ titulo, children }: { titulo: string; children: React.Reac
 
 export default function InformativoMatricula() {
   const titulo = "font-['Playfair_Display',serif]";
-  const [dialogo, setDialogo] = useState<{ modo: ModoLead; serie?: string; remarcar?: boolean } | null>(null);
+  const [dialogo, setDialogo] = useState<{ modo: ModoLead; serie?: string; remarcar?: boolean; semLead?: boolean } | null>(null);
   const abrir = (modo: ModoLead, serie?: string) => setDialogo({ modo, serie });
 
   useEffect(() => {
@@ -242,7 +243,14 @@ export default function InformativoMatricula() {
     if (id) requestAnimationFrame(() => document.getElementById(id)?.scrollIntoView({ block: "start" }));
 
     // Link "remarcar" da mensagem de visita cancelada: abre o agendamento direto
-    if (new URLSearchParams(window.location.search).get("remarcar") === "1") setDialogo({ modo: "visita", remarcar: true });
+    const params = new URLSearchParams(window.location.search);
+    if (params.get("remarcar") === "1") setDialogo({ modo: "visita", remarcar: true });
+    // Link da secretaria (colegiozampieri.com.br/visita) para quem já está conversando no WhatsApp:
+    // abre o agendamento direto e não conta como Lead novo no Meta (a conversa já foi contada)
+    else if (params.get("agendar") === "1") {
+      capturarUtms();
+      setDialogo({ modo: "visita", semLead: params.get("utm_medium") === "secretaria" });
+    }
   }, []);
 
   const [etapaId, setEtapaId] = useState(ETAPAS[3].id);
@@ -644,6 +652,7 @@ export default function InformativoMatricula() {
         modo={dialogo?.modo ?? "visita"}
         serieInicial={dialogo?.serie}
         remarcar={dialogo?.remarcar}
+        semLead={dialogo?.semLead}
         aoFechar={() => setDialogo(null)}
       />
     </div>

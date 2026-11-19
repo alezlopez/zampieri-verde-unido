@@ -46,12 +46,15 @@ export const origemDoLead = (l: {
   fbclid?: string | null;
   fbc?: string | null;
   gclid?: string | null;
+  utm_medium?: string | null;
 }) => {
   const fonte = (l.utm_source || "").toLowerCase();
   const canal = l.fbclid || l.fbc || /^(fb|facebook|ig|instagram|meta)/.test(fonte)
     ? "Anúncio Meta"
     : l.gclid || /google/.test(fonte)
     ? "Anúncio Google"
+    : fonte === "whatsapp" && l.utm_medium === "secretaria"
+    ? "WhatsApp (link da secretaria)"
     : fonte
     ? `Campanha (${l.utm_source})`
     : "Site (sem campanha)";

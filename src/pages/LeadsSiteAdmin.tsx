@@ -70,6 +70,7 @@ const canal = (l: Pick<Lead, "fbclid" | "fbc" | "gclid" | "utm_source" | "utm_me
   const fonte = (l.utm_source || "").toLowerCase();
   if (l.fbclid || l.fbc || /^(fb|facebook|ig|instagram|meta)/.test(fonte)) return "Anúncio Meta";
   if (l.gclid || /google/.test(fonte)) return "Anúncio Google";
+  if (fonte === "whatsapp" && (l.utm_medium || "") === "secretaria") return "WhatsApp (link da secretaria)";
   if (fonte) return `Campanha (${l.utm_source})`;
   return "Orgânico / direto";
 };

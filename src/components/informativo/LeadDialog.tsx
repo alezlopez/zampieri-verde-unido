@@ -72,10 +72,12 @@ interface Props {
   serieInicial?: string;
   /** Família remarcando uma visita cancelada pela escola: não conta como Lead novo no Meta. */
   remarcar?: boolean;
+  /** Contato que já está no WhatsApp com a secretaria: não envia Lead ao Meta. */
+  semLead?: boolean;
   aoFechar: () => void;
 }
 
-export const LeadDialog = ({ aberto, modo, serieInicial, remarcar, aoFechar }: Props) => {
+export const LeadDialog = ({ aberto, modo, serieInicial, remarcar, semLead, aoFechar }: Props) => {
   const [etapa, setEtapa] = useState<Etapa>("dados");
   const [nome, setNome] = useState("");
   const [whats, setWhats] = useState("");
@@ -144,6 +146,7 @@ export const LeadDialog = ({ aberto, modo, serieInicial, remarcar, aoFechar }: P
         turno,
         empresa,
         remarcar: !!remarcar,
+        sem_lead: !!semLead,
         utm: utmsGuardadas(),
         meta_event_id: eventId,
         fbp,
@@ -156,7 +159,7 @@ export const LeadDialog = ({ aberto, modo, serieInicial, remarcar, aoFechar }: P
     setEnviando(false);
 
     const ok = !error && data?.ok;
-    if (ok && !data.repetido && !remarcar) {
+    if (ok && !data.repetido && !remarcar && !semLead) {
       pixel(modo === "whatsapp" ? "Contact" : "Lead", {
         content_name: modo === "whatsapp" ? "whatsapp" : modo === "visita" ? "agendar-visita" : "formulario-curto",
         segmento: segmentoDaSerie(serie),

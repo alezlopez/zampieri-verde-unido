@@ -2,7 +2,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider } from "@/contexts/AuthContext";
 import Index from "./pages/Index";
 import NotFound from "./pages/NotFound";
@@ -118,6 +118,7 @@ const App = () => (
 
 
             <Route path="/admin/responsaveis" element={<RequireAdmin><AdminResponsaveis /></RequireAdmin>} />
+            <Route path="/visita" element={<Navigate to="/informativomatricula?agendar=1&utm_source=whatsapp&utm_medium=secretaria" replace />} />
             <Route path="/matricula/leads" element={<RequireAdmin setor="matricula"><LeadsSiteAdmin /></RequireAdmin>} />
             <Route path="/fotos" element={<Fotos />} />
             <Route path="/fotos/admin" element={<RequireAdmin setor="fotos"><FotosAdmin /></RequireAdmin>} />
