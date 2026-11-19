@@ -84,6 +84,8 @@ export interface PreMatriculaForm {
   observacoes_saude: string;
   consentimento_veracidade: boolean;
   consentimento_privacidade: boolean;
+  /** Opcional: só a direção vê, no painel de Leads */
+  como_conheceu: string;
 }
 
 export const formVazio = (): PreMatriculaForm => ({
@@ -111,7 +113,18 @@ export const formVazio = (): PreMatriculaForm => ({
   observacoes_saude: "",
   consentimento_veracidade: false,
   consentimento_privacidade: false,
+  como_conheceu: "",
 });
+
+/** "Como conheceu o Colégio Zampieri?" (mesma lista validada em prematricula-enviar) */
+export const COMO_CONHECEU: [string, string][] = [
+  ["indicacao", "Indicação de pai, mãe ou aluno"],
+  ["instagram", "Instagram"],
+  ["google", "Google"],
+  ["ex_aluno", "Sou ex-aluno ou já tive filho na escola"],
+  ["passei_em_frente", "Passei em frente à escola"],
+  ["outro", "Outro"],
+];
 
 export const STATUS_LABEL: Record<string, string> = {
   pendente: "Pendente",

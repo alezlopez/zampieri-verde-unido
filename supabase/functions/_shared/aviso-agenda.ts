@@ -64,7 +64,10 @@ const canalDoLead = (l: {
   const meio = (l.utm_medium || "").toLowerCase();
   const meta = /^(fb|facebook|ig|instagram|meta)/.test(fonte);
   const google = /google/.test(fonte);
-  if (fonte === "whatsapp" && meio === "secretaria") return "WhatsApp (link da secretaria)";
+  // Links do atendimento (secretaria, WhatsZampieri) e das automações de WhatsApp
+  if (fonte === "whatsapp") {
+    return meio === "automacao" ? "WhatsApp (automação)" : meio ? "WhatsApp (atendimento)" : "WhatsApp";
+  }
   // UTM explícita de tráfego orgânico vale mais que o fbclid que o Instagram/Facebook anexam a qualquer link
   if (/^(bio|organic|organico|social|post|stories|story|reels|perfil|link_?in_?bio)/.test(meio)) {
     return `Orgânico: ${l.utm_source || "sem fonte"} (${l.utm_medium})`;

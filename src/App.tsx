@@ -118,7 +118,9 @@ const App = () => (
 
 
             <Route path="/admin/responsaveis" element={<RequireAdmin><AdminResponsaveis /></RequireAdmin>} />
-            <Route path="/visita" element={<Navigate to="/informativomatricula?agendar=1&utm_source=whatsapp&utm_medium=secretaria" replace />} />
+            {/* Links curtos da secretaria no WhatsApp (mesmo padrão de etiquetas do WhatsZampieri) */}
+            <Route path="/visita" element={<Navigate to="/informativomatricula?agendar=1&utm_source=whatsapp&utm_medium=atendimento" replace />} />
+            <Route path="/pre" element={<Navigate to="/prematricula?utm_source=whatsapp&utm_medium=atendimento" replace />} />
             <Route path="/matricula/leads" element={<RequireAdmin setor="matricula"><LeadsSiteAdmin /></RequireAdmin>} />
             <Route path="/fotos" element={<Fotos />} />
             <Route path="/fotos/admin" element={<RequireAdmin setor="fotos"><FotosAdmin /></RequireAdmin>} />

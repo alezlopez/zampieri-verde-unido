@@ -5,7 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { brToIso, isValidCpf, isValidEmail, onlyDigits } from "@/components/rematricula/utils";
 import { mensagemAmigavel } from "@/lib/mensagensErro";
-import { utmsGuardadas } from "@/lib/utm";
+import { capturarUtms, utmsGuardadas } from "@/lib/utm";
 import {
   EtapaAluno,
   EtapaConsentimento,
@@ -57,6 +57,11 @@ const PreMatricula = () => {
   const [enviando, setEnviando] = useState(false);
   const [protocolo, setProtocolo] = useState<string | null>(null);
   const [telefoneVerificado, setTelefoneVerificado] = useState<string | null>(null);
+
+  // O link curto /pre (secretaria) redireciona para cá com as etiquetas na URL; guarda a origem
+  useEffect(() => {
+    capturarUtms();
+  }, []);
   const [emailVerificado, setEmailVerificado] = useState<string | null>(null);
   const [duplicado, setDuplicado] = useState<{ protocolo: string | null } | null>(null);
   const [checando, setChecando] = useState(false);

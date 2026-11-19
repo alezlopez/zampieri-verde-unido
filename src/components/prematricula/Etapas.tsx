@@ -27,6 +27,7 @@ import {
   idadeEm31Marco,
   seriesPermitidas,
   turnosPorSerie,
+  COMO_CONHECEU,
 } from "./types";
 import { erroDaFunction, mensagemAmigavel } from "@/lib/mensagensErro";
 
@@ -555,6 +556,22 @@ export const EtapaSaude = ({ form, erros, set }: Props) => (
 
 export const EtapaConsentimento = ({ form, erros, set }: Props) => (
   <div className="space-y-5">
+    <div className="space-y-1.5">
+      <label htmlFor="como_conheceu" className="block text-sm font-medium">
+        Como conheceu o Colégio Zampieri? <span className="font-normal text-muted-foreground">(opcional)</span>
+      </label>
+      <select
+        id="como_conheceu"
+        value={form.como_conheceu}
+        onChange={(e) => set("como_conheceu", e.target.value)}
+        className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+      >
+        <option value="">Selecione</option>
+        {COMO_CONHECEU.map(([v, t]) => (
+          <option key={v} value={v}>{t}</option>
+        ))}
+      </select>
+    </div>
     <SecaoTitulo>Consentimento</SecaoTitulo>
     <label className="flex items-start gap-3 text-sm cursor-pointer">
       <input

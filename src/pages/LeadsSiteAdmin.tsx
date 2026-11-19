@@ -1,12 +1,13 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
-import { CalendarClock, Download, Loader2, MessageCircle, Plus, Trash2 } from "lucide-react";
+import { CalendarClock, Loader2, MessageCircle, Plus, Trash2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { mensagemAmigavel, mensagemDaFunction } from "@/lib/mensagensErro";
+import { FunilFamilias } from "@/components/admin/FunilFamilias";
 
 // Tabelas novas ainda não estão nos tipos gerados do Supabase
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -57,310 +58,43 @@ interface Bloqueio {
 }
 
 const DIAS = ["Domingo", "Segunda", "Terça", "Quarta", "Quinta", "Sexta", "Sábado"];
-const ORIGENS: Record<Lead["origem"], string> = { visita: "Agendar visita", whatsapp: "WhatsApp", formulario: "Quero saber o desconto" };
-const STATUS: Record<Lead["status"], string> = { novo: "Novo", em_contato: "Em contato", convertido: "Matriculou", perdido: "Perdido" };
 const STATUS_VISITA: Record<Visita["status"], string> = { agendada: "Agendada", realizada: "Realizada", faltou: "Faltou", cancelada: "Cancelada" };
 
 const dataHora = (iso: string) =>
   new Intl.DateTimeFormat("pt-BR", { dateStyle: "short", timeStyle: "short", timeZone: "America/Sao_Paulo" }).format(new Date(iso));
 const telefone = (d: string) => (d.length === 11 ? `(${d.slice(0, 2)}) ${d.slice(2, 7)}-${d.slice(7)}` : `(${d.slice(0, 2)}) ${d.slice(2, 6)}-${d.slice(6)}`);
 
-/** De onde veio: anúncio do Meta (fbclid/_fbc ou utm), do Google (gclid ou utm) ou orgânico. */
-const canal = (l: Pick<Lead, "fbclid" | "fbc" | "gclid" | "utm_source" | "utm_medium">) => {
-  const fonte = (l.utm_source || "").toLowerCase();
-  const meio = (l.utm_medium || "").toLowerCase();
-  const meta = /^(fb|facebook|ig|instagram|meta)/.test(fonte);
-  const google = /google/.test(fonte);
-  if (fonte === "whatsapp" && meio === "secretaria") return "WhatsApp (link da secretaria)";
-  // UTM explícita de tráfego orgânico vale mais que o fbclid que o Instagram/Facebook anexam a qualquer link
-  if (/^(bio|organic|organico|social|post|stories|story|reels|perfil|link_?in_?bio)/.test(meio)) {
-    return `Orgânico: ${l.utm_source || "sem fonte"} (${l.utm_medium})`;
-  }
-  if (/^(cpc|ppc|cpm|paid|pago|ads?|anuncio|display)/.test(meio)) {
-    return meta ? "Anúncio Meta" : google ? "Anúncio Google" : `Anúncio (${l.utm_source || "sem fonte"})`;
-  }
-  // Sem utm_medium: links de anúncio antigos e cliques com fbclid/gclid
-  if (l.fbclid || l.fbc || meta) return "Anúncio Meta";
-  if (l.gclid || google) return "Anúncio Google";
-  if (fonte) return `Campanha (${l.utm_source})`;
-  return "Orgânico / direto";
-};
-const ehAnuncio = (l: Lead) => canal(l).startsWith("Anúncio");
+const LeadsSiteAdmin = () => (
+  <div className="min-h-screen bg-zampieri-cream/40">
+    <div className="container mx-auto px-4 py-8 max-w-7xl">
+      <h1 className="font-serif text-3xl font-bold text-zampieri-green-dark">Leads e funil de matrículas</h1>
+      <p className="text-sm text-muted-foreground mb-6">
+        Uma linha por família, de qualquer porta de entrada (site, WhatsApp, direto na pré-matrícula). A etapa se atualiza sozinha
+        com as visitas, pré-matrículas e matrículas.
+      </p>
 
-const PERIODOS = [
-  { v: "7", t: "7 dias" },
-  { v: "30", t: "30 dias" },
-  { v: "90", t: "90 dias" },
-  { v: "tudo", t: "Tudo" },
-];
+      <Tabs defaultValue="funil">
+        <TabsList>
+          <TabsTrigger value="funil">Funil de famílias</TabsTrigger>
+          <TabsTrigger value="visitas">Visitas</TabsTrigger>
+          <TabsTrigger value="agenda">Agenda de visitas</TabsTrigger>
+        </TabsList>
 
-const LeadsSiteAdmin = () => {
-  const [periodo, setPeriodo] = useState("30");
-  const [origem, setOrigem] = useState<"" | Lead["origem"]>("");
-  const [soAnuncios, setSoAnuncios] = useState(false);
-  const [leads, setLeads] = useState<Lead[]>([]);
-  const [visitas, setVisitas] = useState<Visita[]>([]);
-  const [prematriculas, setPrematriculas] = useState<Map<string, string>>(new Map());
-  const [carregando, setCarregando] = useState(true);
+        <TabsContent value="funil" className="mt-4">
+          <FunilFamilias />
+        </TabsContent>
 
-  const carregar = useCallback(async () => {
-    setCarregando(true);
-    let q = tabela("leads_site").select("*").order("created_at", { ascending: false }).limit(2000);
-    if (periodo !== "tudo") q = q.gte("created_at", new Date(Date.now() - Number(periodo) * 86400000).toISOString());
-    const { data, error } = await q;
-    if (error) {
-      toast.error(mensagemAmigavel(error));
-      setCarregando(false);
-      return;
-    }
-    const lista = (data ?? []) as unknown as Lead[];
-    setLeads(lista);
+        <TabsContent value="visitas" className="mt-4">
+          <VisitasLista />
+        </TabsContent>
 
-    const ids = lista.map((l) => l.id);
-    const fones = [...new Set(lista.map((l) => l.whatsapp))];
-    const [vis, pms] = await Promise.all([
-      ids.length ? tabela("visitas").select("id, lead_id, inicio, status").in("lead_id", ids.slice(0, 1000)).order("inicio") : Promise.resolve({ data: [] }),
-      fones.length
-        ? supabase.from("prematriculas").select("protocolo, resp_whatsapp").in("resp_whatsapp", fones.slice(0, 1000))
-        : Promise.resolve({ data: [] }),
-    ]);
-    setVisitas(((vis as { data: unknown }).data ?? []) as Visita[]);
-    const mapa = new Map<string, string>();
-    for (const p of ((pms as { data: unknown }).data ?? []) as { protocolo: string; resp_whatsapp: string }[]) {
-      mapa.set(String(p.resp_whatsapp).replace(/\D/g, ""), p.protocolo);
-    }
-    setPrematriculas(mapa);
-    setCarregando(false);
-  }, [periodo]);
-
-  useEffect(() => {
-    carregar();
-  }, [carregar]);
-
-  const visitaDoLead = useMemo(() => {
-    const m = new Map<string, Visita>();
-    for (const v of visitas) if (v.status !== "cancelada" || !m.has(v.lead_id)) m.set(v.lead_id, v);
-    return m;
-  }, [visitas]);
-
-  const filtrados = leads.filter((l) => (!origem || l.origem === origem) && (!soAnuncios || ehAnuncio(l)));
-
-  const resumoCampanhas = useMemo(() => {
-    const m = new Map<string, { canal: string; campanha: string; leads: number; visitas: number; pre: number }>();
-    for (const l of filtrados) {
-      const c = canal(l);
-      const campanha = l.utm_campaign || "(sem campanha)";
-      const k = `${c}|${campanha}`;
-      const item = m.get(k) ?? { canal: c, campanha, leads: 0, visitas: 0, pre: 0 };
-      item.leads++;
-      if (visitaDoLead.get(l.id)?.status && visitaDoLead.get(l.id)!.status !== "cancelada") item.visitas++;
-      if (prematriculas.has(l.whatsapp)) item.pre++;
-      m.set(k, item);
-    }
-    return [...m.values()].sort((a, b) => b.leads - a.leads);
-  }, [filtrados, visitaDoLead, prematriculas]);
-
-  const mudarStatus = async (l: Lead, status: Lead["status"]) => {
-    const { error } = await tabela("leads_site").update({ status }).eq("id", l.id);
-    if (error) return toast.error(mensagemAmigavel(error));
-    setLeads((ls) => ls.map((x) => (x.id === l.id ? { ...x, status } : x)));
-  };
-
-  const exportar = () => {
-    const cab = ["data", "nome", "whatsapp", "serie", "turno", "origem", "canal", "utm_source", "utm_medium", "utm_campaign", "utm_content", "utm_term", "visita", "status_visita", "pre_matricula", "status", "ref"];
-    const esc = (v: unknown) => `"${String(v ?? "").replace(/"/g, '""')}"`;
-    const linhas = filtrados.map((l) => {
-      const v = visitaDoLead.get(l.id);
-      return [dataHora(l.created_at), l.nome, l.whatsapp, l.serie, l.turno, ORIGENS[l.origem], canal(l), l.utm_source, l.utm_medium, l.utm_campaign, l.utm_content, l.utm_term, v ? dataHora(v.inicio) : "", v ? STATUS_VISITA[v.status] : "", prematriculas.get(l.whatsapp) ?? "", STATUS[l.status], l.ref].map(esc).join(";");
-    });
-    const blob = new Blob(["﻿" + [cab.join(";"), ...linhas].join("\n")], { type: "text/csv;charset=utf-8" });
-    const a = document.createElement("a");
-    a.href = URL.createObjectURL(blob);
-    a.download = `leads-site-${new Date().toISOString().slice(0, 10)}.csv`;
-    a.click();
-    URL.revokeObjectURL(a.href);
-  };
-
-  const anuncios = filtrados.filter(ehAnuncio).length;
-
-  return (
-    <div className="min-h-screen bg-zampieri-cream/40">
-      <div className="container mx-auto px-4 py-8 max-w-7xl">
-        <h1 className="font-serif text-3xl font-bold text-zampieri-green-dark">Leads do site</h1>
-        <p className="text-sm text-muted-foreground mb-6">
-          Contatos da página de matrículas (/informativomatricula): agendar visita, WhatsApp e "quero saber o desconto".
-        </p>
-
-        <Tabs defaultValue="leads">
-          <TabsList>
-            <TabsTrigger value="leads">Leads</TabsTrigger>
-            <TabsTrigger value="visitas">Visitas</TabsTrigger>
-            <TabsTrigger value="agenda">Agenda de visitas</TabsTrigger>
-          </TabsList>
-
-          <TabsContent value="leads" className="space-y-5 mt-4">
-            <div className="flex flex-wrap items-end gap-3">
-              <div>
-                <label className="block text-xs font-semibold mb-1">Período</label>
-                <select value={periodo} onChange={(e) => setPeriodo(e.target.value)} className="rounded-md border px-3 py-2 bg-white text-sm">
-                  {PERIODOS.map((p) => (
-                    <option key={p.v} value={p.v}>{p.t}</option>
-                  ))}
-                </select>
-              </div>
-              <div>
-                <label className="block text-xs font-semibold mb-1">Origem</label>
-                <select value={origem} onChange={(e) => setOrigem(e.target.value as typeof origem)} className="rounded-md border px-3 py-2 bg-white text-sm">
-                  <option value="">Todas</option>
-                  {Object.entries(ORIGENS).map(([v, t]) => (
-                    <option key={v} value={v}>{t}</option>
-                  ))}
-                </select>
-              </div>
-              <label className="flex items-center gap-2 text-sm pb-2 cursor-pointer">
-                <input type="checkbox" checked={soAnuncios} onChange={(e) => setSoAnuncios(e.target.checked)} />
-                Só quem veio de anúncio
-              </label>
-              <Button variant="outline" onClick={exportar} disabled={!filtrados.length} className="ml-auto">
-                <Download className="w-4 h-4 mr-1" /> Exportar CSV
-              </Button>
-            </div>
-
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-              {[
-                ["Leads", filtrados.length],
-                ["Vieram de anúncio", anuncios],
-                ["Visitas agendadas", filtrados.filter((l) => { const v = visitaDoLead.get(l.id); return v && v.status !== "cancelada"; }).length],
-                ["Fizeram pré-matrícula", filtrados.filter((l) => prematriculas.has(l.whatsapp)).length],
-              ].map(([t, n]) => (
-                <div key={t as string} className="rounded-xl bg-white border p-4">
-                  <p className="text-xs text-muted-foreground">{t}</p>
-                  <p className="text-2xl font-bold text-zampieri-green-dark">{n}</p>
-                </div>
-              ))}
-            </div>
-
-            {resumoCampanhas.length > 0 && (
-              <div className="rounded-xl bg-white border overflow-x-auto">
-                <table className="w-full text-sm">
-                  <thead className="bg-muted/50 text-left">
-                    <tr>
-                      <th className="px-3 py-2">Canal</th>
-                      <th className="px-3 py-2">Campanha (utm_campaign)</th>
-                      <th className="px-3 py-2 text-right">Leads</th>
-                      <th className="px-3 py-2 text-right">Visitas</th>
-                      <th className="px-3 py-2 text-right">Pré-matrícula</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {resumoCampanhas.map((r) => (
-                      <tr key={`${r.canal}|${r.campanha}`} className="border-t">
-                        <td className="px-3 py-2">{r.canal}</td>
-                        <td className="px-3 py-2">{r.campanha}</td>
-                        <td className="px-3 py-2 text-right font-semibold">{r.leads}</td>
-                        <td className="px-3 py-2 text-right">{r.visitas}</td>
-                        <td className="px-3 py-2 text-right">{r.pre}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            )}
-
-            {carregando ? (
-              <Loader2 className="w-6 h-6 animate-spin mx-auto text-zampieri-green-dark" aria-label="Carregando" />
-            ) : filtrados.length === 0 ? (
-              <p className="text-center text-muted-foreground py-10">Nenhum lead no período.</p>
-            ) : (
-              <div className="rounded-xl bg-white border overflow-x-auto">
-                <table className="w-full text-sm">
-                  <thead className="bg-muted/50 text-left">
-                    <tr>
-                      <th className="px-3 py-2">Quando</th>
-                      <th className="px-3 py-2">Responsável</th>
-                      <th className="px-3 py-2">Série</th>
-                      <th className="px-3 py-2">Origem</th>
-                      <th className="px-3 py-2">Veio de</th>
-                      <th className="px-3 py-2">Visita</th>
-                      <th className="px-3 py-2">Pré-matrícula</th>
-                      <th className="px-3 py-2">Status</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {filtrados.map((l) => {
-                      const v = visitaDoLead.get(l.id);
-                      return (
-                        <tr key={l.id} className="border-t align-top">
-                          <td className="px-3 py-2 whitespace-nowrap">{dataHora(l.created_at)}</td>
-                          <td className="px-3 py-2">
-                            <span className="font-medium">{l.nome}</span>
-                            <a
-                              href={`https://wa.me/55${l.whatsapp}`}
-                              target="_blank"
-                              rel="noreferrer"
-                              className="flex items-center gap-1 text-xs text-zampieri-green-dark underline"
-                            >
-                              <MessageCircle className="w-3 h-3" /> {telefone(l.whatsapp)}
-                            </a>
-                            <span className="text-[11px] text-muted-foreground">ref {l.ref}</span>
-                          </td>
-                          <td className="px-3 py-2">
-                            {l.serie}
-                            {l.turno && <span className="block text-xs text-muted-foreground">{l.turno}</span>}
-                          </td>
-                          <td className="px-3 py-2">{ORIGENS[l.origem]}</td>
-                          <td className="px-3 py-2">
-                            <span className={ehAnuncio(l) ? "font-semibold text-zampieri-green-dark" : ""}>{canal(l)}</span>
-                            {(l.utm_campaign || l.utm_content) && (
-                              <span className="block text-xs text-muted-foreground">
-                                {[l.utm_campaign, l.utm_content].filter(Boolean).join(" · ")}
-                              </span>
-                            )}
-                          </td>
-                          <td className="px-3 py-2 whitespace-nowrap">
-                            {v ? (
-                              <>
-                                {dataHora(v.inicio)}
-                                <span className="block text-xs text-muted-foreground">{STATUS_VISITA[v.status]}</span>
-                              </>
-                            ) : (
-                              "—"
-                            )}
-                          </td>
-                          <td className="px-3 py-2">{prematriculas.get(l.whatsapp) ?? "—"}</td>
-                          <td className="px-3 py-2">
-                            <select
-                              value={l.status}
-                              onChange={(e) => mudarStatus(l, e.target.value as Lead["status"])}
-                              className="rounded border px-2 py-1 bg-white text-xs"
-                              aria-label={`Status de ${l.nome}`}
-                            >
-                              {Object.entries(STATUS).map(([k, t]) => (
-                                <option key={k} value={k}>{t}</option>
-                              ))}
-                            </select>
-                          </td>
-                        </tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
-              </div>
-            )}
-          </TabsContent>
-
-          <TabsContent value="visitas" className="mt-4">
-            <VisitasLista />
-          </TabsContent>
-
-          <TabsContent value="agenda" className="mt-4">
-            <AgendaVisitas />
-          </TabsContent>
-        </Tabs>
-      </div>
+        <TabsContent value="agenda" className="mt-4">
+          <AgendaVisitas />
+        </TabsContent>
+      </Tabs>
     </div>
-  );
-};
+  </div>
+);
 
 const LINK_REMARCAR = "https://colegiozampieri.com.br/informativomatricula?remarcar=1";
 const dataLonga = (iso: string) =>

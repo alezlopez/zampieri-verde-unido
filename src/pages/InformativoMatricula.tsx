@@ -249,7 +249,7 @@ export default function InformativoMatricula() {
     // abre o agendamento direto e não conta como Lead novo no Meta (a conversa já foi contada)
     else if (params.get("agendar") === "1") {
       capturarUtms();
-      setDialogo({ modo: "visita", semLead: params.get("utm_medium") === "secretaria" });
+      setDialogo({ modo: "visita", semLead: ["atendimento", "secretaria"].includes(params.get("utm_medium") || "") });
     }
   }, []);
 

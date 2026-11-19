@@ -45,6 +45,8 @@ const SERIES = [
 ];
 
 // Mesmos segmentos do Lead disparado pelo pixel no formulário
+const COMO_CONHECEU = ["indicacao", "instagram", "google", "ex_aluno", "passei_em_frente", "outro"];
+
 const segmentoDaSerie = (serie: string) => {
   if (serie.startsWith("Infantil")) return "infantil";
   if (serie.includes("Ensino Médio")) return "medio";
@@ -315,6 +317,12 @@ Deno.serve(async (req) => {
         utm_source: txt(form.get("utm_source"), 200) || null,
         utm_campaign: txt(form.get("utm_campaign"), 200) || null,
         utm_content: txt(form.get("utm_content"), 200) || null,
+        utm_medium: txt(form.get("utm_medium"), 200) || null,
+        utm_term: txt(form.get("utm_term"), 200) || null,
+        fbclid: txt(form.get("fbclid"), 500) || null,
+        gclid: txt(form.get("gclid"), 500) || null,
+        // Pergunta opcional "Como conheceu o Colégio Zampieri?"; valor fora da lista é descartado
+        como_conheceu: COMO_CONHECEU.includes(txt(d.como_conheceu, 30)) ? txt(d.como_conheceu, 30) : null,
       })
       .select("id, protocolo")
       .single();
