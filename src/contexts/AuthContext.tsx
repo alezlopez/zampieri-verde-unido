@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useEffect, useState } from "react";
+import React, { createContext, useContext, useEffect, useRef, useState } from "react";
 import { User, Session } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
 import { allowedSetores, createPermissionRequestGuard, SETORES, type Setor } from "@/lib/auth-permissions";
@@ -32,6 +32,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [isAdmin, setIsAdmin] = useState(false);
   const [isConferente, setIsConferente] = useState(false);
   const [setores, setSetores] = useState<Setor[]>([]);
+  // Usuário cujos perfis já foram carregados (ver applySession).
+  const perfisDe = useRef<string | null>(null);
 
   const limparPerfis = () => {
     setIsAdmin(false);
@@ -49,10 +51,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         ),
       ]);
       if (!isCurrent()) return;
+      // Falha de rede na checagem: permite nova tentativa no próximo evento de sessão
+      if (adminRes.error) perfisDe.current = null;
       setIsAdmin(adminRes.data === true && !adminRes.error);
       setIsConferente(confRes.data === true && !confRes.error);
       setSetores(allowedSetores(setorRes));
     } catch {
+      perfisDe.current = null;
       if (isCurrent()) limparPerfis();
     } finally {
       if (isCurrent()) setLoading(false);
@@ -65,8 +70,20 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   useEffect(() => {
     const requests = createPermissionRequestGuard();
     let authEventReceived = false;
-    const applySession = (nextSession: Session | null) => {
+    // Usuário cujos perfis já foram carregados. O Supabase repete SIGNED_IN ao voltar para a aba e
+    // TOKEN_REFRESHED a cada hora; tratar isso como login novo ligava o "loading", o RequireAdmin
+    // desmontava a página e o admin perdia a pré-matrícula aberta, a busca e os filtros.
+    const applySession = (nextSession: Session | null, event?: string) => {
+      const mesmoUsuario = !!nextSession?.user && nextSession.user.id === perfisDe.current;
+      if (mesmoUsuario) {
+        setSession(nextSession);
+        // Mantém o mesmo objeto (evita recarregar telas que dependem de "user"), salvo quando os
+        // dados da conta mudaram de fato (ex.: troca de senha obrigatória limpa o metadado).
+        if (event === "USER_UPDATED") setUser(nextSession!.user);
+        return;
+      }
       const isCurrent = requests.begin();
+      perfisDe.current = nextSession?.user?.id ?? null;
       setSession(nextSession);
       setUser(nextSession?.user ?? null);
       if (nextSession?.user) {
@@ -89,7 +106,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           setTimeout(() => void supabase.auth.signOut(), 0);
           return;
         }
-        applySession(session);
+        applySession(session, event);
       }
     );
 
@@ -119,6 +136,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const signOut = async () => {
+    perfisDe.current = null;
     await supabase.auth.signOut();
     setUser(null);
     setSession(null);
