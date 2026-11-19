@@ -35,8 +35,9 @@ Não editar o WhatsZampieri pelo editor da Lovable, para não haver duas frentes
   visita (edge function `lead-site`). Contato que nunca escreveu no WhatsApp responde 404 e é ignorado.
 - Etapas enviadas: `pre_enrollment`, `visit_scheduled` (entrevista agendada), `interview_done`,
   `enrollment_docs`, `enrolled`, `lost`, `qualified`.
-- **Dono do SQL**: o repositório do site (é onde roda). Em `whatszampieri/integrations/n8n-project/` fica só
-  um apontamento para cá. Reenvio completo: `select public.whatszampieri_resync_all();` no banco do site.
+- **Dono do SQL**: o repositório do site (é onde roda), em
+  `supabase/migrations/20261119170000_whatszampieri_lead_sync_v2.sql`. Em
+  `whatszampieri/integrations/n8n-project/` fica só um apontamento para cá. Reenvio completo: `select public.whatszampieri_resync_all();` no banco do site.
 
 ## WhatsZampieri → site: `lead-whatsapp`
 
@@ -45,8 +46,12 @@ Não editar o WhatsZampieri pelo editor da Lovable, para não haver duas frentes
   WhatsZampieri envia o contato para a edge function `lead-whatsapp` do site:
   `POST https://lzdhrtcugqnqmyapgmbs.supabase.co/functions/v1/lead-whatsapp`,
   header `X-Webhook-Token` = `LEAD_CALLBACK_TOKEN` (o mesmo token), corpo
-  `{ phone, name, source, source_detail, contact_id, lead_stage, lost_reason, created_at }`
+  `{ phone, name, source, source_detail, contact_id, contact_type, lead_stage, lost_reason, created_at }`
   ou `{ contacts: [...] }` (até 1000, usado no reenvio completo).
+- `contact_type` diferente de `lead` (atendente corrigiu para Família, por exemplo) tira a família do funil.
+- No WhatsZampieri: o webhook avisa quando o contato vira Interessado (anúncio, link com código, Comercial no
+  menu); a barra do contato chama a function `site-sync` quando o atendente marca ou edita um interessado; e a
+  página Novos alunos tem o botão "Enviar ao funil do site" (administradores) para o reenvio completo.
 - O site grava em `contatos_whatsapp` (uma linha por telefone; a primeira origem é mantida) e a família
   entra no funil como "Conversa no WhatsApp". Se depois agendar visita ou fizer pré-matrícula, a etapa
   avança sozinha (ligação pelo telefone).
@@ -61,7 +66,7 @@ Não editar o WhatsZampieri pelo editor da Lovable, para não haver duas frentes
 | Bio / posts / stories | `/informativomatricula` | `utm_source=instagram`, `utm_medium=bio\|post\|stories` |
 | Secretaria manda visita | `colegiozampieri.com.br/visita` | `utm_source=whatsapp`, `utm_medium=atendimento` (não envia Lead ao Meta) |
 | Secretaria manda pré-matrícula | `colegiozampieri.com.br/pre` | `utm_source=whatsapp`, `utm_medium=atendimento` |
-| Automações do WhatsZampieri | links com | `utm_source=whatsapp`, `utm_medium=automacao` |
+| Automações do WhatsZampieri | `pre_enrollment_link` e `visit_link` no webhook das automações | `utm_source=whatsapp`, `utm_medium=automacao` (visita não envia Lead ao Meta) |
 
 Regra do painel: `utm_medium` orgânico (bio, post, stories, social) vale mais que `fbclid`;
 `utm_medium` pago (paid, cpc, ads) = anúncio. Mesma regra em `src/lib/canalLead.ts` e

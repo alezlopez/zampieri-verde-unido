@@ -18,6 +18,7 @@ interface ContatoWa {
   source?: string | null;
   source_detail?: Record<string, unknown> | null;
   contact_id?: string | null;
+  contact_type?: string | null;
   lead_stage?: string | null;
   lost_reason?: string | null;
   created_at?: string | null;
@@ -48,10 +49,16 @@ Deno.serve(async (req) => {
     if (lista.length > 1000) return json({ error: "lista_grande" }, 400);
 
     const linhas = [];
+    const remover: string[] = [];
     for (const c of lista) {
       const fone = digitos(c.phone);
       const k = chave(fone);
       if (!k) continue;
+      // Deixou de ser interessado no WhatsZampieri (ex.: atendente corrigiu para Família): sai do funil
+      if (c.contact_type && c.contact_type !== "lead") {
+        remover.push(k);
+        continue;
+      }
       const origem = ORIGENS.includes(String(c.source)) ? String(c.source) : c.source ? "outro" : "manual";
       // Só os campos úteis da origem (o referral do Meta traz texto do anúncio e IDs)
       const det = c.source_detail ?? {};
@@ -83,7 +90,11 @@ Deno.serve(async (req) => {
     }
     linhas.length = 0;
     linhas.push(...porChave.values());
-    if (!linhas.length) return json({ ok: true, gravados: 0 });
+    if (remover.length) {
+      const { error } = await admin.from("contatos_whatsapp").delete().in("chave", remover);
+      if (error) throw error;
+    }
+    if (!linhas.length) return json({ ok: true, gravados: 0, removidos: remover.length });
 
     // Reenvio do mesmo contato atualiza nome, etapa e motivo; a origem e o primeiro contato ficam os originais
     const { data: existentes } = await admin
@@ -100,7 +111,7 @@ Deno.serve(async (req) => {
 
     const { error } = await admin.from("contatos_whatsapp").upsert(final, { onConflict: "chave" });
     if (error) throw error;
-    return json({ ok: true, gravados: final.length });
+    return json({ ok: true, gravados: final.length, removidos: remover.length });
   } catch (e) {
     console.error("lead-whatsapp erro:", (e as Error)?.message ?? e);
     return json({ error: "erro_interno" }, 500);
