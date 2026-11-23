@@ -1,4 +1,6 @@
 import { useEffect, useState } from "react";
+import { eventoRestrito, resumoTurmas } from "@/lib/turmas";
+import { useTurmas } from "@/hooks/useTurmas";
 import { Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
@@ -26,6 +28,7 @@ interface Evento {
   ativo: boolean;
   requer_autorizacao: boolean;
   publico_alvo: "apenas_alunos" | "alunos_e_convidados" | "aberto_ao_publico";
+  turmas_permitidas?: string[] | null;
 }
 
 const Eventos = () => {
@@ -35,6 +38,7 @@ const Eventos = () => {
   const [hasProdutos, setHasProdutos] = useState(false);
   const { user, isAdmin, signOut } = useAuth();
   const perfil = usePerfilComprador(user);
+  const { turmas: todasTurmas } = useTurmas();
 
   useEffect(() => {
     const fetchEventos = async () => {
@@ -194,6 +198,11 @@ const Eventos = () => {
                   </div>
                 </CardHeader>
                 <CardContent className="space-y-2">
+                  {eventoRestrito(evento.turmas_permitidas) && (
+                    <p className="text-xs font-medium text-zampieri-green-dark">
+                      Só para {resumoTurmas(evento.turmas_permitidas, todasTurmas)}
+                    </p>
+                  )}
                   {evento.descricao && (
                     <p className="text-muted-foreground text-sm line-clamp-3">{evento.descricao}</p>
                   )}

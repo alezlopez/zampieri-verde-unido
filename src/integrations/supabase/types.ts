@@ -863,6 +863,7 @@ export type Database = {
           sucesso_upsell_titulo: string | null
           sucesso_upsell_variacao_id: string | null
           tipo_evento: string
+          turmas_permitidas: string[] | null
           titulo: string
           updated_at: string
           vagas_disponiveis: number
@@ -895,6 +896,7 @@ export type Database = {
           sucesso_upsell_titulo?: string | null
           sucesso_upsell_variacao_id?: string | null
           tipo_evento?: string
+          turmas_permitidas?: string[] | null
           titulo: string
           updated_at?: string
           vagas_disponiveis?: number
@@ -927,6 +929,7 @@ export type Database = {
           sucesso_upsell_titulo?: string | null
           sucesso_upsell_variacao_id?: string | null
           tipo_evento?: string
+          turmas_permitidas?: string[] | null
           titulo?: string
           updated_at?: string
           vagas_disponiveis?: number
@@ -3040,6 +3043,7 @@ export type Database = {
         Returns: boolean
       }
       increment_message_count: { Args: { count: number }; Returns: undefined }
+      listar_turmas: { Args: never; Returns: string[] }
       marcar_ingresso_utilizado: {
         Args: { p_id: string }
         Returns: {

@@ -1,4 +1,6 @@
 import { useEffect, useState } from "react";
+import { eventoRestrito, resumoTurmas } from "@/lib/turmas";
+import { useTurmas } from "@/hooks/useTurmas";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
@@ -26,6 +28,7 @@ interface Evento {
   ativo: boolean;
   requer_autorizacao: boolean;
   publico_alvo: "apenas_alunos" | "alunos_e_convidados" | "aberto_ao_publico";
+  turmas_permitidas?: string[] | null;
   aluno_cortesia?: boolean;
   meia_entrada_habilitada?: boolean;
   preco_meia?: number;
@@ -51,6 +54,7 @@ const EventoDetalhe = () => {
   const { user, isAdmin, signOut } = useAuth();
   const perfil = usePerfilComprador(user);
   const [evento, setEvento] = useState<Evento | null>(null);
+  const { turmas: todasTurmas } = useTurmas();
   const [loading, setLoading] = useState(true);
   const [tipoComprador, setTipoComprador] = useState<"aluno" | "externo" | null>(null);
   const [produtosExtras, setProdutosExtras] = useState<Array<{ id: string; nome: string; descricao: string | null; imagem_url: string | null; preco_min: number | null }>>([]);
@@ -218,6 +222,11 @@ const EventoDetalhe = () => {
                 {evento.requer_autorizacao && (
                   <Badge variant="outline" className="border-zampieri-wine/60 text-zampieri-wine">
                     Requer autorização
+                  </Badge>
+                )}
+                {eventoRestrito(evento.turmas_permitidas) && (
+                  <Badge variant="outline" className="border-zampieri-green/60 text-zampieri-green-dark">
+                    Só para {resumoTurmas(evento.turmas_permitidas, todasTurmas)}
                   </Badge>
                 )}
                 {evento.vagas_disponiveis <= 0 && (

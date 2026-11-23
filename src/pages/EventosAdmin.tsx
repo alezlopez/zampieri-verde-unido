@@ -15,6 +15,7 @@ import { Label } from "@/components/ui/label";
 import { EventosHeader } from "@/components/EventosHeader";
 import { Footer } from "@/components/Footer";
 import { mensagemDaFunction } from "@/lib/mensagensErro";
+import TurmasPermitidas from "@/components/admin/TurmasPermitidas";
 
 interface Evento {
   id: string;
@@ -40,6 +41,7 @@ interface Evento {
   preco_meia_parcelado: number;
   categorias_meia: string[];
   aluno_cortesia: boolean;
+  turmas_permitidas?: string[] | null;
   sucesso_upsell_ativo?: boolean;
   sucesso_upsell_titulo?: string | null;
   sucesso_upsell_subtitulo?: string | null;
@@ -130,6 +132,8 @@ const EventosAdmin = () => {
   const [meiaHabilitada, setMeiaHabilitada] = useState(true);
   const [categoriasMeia, setCategoriasMeia] = useState<string[]>(["estudante", "idoso", "pcd", "pcd_acompanhante", "professor"]);
   const [alunoCortesia, setAlunoCortesia] = useState(false);
+  const [restringirTurmas, setRestringirTurmas] = useState(false);
+  const [turmasPermitidas, setTurmasPermitidas] = useState<string[]>([]);
   const [sucessoUpsellAtivo, setSucessoUpsellAtivo] = useState(true);
   const [sucessoUpsellBadge, setSucessoUpsellBadge] = useState("");
   const [sucessoUpsellTitulo, setSucessoUpsellTitulo] = useState("");
@@ -282,6 +286,8 @@ const EventosAdmin = () => {
     setMeiaHabilitada(true);
     setCategoriasMeia(["estudante", "idoso", "pcd", "pcd_acompanhante", "professor"]);
     setAlunoCortesia(false);
+    setRestringirTurmas(false);
+    setTurmasPermitidas([]);
     setSucessoUpsellAtivo(true);
     setSucessoUpsellBadge("");
     setSucessoUpsellTitulo("");
@@ -316,6 +322,9 @@ const EventosAdmin = () => {
         : ["estudante", "idoso", "pcd", "pcd_acompanhante", "professor"]
     );
     setAlunoCortesia(!!(evento as any).aluno_cortesia);
+    const turmasEv = Array.isArray(evento.turmas_permitidas) ? evento.turmas_permitidas : [];
+    setRestringirTurmas(turmasEv.length > 0);
+    setTurmasPermitidas(turmasEv);
     setSucessoUpsellAtivo((evento as any).sucesso_upsell_ativo ?? true);
     setSucessoUpsellBadge((evento as any).sucesso_upsell_badge || "");
     setSucessoUpsellTitulo((evento as any).sucesso_upsell_titulo || "");
@@ -386,6 +395,10 @@ const EventosAdmin = () => {
       toast({ title: "Selecione ao menos uma categoria de meia-entrada", variant: "destructive" });
       return;
     }
+    if (restringirTurmas && publicoAlvo !== "aberto_ao_publico" && turmasPermitidas.length === 0) {
+      toast({ title: "Escolha as turmas do evento", description: "Ou desmarque “Restringir por turma”.", variant: "destructive" });
+      return;
+    }
     const precoNum = parseFloat(preco) || 0;
     const precoParceladoNum = parseFloat(precoParcelado) || 0;
     if (precoParceladoNum > 0 && precoParceladoNum < precoNum) {
@@ -428,6 +441,7 @@ const EventosAdmin = () => {
       preco_meia_parcelado: precoMeiaParcelado,
       categorias_meia: categoriasMeia,
       aluno_cortesia: alunoCortesia,
+      turmas_permitidas: restringirTurmas && publicoAlvo !== "aberto_ao_publico" && turmasPermitidas.length > 0 ? turmasPermitidas : null,
       sucesso_upsell_ativo: sucessoUpsellAtivo,
       sucesso_upsell_badge: sucessoUpsellBadge.trim() || null,
       sucesso_upsell_titulo: sucessoUpsellTitulo.trim() || null,
@@ -889,6 +903,14 @@ const EventosAdmin = () => {
                     </p>
                   </div>
                 </div>
+              )}
+              {publicoAlvo !== "aberto_ao_publico" && (
+                <TurmasPermitidas
+                  restringir={restringirTurmas}
+                  onRestringir={setRestringirTurmas}
+                  selecionadas={turmasPermitidas}
+                  onChange={setTurmasPermitidas}
+                />
               )}
               <div className="flex items-center space-x-2">
                 <Checkbox

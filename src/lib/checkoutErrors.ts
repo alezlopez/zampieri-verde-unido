@@ -25,6 +25,12 @@ export function friendlyCheckoutError(err: unknown, fallbackTitle = "Não foi po
   }
 
   // Regras de negócio conhecidas
+  if (raw.includes("turma_nao_permitida")) {
+    return {
+      title: "Evento não disponível para esta turma",
+      description: "Um dos alunos escolhidos não é de uma turma deste evento. Confira o evento certo para a série dele.",
+    };
+  }
   if (raw.includes("cota_meia") || raw.includes("cota de meia")) {
     return {
       title: "Cota de meia-entrada esgotada",

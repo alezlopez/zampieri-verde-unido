@@ -17,6 +17,8 @@ import { Label } from "@/components/ui/label";
 import { EventosHeader } from "@/components/EventosHeader";
 import { Footer } from "@/components/Footer";
 import { friendlyCheckoutError } from "@/lib/checkoutErrors";
+import { eventoRestrito, infoTurma, resumoTurmas, turmaPermitida } from "@/lib/turmas";
+import { useTurmas } from "@/hooks/useTurmas";
 import { mensagemDaFunction } from "@/lib/mensagensErro";
 import { erroDaFunction } from "@/lib/mensagensErro";
 
@@ -42,6 +44,7 @@ interface Evento {
   preco_meia_parcelado?: number;
   categorias_meia?: string[];
   aluno_cortesia?: boolean;
+  turmas_permitidas?: string[] | null;
 }
 
 interface Aluno {
@@ -116,6 +119,7 @@ const EventoCompra = () => {
 
   // Alunos que já possuem ingresso pago ou pendente para este evento
   const [alunosComIngresso, setAlunosComIngresso] = useState<string[]>([]);
+  const { turmas: todasTurmas } = useTurmas();
 
   // Termos e autorização
   // (Termos: aceitação implícita ao prosseguir — sem checkbox)
@@ -910,6 +914,11 @@ const EventoCompra = () => {
                     </p>
                   ) : (
                     <>
+                      {eventoRestrito(evento.turmas_permitidas) && (
+                        <p className="text-xs mb-2 rounded-md border border-zampieri-gold/40 bg-zampieri-cream/50 px-2.5 py-1.5 text-zampieri-green-dark">
+                          Este evento é <strong>só para {resumoTurmas(evento.turmas_permitidas, todasTurmas)}</strong>.
+                        </p>
+                      )}
                       <p className="text-xs font-medium text-muted-foreground mb-2">
                         Alunos vinculados ao seu CPF
                         {alunoCortesia && (
@@ -921,16 +930,18 @@ const EventoCompra = () => {
                       <div className="space-y-2">
                         {alunos.map((aluno) => {
                           const jaTemIngresso = alunosComIngresso.includes(aluno.codigo_aluno);
+                          const foraDaTurma = !turmaPermitida(evento.turmas_permitidas, aluno.curso);
+                          const bloqueado = jaTemIngresso || foraDaTurma;
                           return (
                             <div
                               key={aluno.codigo_aluno}
-                              className={`flex items-center space-x-3 p-2 rounded-md border ${jaTemIngresso ? "opacity-50 cursor-not-allowed bg-muted/30" : "hover:bg-muted/50 cursor-pointer"}`}
-                              onClick={() => !jaTemIngresso && toggleAluno(aluno.codigo_aluno)}
+                              className={`flex items-center space-x-3 p-2 rounded-md border ${bloqueado ? "opacity-50 cursor-not-allowed bg-muted/30" : "hover:bg-muted/50 cursor-pointer"}`}
+                              onClick={() => !bloqueado && toggleAluno(aluno.codigo_aluno)}
                             >
                               <Checkbox
                                 checked={alunosSelecionados.includes(aluno.codigo_aluno)}
-                                onCheckedChange={() => !jaTemIngresso && toggleAluno(aluno.codigo_aluno)}
-                                disabled={jaTemIngresso}
+                                onCheckedChange={() => !bloqueado && toggleAluno(aluno.codigo_aluno)}
+                                disabled={bloqueado}
                               />
                               <div className="flex-1">
                                 <div className="flex items-center justify-between gap-2">
@@ -946,6 +957,11 @@ const EventoCompra = () => {
                                 </p>
                                 {jaTemIngresso && (
                                   <p className="text-xs text-orange-600 font-medium">✅ Já possui ingresso para este evento</p>
+                                )}
+                                {!jaTemIngresso && foraDaTurma && (
+                                  <p className="text-xs text-destructive font-medium">
+                                    Este evento não é para a turma {aluno.curso ? infoTurma(aluno.curso).curta : "deste aluno"}.
+                                  </p>
                                 )}
                               </div>
                             </div>
