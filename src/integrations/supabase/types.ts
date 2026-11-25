@@ -868,6 +868,7 @@ export type Database = {
           updated_at: string
           vagas_disponiveis: number
           vagas_total: number
+          visivel_na_lista: boolean
         }
         Insert: {
           aluno_cortesia?: boolean
@@ -901,6 +902,7 @@ export type Database = {
           updated_at?: string
           vagas_disponiveis?: number
           vagas_total?: number
+          visivel_na_lista?: boolean
         }
         Update: {
           aluno_cortesia?: boolean
@@ -934,6 +936,7 @@ export type Database = {
           updated_at?: string
           vagas_disponiveis?: number
           vagas_total?: number
+          visivel_na_lista?: boolean
         }
         Relationships: [
           {

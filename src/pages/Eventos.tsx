@@ -47,6 +47,8 @@ const Eventos = () => {
         .from("eventos")
         .select("*")
         .eq("ativo", true)
+        // Evento "só pelo link" (lista de espera, convite) não aparece aqui; o link direto continua valendo
+        .eq("visivel_na_lista", true)
         .gte("data_evento", hoje)
         .order("data_evento", { ascending: true });
 

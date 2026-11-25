@@ -7,7 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useToast } from "@/hooks/use-toast";
-import { ArrowLeft, Plus, Pencil, Trash2, Eye, EyeOff, Users, Upload, X, ScanLine, UserPlus, RefreshCw, Link2, BarChart3 } from "lucide-react";
+import { ArrowLeft, Plus, Pencil, Trash2, Eye, EyeOff, Users, Upload, X, ScanLine, UserPlus, RefreshCw, Link2, BarChart3, Copy, ListX, ListChecks } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
@@ -42,6 +42,7 @@ interface Evento {
   categorias_meia: string[];
   aluno_cortesia: boolean;
   turmas_permitidas?: string[] | null;
+  visivel_na_lista?: boolean;
   sucesso_upsell_ativo?: boolean;
   sucesso_upsell_titulo?: string | null;
   sucesso_upsell_subtitulo?: string | null;
@@ -517,6 +518,31 @@ const EventosAdmin = () => {
   const toggleAtivo = async (evento: Evento) => {
     await supabase.from("eventos").update({ ativo: !evento.ativo }).eq("id", evento.id);
     fetchEventos();
+  };
+
+  // Tira/volta o evento da página /eventos sem desligar o link (lista de espera, convites)
+  const toggleVisivelNaLista = async (evento: Evento) => {
+    const visivel = evento.visivel_na_lista !== false;
+    const { error } = await supabase.from("eventos").update({ visivel_na_lista: !visivel }).eq("id", evento.id);
+    if (error) {
+      toast({ title: "Não foi possível alterar", description: await mensagemDaFunction(error, null), variant: "destructive" });
+      return;
+    }
+    toast({
+      title: visivel ? "Evento oculto da página de eventos" : "Evento de volta à página de eventos",
+      description: visivel ? "O link continua funcionando. Use “Copiar link” para enviar só a quem deve comprar." : undefined,
+    });
+    fetchEventos();
+  };
+
+  const copiarLinkEvento = async (evento: Evento) => {
+    const url = `${window.location.origin}/eventos/${evento.id}`;
+    try {
+      await navigator.clipboard.writeText(url);
+      toast({ title: "Link copiado", description: url });
+    } catch {
+      window.prompt("Copie o link do evento:", url);
+    }
   };
 
   const handleDelete = async (id: string) => {
@@ -1299,11 +1325,16 @@ const EventosAdmin = () => {
               <CardContent className="p-4">
                 <div className="flex flex-col md:flex-row md:items-center justify-between gap-3">
                   <div className="flex-1">
-                    <div className="flex items-center gap-2">
+                    <div className="flex flex-wrap items-center gap-2">
                       <h3 className="font-semibold text-zampieri-green-dark">{evento.titulo}</h3>
                       <Badge variant={evento.ativo ? "default" : "secondary"}>
                         {evento.ativo ? "Ativo" : "Inativo"}
                       </Badge>
+                      {evento.visivel_na_lista === false && (
+                        <Badge variant="outline" className="whitespace-nowrap border-zampieri-gold/60 text-zampieri-green-dark">
+                          Só pelo link
+                        </Badge>
+                      )}
                     </div>
                     <p className="text-sm text-muted-foreground">
                       {new Date(evento.data_evento + "T00:00:00").toLocaleDateString("pt-BR")}
@@ -1334,7 +1365,25 @@ const EventosAdmin = () => {
                       <Users className="w-4 h-4 mr-1" />
                       Ingressos
                     </Button>
-                    <Button variant="outline" size="sm" onClick={() => toggleAtivo(evento)}>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => toggleVisivelNaLista(evento)}
+                      title={evento.visivel_na_lista === false ? "Voltar a mostrar na página de eventos" : "Tirar da página de eventos (o link continua valendo)"}
+                    >
+                      {evento.visivel_na_lista === false ? <ListChecks className="w-4 h-4 mr-1" /> : <ListX className="w-4 h-4 mr-1" />}
+                      {evento.visivel_na_lista === false ? "Mostrar na lista" : "Ocultar da lista"}
+                    </Button>
+                    <Button variant="outline" size="sm" onClick={() => copiarLinkEvento(evento)} title="Copiar o link do evento">
+                      <Copy className="w-4 h-4 mr-1" />
+                      Copiar link
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => toggleAtivo(evento)}
+                      title={evento.ativo ? "Desativar evento (some da lista e o link para de funcionar)" : "Ativar evento"}
+                    >
                       {evento.ativo ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                     </Button>
                     <Button variant="outline" size="sm" onClick={() => handleEdit(evento)}>
