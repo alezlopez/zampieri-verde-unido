@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { eventoRestrito, resumoTurmas } from "@/lib/turmas";
 import { useTurmas } from "@/hooks/useTurmas";
+import { linkLogin } from "@/lib/destinoLogin";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
@@ -155,7 +156,7 @@ const EventoDetalhe = () => {
           </Button>
         </>
       ) : (
-        <Link to="/eventos/login">
+        <Link to={linkLogin(id ? `/eventos/${id}` : "/eventos")}>
           <Button size="sm" className="bg-zampieri-green-dark hover:bg-zampieri-green text-white">
             Entrar
           </Button>
@@ -167,7 +168,7 @@ const EventoDetalhe = () => {
   const handleComprar = () => {
     if (!evento) return;
     if (!user) {
-      navigate("/eventos/login", { state: { redirectTo: `/eventos/comprar/${evento.id}` } });
+      navigate(linkLogin(`/eventos/comprar/${evento.id}`));
       return;
     }
     navigate(`/eventos/comprar/${evento.id}`);

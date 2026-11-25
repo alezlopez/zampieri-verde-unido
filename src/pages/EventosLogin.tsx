@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
-import { useNavigate, Link } from "react-router-dom";
+import { useNavigate, Link, useLocation } from "react-router-dom";
+import { consumirDestino, destinoGuardado, guardarDestino } from "@/lib/destinoLogin";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -67,6 +68,14 @@ const EventosLogin = () => {
 
   const { loginWithCpf, registerWithCpf, signIn } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
+
+  // Volta para onde a pessoa estava (ex.: link de evento oculto), não para a lista de eventos
+  useEffect(() => {
+    const voltar = new URLSearchParams(location.search).get("voltar");
+    const doState = (location.state as { redirectTo?: string } | null)?.redirectTo;
+    guardarDestino(voltar || doState);
+  }, [location.search, location.state]);
   const { toast } = useToast();
 
   const formatCpf = (value: string) => {
@@ -184,10 +193,10 @@ const EventosLogin = () => {
             if (!isAdminRole && isConfRole) {
               navigate("/eventos/admin/scanner");
             } else {
-              navigate("/eventos");
+              navigate(consumirDestino());
             }
           } else {
-            navigate("/eventos");
+            navigate(consumirDestino());
           }
         }
       } else if (isRegister) {
@@ -197,7 +206,7 @@ const EventosLogin = () => {
           setLoading(false);
           return;
         }
-        const { error, needsConfirmation, email } = await registerWithCpf(cpf, password);
+        const { error, needsConfirmation, email } = await registerWithCpf(cpf, password, destinoGuardado());
         if (error) {
           const msg = error.message?.toLowerCase() || "";
           const friendlyPw = translatePasswordError(error.message);
@@ -251,7 +260,7 @@ const EventosLogin = () => {
                 toast({ title: "Não foi possível entrar", description: mensagemAmigavel(r.error, "cpf"), variant: "destructive" });
               } else {
                 toast({ title: "Login realizado!" });
-                navigate("/eventos");
+                navigate(consumirDestino());
               }
             } else if (!(await ehResponsavelSemEmail())) {
               setShowExternoForm(true);
@@ -266,7 +275,7 @@ const EventosLogin = () => {
           }
         } else {
           toast({ title: "Login realizado com sucesso!" });
-          navigate("/eventos");
+          navigate(consumirDestino());
         }
       }
     } catch (err: any) {
@@ -316,7 +325,7 @@ const EventosLogin = () => {
         setShowExternoForm(false);
       } else {
         toast({ title: "Bem-vindo!", description: "Conta criada e logada com sucesso." });
-        navigate("/eventos");
+        navigate(consumirDestino());
       }
     } catch (err: any) {
       toast({ title: "Não foi possível criar a conta", description: mensagemAmigavel(err), variant: "destructive" });

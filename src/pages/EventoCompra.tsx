@@ -19,6 +19,7 @@ import { Footer } from "@/components/Footer";
 import { friendlyCheckoutError } from "@/lib/checkoutErrors";
 import { eventoRestrito, infoTurma, resumoTurmas, turmaPermitida } from "@/lib/turmas";
 import { useTurmas } from "@/hooks/useTurmas";
+import { linkLogin } from "@/lib/destinoLogin";
 import { mensagemDaFunction } from "@/lib/mensagensErro";
 import { erroDaFunction } from "@/lib/mensagensErro";
 
@@ -169,9 +170,9 @@ const EventoCompra = () => {
 
   useEffect(() => {
     if (!authLoading && !user) {
-      navigate("/eventos/login");
+      navigate(linkLogin(id ? `/eventos/comprar/${id}` : "/eventos"));
     }
-  }, [user, authLoading, navigate]);
+  }, [user, authLoading, navigate, id]);
 
   // Detecta se é comprador externo + carrega dados completos
   useEffect(() => {

@@ -18,7 +18,7 @@ interface AuthContextType {
   signUp: (email: string, password: string) => Promise<{ error: any }>;
   signOut: () => Promise<void>;
   loginWithCpf: (cpf: string, password: string) => Promise<{ error: any }>;
-  registerWithCpf: (cpf: string, password: string) => Promise<{ error: any; needsConfirmation?: boolean; email?: string }>;
+  registerWithCpf: (cpf: string, password: string, voltarPara?: string | null) => Promise<{ error: any; needsConfirmation?: boolean; email?: string }>;
 }
 
 const AuthContext = createContext<AuthContextType>({} as AuthContextType);
@@ -188,7 +188,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return result;
   };
 
-  const registerWithCpf = async (cpf: string, password: string) => {
+  const registerWithCpf = async (cpf: string, password: string, voltarPara?: string | null) => {
     const { email, nome } = await findEmailByCpf(cpf);
     if (!email) return { error: { message: "CPF não encontrado na base de alunos. Verifique se o CPF está cadastrado na escola." } };
 
@@ -196,7 +196,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       email,
       password,
       options: {
-        emailRedirectTo: window.location.origin,
+        emailRedirectTo: voltarPara ? `${window.location.origin}${voltarPara}` : window.location.origin,
         data: { nome, cpf: cleanCpf(cpf) },
       },
     });

@@ -1,7 +1,8 @@
 import { useEffect, useState } from "react";
 import { eventoRestrito, resumoTurmas } from "@/lib/turmas";
 import { useTurmas } from "@/hooks/useTurmas";
-import { Link } from "react-router-dom";
+import { consumirDestino, destinoGuardado } from "@/lib/destinoLogin";
+import { Link, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { usePerfilComprador } from "@/hooks/usePerfilComprador";
@@ -39,6 +40,13 @@ const Eventos = () => {
   const { user, isAdmin, signOut } = useAuth();
   const perfil = usePerfilComprador(user);
   const { turmas: todasTurmas } = useTurmas();
+  const navigate = useNavigate();
+
+  // Quem criou a conta a partir do link de um evento (ex.: evento oculto) e caiu aqui depois de confirmar o
+  // e-mail volta para aquele evento
+  useEffect(() => {
+    if (user && destinoGuardado()) navigate(consumirDestino(), { replace: true });
+  }, [user, navigate]);
 
   useEffect(() => {
     const fetchEventos = async () => {
