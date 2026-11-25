@@ -136,14 +136,13 @@ export const STATUS_LABEL: Record<string, string> = {
   entrevista_concluida: "Entrevista concluída",
 };
 
-/** Série do Pré (Infantil 5) — só turno da tarde e desconto até 60% */
+/** Série do Pré (Infantil 5) — só turno da tarde e desconto de 5, 30 ou 60% */
 export const SERIE_PRE = SERIES[0];
 
-/** Percentuais de desconto disponíveis por série (0% a 60% no Pré, 0% a 30% nas demais) */
-export const descontosPorSerie = (serie?: string | null): number[] => {
-  const max = serie === SERIE_PRE ? 60 : 30;
-  return Array.from({ length: max / 5 + 1 }, (_, i) => i * 5);
-};
+/** Percentuais de desconto da entrevista (decisão do Alexandre, nov/2026): 5, 30 ou 60% no Pré; 5, 30 ou 50% nas demais.
+ *  Mesma lista em supabase/functions/prematricula-admin-acao (validação no servidor). */
+export const descontosPorSerie = (serie?: string | null): number[] =>
+  serie === SERIE_PRE ? [5, 30, 60] : [5, 30, 50];
 
 /** Turnos disponíveis por série */
 export const turnosPorSerie = (serie?: string | null): string[] =>

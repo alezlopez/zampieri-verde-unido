@@ -12,8 +12,8 @@ const json = (body: unknown, status = 200) =>
   });
 
 const SERIE_PRE = "Infantil 5 (Pré-Escola)";
-const descontosPorSerie = (serie?: string | null) =>
-  Array.from({ length: (serie === SERIE_PRE ? 60 : 30) / 5 + 1 }, (_, i) => i * 5);
+// Mesma lista de src/components/prematricula/types.ts: 5, 30 ou 60% no Pré; 5, 30 ou 50% nas demais
+const descontosPorSerie = (serie?: string | null) => (serie === SERIE_PRE ? [5, 30, 60] : [5, 30, 50]);
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
