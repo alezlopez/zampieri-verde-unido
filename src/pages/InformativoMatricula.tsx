@@ -8,6 +8,7 @@ import fotoRecreio from "@/assets/foto_recreio.jpg";
 import fotoLanche from "@/assets/foto_lanche.jpg";
 import { LeadDialog, MAPS_URL, ModoLead } from "@/components/informativo/LeadDialog";
 import { capturarUtms } from "@/lib/utm";
+import { descontosPorSerie } from "@/components/prematricula/types";
 
 const LOGO =
   "https://lzdhrtcugqnqmyapgmbs.supabase.co/storage/v1/object/public/zampieri/fotos/Logotipo.png";
@@ -32,10 +33,10 @@ type Etapa = { id: string; nome: string; mensalidade: number; descontoMax: numbe
 
 const ETAPAS: Etapa[] = [
   { id: "pre", nome: "Pré (Educação Infantil)", mensalidade: 1500, descontoMax: 60, taxa: 1500, serie: "Infantil 5 (Pré-Escola)" },
-  { id: "1", nome: "1º Ano", mensalidade: 890, descontoMax: 30, taxa: 890, serie: "1º ano" },
-  { id: "2a5", nome: "2º ao 5º Ano", mensalidade: 1000, descontoMax: 30, taxa: 1000, serie: "2º ano" },
-  { id: "6a9", nome: "6º ao 9º Ano", mensalidade: 1110, descontoMax: 30, taxa: 1110, serie: "6º ano" },
-  { id: "em", nome: "Ensino Médio", mensalidade: 1150, descontoMax: 30, taxa: 1150, serie: "1ª série do Ensino Médio" },
+  { id: "1", nome: "1º Ano", mensalidade: 890, descontoMax: 50, taxa: 890, serie: "1º ano" },
+  { id: "2a5", nome: "2º ao 5º Ano", mensalidade: 1000, descontoMax: 50, taxa: 1000, serie: "2º ano" },
+  { id: "6a9", nome: "6º ao 9º Ano", mensalidade: 1110, descontoMax: 50, taxa: 1110, serie: "6º ano" },
+  { id: "em", nome: "Ensino Médio", mensalidade: 1150, descontoMax: 50, taxa: 1150, serie: "1ª série do Ensino Médio" },
 ];
 
 /** Cards por segmento. O id é a âncora usada nos anúncios (#infantil, #1ano, #fund1, #fund2, #medio). */
@@ -56,7 +57,7 @@ const SEGMENTOS = [
     series: "Fundamental I",
     turno: "Tarde ou manhã",
     taxa: [890],
-    desconto: 30,
+    desconto: 50,
     mensalidade: 890,
     serie: "1º ano",
   },
@@ -66,7 +67,7 @@ const SEGMENTOS = [
     series: "2º ao 5º ano",
     turno: "Tarde ou manhã",
     taxa: [1000],
-    desconto: 30,
+    desconto: 50,
     mensalidade: 1000,
     serie: "2º ano",
   },
@@ -76,7 +77,7 @@ const SEGMENTOS = [
     series: "6º ao 9º ano",
     turno: "Tarde ou manhã",
     taxa: [1110],
-    desconto: 30,
+    desconto: 50,
     mensalidade: 1110,
     serie: "6º ano",
   },
@@ -86,7 +87,7 @@ const SEGMENTOS = [
     series: "1ª à 3ª série",
     turno: "Tarde ou manhã",
     taxa: [1150],
-    desconto: 30,
+    desconto: 50,
     mensalidade: 1150,
     serie: "1ª série do Ensino Médio",
   },
@@ -152,7 +153,7 @@ const FAQ = [
   },
   {
     q: "Como é definido o desconto na mensalidade?",
-    a: "Na entrevista familiar, conforme a série e a disponibilidade de vagas na turma. O desconto de admissão vai até 60% na Educação Infantil e até 30% do 1º ano ao Ensino Médio.",
+    a: "Na entrevista familiar, conforme a série e a disponibilidade de vagas na turma. O desconto de admissão vai até 60% na Educação Infantil e até 50% do 1º ano ao Ensino Médio.",
   },
   {
     q: "Quais turnos vocês oferecem?",
@@ -445,7 +446,7 @@ export default function InformativoMatricula() {
           <h2 className={`${titulo} text-2xl md:text-4xl font-bold text-center mb-3`}>Simule a economia da sua família</h2>
           <p className="text-center text-sm md:text-base opacity-80 max-w-2xl mx-auto mb-8">
             Além da taxa de matrícula grátis, novos alunos podem ter desconto de admissão na mensalidade: até 60% na
-            Educação Infantil e até 30% do 1º ano ao Ensino Médio. O percentual da sua família é definido na entrevista
+            Educação Infantil e até 50% do 1º ano ao Ensino Médio. O percentual da sua família é definido na entrevista
             familiar, conforme a série e a disponibilidade de vagas na turma.
           </p>
 
@@ -464,19 +465,25 @@ export default function InformativoMatricula() {
             </select>
 
             <div className="flex items-center justify-between text-sm font-bold mb-2">
-              <label htmlFor="desc">Desconto de admissão</label>
+              <span>Desconto de admissão</span>
               <span style={{ color: C.vinho }}>{desconto}%</span>
             </div>
-            <input
-              id="desc"
-              type="range"
-              min={0}
-              max={etapa.descontoMax}
-              step={5}
-              value={desconto}
-              onChange={(e) => setDesconto(Number(e.target.value))}
-              className="w-full accent-[#8B1A1A] mb-6"
-            />
+            {/* Só os percentuais que a entrevista oferece (mesma lista do painel de pré-matrícula) */}
+            <div id="desc" role="radiogroup" aria-label="Desconto de admissão" className="grid grid-cols-3 gap-2 mb-6">
+              {descontosPorSerie(etapa.serie).map((d) => (
+                <button
+                  key={d}
+                  type="button"
+                  role="radio"
+                  aria-checked={desconto === d}
+                  onClick={() => setDesconto(d)}
+                  className="rounded-lg border-2 py-2 text-sm font-bold transition"
+                  style={desconto === d ? { background: C.vinho, borderColor: C.vinho, color: "#fff" } : { borderColor: `${C.vinho}55`, color: C.vinho }}
+                >
+                  {d}%
+                </button>
+              ))}
+            </div>
 
             <div className="grid sm:grid-cols-2 gap-4">
               <div className="rounded-xl p-5" style={{ background: C.creme }}>

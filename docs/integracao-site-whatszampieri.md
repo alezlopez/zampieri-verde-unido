@@ -78,3 +78,11 @@ Regra do painel: `utm_medium` orgânico (bio, post, stories, social) vale mais q
    `MENSALIDADES`, `MATERIAIS`).
 2. WhatsZampieri: mensagens rápidas por turma (cadastradas pela equipe em "Respostas rápidas").
 3. Renegociação de débitos usa outra regra (`src/lib/renegociacaoDesconto.ts`), não os preços acima.
+
+**Desconto de admissão** (hoje: 5, 30 ou 50%; Pré 5, 30 ou 60%). Mudou, troque em todos:
+
+1. Opções da entrevista: `src/components/prematricula/types.ts` (`descontosPorSerie`, usado também no simulador do
+   site) e a validação em `supabase/functions/prematricula-admin-acao/index.ts`, no repositório do site.
+2. Textos "até X%": `src/pages/InformativoMatricula.tsx` (`ETAPAS.descontoMax`, `SEGMENTOS.desconto`, bloco do
+   simulador e pergunta frequente).
+3. Mensagens rápidas por turma do WhatsZampieri (trecho "até X% de desconto").
