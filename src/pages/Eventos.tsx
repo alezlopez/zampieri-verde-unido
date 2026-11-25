@@ -175,7 +175,7 @@ const Eventos = () => {
             {eventos.map((evento) => (
               <Card key={evento.id} className="overflow-hidden hover:shadow-xl transition-shadow border-border bg-card">
                 {evento.imagem_url && (
-                  <div className={`h-48 overflow-hidden relative ${evento.vagas_disponiveis <= 0 ? "opacity-50" : ""}`}>
+                  <div className={`aspect-[1200/630] overflow-hidden relative ${evento.vagas_disponiveis <= 0 ? "opacity-50" : ""}`}>
                     <img
                       src={evento.imagem_url}
                       alt={evento.titulo}

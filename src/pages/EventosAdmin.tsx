@@ -869,6 +869,9 @@ const EventosAdmin = () => {
               </div>
               <div>
                 <label className="text-sm font-medium">Imagem do Evento</label>
+                <p className="text-xs text-muted-foreground">
+                  Tamanho ideal: <strong>1200 × 630 px</strong>. O site mostra o banner inteiro nessa proporção; outra proporção é cortada nas bordas.
+                </p>
                 <div className="mt-1">
                   <label className="flex items-center gap-2 cursor-pointer border border-input rounded-md px-3 py-2 text-sm hover:bg-muted/50 transition-colors">
                     <Upload className="w-4 h-4 text-zampieri-gold" />
@@ -877,7 +880,7 @@ const EventosAdmin = () => {
                   </label>
                   {imagemPreview && (
                     <div className="mt-2 relative inline-block">
-                      <img src={imagemPreview} alt="Preview" className="h-32 rounded-md object-cover" />
+                      <img src={imagemPreview} alt="Preview" className="h-32 aspect-[1200/630] rounded-md object-cover" />
                       <button
                         type="button"
                         onClick={() => { setImagemFile(null); setImagemPreview(null); setImagemUrl(""); }}

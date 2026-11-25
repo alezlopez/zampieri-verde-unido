@@ -196,10 +196,11 @@ const EventoDetalhe = () => {
             {evento.imagem_url && (
               <div className="w-full bg-zampieri-cream">
                 <div className="container mx-auto px-4 py-6">
+                  {/* Banner sempre inteiro, na proporção 1200×630 (sem corte) */}
                   <img
                     src={evento.imagem_url}
                     alt={evento.titulo}
-                    className="w-full max-h-[420px] object-cover rounded-lg shadow-lg"
+                    className="w-full max-w-4xl mx-auto block aspect-[1200/630] object-cover rounded-lg shadow-lg"
                   />
                 </div>
               </div>
